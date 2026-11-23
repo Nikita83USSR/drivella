@@ -144,13 +144,21 @@ function makeRidge(seed,count,width){
  for(let i=0;i<count;i++){const x=-width/2+i*width/count,span=width/count*(1.25+rand()*.8),peak=x+span*(.15+rand()*.7),h=.35+rand()*.65;out.push(x,0,0,peak,h,0,x+span,0,0);}return mesh(out);
 }
 const ridgeFar=makeRidge(713,42,280),ridgeMid=makeRidge(991,34,250),ridgeNear=makeRidge(1827,27,220);
+function makeRidgeEdge(seed,count,width){
+ let out=[],r=seed>>>0;const rand=()=>{r=(r*1664525+1013904223)>>>0;return r/4294967296;};
+ for(let i=0;i<count;i++){const x=-width/2+i*width/count,span=width/count*(1.25+rand()*.8),peak=x+span*(.15+rand()*.7),h=.35+rand()*.65,t=.009;
+  out.push(x,0,0,peak,h,0,peak,h-t,0,x,0,0,peak,h-t,0,x,t,0);
+  out.push(peak,h,0,x+span,0,0,x+span,t,0,peak,h,0,x+span,t,0,peak,h-t,0);
+ }return mesh(out);
+}
+const ridgeFarEdge=makeRidgeEdge(713,42,280),ridgeMidEdge=makeRidgeEdge(991,34,250),ridgeNearEdge=makeRidgeEdge(1827,27,220);
 const pine=mesh([-.50,0,0,0,1,0,.50,0,0,-.43,.34,.015,0,1.34,.015,.43,.34,.015,-.34,.70,.03,0,1.65,.03,.34,.70,.03]);
 let biomeOrder=[0,1,2];for(let i=2;i>0;i--){const j=Math.floor(Math.random()*(i+1));[biomeOrder[i],biomeOrder[j]]=[biomeOrder[j],biomeOrder[i]];}
 function biomeWeights(z){const span=1120,fade=210,cycle=Math.floor(Math.max(0,z)/span),local=Math.max(0,z)-cycle*span,current=biomeOrder[cycle%3],next=biomeOrder[(cycle+1)%3],t=clamp((local-(span-fade))/fade,0,1),u=t*t*(3-2*t),w=[0,0,0];w[current]=1-u;w[next]+=u;return w;}
 function hash01(n){let x=Math.imul(n^0x9e3779b9,0x85ebca6b);x^=x>>>13;x=Math.imul(x,0xc2b2ae35);x^=x>>>16;return (x>>>0)/4294967295;}
 function drawBiome(z,weight,type){
  if(weight<.012)return;const a=weight;
- if(type===2){draw(ridgeFar,0,-.5,z+205,1,27,1,[.075,.055,.19,a]);draw(ridgeMid,0,-.5,z+188,1,19,1,[.12,.055,.25,a]);draw(ridgeNear,0,-.5,z+168,1,12,1,[.20,.055,.29,a]);return;}
+ if(type===2){draw(ridgeFar,0,-.5,z+205,1,27,1,[.075,.055,.19,a]);draw(ridgeFarEdge,0,-.5,z+205.25,1,27,1,[.22,.20,.52,a*.9]);draw(ridgeMid,0,-.5,z+188,1,19,1,[.12,.055,.25,a]);draw(ridgeMidEdge,0,-.5,z+188.25,1,19,1,[.48,.16,.49,a*.92]);draw(ridgeNear,0,-.5,z+168,1,12,1,[.20,.055,.29,a]);draw(ridgeNearEdge,0,-.5,z+168.25,1,12,1,[.95,.22,.57,a]);return;}
  if(type===0){
   const start=Math.floor((z+30)/34),end=Math.ceil((z+245)/34);
   for(let i=start;i<=end;i++){const h=7+hash01(i*17+4)*20,w=2.2+hash01(i*31+8)*3.8,side=i%2?-1:1,zz=i*34,cx=roadX(zz)+side*(24+hash01(i*13+2)*13);
@@ -296,7 +304,7 @@ const clamp=(v,a,b)=>Math.max(a,Math.min(b,v));
 const roadWaypoints=[0];let roadSeed=0x51f15e;
 function roadRand(){roadSeed=(roadSeed*1664525+1013904223)>>>0;return roadSeed/4294967296;}
 for(let i=1;i<=2400;i++)roadWaypoints.push(clamp(roadWaypoints[i-1]+(roadRand()-.5)*27,-34,34));
-function roadX(z){const seg=Math.floor(z/170),t=(z-seg*170)/170,a=roadWaypoints[clamp(seg,0,roadWaypoints.length-1)]||0,b=roadWaypoints[clamp(seg+1,0,roadWaypoints.length-1)]||a,u=t*t*(3-2*t);return a+(b-a)*u;}
+function roadX(z){z=Math.max(0,z);const seg=Math.floor(z/170),t=(z-seg*170)/170,a=roadWaypoints[clamp(seg,0,roadWaypoints.length-1)]||0,b=roadWaypoints[clamp(seg+1,0,roadWaypoints.length-1)]||a,u=t*t*(3-2*t);return a+(b-a)*u;}
 function draw(shape,x,y,z,sx,sy,sz,color,yaw=0,roll=0){
  const model=matMul(translate(x,y,z),matMul(rotateY(yaw),matMul(rotateZ(roll),scale(sx,sy,sz))));
  gl.uniformMatrix4fv(loc.model,false,new Float32Array(model));gl.uniform4fv(loc.color,color);gl.bindBuffer(gl.ARRAY_BUFFER,shape.b);gl.enableVertexAttribArray(loc.p);gl.vertexAttribPointer(loc.p,3,gl.FLOAT,false,0,0);gl.drawArrays(gl.TRIANGLES,0,shape.n);drawCalls++;
