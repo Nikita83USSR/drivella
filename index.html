@@ -87,7 +87,7 @@
 <body>
 <canvas id="scene"></canvas><canvas id="sun"></canvas>
 <div id="hud">
- <div class="top"><div class="logo">DRIVELLA<small>3D SYNTHWAVE DRIFT RACING</small></div><div class="version-label" id="version-label">v0.6.1 · BUILD 009</div><div class="stat">DISTANCE<b id="distance">000.0 KM</b></div><div class="stat">LOCATION<b>VIOLET COAST</b></div></div>
+ <div class="top"><div class="logo">DRIVELLA<small>3D SYNTHWAVE DRIFT RACING</small></div><div class="version-label" id="version-label">v0.7.0 · BUILD 010</div><div class="stat">DISTANCE<b id="distance">000.0 KM</b></div><div class="stat">LOCATION<b>VIOLET COAST</b></div></div>
  <div class="right"><div id="speed">000 <span>KM/H</span></div><div id="direction">▶ FORWARD</div><div id="music">♫ MUSIC SCANNING…</div></div>
  <div class="bottom"><div class="hint"><strong>W / ↑</strong> ACCELERATE　<strong>S / ↓</strong> BRAKE / REVERSE<br><strong>A / ←　D / →</strong> STEER　<strong>SPACE</strong> HANDBRAKE　<strong>M</strong> MUSIC　<strong>1–4</strong> CAMERA</div><div>3D NEON HIGHWAY // BUILD 009</div></div>
 </div>
@@ -178,7 +178,7 @@ const C={
  body:[.72,.025,.075,1],bodyLight:[1,.16,.20,1],glass:[.012,.075,.12,1],trim:[.018,.022,.035,1],
  tire:[.012,.014,.022,1],hub:[.78,.53,.25,1],city:[.085,.045,.12,1],mount:[.08,.045,.14,1]
 };
-let keys={},started=false,speed=0,playerX=0,steer=0,bodyRoll=0,distance=0,boost=0,carYaw=0,lateralVelocity=0,spinout=0,driftIntensity=0,handbrakeActive=false,last=performance.now(),musicOn=true,track=0,trackOrder=[],trackPos=0,audio=null,musicPending=true,foundTracks=[],audioCtx=null,engineOsc=null,engineOsc2=null,engineGain=null,engineFilter=null,skidGain=null,skidFilter=null,roadGain=null,roadFilter=null,audioNoise=null;
+let keys={},started=false,speed=0,playerX=0,steer=0,bodyRoll=0,distance=0,boost=0,carYaw=0,yawRate=0,lateralVelocity=0,driftIntensity=0,handbrakeActive=false,last=performance.now(),musicOn=true,track=0,trackOrder=[],trackPos=0,audio=null,musicPending=true,foundTracks=[],audioCtx=null,engineOsc=null,engineOsc2=null,engineGain=null,engineFilter=null,skidGain=null,skidFilter=null,roadGain=null,roadFilter=null,audioNoise=null;
 // One axis convention shared by controls, car movement, body lean and indicators.
 const STEER_AXIS=Object.freeze({left:-1,right:1,screenRight:1,bodyLean:-1});
 function readSteeringInput(){return (keys.d||keys.arrowright?STEER_AXIS.right:0)+(keys.a||keys.arrowleft?STEER_AXIS.left:0);}
@@ -475,27 +475,51 @@ function updateDebug(dt){
  }
 }
 function frame(now){
- const dt=Math.min(.04,(now-last)/1000);last=now;
+ const dt=Math.min(.033,(now-last)/1000);last=now;
  const up=keys.w||keys.arrowup,down=keys.s||keys.arrowdown,handbrake=!!keys[' '];
  if(started){
-  if(up)speed+=58*dt;else if(down)speed-=78*dt;else speed*=Math.pow(.992,dt*60);
-  handbrakeActive=handbrake&&speed>24;
-  if(handbrakeActive)speed=Math.max(0,speed-7.5*dt);
+  // Smooth throttle/brake response with a little drivetrain inertia.
+  if(up)speed+=72*dt;else if(down)speed+=speed>0?-112*dt:82*dt;else speed*=Math.pow(.994,dt*60);
+  handbrakeActive=handbrake&&speed>28;
+  if(handbrakeActive)speed=Math.max(0,speed-10*dt);
   speed=clamp(speed,-75,310);
+
+  // Arcade-rally bicycle model: steering creates yaw momentum; grip controls how
+  // much lateral velocity the tyres can scrub away. No artificial spinout force.
   const steerInput=readSteeringInput();
-  steer+=(steerInput-steer)*Math.min(1,dt*5.5);
-  const yawTarget=steer*(handbrakeActive?.96:.25);
-  carYaw+=(yawTarget-carYaw)*Math.min(1,dt*(handbrakeActive?2.15:4.8));
-  const losingRear=handbrakeActive&&Math.abs(speed)>78&&Math.abs(carYaw)>.72;
-  spinout+=(losingRear?Math.sign(carYaw)*2.35:-spinout*2.1)*dt;
-  carYaw=clamp(carYaw+spinout*dt,-1.55,1.55);
-  driftIntensity=clamp((Math.abs(carYaw-steer*.16)-.10)*1.65,0,1);
-  const lateralTarget=Math.sin(carYaw)*Math.abs(speed)*.018;
-  lateralVelocity+=(lateralTarget-lateralVelocity)*Math.min(1,dt*(handbrakeActive?1.25:5.2));
-  playerX=clamp(playerX+lateralVelocity*dt,-5.8,5.8);
-  bodyRoll+=((-carYaw*.19-steer*.035)-bodyRoll)*Math.min(1,dt*7);
+  steer+=(steerInput-steer)*Math.min(1,dt*7.5);
+  const v=Math.abs(speed)/3.6;
+  const reverseSign=speed< -1?-1:1;
+  const steerAngle=steer*.36/(1+v/92);
+  const gripFactor=handbrakeActive?.30:1;
+  const yawTarget=clamp((v/2.75)*Math.tan(steerAngle)*reverseSign,-1.45,1.45);
+  const yawResponse=handbrakeActive?4.8:7.2;
+  yawRate+=(yawTarget-yawRate)*Math.min(1,dt*yawResponse);
+  // The rear axle loses grip under the handbrake, allowing a progressive,
+  // catchable slide. Countersteering naturally rotates the car back.
+  const lateralGrip=handbrakeActive?1.65:7.8;
+  const lateralAccel=-yawRate*(speed/3.6)-lateralVelocity*lateralGrip;
+  lateralVelocity+=lateralAccel*dt;
+  lateralVelocity=clamp(lateralVelocity,-v*.58,v*.58);
+  carYaw+=yawRate*dt;
+  carYaw=clamp(carYaw,-1.35,1.35);
+  // Convert local forward/sideways velocity into world-space lateral movement.
+  const worldLateral=(speed/3.6)*Math.sin(carYaw)+lateralVelocity*Math.cos(carYaw);
+  playerX=clamp(playerX+worldLateral*dt,-8.5,8.5);
+  const slipAngle=Math.atan2(lateralVelocity,Math.max(2,v));
+  driftIntensity=clamp((Math.abs(slipAngle)-.055)/.48,0,1);
+  const lateralLoad=clamp(-lateralAccel/24,-1,1);
+  const rollTarget=clamp(-lateralLoad*.10-steer*.012,-.12,.12);
+  bodyRoll+=(rollTarget-bodyRoll)*Math.min(1,dt*5.5);
+  // Keep the road scrolling speed tied to the actual longitudinal velocity.
   distance+=speed*dt*.12;
- }else{handbrakeActive=false;driftIntensity*=.9;spinout*=.9;}
+ }else{
+  handbrakeActive=false;
+  yawRate*=Math.pow(.88,dt*60);
+  lateralVelocity*=Math.pow(.90,dt*60);
+  driftIntensity*=.88;
+  bodyRoll*=Math.pow(.88,dt*60);
+ }
 
  drawWorld();drawSun();updateDebug(dt);
  updateCarAudio();
