@@ -94,7 +94,7 @@
 <body>
 <canvas id="scene"></canvas><canvas id="sun"></canvas>
 <div id="hud">
- <div class="top"><div class="logo">DRIVELLA<small>3D SYNTHWAVE DRIFT RACING</small></div><div class="version-label" id="version-label">v0.12.2 · BUILD 024</div><div class="stat">DISTANCE<b id="distance">000.0 KM</b></div><div class="stat">LOCATION<b>VIOLET COAST</b></div></div>
+ <div class="top"><div class="logo">DRIVELLA<small>3D SYNTHWAVE DRIFT RACING</small></div><div class="version-label" id="version-label">v0.13.0 · BUILD 025</div><div class="stat">DISTANCE<b id="distance">000.0 KM</b></div><div class="stat">LOCATION<b>VIOLET COAST</b></div></div>
  <div class="right"><div id="speed">000 <span>KM/H</span></div><div id="direction">▶ FORWARD</div><div id="music">♫ MUSIC SCANNING…</div></div>
  <div class="bottom"><div class="hint"><strong>W / ↑</strong> ACCELERATE　<strong>S / ↓</strong> BRAKE / REVERSE<br><strong>A / ←　D / →</strong> STEER　<strong>SPACE</strong> HANDBRAKE　<strong>M</strong> MUSIC　<strong>1–4</strong> CAMERA</div><div>3D NEON HIGHWAY // BUILD 009</div></div>
 </div>
@@ -108,7 +108,7 @@
 <script>
 (()=>{
 'use strict';
-const VERSION='v0.12.2',BUILD='024';
+const VERSION='v0.13.0',BUILD='025';
 const canvas=document.getElementById('scene'),gl=canvas.getContext('webgl',{antialias:true,alpha:true}),sun=document.getElementById('sun'),sctx=sun.getContext('2d');
 const $=id=>document.getElementById(id);
 const clamp=(v,a,b)=>Math.max(a,Math.min(b,v));
@@ -245,8 +245,25 @@ function sideRibbon(side,points,width){
            xa,a[0]+ny,a[1]+nz,xb,b[0]-ny,b[1]-nz,xb,b[0]+ny,b[1]+nz);
  }return mesh(out);
 }
+function makeProfileLine(keys,side,zStart,zEnd,yKey,xFactor,width,offset=0){
+ const pts=[],steps=Math.max(12,Math.ceil((zEnd-zStart)/.11));
+ for(let i=0;i<=steps;i++){
+  const z=zStart+(zEnd-zStart)*i/steps,p=profileValue(z,keys);
+  pts.push([p[yKey],z,p.w*xFactor+offset]);
+ }
+ return sideRibbon(side,pts,width);
+}
+function makeArchLine(center,side,width,offset=.012){
+ const pts=[],steps=48;
+ for(let i=0;i<=steps;i++){
+  const z=center-.48+.96*i/steps,d=z-center;
+  const y=.465+Math.sqrt(Math.max(0,.455*.455-d*d))+.045;
+  pts.push([y,z,1.205+offset]);
+ }
+ return sideRibbon(side,pts,width);
+}
 // Scaled 1.25x from the design sheet: 5.75 x 2.475 x 1.40 game units.
-const bodyMesh=makeCarHull([
+const bodyProfile=[
  {z:-2.875,w:.93,floor:.18,side:.28,mid:.40,shoulder:.58,upper:.63,top:.65},
  {z:-2.70,w:1.12,floor:.18,side:.34,mid:.58,shoulder:.78,upper:.84,top:.86},
  {z:-2.20,w:1.23,floor:.18,side:.35,mid:.65,shoulder:.90,upper:.95,top:.97},
@@ -260,7 +277,8 @@ const bodyMesh=makeCarHull([
  {z:2.15,w:1.18,floor:.18,side:.34,mid:.62,shoulder:.86,upper:.91,top:.93},
  {z:2.55,w:1.00,floor:.18,side:.30,mid:.50,shoulder:.70,upper:.74,top:.76},
  {z:2.875,w:.76,floor:.18,side:.26,mid:.38,shoulder:.52,upper:.55,top:.57}
-],true);
+ ];
+const bodyMesh=makeCarHull(bodyProfile,true);
 const cabinProfile=[
  {z:-1.78,w:.70,floor:.63,side:.67,mid:.82,shoulder:.96,upper:1.03,top:1.08},
  {z:-1.50,w:.78,floor:.63,side:.67,mid:.94,shoulder:1.15,upper:1.24,top:1.29},
@@ -291,6 +309,38 @@ const frontIntake=quad([-.58,.48,2.80],[.58,.48,2.80],[.48,.25,2.84],[-.48,.25,2
 const rearLampL=quad([-.96,.75,-2.73],[-.10,.75,-2.78],[-.10,.59,-2.78],[-.96,.59,-2.73]);
 const rearLampR=quad([.96,.75,-2.73],[.96,.59,-2.73],[.10,.59,-2.78],[.10,.75,-2.78]);
 const rearVent=quad([-.54,.69,-2.76],[.54,.69,-2.76],[.50,.43,-2.80],[-.50,.43,-2.80]);
+// Dark backing frames leave a crisp ink border around each glass opening.
+const windshieldFrame=quad([-.39,1.345,.265],[.39,1.345,.265],[.57,.855,1.055],[-.57,.855,1.055]);
+const rearGlassFrame=quad([-.42,1.335,-1.355],[.42,1.335,-1.355],[.70,.815,-1.755],[-.70,.815,-1.755]);
+const frontGlassGlint=quad([-.255,1.245,.405],[-.205,1.245,.405],[-.395,.985,.83],[-.445,.985,.83]);
+const rearGlassGlint=quad([-.19,1.225,-1.435],[-.135,1.225,-1.435],[-.39,.965,-1.675],[-.445,.965,-1.675]);
+const sideGlassGlintL=quad([-.455,1.205,.49],[-.405,1.215,.43],[-.565,1.175,-.36],[-.615,1.155,-.43]);
+const sideGlassGlintR=quad([.455,1.205,.49],[.615,1.155,-.43],[.565,1.175,-.36],[.405,1.215,.43]);
+const roofGlint=quad([-.075,1.445,-.77],[.075,1.445,-.77],[.14,1.355,.12],[-.14,1.355,.12]);
+// Black ink contours follow sampled body sections; every line shares the car profile.
+const shoulderInkL=makeProfileLine(bodyProfile,-1,-2.70,2.67,'shoulder',.985,.026,.012);
+const shoulderInkR=makeProfileLine(bodyProfile,1,-2.70,2.67,'shoulder',.985,.026,.012);
+const beltInkL=makeProfileLine(bodyProfile,-1,-2.68,2.62,'mid',1,.020,.018);
+const beltInkR=makeProfileLine(bodyProfile,1,-2.68,2.62,'mid',1,.020,.018);
+const sillInkL=makeProfileLine(bodyProfile,-1,-2.58,2.56,'floor',.82,.024,.035);
+const sillInkR=makeProfileLine(bodyProfile,1,-2.58,2.56,'floor',.82,.024,.035);
+const archInk=[makeArchLine(-1.6375,-1,.025),makeArchLine(-1.6375,1,.025),makeArchLine(1.6375,-1,.025),makeArchLine(1.6375,1,.025)];
+const cabinInkL=makeProfileLine(cabinProfile,-1,-1.49,.95,'upper',.82,.022,.018);
+const cabinInkR=makeProfileLine(cabinProfile,1,-1.49,.95,'upper',.82,.022,.018);
+const windowInkLF=sideRibbon(-1,[[.91,1.00,.50],[1.29,.29,.34],[1.30,-.70,.62],[.91,-.78,.74],[.91,1.00,.50]],.020);
+const windowInkLR=sideRibbon(-1,[[.91,-.84,.74],[1.30,-.76,.62],[1.23,-1.38,.35],[.79,-1.66,.64],[.91,-.84,.74]],.020);
+const windowInkRF=sideRibbon(1,[[.91,1.00,.50],[.91,-.78,.74],[1.30,-.70,.62],[1.29,.29,.34],[.91,1.00,.50]],.020);
+const windowInkRR=sideRibbon(1,[[.91,-.84,.74],[.79,-1.66,.64],[1.23,-1.38,.35],[1.30,-.76,.62],[.91,-.84,.74]],.020);
+// Faceted paint zones: a dark lower flank and two crisp planes on the hood.
+const hoodFacetL=quad([-.38,.57,2.875],[-.59,.93,2.15],[0,.956,2.15],[0,.596,2.875]);
+const hoodFacetR=quad([.38,.57,2.875],[0,.596,2.875],[0,.956,2.15],[.59,.93,2.15]);
+const hoodCenterInk=sideRibbon(1,[[.62,2.70,.012],[.78,2.48,.012],[.92,2.15,.012],[.98,1.90,.012]],.014);
+const hoodEdgeL=sideRibbon(-1,[[.59,2.55,.98],[.78,2.15,1.17],[.90,1.72,1.19],[.95,1.30,1.15]],.025);
+const hoodEdgeR=sideRibbon(1,[[.59,2.55,.98],[.78,2.15,1.17],[.90,1.72,1.19],[.95,1.30,1.15]],.025);
+const flankShadeL=makeProfileLine(bodyProfile,-1,-2.48,2.45,'mid',1.005,.105,.022);
+const flankShadeR=makeProfileLine(bodyProfile,1,-2.48,2.45,'mid',1.005,.105,.022);
+const hoodSheenL=sideRibbon(-1,[[.73,2.55,.47],[.86,2.15,.59],[.91,1.72,.60],[.88,1.30,.58]],.018);
+const hoodSheenR=sideRibbon(1,[[.73,2.55,.47],[.86,2.15,.59],[.91,1.72,.60],[.88,1.30,.58]],.018);
 const C={
  ground:[.025,.025,.065,1],grid:[.09,.34,.48,.72],grid2:[.34,.10,.40,.55],
  road:[.055,.055,.105,1],road2:[.075,.07,.13,1],pink:[1,.13,.60,1],cyan:[.20,.88,1,1],white:[.92,.96,1,1],
@@ -491,10 +541,21 @@ function drawWorld(){
  // DRIVELLA GTS — original low, angular mid-engine coupe built to the approved four-view blueprint.
  const yaw=garageMode?0:carYaw;
  drawCarMesh(bodyMesh,carX,carZ,C.body,yaw);
- // Cabin shell, painted roof panel and inset glass share the same profile datums.
- drawCarMesh(cabinMesh,carX,carZ,C.glass,yaw);drawCarMesh(roofMesh,carX,carZ,C.body,yaw);
+ // Hand-painted cel-shaded planes: a cool dark flank shadow and two angular hood facets.
+ for(const line of [flankShadeL,flankShadeR])drawCarMesh(line,carX,carZ,C.bodyShade,yaw);
+ drawCarMesh(hoodFacetL,carX,carZ,[1,.105,.39,1],yaw);drawCarMesh(hoodFacetR,carX,carZ,[1,.105,.39,1],yaw);
+ drawCarMesh(hoodSheenL,carX,carZ,[1,.42,.72,1],yaw);drawCarMesh(hoodSheenR,carX,carZ,[1,.42,.72,1],yaw);
+ drawCarMesh(hoodEdgeL,carX,carZ,C.trim,yaw);drawCarMesh(hoodEdgeR,carX,carZ,C.trim,yaw);
+ drawCarMesh(hoodCenterInk,carX,carZ,C.trim,yaw);
+ // Cabin shell, black glass beds, painted roof and fitted panes.
+ drawCarMesh(cabinMesh,carX,carZ,C.glass,yaw);
+ drawCarMesh(windshieldFrame,carX,carZ,C.trim,yaw);drawCarMesh(rearGlassFrame,carX,carZ,C.trim,yaw);
+ drawCarMesh(roofMesh,carX,carZ,[.78,.035,.23,1],yaw);
  drawCarMesh(windshield,carX,carZ,C.glassLight,yaw);drawCarMesh(rearGlass,carX,carZ,[.025,.095,.16,1],yaw);
  for(const win of [sideGlassLF,sideGlassLR,sideGlassRF,sideGlassRR])drawCarMesh(win,carX,carZ,[.025,.10,.17,1],yaw);
+ // Cool specular streaks are separate from the warm body paint highlights.
+ for(const glint of [frontGlassGlint,rearGlassGlint,sideGlassGlintL,sideGlassGlintR])drawCarMesh(glint,carX,carZ,[.24,.70,.91,1],yaw);
+ drawCarMesh(roofGlint,carX,carZ,[1,.35,.70,1],yaw);
  for(const side of [-1,1]){
   drawCarPart(carX,carZ,side*.73,1.04,-.72,.018,.26,.022,C.trim,yaw);
   // Short mirrors sit at the base of the A-pillars.
@@ -504,8 +565,12 @@ function drawWorld(){
   drawCarMesh(side<0?intakeUpperL:intakeUpperR,carX,carZ,C.trim,yaw);
   drawCarMesh(side<0?intakeLowerL:intakeLowerR,carX,carZ,C.trim,yaw);
  }
- drawCarMesh(doorSeamL,carX,carZ,C.bodyShade,yaw);drawCarMesh(doorSeamR,carX,carZ,C.bodyShade,yaw);
+ drawCarMesh(doorSeamL,carX,carZ,C.trim,yaw);drawCarMesh(doorSeamR,carX,carZ,C.trim,yaw);
+ // Heavy black-ink strokes trace body edges, wheel arches and the window cut-lines.
+ for(const line of [shoulderInkL,shoulderInkR,beltInkL,beltInkR,sillInkL,sillInkR,cabinInkL,cabinInkR,
+                    windowInkLF,windowInkLR,windowInkRF,windowInkRR])drawCarMesh(line,carX,carZ,C.trim,yaw);
  for(const arch of [archFrontL,archFrontR,archRearL,archRearR])drawCarMesh(arch,carX,carZ,C.bodyLight,yaw);
+ for(const line of archInk)drawCarMesh(line,carX,carZ,C.trim,yaw);
  // Four 18-inch wheels: low-profile tyres and five-spoke alloy faces.
  for(const side of [-1,1])for(const wz of [-1.6375,1.6375]){
   const wx=1.015,wy=.465,tyreR=.455;
