@@ -87,7 +87,7 @@
 <body>
 <canvas id="scene"></canvas><canvas id="sun"></canvas>
 <div id="hud">
- <div class="top"><div class="logo">DRIVELLA<small>3D SYNTHWAVE DRIFT RACING</small></div><div class="version-label" id="version-label">v0.10.1 · BUILD 016</div><div class="stat">DISTANCE<b id="distance">000.0 KM</b></div><div class="stat">LOCATION<b>VIOLET COAST</b></div></div>
+ <div class="top"><div class="logo">DRIVELLA<small>3D SYNTHWAVE DRIFT RACING</small></div><div class="version-label" id="version-label">v0.10.2 · BUILD 017</div><div class="stat">DISTANCE<b id="distance">000.0 KM</b></div><div class="stat">LOCATION<b>VIOLET COAST</b></div></div>
  <div class="right"><div id="speed">000 <span>KM/H</span></div><div id="direction">▶ FORWARD</div><div id="music">♫ MUSIC SCANNING…</div></div>
  <div class="bottom"><div class="hint"><strong>W / ↑</strong> ACCELERATE　<strong>S / ↓</strong> BRAKE / REVERSE<br><strong>A / ←　D / →</strong> STEER　<strong>SPACE</strong> HANDBRAKE　<strong>M</strong> MUSIC　<strong>1–4</strong> CAMERA</div><div>3D NEON HIGHWAY // BUILD 009</div></div>
 </div>
@@ -101,9 +101,17 @@
 <script>
 (()=>{
 'use strict';
-const VERSION='v0.10.1',BUILD='016';
+const VERSION='v0.10.2',BUILD='017';
 const canvas=document.getElementById('scene'),gl=canvas.getContext('webgl',{antialias:true,alpha:true}),sun=document.getElementById('sun'),sctx=sun.getContext('2d');
 const $=id=>document.getElementById(id);
+const clamp=(v,a,b)=>Math.max(a,Math.min(b,v));
+function reportStartupError(message){
+ const status=$('boot-status');
+ if(status&&!bootDone){status.textContent='ОШИБКА ЗАПУСКА: '+String(message||'неизвестная ошибка').slice(0,110);status.style.color='#ff718a';}
+}
+window.addEventListener('error',e=>reportStartupError(e.message||'JavaScript error'));
+window.addEventListener('unhandledrejection',e=>reportStartupError(e.reason&&e.reason.message||e.reason||'Promise rejected'));
+
 let W=innerWidth,H=innerHeight,DPR=1;
 function resize(){
  DPR=Math.min(devicePixelRatio||1,2);W=innerWidth;H=innerHeight;
@@ -330,7 +338,6 @@ function updateCarAudio(){
  roadGain.gain.setTargetAtTime(sfxEnabled&&drift?Math.min(.13,driftIntensity*spd/1500):0,now,.12);
  roadFilter.frequency.setTargetAtTime(170+spd*2.2,now,.15);
 }
-const clamp=(v,a,b)=>Math.max(a,Math.min(b,v));
 // Seeded procedural road: linked waypoints form long, varied bends.
 const roadWaypoints=[0];let roadSeed=(Math.random()*4294967296)>>>0;
 function roadRand(){roadSeed=(roadSeed*1664525+1013904223)>>>0;return roadSeed/4294967296;}
