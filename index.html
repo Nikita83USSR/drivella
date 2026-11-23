@@ -60,18 +60,18 @@
 <body>
 <canvas id="scene"></canvas><canvas id="sun"></canvas>
 <div id="hud">
- <div class="top"><div class="logo">DRIVELLA<small>3D SYNTHWAVE DRIFT RACING</small></div><div class="version-label" id="version-label">v0.4.0 · BUILD 006</div><div class="stat">DISTANCE<b id="distance">000.0 KM</b></div><div class="stat">LOCATION<b>VIOLET COAST</b></div></div>
+ <div class="top"><div class="logo">DRIVELLA<small>3D SYNTHWAVE DRIFT RACING</small></div><div class="version-label" id="version-label">v0.5.0 · BUILD 007</div><div class="stat">DISTANCE<b id="distance">000.0 KM</b></div><div class="stat">LOCATION<b>VIOLET COAST</b></div></div>
  <div class="right"><div id="speed">000 <span>KM/H</span></div><div id="direction">▶ FORWARD</div><div id="music">♫ MUSIC SCANNING…</div></div>
- <div class="bottom"><div class="hint"><strong>W / ↑</strong> ACCELERATE　<strong>S / ↓</strong> BRAKE / REVERSE<br><strong>A / ←　D / →</strong> STEER　<strong>SPACE</strong> NITRO　<strong>M</strong> MUSIC　<strong>1–4</strong> CAMERA</div><div>3D NEON HIGHWAY // BUILD 006</div></div>
+ <div class="bottom"><div class="hint"><strong>W / ↑</strong> ACCELERATE　<strong>S / ↓</strong> BRAKE / REVERSE<br><strong>A / ←　D / →</strong> STEER　<strong>SPACE</strong> HANDBRAKE　<strong>M</strong> MUSIC　<strong>1–4</strong> CAMERA</div><div>3D NEON HIGHWAY // BUILD 006</div></div>
 </div>
 <div id="tools-ui"><button id="cam-prev" aria-label="Previous camera">◀</button><span id="cam-label">CAM 2 · CLOSE</span><button id="cam-next" aria-label="Next camera">▶</button><button id="debug-toggle">DEBUG</button></div>
 <div id="debug-panel"><div class="debug-title">DRIVELLA DIAGNOSTICS</div><div id="debug-data">Initializing…</div></div>
 <div id="boot-screen"><div class="boot-content"><div class="boot-kicker">NIGHT DRIVE SYSTEMS // INITIALIZING</div><div class="boot-logo">DRIVELLA</div><div class="boot-subtitle">3D SYNTHWAVE DRIFT RACING</div><div class="boot-mark"></div><div class="boot-status" id="boot-status">BUILDING THE 3D WORLD</div><div class="boot-track"><div class="boot-progress" id="boot-progress"></div></div><div class="boot-meta"><span>3D ENGINE ONLINE</span><span id="boot-percent">00%</span></div><div class="boot-footer">ENGINE STARTUP // v0.4.0 · BUILD 006</div></div></div>
-<div id="overlay"><div class="panel"><h1>DRIVELLA</h1><p>VIOLET COAST // NIGHT DRIVE</p><p class="start">PRESS W / ↑ TO DRIVE</p><p>W FORWARD · S REVERSE · A/D STEER · SPACE NITRO</p></div></div>
+<div id="overlay"><div class="panel"><h1>DRIVELLA</h1><p>VIOLET COAST // NIGHT DRIVE</p><p class="start">PRESS W / ↑ TO DRIVE</p><p>W FORWARD · S REVERSE · A/D STEER · SPACE HANDBRAKE</p></div></div>
 <script>
 (()=>{
 'use strict';
-const VERSION='v0.4.0',BUILD='006';
+const VERSION='v0.5.0',BUILD='007';
 const canvas=document.getElementById('scene'),gl=canvas.getContext('webgl',{antialias:true,alpha:true}),sun=document.getElementById('sun'),sctx=sun.getContext('2d');
 const $=id=>document.getElementById(id);
 let W=innerWidth,H=innerHeight,DPR=1;
@@ -148,7 +148,7 @@ const C={
  body:[.72,.025,.075,1],bodyLight:[1,.16,.20,1],glass:[.012,.075,.12,1],trim:[.018,.022,.035,1],
  tire:[.012,.014,.022,1],hub:[.78,.53,.25,1],city:[.085,.045,.12,1],mount:[.08,.045,.14,1]
 };
-let keys={},started=false,speed=0,playerX=0,steer=0,bodyRoll=0,distance=0,boost=0,last=performance.now(),musicOn=true,track=0,audio=null,musicPending=true,foundTracks=[],audioCtx=null,engineOsc=null,engineOsc2=null,engineGain=null,engineFilter=null,skidGain=null,skidFilter=null,roadGain=null,roadFilter=null,audioNoise=null;
+let keys={},started=false,speed=0,playerX=0,steer=0,bodyRoll=0,distance=0,boost=0,carYaw=0,lateralVelocity=0,spinout=0,driftIntensity=0,handbrakeActive=false,last=performance.now(),musicOn=true,track=0,trackOrder=[],trackPos=0,audio=null,musicPending=true,foundTracks=[],audioCtx=null,engineOsc=null,engineOsc2=null,engineGain=null,engineFilter=null,skidGain=null,skidFilter=null,roadGain=null,roadFilter=null,audioNoise=null;
 // One axis convention shared by controls, car movement, body lean and indicators.
 const STEER_AXIS=Object.freeze({left:-1,right:1,screenRight:1,bodyLean:-1});
 function readSteeringInput(){return (keys.d||keys.arrowright?STEER_AXIS.right:0)+(keys.a||keys.arrowleft?STEER_AXIS.left:0);}
@@ -178,17 +178,20 @@ async function scanMusic(){
  }));
  foundTracks=checks.filter(Boolean);
  $('music').textContent='♫ MUSIC '+foundTracks.length+' TRACK'+(foundTracks.length===1?'':'S')+' FOUND';
- if(foundTracks.length){track=0;tryStartMusic();}
+ if(foundTracks.length){shuffleTracks();tryStartMusic();}
 }
 function tryStartMusic(){
  if(!musicOn||!foundTracks.length)return;
  if(!audio)audio=new Audio();
- audio.src=foundTracks[track%foundTracks.length];audio.volume=.52;audio.loop=false;
- audio.onended=()=>{track=(track+1)%foundTracks.length;playTrack();};
+ if(!trackOrder.length)shuffleTracks();
+ audio.src=foundTracks[trackOrder[trackPos]];audio.volume=.52;audio.loop=false;
+ audio.onended=()=>{advanceTrack();};
  audio.play().then(()=>{musicPending=false;updateMusicLabel();}).catch(()=>{musicPending=true;$('music').textContent='♫ '+foundTracks.length+' TRACKS · PRESS ANY KEY';});
 }
-function playTrack(){if(!foundTracks.length)return;audio.src=foundTracks[track%foundTracks.length];audio.volume=.52;audio.onended=()=>{track=(track+1)%foundTracks.length;playTrack();};audio.play().catch(()=>{musicPending=true;});}
-function updateMusicLabel(){$('music').textContent=!musicOn?'♫ MUSIC OFF':foundTracks.length?'♫ TRACK '+(track+1)+' / '+foundTracks.length:'♫ NO MUSIC FILES';}
+function shuffleTracks(){trackOrder=foundTracks.map((_,i)=>i);for(let i=trackOrder.length-1;i>0;i--){const j=Math.floor(Math.random()*(i+1));[trackOrder[i],trackOrder[j]]=[trackOrder[j],trackOrder[i]];}trackPos=0;track=trackOrder[0]??0;}
+function advanceTrack(){if(!foundTracks.length)return;trackPos++;if(trackPos>=trackOrder.length){const previous=trackOrder[trackOrder.length-1];shuffleTracks();if(trackOrder.length>1&&trackOrder[0]===previous)[trackOrder[0],trackOrder[1]]=[trackOrder[1],trackOrder[0]];}track=trackOrder[trackPos];playTrack();}
+function playTrack(){if(!foundTracks.length)return;if(!trackOrder.length)shuffleTracks();track=trackOrder[trackPos];audio.src=foundTracks[track];audio.volume=.52;audio.onended=advanceTrack;audio.play().catch(()=>{musicPending=true;});}
+function updateMusicLabel(){$('music').textContent=!musicOn?'♫ MUSIC OFF':foundTracks.length?'♫ RANDOM TRACK '+(track+1)+' / '+foundTracks.length:'♫ NO MUSIC FILES';}
 function toggleMusic(){musicOn=!musicOn;if(musicOn)tryStartMusic();else if(audio)audio.pause();updateMusicLabel();}
 function initAudio(){
  if(audioCtx){if(audioCtx.state==='suspended')audioCtx.resume();return;}
@@ -211,14 +214,14 @@ function initAudio(){
 }
 function updateCarAudio(){
  if(!audioCtx)return;
- const now=audioCtx.currentTime,spd=Math.abs(speed),drift=started&&spd>32&&Math.abs(steer)>.23;
+ const now=audioCtx.currentTime,spd=Math.abs(speed),drift=started&&spd>32&&driftIntensity>.12;
  const rpm=48+spd*.92+boost*38;
  engineOsc.frequency.setTargetAtTime(rpm,now,.07);engineOsc2.frequency.setTargetAtTime(rpm*.48,now,.09);
  engineFilter.frequency.setTargetAtTime(130+spd*3.3,now,.12);
  engineGain.gain.setTargetAtTime(started?.065+Math.min(spd/310,.22)*.10:0,now,.12);
- skidGain.gain.setTargetAtTime(drift?Math.min(.17,(Math.abs(steer)-.18)*.30+spd/1800):0,now,.08);
+ skidGain.gain.setTargetAtTime(drift?Math.min(.20,driftIntensity*.16+spd/2200):0,now,.08);
  skidFilter.frequency.setTargetAtTime(950+Math.abs(steer)*1200+spd*2,now,.08);
- roadGain.gain.setTargetAtTime(drift?Math.min(.105,spd/1800):0,now,.12);
+ roadGain.gain.setTargetAtTime(drift?Math.min(.13,driftIntensity*spd/1500):0,now,.12);
  roadFilter.frequency.setTargetAtTime(170+spd*2.2,now,.15);
 }
 const clamp=(v,a,b)=>Math.max(a,Math.min(b,v));
@@ -255,11 +258,12 @@ function lookAt(ex,ey,ez,cx,cy,cz){
   -(rx*ex+ry*ey+rz*ez),-(ux*ex+uy*ey+uz*ez),-(fx*ex+fy*ey+fz*ez),1];
 }
 function cameraFor(carX,carZ){
+ const fx=Math.sin(carYaw),fz=Math.cos(carYaw);
  const modes=[
-  {x:carX,y:1.38,z:carZ+1.28,tx:carX,ty:1.08,tz:carZ+48,fov:76},
-  {x:carX,y:2.45,z:carZ-7.2,tx:carX,ty:.72,tz:carZ+19,fov:68},
-  {x:carX,y:4.25,z:carZ-14.0,tx:carX,ty:.72,tz:carZ+24,fov:66},
-  {x:carX,y:1.72,z:carZ-11.0,tx:carX,ty:.65,tz:carZ+22,fov:70}
+  {x:carX+fx*1.28,y:1.38,z:carZ+fz*1.28,tx:carX+fx*48,ty:1.08,tz:carZ+fz*48,fov:76},
+  {x:carX-fx*7.2,y:2.45,z:carZ-fz*7.2,tx:carX+fx*19,ty:.72,tz:carZ+fz*19,fov:68},
+  {x:carX-fx*14,y:4.25,z:carZ-fz*14,tx:carX+fx*24,ty:.72,tz:carZ+fz*24,fov:66},
+  {x:carX-fx*11,y:1.72,z:carZ-fz*11,tx:carX+fx*22,ty:.65,tz:carZ+fz*22,fov:70}
  ];
  return modes[cameraMode];
 }
@@ -307,7 +311,7 @@ function drawWorld(){
   draw(cube,tx,2.55,tz,.53,.72,.53,[.04,.31,.27,1]);
  }
  // INFERNO GT: wider, sharp-edged 80s sports coupe with a clean red/graphite silhouette.
- const yaw=steer*.11,roll=-steer*.105;
+ const yaw=carYaw,roll=-carYaw*.19-steer*.035;
  drawCarMesh(bodyMesh,carX,carZ,C.body,yaw);
  // Hood facets and center power bulge.
  drawCarPart(carX,carZ,0,.575,1.46,.73,.025,.78,C.bodyLight,yaw);
@@ -383,7 +387,7 @@ function drawWorld(){
 }
 function drawSun(){
  sctx.clearRect(0,0,W,H);
- const x=W*.5,y=H*.225,r=Math.min(W,H)*.155;
+ const x=W*.5,r=Math.min(W,H)*.194,y=H*.48-r*.40;
  const halo=sctx.createRadialGradient(x,y,r*.12,x,y,r*2.05);halo.addColorStop(0,'rgba(255,222,170,.32)');halo.addColorStop(.34,'rgba(255,105,163,.22)');halo.addColorStop(.68,'rgba(181,65,255,.10)');halo.addColorStop(1,'rgba(255,40,150,0)');
  sctx.fillStyle=halo;sctx.fillRect(x-r*2.4,y-r*2.4,r*4.8,r*4.8);
  // Crisp circular sun with a warm cream-to-coral-to-magenta synthwave palette.
@@ -428,21 +432,31 @@ function updateDebug(dt){
 }
 function frame(now){
  const dt=Math.min(.04,(now-last)/1000);last=now;
- const up=keys.w||keys.arrowup,down=keys.s||keys.arrowdown,left=keys.a||keys.arrowleft,right=keys.d||keys.arrowright,nitro=keys[' '];
+ const up=keys.w||keys.arrowup,down=keys.s||keys.arrowdown,handbrake=!!keys[' '];
  if(started){
-  if(up)speed+=58*dt;else if(down)speed-=78*dt;else speed*=Math.pow(.985,dt*60);
-  if(nitro&&speed>20){boost=Math.min(1,boost+dt*2.4);speed+=72*dt;}else boost=Math.max(0,boost-dt*2);
+  if(up)speed+=58*dt;else if(down)speed-=78*dt;else speed*=Math.pow(.992,dt*60);
+  handbrakeActive=handbrake&&speed>24;
+  if(handbrakeActive)speed=Math.max(0,speed-7.5*dt);
   speed=clamp(speed,-75,310);
   const steerInput=readSteeringInput();
   steer+=(steerInput-steer)*Math.min(1,dt*5.5);
-  bodyRoll+=((STEER_AXIS.bodyLean*steer*.14)-bodyRoll)*Math.min(1,dt*7);
-  playerX=clamp(playerX+steer*STEER_AXIS.screenRight*dt*(.75+Math.abs(speed)/145),-4.5,4.5);
+  const yawTarget=steer*(handbrakeActive?.96:.25);
+  carYaw+=(yawTarget-carYaw)*Math.min(1,dt*(handbrakeActive?2.15:4.8));
+  const losingRear=handbrakeActive&&Math.abs(speed)>78&&Math.abs(carYaw)>.72;
+  spinout+=(losingRear?Math.sign(carYaw)*2.35:-spinout*2.1)*dt;
+  carYaw=clamp(carYaw+spinout*dt,-1.55,1.55);
+  driftIntensity=clamp((Math.abs(carYaw-steer*.16)-.10)*1.65,0,1);
+  const lateralTarget=Math.sin(carYaw)*Math.abs(speed)*.018;
+  lateralVelocity+=(lateralTarget-lateralVelocity)*Math.min(1,dt*(handbrakeActive?1.25:5.2));
+  playerX=clamp(playerX+lateralVelocity*dt,-5.8,5.8);
+  bodyRoll+=((-carYaw*.19-steer*.035)-bodyRoll)*Math.min(1,dt*7);
   distance+=speed*dt*.12;
- }
+ }else{handbrakeActive=false;driftIntensity*=.9;spinout*=.9;}
+
  drawWorld();drawSun();updateDebug(dt);
  updateCarAudio();
  $('speed').innerHTML=String(Math.round(Math.abs(speed))).padStart(3,'0')+' <span>KM/H</span>';
- $('direction').textContent=speed< -1?'◀ REVERSE':'▶ FORWARD';$('direction').style.color=speed< -1?'#ffb56f':'#ff8de9';
+ $('direction').textContent=speed< -1?'◀ REVERSE':handbrakeActive?'✦ DRIFT':driftIntensity>.18?'✦ SLIDE':'▶ FORWARD';$('direction').style.color=speed< -1?'#ffb56f':driftIntensity>.18?'#ff70dc':'#ff8de9';
  $('distance').textContent=Math.max(0,distance).toFixed(1).padStart(5,'0')+' KM';
  requestAnimationFrame(frame);
 }
