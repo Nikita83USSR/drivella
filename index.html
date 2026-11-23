@@ -753,7 +753,7 @@ function frame(now){
   const rollTarget=clamp(-lateralLoad*.10-steer*.012,-.12,.12);
   bodyRoll+=(rollTarget-bodyRoll)*Math.min(1,dt*5.5);
   // Keep the road scrolling speed tied to the actual longitudinal velocity.
-  distance+=speed*dt*.12;
+
  }else if(!paused){
   handbrakeActive=false;
   yawRate*=Math.pow(.88,dt*60);
