@@ -53,6 +53,32 @@
 #debug-panel.visible{display:block}
 #debug-panel strong{color:#82f6ff;font-weight:700}
 #debug-panel .debug-title{color:#ff83df;letter-spacing:.2em;margin-bottom:5px}
+/* DRIVELLA front end */
+#main-menu{position:fixed;inset:0;z-index:12;display:none;align-items:center;justify-content:flex-start;padding:clamp(22px,5vw,76px);background:linear-gradient(90deg,rgba(5,7,22,.78),rgba(7,8,24,.34) 44%,rgba(5,6,20,.08)),url('assets/menu-art.svg') center/cover no-repeat;}
+#main-menu.show{display:flex;animation:menuIn .8s ease both}
+.menu-content{width:min(490px,90vw);margin-top:-2vh}
+.menu-brand{font:900 clamp(44px,7vw,86px)/.9 Arial,sans-serif;letter-spacing:.10em;color:#fff;text-shadow:0 0 10px #fff,0 0 28px #ff36d9,0 0 55px #8b35ff}
+.menu-sub{margin:15px 0 38px 5px;color:#8df8ff;font-size:11px;letter-spacing:.36em}
+.menu-actions{display:grid;gap:13px;width:min(340px,100%)}
+.menu-btn{position:relative;min-height:62px;padding:0 22px;text-align:left;border:1px solid #70eaff88;background:linear-gradient(100deg,#080d24eF,#11102de0);color:#eafaff;font:800 16px Consolas,monospace;letter-spacing:.18em;cursor:pointer;clip-path:polygon(0 0,96% 0,100% 18%,96% 100%,0 100%);transition:.18s;box-shadow:inset 0 0 20px #1f4e7933,0 0 16px #00d9ff18}
+.menu-btn:before{content:'›';display:inline-block;margin-right:18px;color:#ff53d6;font-size:24px;vertical-align:-2px}
+.menu-btn:hover,.menu-btn:focus-visible{outline:none;transform:translateX(8px);border-color:#ff54df;background:linear-gradient(100deg,#321044ef,#101d39ef);box-shadow:0 0 24px #ff27d555,inset 0 0 22px #ff27d522}
+.menu-footer{position:absolute;left:clamp(22px,5vw,76px);bottom:24px;color:#b9c6e3;font-size:11px;letter-spacing:.14em;text-shadow:0 2px 6px #000}
+.menu-footer b{color:#ff8cdd;font-weight:700}
+#garage-screen,#options-screen{position:fixed;inset:0;z-index:13;display:none;pointer-events:none;background:linear-gradient(90deg,#07091beF 0%,#07091b99 38%,transparent 72%)}
+#garage-screen.show,#options-screen.show{display:block}
+.garage-head,.options-head{position:absolute;left:clamp(20px,4vw,58px);top:clamp(20px,4vw,48px);color:#fff;text-shadow:0 0 15px #ff3cdb;letter-spacing:.24em;font-weight:900;font-size:clamp(25px,4vw,42px)}
+.garage-copy{position:absolute;left:clamp(20px,4vw,58px);top:112px;color:#8cefff;font-size:10px;letter-spacing:.18em;line-height:2}
+.garage-controls{position:absolute;left:clamp(20px,4vw,58px);bottom:clamp(22px,5vh,55px);display:grid;gap:12px;pointer-events:auto}
+.garage-controls button,.options-card button{padding:13px 18px;border:1px solid #65eaff99;background:#090d25eF;color:#eafaff;font:700 11px Consolas,monospace;letter-spacing:.15em;cursor:pointer}
+.garage-controls button:hover,.options-card button:hover{border-color:#ff55dc;box-shadow:0 0 18px #ff2ad455}
+.garage-tip{position:absolute;right:28px;bottom:30px;color:#a7b6d7;font-size:10px;letter-spacing:.12em;text-align:right}
+.options-card{position:absolute;left:clamp(20px,4vw,58px);top:145px;width:min(360px,86vw);padding:22px;border:1px solid #6ceaff66;background:#080b20eF;box-shadow:0 0 40px #a100ff22;pointer-events:auto;color:#c9d9f1;font-size:11px;letter-spacing:.1em}
+.option-row{display:flex;justify-content:space-between;align-items:center;gap:15px;padding:13px 0;border-bottom:1px solid #78cfff22}
+.option-row input{accent-color:#ff48d5;width:130px}
+#garage-screen{cursor:grab}#garage-screen.dragging{cursor:grabbing}
+@keyframes menuIn{from{opacity:0;transform:scale(1.025)}to{opacity:1;transform:scale(1)}}
+@media(max-width:700px){#main-menu{background-position:58% center;padding:20px;align-items:flex-start}#main-menu:before{content:'';position:absolute;inset:0;background:linear-gradient(90deg,#050718ed,#050718a8 65%,transparent)}.menu-content{position:relative;margin-top:8vh}.menu-brand{font-size:clamp(42px,13vw,68px)}.menu-sub{margin:10px 0 25px;font-size:8px}.menu-actions{width:min(290px,88vw);gap:9px}.menu-btn{min-height:54px;font-size:13px}.menu-footer{left:20px;bottom:14px;font-size:9px}.garage-copy{top:95px;font-size:8px}.garage-tip{right:15px;bottom:15px;font-size:8px;max-width:42vw}.options-card{top:125px}}
 @media(max-width:700px){.top{gap:8px}.version-label{font-size:7px;margin-left:0}.stat{display:none}#tools-ui{right:8px;bottom:48px;gap:4px}#tools-ui button{padding:8px 7px;font-size:9px}#cam-label{min-width:90px;font-size:8px}#debug-panel{left:8px;bottom:98px;min-width:205px;font-size:9px}.bottom{max-width:75%}}
 @media(max-width:700px){.top{left:10px;top:10px;gap:9px}.right{right:10px;top:10px}.bottom{left:10px;right:10px;bottom:9px}.stat{font-size:8px;padding-left:7px}.stat b{font-size:14px}.logo small{font-size:8px}.hint{font-size:8px}.boot-content{padding:28px 18px 24px}}
 </style>
@@ -60,18 +86,21 @@
 <body>
 <canvas id="scene"></canvas><canvas id="sun"></canvas>
 <div id="hud">
- <div class="top"><div class="logo">DRIVELLA<small>3D SYNTHWAVE DRIFT RACING</small></div><div class="version-label" id="version-label">v0.5.0 · BUILD 007</div><div class="stat">DISTANCE<b id="distance">000.0 KM</b></div><div class="stat">LOCATION<b>VIOLET COAST</b></div></div>
+ <div class="top"><div class="logo">DRIVELLA<small>3D SYNTHWAVE DRIFT RACING</small></div><div class="version-label" id="version-label">v0.6.0 · BUILD 008</div><div class="stat">DISTANCE<b id="distance">000.0 KM</b></div><div class="stat">LOCATION<b>VIOLET COAST</b></div></div>
  <div class="right"><div id="speed">000 <span>KM/H</span></div><div id="direction">▶ FORWARD</div><div id="music">♫ MUSIC SCANNING…</div></div>
- <div class="bottom"><div class="hint"><strong>W / ↑</strong> ACCELERATE　<strong>S / ↓</strong> BRAKE / REVERSE<br><strong>A / ←　D / →</strong> STEER　<strong>SPACE</strong> HANDBRAKE　<strong>M</strong> MUSIC　<strong>1–4</strong> CAMERA</div><div>3D NEON HIGHWAY // BUILD 006</div></div>
+ <div class="bottom"><div class="hint"><strong>W / ↑</strong> ACCELERATE　<strong>S / ↓</strong> BRAKE / REVERSE<br><strong>A / ←　D / →</strong> STEER　<strong>SPACE</strong> HANDBRAKE　<strong>M</strong> MUSIC　<strong>1–4</strong> CAMERA</div><div>3D NEON HIGHWAY // BUILD 008</div></div>
 </div>
 <div id="tools-ui"><button id="cam-prev" aria-label="Previous camera">◀</button><span id="cam-label">CAM 2 · CLOSE</span><button id="cam-next" aria-label="Next camera">▶</button><button id="debug-toggle">DEBUG</button></div>
 <div id="debug-panel"><div class="debug-title">DRIVELLA DIAGNOSTICS</div><div id="debug-data">Initializing…</div></div>
-<div id="boot-screen"><div class="boot-content"><div class="boot-kicker">NIGHT DRIVE SYSTEMS // INITIALIZING</div><div class="boot-logo">DRIVELLA</div><div class="boot-subtitle">3D SYNTHWAVE DRIFT RACING</div><div class="boot-mark"></div><div class="boot-status" id="boot-status">BUILDING THE 3D WORLD</div><div class="boot-track"><div class="boot-progress" id="boot-progress"></div></div><div class="boot-meta"><span>3D ENGINE ONLINE</span><span id="boot-percent">00%</span></div><div class="boot-footer">ENGINE STARTUP // v0.4.0 · BUILD 006</div></div></div>
-<div id="overlay"><div class="panel"><h1>DRIVELLA</h1><p>VIOLET COAST // NIGHT DRIVE</p><p class="start">PRESS W / ↑ TO DRIVE</p><p>W FORWARD · S REVERSE · A/D STEER · SPACE HANDBRAKE</p></div></div>
+<div id="boot-screen"><div class="boot-content"><div class="boot-kicker">NIGHT DRIVE SYSTEMS // INITIALIZING</div><div class="boot-logo">DRIVELLA</div><div class="boot-subtitle">3D SYNTHWAVE DRIFT RACING</div><div class="boot-mark"></div><div class="boot-status" id="boot-status">BUILDING THE 3D WORLD</div><div class="boot-track"><div class="boot-progress" id="boot-progress"></div></div><div class="boot-meta"><span>3D ENGINE ONLINE</span><span id="boot-percent">00%</span></div><div class="boot-footer">ENGINE STARTUP // v0.6.0 · BUILD 008</div></div></div>
+<div id="main-menu"><div class="menu-content"><div class="menu-brand">DRIVELLA</div><div class="menu-sub">SYNTHWAVE DRIFT RACING</div><div class="menu-actions"><button class="menu-btn" id="menu-start">СТАРТ ИГРЫ</button><button class="menu-btn" id="menu-garage">ГАРАЖ</button><button class="menu-btn" id="menu-options">ОПЦИИ</button></div></div><div class="menu-footer">РАЗРАБОТЧИК — <b>НИКИТА МАРКИН</b></div></div>
+<div id="garage-screen"><div class="garage-head">ГАРАЖ // INFERNO GT</div><div class="garage-copy">ТЕКУЩИЙ АВТОМОБИЛЬ<br>INFERNO GT · CLASSIC SUPERCAR<br>ПОКАЖИ ЕЁ СО ВСЕХ СТОРОН</div><div class="garage-controls"><button id="garage-back">← НАЗАД В МЕНЮ</button></div><div class="garage-tip">ЗАЖМИ И ТЯНИ — ВРАЩЕНИЕ<br>КОЛЁСИКО — ПРИБЛИЗИТЬ / ОТДАЛИТЬ</div></div>
+<div id="options-screen"><div class="options-head">ОПЦИИ</div><div class="options-card"><div class="option-row"><span>МУЗЫКА</span><button id="option-music">ВКЛЮЧЕНА</button></div><div class="option-row"><span>ГРОМКОСТЬ</span><input id="option-volume" type="range" min="0" max="100" value="52"></div><div class="option-row"><span>ЗВУК ДВИГАТЕЛЯ</span><button id="option-sfx">ВКЛЮЧЁН</button></div><div class="option-row"><span>КАМЕРА</span><span>КЛАВИШИ 1–4</span></div><button id="options-back" style="width:100%;margin-top:18px">← НАЗАД В МЕНЮ</button></div></div>
+<div id="overlay" class="hidden"><div class="panel"><h1>DRIVELLA</h1><p>VIOLET COAST // NIGHT DRIVE</p><p class="start">PRESS W / ↑ TO DRIVE</p><p>W FORWARD · S REVERSE · A/D STEER · SPACE HANDBRAKE</p></div></div>
 <script>
 (()=>{
 'use strict';
-const VERSION='v0.5.0',BUILD='007';
+const VERSION='v0.6.0',BUILD='008';
 const canvas=document.getElementById('scene'),gl=canvas.getContext('webgl',{antialias:true,alpha:true}),sun=document.getElementById('sun'),sctx=sun.getContext('2d');
 const $=id=>document.getElementById(id);
 let W=innerWidth,H=innerHeight,DPR=1;
@@ -152,7 +181,7 @@ let keys={},started=false,speed=0,playerX=0,steer=0,bodyRoll=0,distance=0,boost=
 // One axis convention shared by controls, car movement, body lean and indicators.
 const STEER_AXIS=Object.freeze({left:-1,right:1,screenRight:1,bodyLean:-1});
 function readSteeringInput(){return (keys.d||keys.arrowright?STEER_AXIS.right:0)+(keys.a||keys.arrowleft?STEER_AXIS.left:0);}
-let cameraMode=1,debugVisible=false,drawCalls=0,fps=0,fpsFrames=0,fpsTime=0,debugTime=0,bootDone=false;
+let cameraMode=1,debugVisible=false,drawCalls=0,fps=0,fpsFrames=0,fpsTime=0,debugTime=0,bootDone=false,garageMode=false,garageAngle=0,garageZoom=11,garageDrag=false,garageLastX=0,musicVolume=.52,sfxEnabled=true;
 const CAMERA_NAMES=['HOOD / FIRST PERSON','CLOSE CHASE','WIDE CHASE','LOW CHASE'];
 function setCamera(n){cameraMode=(n+4)%4;$('cam-label').textContent='CAM '+(cameraMode+1)+' · '+['HOOD','CLOSE','WIDE','LOW'][cameraMode];}
 function toggleDebug(){debugVisible=!debugVisible;$('debug-panel').classList.toggle('visible',debugVisible);$('debug-toggle').textContent=debugVisible?'DEBUG ON':'DEBUG';}
@@ -163,14 +192,25 @@ addEventListener('keydown',e=>{
  if(bootDone){initAudio();if(musicPending&&musicOn)tryStartMusic();}
  if(k==='f3'){e.preventDefault();toggleDebug();}
  if(['1','2','3','4'].includes(k))setCamera(Number(k)-1);
- if(!started&&bootDone&&(k==='w'||k==='arrowup'))start();
+ if(!started&&bootDone&&k==='enter'&&!garageMode)start();
 });
 addEventListener('keyup',e=>keys[e.key.toLowerCase()]=false);
 addEventListener('pointerdown',()=>{if(bootDone){initAudio();if(musicPending&&musicOn)tryStartMusic();}},{passive:true});
 $('cam-prev').addEventListener('click',()=>setCamera(cameraMode-1));
 $('cam-next').addEventListener('click',()=>setCamera(cameraMode+1));
 $('debug-toggle').addEventListener('click',toggleDebug);
-function start(){started=true;initAudio();if(musicPending&&musicOn)tryStartMusic();$('overlay').classList.add('hidden');}
+function showMenu(){garageMode=false;$('garage-screen').classList.remove('show');$('options-screen').classList.remove('show');$('main-menu').classList.add('show');}
+function showGarage(){garageMode=true;garageAngle=0;garageZoom=11;$('main-menu').classList.remove('show');$('options-screen').classList.remove('show');$('garage-screen').classList.add('show');}
+function showOptions(){$('main-menu').classList.remove('show');$('garage-screen').classList.remove('show');$('options-screen').classList.add('show');}
+function start(){garageMode=false;started=true;initAudio();if(musicPending&&musicOn)tryStartMusic();$('main-menu').classList.remove('show');$('garage-screen').classList.remove('show');$('options-screen').classList.remove('show');$('overlay').classList.add('hidden');}
+$('menu-start').addEventListener('click',start);$('menu-garage').addEventListener('click',showGarage);$('menu-options').addEventListener('click',showOptions);$('garage-back').addEventListener('click',showMenu);$('options-back').addEventListener('click',showMenu);
+$('option-music').addEventListener('click',()=>{toggleMusic();$('option-music').textContent=musicOn?'ВКЛЮЧЕНА':'ВЫКЛЮЧЕНА';});
+$('option-volume').addEventListener('input',e=>{musicVolume=Number(e.target.value)/100;if(audio)audio.volume=musicVolume;});
+$('option-sfx').addEventListener('click',()=>{sfxEnabled=!sfxEnabled;$('option-sfx').textContent=sfxEnabled?'ВКЛЮЧЁН':'ВЫКЛЮЧЕН';});
+$('garage-screen').addEventListener('pointerdown',e=>{if(e.target.closest('button'))return;garageDrag=true;garageLastX=e.clientX;$('garage-screen').classList.add('dragging');});
+addEventListener('pointermove',e=>{if(garageDrag)garageAngle+=(e.clientX-garageLastX)*.009,garageLastX=e.clientX;});
+addEventListener('pointerup',()=>{garageDrag=false;$('garage-screen').classList.remove('dragging');});
+$('garage-screen').addEventListener('wheel',e=>{if(!garageMode)return;e.preventDefault();garageZoom=clamp(garageZoom+Math.sign(e.deltaY)*.8,7,17);},{passive:false});
 const musicFiles=Array.from({length:20},(_,i)=>'assets/music/'+(i+1)+'.mp3');
 async function scanMusic(){
  const checks=await Promise.all(musicFiles.map(async url=>{
@@ -184,13 +224,13 @@ function tryStartMusic(){
  if(!musicOn||!foundTracks.length)return;
  if(!audio)audio=new Audio();
  if(!trackOrder.length)shuffleTracks();
- audio.src=foundTracks[trackOrder[trackPos]];audio.volume=.52;audio.loop=false;
+ audio.src=foundTracks[trackOrder[trackPos]];audio.volume=musicVolume;audio.loop=false;
  audio.onended=()=>{advanceTrack();};
  audio.play().then(()=>{musicPending=false;updateMusicLabel();}).catch(()=>{musicPending=true;$('music').textContent='♫ '+foundTracks.length+' TRACKS · PRESS ANY KEY';});
 }
 function shuffleTracks(){trackOrder=foundTracks.map((_,i)=>i);for(let i=trackOrder.length-1;i>0;i--){const j=Math.floor(Math.random()*(i+1));[trackOrder[i],trackOrder[j]]=[trackOrder[j],trackOrder[i]];}trackPos=0;track=trackOrder[0]??0;}
 function advanceTrack(){if(!foundTracks.length)return;trackPos++;if(trackPos>=trackOrder.length){const previous=trackOrder[trackOrder.length-1];shuffleTracks();if(trackOrder.length>1&&trackOrder[0]===previous)[trackOrder[0],trackOrder[1]]=[trackOrder[1],trackOrder[0]];}track=trackOrder[trackPos];playTrack();}
-function playTrack(){if(!foundTracks.length)return;if(!trackOrder.length)shuffleTracks();track=trackOrder[trackPos];audio.src=foundTracks[track];audio.volume=.52;audio.onended=advanceTrack;audio.play().catch(()=>{musicPending=true;});}
+function playTrack(){if(!foundTracks.length)return;if(!trackOrder.length)shuffleTracks();track=trackOrder[trackPos];audio.src=foundTracks[track];audio.volume=musicVolume;audio.onended=advanceTrack;audio.play().catch(()=>{musicPending=true;});}
 function updateMusicLabel(){$('music').textContent=!musicOn?'♫ MUSIC OFF':foundTracks.length?'♫ RANDOM TRACK '+(track+1)+' / '+foundTracks.length:'♫ NO MUSIC FILES';}
 function toggleMusic(){musicOn=!musicOn;if(musicOn)tryStartMusic();else if(audio)audio.pause();updateMusicLabel();}
 function initAudio(){
@@ -218,10 +258,10 @@ function updateCarAudio(){
  const rpm=48+spd*.92+boost*38;
  engineOsc.frequency.setTargetAtTime(rpm,now,.07);engineOsc2.frequency.setTargetAtTime(rpm*.48,now,.09);
  engineFilter.frequency.setTargetAtTime(130+spd*3.3,now,.12);
- engineGain.gain.setTargetAtTime(started?.065+Math.min(spd/310,.22)*.10:0,now,.12);
- skidGain.gain.setTargetAtTime(drift?Math.min(.20,driftIntensity*.16+spd/2200):0,now,.08);
+ engineGain.gain.setTargetAtTime(started&&sfxEnabled?.065+Math.min(spd/310,.22)*.10:0,now,.12);
+ skidGain.gain.setTargetAtTime(sfxEnabled&&drift?Math.min(.20,driftIntensity*.16+spd/2200):0,now,.08);
  skidFilter.frequency.setTargetAtTime(950+Math.abs(steer)*1200+spd*2,now,.08);
- roadGain.gain.setTargetAtTime(drift?Math.min(.13,driftIntensity*spd/1500):0,now,.12);
+ roadGain.gain.setTargetAtTime(sfxEnabled&&drift?Math.min(.13,driftIntensity*spd/1500):0,now,.12);
  roadFilter.frequency.setTargetAtTime(170+spd*2.2,now,.15);
 }
 const clamp=(v,a,b)=>Math.max(a,Math.min(b,v));
@@ -258,6 +298,7 @@ function lookAt(ex,ey,ez,cx,cy,cz){
   -(rx*ex+ry*ey+rz*ez),-(ux*ex+uy*ey+uz*ez),-(fx*ex+fy*ey+fz*ez),1];
 }
 function cameraFor(carX,carZ){
+ if(garageMode){const gx=Math.sin(garageAngle)*garageZoom,gz=Math.cos(garageAngle)*garageZoom;return{x:carX+gx,y:3.1,z:carZ+gz,tx:carX,ty:.78,tz:carZ,fov:43};}
  const fx=Math.sin(carYaw),fz=Math.cos(carYaw);
  const modes=[
   {x:carX+fx*1.28,y:1.38,z:carZ+fz*1.28,tx:carX+fx*48,ty:1.08,tz:carZ+fz*48,fov:76},
@@ -269,11 +310,15 @@ function cameraFor(carX,carZ){
 }
 function drawWorld(){
  drawCalls=0;
- const carZ=distance,trackCenter=roadX(carZ),carX=trackCenter+playerX;
+ const carZ=garageMode?0:distance,trackCenter=garageMode?0:roadX(carZ),carX=garageMode?0:trackCenter+playerX;
  const cam=cameraFor(carX,carZ);
  const vp=matMul(perspective(cam.fov*Math.PI/180,W/H,.1,650),lookAt(cam.x,cam.y,cam.z,cam.tx,cam.ty,cam.tz));
  gl.uniformMatrix4fv(loc.vp,false,new Float32Array(vp));
  gl.enable(gl.DEPTH_TEST);gl.disable(gl.BLEND);gl.clearColor(0,0,0,0);gl.clear(gl.COLOR_BUFFER_BIT|gl.DEPTH_BUFFER_BIT);
+ if(garageMode){
+  draw(cube,0,-.48,0,22,.18,22,C.ground);draw(cube,0,-.37,0,8,.12,8,C.trim);
+  draw(cube,0,-.29,0,7.6,.025,7.6,C.grid);draw(cube,-9,-.27,0,.035,.025,18,C.cyan);draw(cube,9,-.27,0,.035,.025,18,C.pink);
+ }else{
  // Continuous dark ground plane: it follows the world, not a snapped scrolling tile.
  draw(cube,0,-.56,distance+115,150,.30,185,C.ground);
  // Classic synthwave grid, with every line at a fixed world coordinate.
@@ -310,8 +355,9 @@ function drawWorld(){
   draw(cube,tx,1.75,tz,.78,1.02,.78,[.035,.22,.20,1]);
   draw(cube,tx,2.55,tz,.53,.72,.53,[.04,.31,.27,1]);
  }
+ }
  // INFERNO GT: wider, sharp-edged 80s sports coupe with a clean red/graphite silhouette.
- const yaw=carYaw,roll=-carYaw*.19-steer*.035;
+ const yaw=garageMode?0:carYaw,roll=garageMode?0:-carYaw*.19-steer*.035;
  drawCarMesh(bodyMesh,carX,carZ,C.body,yaw);
  // Hood facets and center power bulge.
  drawCarPart(carX,carZ,0,.575,1.46,.73,.025,.78,C.bodyLight,yaw);
@@ -467,7 +513,7 @@ function bootFrame(now){
  let t=clamp((now-bootStart)/2600,0,1),p=Math.round((1-Math.pow(1-t,2))*100),step=bootSteps[0];
  for(const s of bootSteps)if(p>=s[0])step=s;
  $('boot-progress').style.width=p+'%';$('boot-percent').textContent=String(p).padStart(2,'0')+'%';$('boot-status').textContent=step[1];
- if(t<1)requestAnimationFrame(bootFrame);else{bootDone=true;$('boot-screen').classList.add('done');}
+ if(t<1)requestAnimationFrame(bootFrame);else{bootDone=true;$('boot-screen').classList.add('done');showMenu();}
 }
 requestAnimationFrame(bootFrame);
 scanMusic();
