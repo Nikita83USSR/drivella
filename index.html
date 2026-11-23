@@ -87,7 +87,7 @@
 <body>
 <canvas id="scene"></canvas><canvas id="sun"></canvas>
 <div id="hud">
- <div class="top"><div class="logo">DRIVELLA<small>3D SYNTHWAVE DRIFT RACING</small></div><div class="version-label" id="version-label">v0.10.2 · BUILD 017</div><div class="stat">DISTANCE<b id="distance">000.0 KM</b></div><div class="stat">LOCATION<b>VIOLET COAST</b></div></div>
+ <div class="top"><div class="logo">DRIVELLA<small>3D SYNTHWAVE DRIFT RACING</small></div><div class="version-label" id="version-label">v0.10.3 · BUILD 018</div><div class="stat">DISTANCE<b id="distance">000.0 KM</b></div><div class="stat">LOCATION<b>VIOLET COAST</b></div></div>
  <div class="right"><div id="speed">000 <span>KM/H</span></div><div id="direction">▶ FORWARD</div><div id="music">♫ MUSIC SCANNING…</div></div>
  <div class="bottom"><div class="hint"><strong>W / ↑</strong> ACCELERATE　<strong>S / ↓</strong> BRAKE / REVERSE<br><strong>A / ←　D / →</strong> STEER　<strong>SPACE</strong> HANDBRAKE　<strong>M</strong> MUSIC　<strong>1–4</strong> CAMERA</div><div>3D NEON HIGHWAY // BUILD 009</div></div>
 </div>
@@ -101,7 +101,7 @@
 <script>
 (()=>{
 'use strict';
-const VERSION='v0.10.2',BUILD='017';
+const VERSION='v0.10.3',BUILD='018';
 const canvas=document.getElementById('scene'),gl=canvas.getContext('webgl',{antialias:true,alpha:true}),sun=document.getElementById('sun'),sctx=sun.getContext('2d');
 const $=id=>document.getElementById(id);
 const clamp=(v,a,b)=>Math.max(a,Math.min(b,v));
@@ -121,25 +121,14 @@ function resize(){
 }
 addEventListener('resize',resize);
 if(!gl){$('boot-status').textContent='WEBGL NOT AVAILABLE';throw new Error('WebGL unavailable');}
-const vs='attribute vec3 p;attribute vec3 normal;uniform mat4 vp;uniform mat4 model;varying float vLight;void main(){vec3 N=normalize(mat3(model[0].xyz,model[1].xyz,model[2].xyz)*normal);vec3 L=normalize(vec3(-.38,.84,.39));vLight=.76+.24*abs(dot(N,L));gl_Position=vp*model*vec4(p,1.0);}';
-const fs='precision mediump float;uniform vec4 color;varying float vLight;void main(){gl_FragColor=vec4(color.rgb*vLight,color.a);}';
+const vs='attribute vec3 p;uniform mat4 vp;uniform mat4 model;void main(){gl_Position=vp*model*vec4(p,1.0);}';
+const fs='precision mediump float;uniform vec4 color;void main(){gl_FragColor=color;}';
 function shader(type,src){const s=gl.createShader(type);gl.shaderSource(s,src);gl.compileShader(s);if(!gl.getShaderParameter(s,gl.COMPILE_STATUS))throw new Error(gl.getShaderInfoLog(s));return s;}
 const prog=gl.createProgram();gl.attachShader(prog,shader(gl.VERTEX_SHADER,vs));gl.attachShader(prog,shader(gl.FRAGMENT_SHADER,fs));gl.linkProgram(prog);
 if(!gl.getProgramParameter(prog,gl.LINK_STATUS))throw new Error(gl.getProgramInfoLog(prog));
 gl.useProgram(prog);
-const loc={p:gl.getAttribLocation(prog,'p'),normal:gl.getAttribLocation(prog,'normal'),vp:gl.getUniformLocation(prog,'vp'),model:gl.getUniformLocation(prog,'model'),color:gl.getUniformLocation(prog,'color')};
-function mesh(data){
- const normals=new Float32Array(data.length);
- for(let i=0;i<data.length;i+=9){
-  const ax=data[i],ay=data[i+1],az=data[i+2],bx=data[i+3],by=data[i+4],bz=data[i+5],cx=data[i+6],cy=data[i+7],cz=data[i+8];
-  const ux=bx-ax,uy=by-ay,uz=bz-az,vx=cx-ax,vy=cy-ay,vz=cz-az;
-  let nx=uy*vz-uz*vy,ny=uz*vx-ux*vz,nz=ux*vy-uy*vx,l=Math.hypot(nx,ny,nz)||1;nx/=l;ny/=l;nz/=l;
-  for(let j=0;j<3;j++){normals[i+j*3]=nx;normals[i+j*3+1]=ny;normals[i+j*3+2]=nz;}
- }
- const b=gl.createBuffer();gl.bindBuffer(gl.ARRAY_BUFFER,b);gl.bufferData(gl.ARRAY_BUFFER,new Float32Array(data),gl.STATIC_DRAW);
- const nb=gl.createBuffer();gl.bindBuffer(gl.ARRAY_BUFFER,nb);gl.bufferData(gl.ARRAY_BUFFER,normals,gl.STATIC_DRAW);
- return {b,nb,n:data.length/3};
-}
+const loc={p:gl.getAttribLocation(prog,'p'),vp:gl.getUniformLocation(prog,'vp'),model:gl.getUniformLocation(prog,'model'),color:gl.getUniformLocation(prog,'color')};
+function mesh(data){const b=gl.createBuffer();gl.bindBuffer(gl.ARRAY_BUFFER,b);gl.bufferData(gl.ARRAY_BUFFER,new Float32Array(data),gl.STATIC_DRAW);return {b,n:data.length/3};}
 const cube=mesh([
 -1,-1,-1,1,-1,-1,1,1,-1,-1,-1,-1,1,1,-1,-1,1,-1,
 -1,-1,1,1,1,1,1,-1,1,-1,-1,1,-1,1,1,1,1,1,
@@ -345,15 +334,15 @@ for(let i=1;i<=2400;i++)roadWaypoints.push(clamp(roadWaypoints[i-1]+(roadRand()-
 function roadX(z){z=Math.max(0,z);const seg=Math.floor(z/170),t=(z-seg*170)/170,a=roadWaypoints[clamp(seg,0,roadWaypoints.length-1)]||0,b=roadWaypoints[clamp(seg+1,0,roadWaypoints.length-1)]||a,u=t*t*(3-2*t);return a+(b-a)*u;}
 function draw(shape,x,y,z,sx,sy,sz,color,yaw=0,roll=0){
  const model=matMul(translate(x,y,z),matMul(rotateY(yaw),matMul(rotateZ(roll),scale(sx,sy,sz))));
- gl.uniformMatrix4fv(loc.model,false,new Float32Array(model));gl.uniform4fv(loc.color,color);gl.bindBuffer(gl.ARRAY_BUFFER,shape.b);gl.enableVertexAttribArray(loc.p);gl.vertexAttribPointer(loc.p,3,gl.FLOAT,false,0,0);gl.bindBuffer(gl.ARRAY_BUFFER,shape.nb);gl.enableVertexAttribArray(loc.normal);gl.vertexAttribPointer(loc.normal,3,gl.FLOAT,false,0,0);gl.drawArrays(gl.TRIANGLES,0,shape.n);drawCalls++;
+ gl.uniformMatrix4fv(loc.model,false,new Float32Array(model));gl.uniform4fv(loc.color,color);gl.bindBuffer(gl.ARRAY_BUFFER,shape.b);gl.enableVertexAttribArray(loc.p);gl.vertexAttribPointer(loc.p,3,gl.FLOAT,false,0,0);gl.drawArrays(gl.TRIANGLES,0,shape.n);drawCalls++;
 }
 function drawCarPart(cx,cz,x,y,z,sx,sy,sz,color,yaw=0,shape=cube){
  const model=matMul(translate(cx,0,cz),matMul(rotateY(yaw),matMul(rotateZ(bodyRoll),matMul(translate(x,y,z),matMul((shape===wheel||shape===wheelFace)?rotateZ(Math.PI/2):matIdentity(),scale(sx,sy,sz))))));
- gl.uniformMatrix4fv(loc.model,false,new Float32Array(model));gl.uniform4fv(loc.color,color);gl.bindBuffer(gl.ARRAY_BUFFER,shape.b);gl.enableVertexAttribArray(loc.p);gl.vertexAttribPointer(loc.p,3,gl.FLOAT,false,0,0);gl.bindBuffer(gl.ARRAY_BUFFER,shape.nb);gl.enableVertexAttribArray(loc.normal);gl.vertexAttribPointer(loc.normal,3,gl.FLOAT,false,0,0);gl.drawArrays(gl.TRIANGLES,0,shape.n);drawCalls++;
+ gl.uniformMatrix4fv(loc.model,false,new Float32Array(model));gl.uniform4fv(loc.color,color);gl.bindBuffer(gl.ARRAY_BUFFER,shape.b);gl.enableVertexAttribArray(loc.p);gl.vertexAttribPointer(loc.p,3,gl.FLOAT,false,0,0);gl.drawArrays(gl.TRIANGLES,0,shape.n);drawCalls++;
 }
 function drawCarMesh(shape,cx,cz,color,yaw=0){
  const model=matMul(translate(cx,0,cz),matMul(rotateY(yaw),matMul(rotateZ(bodyRoll),matIdentity())));
- gl.uniformMatrix4fv(loc.model,false,new Float32Array(model));gl.uniform4fv(loc.color,color);gl.bindBuffer(gl.ARRAY_BUFFER,shape.b);gl.enableVertexAttribArray(loc.p);gl.vertexAttribPointer(loc.p,3,gl.FLOAT,false,0,0);gl.bindBuffer(gl.ARRAY_BUFFER,shape.nb);gl.enableVertexAttribArray(loc.normal);gl.vertexAttribPointer(loc.normal,3,gl.FLOAT,false,0,0);gl.drawArrays(gl.TRIANGLES,0,shape.n);drawCalls++;
+ gl.uniformMatrix4fv(loc.model,false,new Float32Array(model));gl.uniform4fv(loc.color,color);gl.bindBuffer(gl.ARRAY_BUFFER,shape.b);gl.enableVertexAttribArray(loc.p);gl.vertexAttribPointer(loc.p,3,gl.FLOAT,false,0,0);gl.drawArrays(gl.TRIANGLES,0,shape.n);drawCalls++;
 }
 function matIdentity(){return [1,0,0,0,0,1,0,0,0,0,1,0,0,0,0,1];}
 function matMul(a,b){let o=new Array(16);for(let c=0;c<4;c++)for(let r=0;r<4;r++)o[c*4+r]=a[r]*b[c*4]+a[4+r]*b[c*4+1]+a[8+r]*b[c*4+2]+a[12+r]*b[c*4+3];return o;}
