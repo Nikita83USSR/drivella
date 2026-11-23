@@ -87,7 +87,7 @@
 <body>
 <canvas id="scene"></canvas><canvas id="sun"></canvas>
 <div id="hud">
- <div class="top"><div class="logo">DRIVELLA<small>3D SYNTHWAVE DRIFT RACING</small></div><div class="version-label" id="version-label">v0.8.2 · BUILD 013</div><div class="stat">DISTANCE<b id="distance">000.0 KM</b></div><div class="stat">LOCATION<b>VIOLET COAST</b></div></div>
+ <div class="top"><div class="logo">DRIVELLA<small>3D SYNTHWAVE DRIFT RACING</small></div><div class="version-label" id="version-label">v0.10.0 · BUILD 015</div><div class="stat">DISTANCE<b id="distance">000.0 KM</b></div><div class="stat">LOCATION<b>VIOLET COAST</b></div></div>
  <div class="right"><div id="speed">000 <span>KM/H</span></div><div id="direction">▶ FORWARD</div><div id="music">♫ MUSIC SCANNING…</div></div>
  <div class="bottom"><div class="hint"><strong>W / ↑</strong> ACCELERATE　<strong>S / ↓</strong> BRAKE / REVERSE<br><strong>A / ←　D / →</strong> STEER　<strong>SPACE</strong> HANDBRAKE　<strong>M</strong> MUSIC　<strong>1–4</strong> CAMERA</div><div>3D NEON HIGHWAY // BUILD 009</div></div>
 </div>
@@ -419,8 +419,8 @@ function drawWorld(){
  const yaw=garageMode?0:carYaw;
  drawCarMesh(bodyMesh,carX,carZ,C.body,yaw);
  for(const side of [-1,1]){
-  drawCarPart(carX,carZ,side*.69,.805,1.88,.022,.012,.76,C.bodyLight,yaw);
-  drawCarPart(carX,carZ,side*.29,.812,2.08,.018,.009,.48,[1,.22,.22,1],yaw);
+  drawCarPart(carX,carZ,side*.69,.872,1.88,.022,.012,.76,C.bodyLight,yaw);
+  drawCarPart(carX,carZ,side*.29,.847,2.08,.018,.009,.48,[1,.22,.22,1],yaw);
  }
  drawCarMesh(cabinMesh,carX,carZ,C.glass,yaw);drawCarMesh(roofMesh,carX,carZ,C.body,yaw);
  drawCarMesh(windshield,carX,carZ,C.glassLight,yaw);drawCarMesh(rearGlass,carX,carZ,[.035,.13,.18,1],yaw);
