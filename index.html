@@ -82,9 +82,16 @@ function matMul(a,b){let o=new Array(16);for(let c=0;c<4;c++)for(let r=0;r<4;r++
 function translate(x,y,z){let m=matIdentity();m[12]=x;m[13]=y;m[14]=z;return m;}
 function scale(x,y,z){let m=matIdentity();m[0]=x;m[5]=y;m[10]=z;return m;}
 function rotateY(a){let c=Math.cos(a),s=Math.sin(a);return [c,0,-s,0,0,1,0,0,s,0,c,0,0,0,0,1];}
+function rotateZ(a){let c=Math.cos(a),s=Math.sin(a);return [c,s,0,0,-s,c,0,0,0,0,1,0,0,0,0,1];}
 function perspective(f,asp,n,far){let t=1/Math.tan(f/2),nf=1/(n-far);return [t/asp,0,0,0,0,t,0,0,0,0,(far+n)*nf,-1,0,0,2*far*n*nf,0];}
 function lookAt(ex,ey,ez,cx,cy,cz){let zx=ex-cx,zy=ey-cy,zz=ez-cz,l=Math.hypot(zx,zy,zz);zx/=l;zy/=l;zz/=l;let xx=zz,xy=0,xz=-zx;l=Math.hypot(xx,xz);xx/=l;xz/=l;let yx=zy*xz-zz*xy,yy=zz*xx-zx*xz,yz=zx*xy-zy*xx;return [xx,yx,zx,0,xy,yy,zy,0,xz,yz,zz,0,-(xx*ex+xy*ey+xz*ez),-(yx*ex+yy*ey+yz*ez),-(zx*ex+zy*ey+zz*ez),1];}
 function draw(m,x,y,z,sx,sy,sz,color,rot=0,shape=cube){let model=matMul(translate(x,y,z),matMul(rotateY(rot),scale(sx,sy,sz)));gl.uniformMatrix4fv(loc.model,false,new Float32Array(model));gl.uniform4fv(loc.color,color);gl.bindBuffer(gl.ARRAY_BUFFER,shape.b);gl.enableVertexAttribArray(loc.p);gl.vertexAttribPointer(loc.p,3,gl.FLOAT,false,0,0);gl.drawArrays(gl.TRIANGLES,0,shape.n);}
+function drawCarPart(cx,cy,cz,x,y,z,sx,sy,sz,color,yaw=0,shape=cube){
+ const roll=steer*.16;
+ const partRotation=shape===wheel?matMul(rotateY(yaw),rotateZ(Math.PI/2)):rotateY(yaw);
+ const model=matMul(translate(cx,cy,cz),matMul(rotateZ(roll),matMul(translate(x,y,z),matMul(partRotation,scale(sx,sy,sz)))));
+ gl.uniformMatrix4fv(loc.model,false,new Float32Array(model));gl.uniform4fv(loc.color,color);gl.bindBuffer(gl.ARRAY_BUFFER,shape.b);gl.enableVertexAttribArray(loc.p);gl.vertexAttribPointer(loc.p,3,gl.FLOAT,false,0,0);gl.drawArrays(gl.TRIANGLES,0,shape.n);
+}
 const C={road:[.10,.09,.18,1],road2:[.14,.12,.23,1],pink:[1,.12,.72,1],cyan:[.18,.92,1,1],white:[.8,.92,1,1],dark:[.035,.035,.07,1],body:[.56,.08,.62,1],glass:[.035,.13,.23,1],tire:[.018,.02,.035,1],mount:[.12,.09,.23,1],city:[.10,.055,.16,1]};
 let keys={},started=false,speed=0,playerX=0,steer=0,distance=0,boost=0,last=performance.now(),musicOn=false,track=0,audio=null;
 addEventListener('keydown',e=>{let k=e.key.toLowerCase();keys[k]=true;if(['arrowup','arrowdown','arrowleft','arrowright',' '].includes(e.key))e.preventDefault();if(k==='m'&&bootDone)toggleMusic();if(!started&&bootDone&&(k==='w'||k==='arrowup'))start();});
@@ -96,44 +103,48 @@ function playTrack(){audio.src=musicFiles[track];audio.volume=.6;audio.onended=(
 const clamp=(v,a,b)=>Math.max(a,Math.min(b,v));
 function roadX(z){return Math.sin(z*.004)*8+Math.sin(z*.0013+1.4)*5;}
 function drawWorld(){
- const camZ=distance,base=Math.floor(camZ/5)*5,camX=roadX(camZ)+playerX*5;
- const view=lookAt(camX,5.1,camZ-12,camX,1.1,camZ+18),vp=matMul(perspective( Math.PI/3, W/H,.1,700),view);
+ // Forward is negative Z: the camera follows behind the car and looks down the road.
+ const camZ=-distance,phase=((distance%5)+5)%5,camX=roadX(camZ)+playerX*5;
+ const view=lookAt(camX,5.1,camZ+12,camX,1.1,camZ-18),vp=matMul(perspective(Math.PI/3,W/H,.1,700),view);
  gl.uniformMatrix4fv(loc.vp,false,new Float32Array(vp));
  gl.enable(gl.DEPTH_TEST);gl.clearColor(0,0,0,0);gl.clear(gl.COLOR_BUFFER_BIT|gl.DEPTH_BUFFER_BIT);
- // Ground plane
- draw(cube,0,-1.2,camZ+100,180,.5,180,C.dark);
- // Rolling 3D road, rails and lane dividers
- for(let i=-3;i<54;i++){let z=base+i*5,rel=z-camZ,cx=roadX(z);if(rel< -17)continue;
+ // Ground covers the visible road ahead of the car.
+ draw(cube,0,-1.2,camZ-100,180,.5,180,C.dark);
+ // Road tiles stay at fixed world positions and approach the camera as it advances.
+ for(let i=0;i<56;i++){
+  let z=camZ+phase-5-i*5,rel=z-camZ,cx=roadX(z);if(rel>18||rel< -280)continue;
   draw(cube,cx,-.25,z,7.8,.18,2.55,(Math.floor(z/10)%2===0)?C.road:C.road2);
-  draw(cube,cx-7.35,.04,z, .11,.12,2.55,C.pink);draw(cube,cx+7.35,.04,z,.11,.12,2.55,C.cyan);
-  if(Math.floor(z/15)%2===0){draw(cube,cx-2.5,.0,z, .055,.025,1.15,C.white);draw(cube,cx+2.5,.0,z,.055,.025,1.15,C.white);}
-  // roadside reflectors
+  draw(cube,cx-7.35,.04,z,.11,.12,2.55,C.pink);draw(cube,cx+7.35,.04,z,.11,.12,2.55,C.cyan);
+  if(Math.floor(z/15)%2===0){draw(cube,cx-2.5,.0,z,.055,.025,1.15,C.white);draw(cube,cx+2.5,.0,z,.055,.025,1.15,C.white);}
   if(i%3===0){draw(cube,cx-9,.4,z,.09,.55,.09,C.pink);draw(cube,cx+9,.4,z,.09,.55,.09,C.cyan);}
  }
- // 3D mountains on both sides, plus neon city blocks
- for(let i=-2;i<25;i++){let z=base+i*12,rel=z-camZ;if(rel< -18)continue;let cx=roadX(z);
+ // Fixed roadside scenery now travels toward the player in the same direction as the road.
+ for(let i=0;i<25;i++){
+  let z=camZ+phase-12-i*12,rel=z-camZ;if(rel>18||rel< -285)continue;
+  let cx=roadX(z);
   draw(cube,cx-25,2,z,5,3+(i%4)*.6,4,C.mount,(i%2)*.18);
   draw(cube,cx+27,2.4,z+5,6,3.5+(i%3),5,C.mount,-.15);
   if(i%2===0){draw(cube,cx-15,1.3,z+8,1.1,1.4+(i%4),1.2,C.city);draw(cube,cx+16,1.5,z+4,1.4,1.8+(i%3),1.3,C.city);}
  }
- // Player car: low sports coupe, modeled from separate 3D body parts
- const carX=camX,carZ=camZ;
- draw(cube,carX,.28,carZ,1.05,.36,2.05,C.body,-steer*.08);
- draw(cube,carX,.64,carZ+.25,.77,.34,.94,C.glass,-steer*.08);
- draw(cube,carX,.2,carZ+1.45,.94,.12,.48,[.26,.035,.26,1]);
- // hood ridge and rear spoiler
- draw(cube,carX,.68,carZ-1.15,.78,.055,.65,[.8,.17,.78,1]);
- draw(cube,carX,.65,carZ-1.95,1.05,.08,.15,C.dark);
- draw(cube,carX,.77,carZ-1.95,.95,.045,.08,C.pink);
- // wheels, hubs, head and tail lights
+ // 3D sports coupe: nose points down -Z, away from the chase camera.
+ const carX=camX,carZ=camZ,yaw=-steer*.08;
+ drawCarPart(carX,0,carZ,0,.28,0,1.05,.36,2.05,C.body,yaw);
+ drawCarPart(carX,0,carZ,0,.64,.25,.77,.34,.94,C.glass,yaw);
+ drawCarPart(carX,0,carZ,0,.2,1.45,.94,.12,.48,[.26,.035,.26,1],yaw);
+ drawCarPart(carX,0,carZ,0,.68,-1.15,.78,.055,.65,[.8,.17,.78,1],yaw);
+ drawCarPart(carX,0,carZ,0,.65,-1.95,1.05,.08,.15,C.dark,yaw);
+ drawCarPart(carX,0,carZ,0,.77,-1.95,.95,.045,.08,C.pink,yaw);
+ // Horizontal wheels with visible hubs; the complete car assembly banks on turns.
  for(let side of [-1,1])for(let zz of [-1.25,1.2]){
-  draw(cube,carX+side*1.02,.05,carZ+zz,.26,.55,.48,C.tire,Math.PI/2,wheel);
-  draw(cube,carX+side*1.29,.05,carZ+zz,.04,.24,.24,C.cyan,Math.PI/2,wheel);
+  drawCarPart(carX,0,carZ,side*1.02,.05,zz,.48,.24,.48,C.tire,yaw,wheel);
+  drawCarPart(carX,0,carZ,side*1.29,.05,zz,.48,.07,.48,C.cyan,yaw,wheel);
  }
- draw(cube,carX-.68,.36,carZ+1.99,.23,.09,.045,C.pink);draw(cube,carX+.68,.36,carZ+1.99,.23,.09,.045,C.pink);
- draw(cube,carX-.68,.36,carZ-2.02,.2,.07,.045,[.55,.9,1,1]);draw(cube,carX+.68,.36,carZ-2.02,.2,.07,.045,[.55,.9,1,1]);
- // nitro exhaust trails
- if(boost>.05){draw(cube,carX-.5,.12,carZ+2.8,.09,.08,1.2,[.05,.7,1,boost]);draw(cube,carX+.5,.12,carZ+2.8,.09,.08,1.2,[.05,.7,1,boost]);}
+ // Rear lights face the chase camera; headlights face down the road.
+ drawCarPart(carX,0,carZ,-.68,.36,1.99,.23,.09,.045,C.pink,yaw);
+ drawCarPart(carX,0,carZ,.68,.36,1.99,.23,.09,.045,C.pink,yaw);
+ drawCarPart(carX,0,carZ,-.68,.36,-2.02,.2,.07,.045,[.55,.9,1,1],yaw);
+ drawCarPart(carX,0,carZ,.68,.36,-2.02,.2,.07,.045,[.55,.9,1,1],yaw);
+ if(boost>.05){drawCarPart(carX,0,carZ,-.5,.12,2.8,.09,.08,1.2,[.05,.7,1,boost],yaw);drawCarPart(carX,0,carZ,.5,.12,2.8,.09,.08,1.2,[.05,.7,1,boost],yaw);}
 }
 function drawSun(){sctx.clearRect(0,0,W,H);const x=W*.5,y=H*.255,r=Math.min(W,H)*.12;let halo=sctx.createRadialGradient(x,y,r*.2,x,y,r*2);halo.addColorStop(0,'#ff82e688');halo.addColorStop(1,'#ff4fc000');sctx.fillStyle=halo;sctx.fillRect(x-r*2,y-r*2,r*4,r*4);sctx.save();sctx.shadowColor='#ff58dd';sctx.shadowBlur=40;let g=sctx.createLinearGradient(x,y-r,x,y+r);g.addColorStop(0,'#fff2c9');g.addColorStop(.4,'#ffb1d8');g.addColorStop(1,'#ff3fbd');sctx.fillStyle=g;sctx.beginPath();sctx.arc(x,y,r,Math.PI,0);sctx.lineTo(x+r,y+r);sctx.lineTo(x-r,y+r);sctx.closePath();sctx.fill();sctx.restore();sctx.save();sctx.globalCompositeOperation='destination-out';for(let i=0;i<7;i++)sctx.fillRect(x-r,y+r*.15+i*r*.22,r*2,r*.055);sctx.restore();}
 function frame(now){let dt=Math.min(.04,(now-last)/1000);last=now;let up=keys.w||keys.arrowup,down=keys.s||keys.arrowdown,left=keys.a||keys.arrowleft,right=keys.d||keys.arrowright,nitro=keys[' '];
