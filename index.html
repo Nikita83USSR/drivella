@@ -94,7 +94,7 @@
 <body>
 <canvas id="scene"></canvas><canvas id="sun"></canvas>
 <div id="hud">
- <div class="top"><div class="logo">DRIVELLA<small>3D SYNTHWAVE DRIFT RACING</small></div><div class="version-label" id="version-label">v0.13.0 · BUILD 025</div><div class="stat">DISTANCE<b id="distance">000.0 KM</b></div><div class="stat">LOCATION<b>VIOLET COAST</b></div></div>
+ <div class="top"><div class="logo">DRIVELLA<small>3D SYNTHWAVE DRIFT RACING</small></div><div class="version-label" id="version-label">v0.13.1 · BUILD 026</div><div class="stat">DISTANCE<b id="distance">000.0 KM</b></div><div class="stat">LOCATION<b>VIOLET COAST</b></div></div>
  <div class="right"><div id="speed">000 <span>KM/H</span></div><div id="direction">▶ FORWARD</div><div id="music">♫ MUSIC SCANNING…</div></div>
  <div class="bottom"><div class="hint"><strong>W / ↑</strong> ACCELERATE　<strong>S / ↓</strong> BRAKE / REVERSE<br><strong>A / ←　D / →</strong> STEER　<strong>SPACE</strong> HANDBRAKE　<strong>M</strong> MUSIC　<strong>1–4</strong> CAMERA</div><div>3D NEON HIGHWAY // BUILD 009</div></div>
 </div>
@@ -108,7 +108,7 @@
 <script>
 (()=>{
 'use strict';
-const VERSION='v0.13.0',BUILD='025';
+const VERSION='v0.13.1',BUILD='026';
 const canvas=document.getElementById('scene'),gl=canvas.getContext('webgl',{antialias:true,alpha:true}),sun=document.getElementById('sun'),sctx=sun.getContext('2d');
 const $=id=>document.getElementById(id);
 const clamp=(v,a,b)=>Math.max(a,Math.min(b,v));
@@ -322,8 +322,8 @@ const shoulderInkL=makeProfileLine(bodyProfile,-1,-2.70,2.67,'shoulder',.985,.02
 const shoulderInkR=makeProfileLine(bodyProfile,1,-2.70,2.67,'shoulder',.985,.026,.012);
 const beltInkL=makeProfileLine(bodyProfile,-1,-2.68,2.62,'mid',1,.020,.018);
 const beltInkR=makeProfileLine(bodyProfile,1,-2.68,2.62,'mid',1,.020,.018);
-const sillInkL=makeProfileLine(bodyProfile,-1,-2.58,2.56,'floor',.82,.024,.035);
-const sillInkR=makeProfileLine(bodyProfile,1,-2.58,2.56,'floor',.82,.024,.035);
+const sillInkL=makeProfileLine(bodyProfile,-1,-2.58,2.56,'side',.96,.028,.016);
+const sillInkR=makeProfileLine(bodyProfile,1,-2.58,2.56,'side',.96,.028,.016);
 const archInk=[makeArchLine(-1.6375,-1,.025),makeArchLine(-1.6375,1,.025),makeArchLine(1.6375,-1,.025),makeArchLine(1.6375,1,.025)];
 const cabinInkL=makeProfileLine(cabinProfile,-1,-1.49,.95,'upper',.82,.022,.018);
 const cabinInkR=makeProfileLine(cabinProfile,1,-1.49,.95,'upper',.82,.022,.018);
