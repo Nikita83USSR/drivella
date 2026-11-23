@@ -270,8 +270,8 @@ function makeCarHull(keys,wheelArches=false){
  const archY=(z,center)=>{const d=Math.abs(z-center),r=.455,cy=.465,clear=.035;if(d<=r)return cy+Math.sqrt(Math.max(0,r*r-d*d))+clear;if(d>=r+.16)return .33;const t=(d-r)/.16,u=t*t*(3-2*t);return (cy+clear)*(1-u)+.33*u;};
  for(let i=0;i<=steps;i++){
   const z=z0+(z1-z0)*i/steps,p=profileValue(z,keys);
-  let side=p.side;if(wheelArches)side=Math.max(side,archY(z,-1.6375),archY(z,1.6375));
-  const w=p.w,pts=[[0,p.floor,z],[w*.42,p.floor,z],[w*.80,p.floor,z],[w*.96,side,z],[w,p.mid,z],[w*.985,p.shoulder,z],[w*.82,p.upper,z],[w*.50,p.top,z],[0,p.top+.026,z],[-w*.50,p.top,z],[-w*.82,p.upper,z],[-w*.985,p.shoulder,z],[-w,p.mid,z],[-w*.96,side,z],[-w*.80,p.floor,z],[-w*.42,p.floor,z]];
+  let side=p.side,floor=p.floor;if(wheelArches){const arch=Math.max(archY(z,-1.6375),archY(z,1.6375));side=Math.max(side,arch);floor=Math.max(floor,arch);}
+  const w=p.w,pts=[[0,floor,z],[w*.42,floor,z],[w*.80,floor,z],[w*.96,side,z],[w,p.mid,z],[w*.985,p.shoulder,z],[w*.82,p.upper,z],[w*.50,p.top,z],[0,p.top+.026,z],[-w*.50,p.top,z],[-w*.82,p.upper,z],[-w*.985,p.shoulder,z],[-w,p.mid,z],[-w*.96,side,z],[-w*.80,p.floor,z],[-w*.42,p.floor,z]];
   rings.push(pts);
  }
  for(let i=0;i<rings.length-1;i++)for(let j=0;j<N;j++){const a=rings[i][j],b=rings[i][(j+1)%N],c=rings[i+1][j],d=rings[i+1][(j+1)%N];out.push(...a,...c,...d,...a,...d,...b);}
