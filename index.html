@@ -87,7 +87,7 @@
 <body>
 <canvas id="scene"></canvas><canvas id="sun"></canvas>
 <div id="hud">
- <div class="top"><div class="logo">DRIVELLA<small>3D SYNTHWAVE DRIFT RACING</small></div><div class="version-label" id="version-label">v0.10.0 · BUILD 015</div><div class="stat">DISTANCE<b id="distance">000.0 KM</b></div><div class="stat">LOCATION<b>VIOLET COAST</b></div></div>
+ <div class="top"><div class="logo">DRIVELLA<small>3D SYNTHWAVE DRIFT RACING</small></div><div class="version-label" id="version-label">v0.10.1 · BUILD 016</div><div class="stat">DISTANCE<b id="distance">000.0 KM</b></div><div class="stat">LOCATION<b>VIOLET COAST</b></div></div>
  <div class="right"><div id="speed">000 <span>KM/H</span></div><div id="direction">▶ FORWARD</div><div id="music">♫ MUSIC SCANNING…</div></div>
  <div class="bottom"><div class="hint"><strong>W / ↑</strong> ACCELERATE　<strong>S / ↓</strong> BRAKE / REVERSE<br><strong>A / ←　D / →</strong> STEER　<strong>SPACE</strong> HANDBRAKE　<strong>M</strong> MUSIC　<strong>1–4</strong> CAMERA</div><div>3D NEON HIGHWAY // BUILD 009</div></div>
 </div>
@@ -101,7 +101,7 @@
 <script>
 (()=>{
 'use strict';
-const VERSION='v0.10.0',BUILD='015';
+const VERSION='v0.10.1',BUILD='016';
 const canvas=document.getElementById('scene'),gl=canvas.getContext('webgl',{antialias:true,alpha:true}),sun=document.getElementById('sun'),sctx=sun.getContext('2d');
 const $=id=>document.getElementById(id);
 let W=innerWidth,H=innerHeight,DPR=1;
@@ -113,7 +113,7 @@ function resize(){
 }
 addEventListener('resize',resize);
 if(!gl){$('boot-status').textContent='WEBGL NOT AVAILABLE';throw new Error('WebGL unavailable');}
-const vs='attribute vec3 p;attribute vec3 normal;uniform mat4 vp;uniform mat4 model;varying float vLight;void main(){vec3 N=normalize(mat3(model)*normal);vec3 L=normalize(vec3(-.38,.84,.39));vLight=.76+.24*abs(dot(N,L));gl_Position=vp*model*vec4(p,1.0);}';
+const vs='attribute vec3 p;attribute vec3 normal;uniform mat4 vp;uniform mat4 model;varying float vLight;void main(){vec3 N=normalize(mat3(model[0].xyz,model[1].xyz,model[2].xyz)*normal);vec3 L=normalize(vec3(-.38,.84,.39));vLight=.76+.24*abs(dot(N,L));gl_Position=vp*model*vec4(p,1.0);}';
 const fs='precision mediump float;uniform vec4 color;varying float vLight;void main(){gl_FragColor=vec4(color.rgb*vLight,color.a);}';
 function shader(type,src){const s=gl.createShader(type);gl.shaderSource(s,src);gl.compileShader(s);if(!gl.getShaderParameter(s,gl.COMPILE_STATUS))throw new Error(gl.getShaderInfoLog(s));return s;}
 const prog=gl.createProgram();gl.attachShader(prog,shader(gl.VERTEX_SHADER,vs));gl.attachShader(prog,shader(gl.FRAGMENT_SHADER,fs));gl.linkProgram(prog);
