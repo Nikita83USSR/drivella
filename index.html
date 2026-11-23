@@ -94,13 +94,13 @@
 <body>
 <canvas id="scene"></canvas><canvas id="sun"></canvas>
 <div id="hud">
- <div class="top"><div class="logo">DRIVELLA<small>3D SYNTHWAVE DRIFT RACING</small></div><div class="version-label" id="version-label">v0.15.0 · BUILD 036</div><div class="stat">DISTANCE<b id="distance">000.0 KM</b></div><div class="stat">LOCATION<b>VIOLET COAST</b></div></div>
+ <div class="top"><div class="logo">DRIVELLA<small>3D SYNTHWAVE DRIFT RACING</small></div><div class="version-label" id="version-label">v0.15.1 · BUILD 037</div><div class="stat">DISTANCE<b id="distance">000.0 KM</b></div><div class="stat">LOCATION<b>VIOLET COAST</b></div></div>
  <div class="right"><div id="speed">000 <span>KM/H</span></div><div id="direction">▶ FORWARD</div><div id="music">♫ MUSIC SCANNING…</div></div>
- <div class="bottom"><div class="hint"><strong>W / ↑</strong> ACCELERATE　<strong>S / ↓</strong> BRAKE / REVERSE<br><strong>A / ←　D / →</strong> STEER　<strong>SPACE</strong> HANDBRAKE　<strong>M</strong> MUSIC　<strong>1–4</strong> CAMERA</div><div>3D NEON HIGHWAY // BUILD 036</div></div>
+ <div class="bottom"><div class="hint"><strong>W / ↑</strong> ACCELERATE　<strong>S / ↓</strong> BRAKE / REVERSE<br><strong>A / ←　D / →</strong> STEER　<strong>SPACE</strong> HANDBRAKE　<strong>M</strong> MUSIC　<strong>1–4</strong> CAMERA</div><div>3D NEON HIGHWAY // BUILD 037</div></div>
 </div>
 <div id="tools-ui"><button id="cam-prev" aria-label="Previous camera">◀</button><span id="cam-label">CAM 2 · CLOSE</span><button id="cam-next" aria-label="Next camera">▶</button><button id="debug-toggle">DEBUG</button></div>
 <div id="debug-panel"><div class="debug-title">DRIVELLA DIAGNOSTICS</div><div id="debug-data">Initializing…</div></div>
-<div id="boot-screen"><div class="boot-content"><div class="boot-kicker">NIGHT DRIVE SYSTEMS // INITIALIZING</div><div class="boot-logo">DRIVELLA</div><div class="boot-subtitle">3D SYNTHWAVE DRIFT RACING</div><div class="boot-mark"></div><div class="boot-status" id="boot-status">BUILDING THE 3D WORLD</div><div class="boot-track"><div class="boot-progress" id="boot-progress"></div></div><div class="boot-meta"><span>3D ENGINE ONLINE</span><span id="boot-percent">00%</span></div><div class="boot-footer">ENGINE STARTUP // v0.15.0 · BUILD 036</div></div></div>
+<div id="boot-screen"><div class="boot-content"><div class="boot-kicker">NIGHT DRIVE SYSTEMS // INITIALIZING</div><div class="boot-logo">DRIVELLA</div><div class="boot-subtitle">3D SYNTHWAVE DRIFT RACING</div><div class="boot-mark"></div><div class="boot-status" id="boot-status">BUILDING THE 3D WORLD</div><div class="boot-track"><div class="boot-progress" id="boot-progress"></div></div><div class="boot-meta"><span>3D ENGINE ONLINE</span><span id="boot-percent">00%</span></div><div class="boot-footer">ENGINE STARTUP // v0.15.1 · BUILD 037</div></div></div>
 <div id="main-menu"><div class="menu-content"><div class="menu-brand">DRIVELLA GTS</div><div class="menu-sub">RIDE THE RETRO FUTURE</div><div class="menu-actions"><button class="menu-btn" id="menu-start">СТАРТ</button><button class="menu-btn" id="menu-garage">ГАРАЖ</button><button class="menu-btn" id="menu-options">НАСТРОЙКИ</button></div></div><div class="menu-footer">РАЗРАБОТЧИК — <b>НИКИТА МАРКИН</b></div></div>
 <div id="garage-screen"><div class="garage-head">ГАРАЖ // DRIVELLA GTS</div><div class="garage-copy">ТЕКУЩИЙ АВТОМОБИЛЬ<br>DRIVELLA GTS · RETRO GT COUPE<br>ПОКАЖИ ЕЁ СО ВСЕХ СТОРОН</div><div class="garage-controls"><button id="garage-back">← НАЗАД В МЕНЮ</button></div><div class="garage-tip">ЗАЖМИ И ТЯНИ — ВРАЩЕНИЕ<br>КОЛЁСИКО — ПРИБЛИЗИТЬ / ОТДАЛИТЬ</div></div>
 <div id="options-screen"><div class="options-head">ОПЦИИ</div><div class="options-card"><div class="option-row"><span>МУЗЫКА</span><button id="option-music">ВКЛЮЧЕНА</button></div><div class="option-row"><span>ГРОМКОСТЬ</span><input id="option-volume" type="range" min="0" max="100" value="52"></div><div class="option-row"><span>ЗВУК ДВИГАТЕЛЯ</span><button id="option-sfx">ВКЛЮЧЁН</button></div><div class="option-row"><span>КАМЕРА</span><span>КЛАВИШИ 1–4</span></div><button id="options-back" style="width:100%;margin-top:18px">← НАЗАД В МЕНЮ</button></div></div>
@@ -108,7 +108,7 @@
 <script>
 (()=>{
 'use strict';
-const VERSION='v0.15.0',BUILD='036';
+const VERSION='v0.15.1',BUILD='037';
 const canvas=document.getElementById('scene'),gl=canvas.getContext('webgl',{antialias:true,alpha:true}),sun=document.getElementById('sun'),sctx=sun.getContext('2d');
 const $=id=>document.getElementById(id);
 const clamp=(v,a,b)=>Math.max(a,Math.min(b,v));
@@ -433,6 +433,16 @@ const flankShadeL=makeProfileLine(bodyProfile,-1,-2.48,2.45,'mid',1.005,.105,.02
 const flankShadeR=makeProfileLine(bodyProfile,1,-2.48,2.45,'mid',1.005,.105,.022);
 const hoodSheenL=sideRibbon(-1,[[.73,2.55,.47],[.86,2.15,.59],[.91,1.72,.60],[.88,1.30,.58]],.018);
 const hoodSheenR=sideRibbon(1,[[.73,2.55,.47],[.86,2.15,.59],[.91,1.72,.60],[.88,1.30,.58]],.018);
+// Short diagonal corner graphics: black slashes edged with deep red, kept away from the doors.
+const cornerSlashes=[];
+for(const side of [-1,1]){
+ cornerSlashes.push(
+  {mesh:sideRibbon(side,[[.34,2.62,1.035],[.57,2.34,1.155]],.070),color:[.008,.009,.018,1]},
+  {mesh:sideRibbon(side,[[.425,2.62,1.052],[.655,2.34,1.172]],.026),color:[.92,.025,.10,1]},
+  {mesh:sideRibbon(side,[[.405,-2.68,1.285],[.655,-2.40,1.245]],.070),color:[.008,.009,.018,1]},
+  {mesh:sideRibbon(side,[[.49,-2.68,1.302],[.74,-2.40,1.262]],.026),color:[.92,.025,.10,1]}
+ );
+}
 const C={
  ground:[.025,.025,.065,1],grid:[.09,.34,.48,.72],grid2:[.34,.10,.40,.55],
  road:[.055,.055,.105,1],road2:[.075,.07,.13,1],pink:[1,.13,.60,1],cyan:[.20,.88,1,1],white:[.92,.96,1,1],
@@ -571,8 +581,10 @@ function draw(shape,x,y,z,sx,sy,sz,color,yaw=0,roll=0){
  const model=matMul(translate(x,y,z),matMul(rotateY(yaw),matMul(rotateZ(roll),scale(sx,sy,sz))));
  bindMesh(shape,model,color,0,0);
 }
-function drawCarPart(cx,cz,x,y,z,sx,sy,sz,color,yaw=0,shape=cube,material=1){
- const model=matMul(translate(cx,0,cz),matMul(rotateY(yaw),matMul(rotateZ(bodyRoll),matMul(translate(x,y,z),matMul((shape===wheel||shape===wheelFace)?rotateZ(Math.PI/2):matIdentity(),scale(sx,sy,sz))))));
+function drawCarPart(cx,cz,x,y,z,sx,sy,sz,color,yaw=0,shape=cube,material=1,spin=0){
+ const isWheel=shape===wheel||shape===wheelFace;
+ const localRotation=isWheel?matMul(rotateZ(Math.PI/2),rotateY(spin)):matIdentity();
+ const model=matMul(translate(cx,0,cz),matMul(rotateY(yaw),matMul(rotateZ(bodyRoll),matMul(translate(x,y,z),matMul(localRotation,scale(sx,sy,sz))))));
  bindMesh(shape,model,color,1,material);
 }
 function drawCarMesh(shape,cx,cz,color,yaw=0,material=1){
@@ -679,7 +691,8 @@ function drawWorld(){
  gl.depthMask(true);gl.disable(gl.BLEND);
  // Continuous hull with broad painted planes and shader-driven clear-coat highlights.
  drawCarMesh(bodyMesh,carX,carZ,C.body,yaw);
- drawCarMesh(flankShadeL,carX,carZ,C.bodyShade,yaw);drawCarMesh(flankShadeR,carX,carZ,C.bodyShade,yaw);
+ for(const decal of cornerSlashes)drawCarMesh(decal.mesh,carX,carZ,decal.color,yaw,0);
+ // Long dark flank ribbons removed; corner slashes carry the graphic accent instead.
  drawCarMesh(hoodFacetL,carX,carZ,[.91,.045,.18,1],yaw);drawCarMesh(hoodFacetR,carX,carZ,[.91,.045,.18,1],yaw);
  // Cabin shell, glass and restrained cool reflections.
  drawCarMesh(cabinMesh,carX,carZ,C.glass,yaw);
@@ -695,12 +708,13 @@ function drawWorld(){
   drawCarMesh(side<0?intakeUpperL:intakeUpperR,carX,carZ,C.trim,yaw);
   drawCarMesh(side<0?intakeLowerL:intakeLowerR,carX,carZ,C.trim,yaw);
  }
- for(const arch of [archFrontL,archFrontR,archRearL,archRearR])drawCarMesh(arch,carX,carZ,C.bodyShade,yaw);
- // Four low-profile tyres with machined five-spoke alloy faces.
+ // Raised wheel-arch overlays removed to leave the tyres unobstructed.
+ // Four low-profile tyres with machined five-spoke alloy faces. Spin follows world travel.
+ const wheelSpin=garageMode?0:distance/.455;
  for(const side of [-1,1])for(const wz of [-1.6375,1.6375]){
   const wx=1.015,wy=.465,tyreR=.455;
-  drawCarPart(carX,carZ,side*wx,wy,wz,tyreR,.145,tyreR,C.tire,yaw,wheel);
-  drawCarPart(carX,carZ,side*(wx+.128),wy,wz,.328,.020,.328,C.brake,yaw,wheelFace);
+  drawCarPart(carX,carZ,side*wx,wy,wz,tyreR,.145,tyreR,C.tire,yaw,wheel,1,wheelSpin);
+  drawCarPart(carX,carZ,side*(wx+.128),wy,wz,.328,.020,.328,C.brake,yaw,wheelFace,1,wheelSpin);
   drawCarPart(carX,carZ,side*(wx+.148),wy,wz,.318,.018,.318,C.hub,yaw,wheelFace);
   drawCarPart(carX,carZ,side*(wx+.163),wy,wz,.092,.020,.092,C.bodyLight,yaw,wheelFace);
  }
