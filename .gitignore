@@ -1,0 +1,10 @@
+# OS / editor
+.DS_Store
+Thumbs.db
+.vscode/
+.idea/
+
+# Local audio assets (add your own tracks)
+assets/music/*.mp3
+assets/music/*.wav
+assets/music/*.ogg
