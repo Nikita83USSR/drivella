@@ -60,18 +60,18 @@
 <body>
 <canvas id="scene"></canvas><canvas id="sun"></canvas>
 <div id="hud">
- <div class="top"><div class="logo">DRIVELLA<small>3D SYNTHWAVE DRIFT RACING</small></div><div class="version-label" id="version-label">v0.3.0 · BUILD 003</div><div class="stat">DISTANCE<b id="distance">000.0 KM</b></div><div class="stat">LOCATION<b>VIOLET COAST</b></div></div>
+ <div class="top"><div class="logo">DRIVELLA<small>3D SYNTHWAVE DRIFT RACING</small></div><div class="version-label" id="version-label">v0.3.1 · BUILD 004</div><div class="stat">DISTANCE<b id="distance">000.0 KM</b></div><div class="stat">LOCATION<b>VIOLET COAST</b></div></div>
  <div class="right"><div id="speed">000 <span>KM/H</span></div><div id="direction">▶ FORWARD</div><div id="music">♫ MUSIC OFF</div></div>
- <div class="bottom"><div class="hint"><strong>W / ↑</strong> ACCELERATE　<strong>S / ↓</strong> BRAKE / REVERSE<br><strong>A / ←　D / →</strong> STEER　<strong>SPACE</strong> NITRO　<strong>M</strong> MUSIC　<strong>1–4</strong> CAMERA</div><div>3D NEON HIGHWAY // BUILD 003</div></div>
+ <div class="bottom"><div class="hint"><strong>W / ↑</strong> ACCELERATE　<strong>S / ↓</strong> BRAKE / REVERSE<br><strong>A / ←　D / →</strong> STEER　<strong>SPACE</strong> NITRO　<strong>M</strong> MUSIC　<strong>1–4</strong> CAMERA</div><div>3D NEON HIGHWAY // BUILD 004</div></div>
 </div>
 <div id="tools-ui"><button id="cam-prev" aria-label="Previous camera">◀</button><span id="cam-label">CAM 2 · CLOSE</span><button id="cam-next" aria-label="Next camera">▶</button><button id="debug-toggle">DEBUG</button></div>
 <div id="debug-panel"><div class="debug-title">DRIVELLA DIAGNOSTICS</div><div id="debug-data">Initializing…</div></div>
-<div id="boot-screen"><div class="boot-content"><div class="boot-kicker">NIGHT DRIVE SYSTEMS // INITIALIZING</div><div class="boot-logo">DRIVELLA</div><div class="boot-subtitle">3D SYNTHWAVE DRIFT RACING</div><div class="boot-mark"></div><div class="boot-status" id="boot-status">BUILDING THE 3D WORLD</div><div class="boot-track"><div class="boot-progress" id="boot-progress"></div></div><div class="boot-meta"><span>3D ENGINE ONLINE</span><span id="boot-percent">00%</span></div><div class="boot-footer">ENGINE STARTUP // v0.3.0 · BUILD 003</div></div></div>
+<div id="boot-screen"><div class="boot-content"><div class="boot-kicker">NIGHT DRIVE SYSTEMS // INITIALIZING</div><div class="boot-logo">DRIVELLA</div><div class="boot-subtitle">3D SYNTHWAVE DRIFT RACING</div><div class="boot-mark"></div><div class="boot-status" id="boot-status">BUILDING THE 3D WORLD</div><div class="boot-track"><div class="boot-progress" id="boot-progress"></div></div><div class="boot-meta"><span>3D ENGINE ONLINE</span><span id="boot-percent">00%</span></div><div class="boot-footer">ENGINE STARTUP // v0.3.1 · BUILD 004</div></div></div>
 <div id="overlay"><div class="panel"><h1>DRIVELLA</h1><p>VIOLET COAST // NIGHT DRIVE</p><p class="start">PRESS W / ↑ TO DRIVE</p><p>W FORWARD · S REVERSE · A/D STEER · SPACE NITRO</p></div></div>
 <script>
 (()=>{
 'use strict';
-const VERSION='v0.3.0',BUILD='003';
+const VERSION='v0.3.1',BUILD='004';
 const canvas=document.getElementById('scene'),gl=canvas.getContext('webgl',{antialias:true,alpha:true}),sun=document.getElementById('sun'),sctx=sun.getContext('2d');
 const $=id=>document.getElementById(id);
 let W=innerWidth,H=innerHeight,DPR=1;
@@ -176,11 +176,11 @@ function draw(shape,x,y,z,sx,sy,sz,color,yaw=0,roll=0){
 }
 function drawCarPart(cx,cz,x,y,z,sx,sy,sz,color,yaw=0,shape=cube){
  let partRotation=shape===wheel?matMul(rotateY(yaw),rotateZ(Math.PI/2)):rotateY(yaw);
- const model=matMul(translate(cx,0,cz),matMul(rotateY(yaw),matMul(rotateZ(-steer*.105),matMul(translate(x,y,z),matMul(shape===wheel?rotateZ(Math.PI/2):matIdentity(),scale(sx,sy,sz))))));
+ const model=matMul(translate(cx,0,cz),matMul(rotateY(yaw),matMul(rotateZ(steer*.105),matMul(translate(x,y,z),matMul(shape===wheel?rotateZ(Math.PI/2):matIdentity(),scale(sx,sy,sz))))));
  gl.uniformMatrix4fv(loc.model,false,new Float32Array(model));gl.uniform4fv(loc.color,color);gl.bindBuffer(gl.ARRAY_BUFFER,shape.b);gl.enableVertexAttribArray(loc.p);gl.vertexAttribPointer(loc.p,3,gl.FLOAT,false,0,0);gl.drawArrays(gl.TRIANGLES,0,shape.n);drawCalls++;
 }
 function drawCarMesh(shape,cx,cz,color,yaw=0){
- const model=matMul(translate(cx,0,cz),matMul(rotateY(yaw),matMul(rotateZ(-steer*.105),matIdentity())));
+ const model=matMul(translate(cx,0,cz),matMul(rotateY(yaw),matMul(rotateZ(steer*.105),matIdentity())));
  gl.uniformMatrix4fv(loc.model,false,new Float32Array(model));gl.uniform4fv(loc.color,color);gl.bindBuffer(gl.ARRAY_BUFFER,shape.b);gl.enableVertexAttribArray(loc.p);gl.vertexAttribPointer(loc.p,3,gl.FLOAT,false,0,0);gl.drawArrays(gl.TRIANGLES,0,shape.n);drawCalls++;
 }
 function matIdentity(){return [1,0,0,0,0,1,0,0,0,0,1,0,0,0,0,1];}
@@ -189,12 +189,18 @@ function translate(x,y,z){let m=matIdentity();m[12]=x;m[13]=y;m[14]=z;return m;}
 function scale(x,y,z){let m=matIdentity();m[0]=x;m[5]=y;m[10]=z;return m;}
 function rotateY(a){let c=Math.cos(a),s=Math.sin(a);return [c,0,-s,0,0,1,0,0,s,0,c,0,0,0,0,1];}
 function rotateZ(a){let c=Math.cos(a),s=Math.sin(a);return [c,s,0,0,-s,c,0,0,0,0,1,0,0,0,0,1];}
-function perspective(f,asp,n,far){let t=1/Math.tan(f/2),nf=1/(n-far);return [t/asp,0,0,0,0,t,0,0,0,0,(far+n)*nf,-1,0,0,2*far*n*nf,0];}
+// Left-handed +Z-forward camera. Screen-right is explicitly world +X.
+function perspective(f,asp,n,far){
+ const t=1/Math.tan(f/2),a=(far+n)/(far-n),b=(-2*far*n)/(far-n);
+ return [t/asp,0,0,0,0,t,0,0,0,0,a,1,0,0,b,0];
+}
 function lookAt(ex,ey,ez,cx,cy,cz){
- let zx=ex-cx,zy=ey-cy,zz=ez-cz,l=Math.hypot(zx,zy,zz);zx/=l;zy/=l;zz/=l;
- let xx=zz,xy=0,xz=-zx;l=Math.hypot(xx,xz);xx/=l;xz/=l;
- let yx=zy*xz-zz*xy,yy=zz*xx-zx*xz,yz=zx*xy-zy*xx;
- return [xx,yx,zx,0,xy,yy,zy,0,xz,yz,zz,0,-(xx*ex+xy*ey+xz*ez),-(yx*ex+yy*ey+yz*ez),-(zx*ex+zy*ey+zz*ez),1];
+ let fx=cx-ex,fy=cy-ey,fz=cz-ez,l=Math.hypot(fx,fy,fz);fx/=l;fy/=l;fz/=l;
+ // right = up × forward, so world +X always appears on the right side of the screen.
+ let rx=fz,ry=0,rz=-fx;l=Math.hypot(rx,ry,rz);rx/=l;ry/=l;rz/=l;
+ let ux=fy*rz-fz*ry,uy=fz*rx-fx*rz,uz=fx*ry-fy*rx;
+ return [rx,ux,fx,0,ry,uy,fy,0,rz,uz,fz,0,
+  -(rx*ex+ry*ey+rz*ez),-(ux*ex+uy*ey+uz*ez),-(fx*ex+fy*ey+fz*ez),1];
 }
 function cameraFor(carX,carZ){
  const modes=[
