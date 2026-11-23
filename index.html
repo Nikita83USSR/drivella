@@ -94,7 +94,7 @@
 <body>
 <canvas id="scene"></canvas><canvas id="sun"></canvas>
 <div id="hud">
- <div class="top"><div class="logo">DRIVELLA<small>3D SYNTHWAVE DRIFT RACING</small></div><div class="version-label" id="version-label">v0.14.3 · BUILD 030</div><div class="stat">DISTANCE<b id="distance">000.0 KM</b></div><div class="stat">LOCATION<b>VIOLET COAST</b></div></div>
+ <div class="top"><div class="logo">DRIVELLA<small>3D SYNTHWAVE DRIFT RACING</small></div><div class="version-label" id="version-label">v0.14.4 · BUILD 031</div><div class="stat">DISTANCE<b id="distance">000.0 KM</b></div><div class="stat">LOCATION<b>VIOLET COAST</b></div></div>
  <div class="right"><div id="speed">000 <span>KM/H</span></div><div id="direction">▶ FORWARD</div><div id="music">♫ MUSIC SCANNING…</div></div>
  <div class="bottom"><div class="hint"><strong>W / ↑</strong> ACCELERATE　<strong>S / ↓</strong> BRAKE / REVERSE<br><strong>A / ←　D / →</strong> STEER　<strong>SPACE</strong> HANDBRAKE　<strong>M</strong> MUSIC　<strong>1–4</strong> CAMERA</div><div>3D NEON HIGHWAY // BUILD 029</div></div>
 </div>
@@ -129,12 +129,12 @@ function resize(){
 addEventListener('resize',resize);
 if(!gl){$('boot-status').textContent='WEBGL NOT AVAILABLE';throw new Error('WebGL unavailable');}
 const vs='attribute vec3 p;attribute vec3 normal;uniform mat4 vp;uniform mat4 model;uniform mat3 normalMatrix;varying vec3 vNormal;varying vec3 vWorldPos;void main(){vec4 world=model*vec4(p,1.0);vWorldPos=world.xyz;vNormal=normalize(normalMatrix*normal);gl_Position=vp*world;}';
-const fs='precision mediump float;uniform vec4 color;uniform float toon;uniform float materialMode;uniform vec3 keyLightDir;uniform vec3 fillLightDir;uniform vec3 viewPos;varying vec3 vNormal;varying vec3 vWorldPos;void main(){if(toon<0.5){gl_FragColor=color;return;}vec3 N=normalize(vNormal);vec3 K=normalize(keyLightDir);vec3 F=normalize(fillLightDir);float key=abs(dot(N,K));float fill=abs(dot(N,F));float illum=clamp(key*0.78+fill*0.30,0.0,1.0);float band=illum<0.27?0.46:(illum<0.59?0.78:1.12);vec3 V=normalize(viewPos-vWorldPos);vec3 HK=normalize(K+V);vec3 HF=normalize(F+V);float power=materialMode>1.5?44.0:20.0;float specK=pow(max(abs(dot(N,HK)),0.0),power);float specF=pow(max(abs(dot(N,HF)),0.0),power*0.78);float strength=materialMode>1.5?1.05:(materialMode>0.5?0.72:0.06);float fresnel=pow(1.0-clamp(abs(dot(N,V)),0.0,1.0),2.0);vec3 lit=color.rgb*band;lit+=vec3(1.0,0.78,0.92)*specK*strength;lit+=vec3(0.22,0.78,1.0)*specF*(materialMode>1.5?0.55:0.20);if(materialMode>1.5){lit+=vec3(0.12,0.62,0.92)*fresnel*0.48;lit+=vec3(0.70,0.92,1.0)*pow(specK,0.34)*0.13;}gl_FragColor=vec4(lit,color.a);}';
+const fs='precision mediump float;uniform vec4 color;uniform float toon;uniform float materialMode;uniform vec3 keyLightDir;uniform vec3 fillLightDir;uniform vec3 viewPos;uniform float showroom;varying vec3 vNormal;varying vec3 vWorldPos;void main(){if(toon<0.5){gl_FragColor=color;return;}vec3 N=normalize(vNormal);vec3 K=normalize(keyLightDir);vec3 F=normalize(fillLightDir);float key=abs(dot(N,K));float fill=abs(dot(N,F));float illum=clamp(key*0.78+fill*0.30,0.0,1.0);float band=illum<0.27?0.46:(illum<0.59?0.78:1.12);vec3 V=normalize(viewPos-vWorldPos);vec3 HK=normalize(K+V);vec3 HF=normalize(F+V);float power=materialMode>1.5?44.0:20.0;float specK=pow(max(abs(dot(N,HK)),0.0),power);float specF=pow(max(abs(dot(N,HF)),0.0),power*0.78);float strength=materialMode>1.5?1.05:(materialMode>0.5?0.72:0.06);float fresnel=pow(1.0-clamp(abs(dot(N,V)),0.0,1.0),2.0);vec3 lit=color.rgb*band;lit+=vec3(1.0,0.78,0.92)*specK*strength;if(showroom>0.5&&materialMode<1.5){float sunSharp=pow(max(abs(dot(N,HK)),0.0),92.0);float sunSoft=pow(max(abs(dot(N,HK)),0.0),26.0);lit+=vec3(1.0,0.96,0.82)*(sunSharp*1.55+sunSoft*0.24);float edgeGlint=pow(fresnel,1.65)*sunSoft;lit+=vec3(1.0,0.48,0.22)*edgeGlint*0.20;}lit+=vec3(0.22,0.78,1.0)*specF*(materialMode>1.5?0.55:0.20);if(materialMode>1.5){lit+=vec3(0.12,0.62,0.92)*fresnel*0.48;lit+=vec3(0.70,0.92,1.0)*pow(specK,0.34)*0.13;}gl_FragColor=vec4(lit,color.a);}';
 function shader(type,src){const s=gl.createShader(type);gl.shaderSource(s,src);gl.compileShader(s);if(!gl.getShaderParameter(s,gl.COMPILE_STATUS))throw new Error(gl.getShaderInfoLog(s));return s;}
 const prog=gl.createProgram();gl.attachShader(prog,shader(gl.VERTEX_SHADER,vs));gl.attachShader(prog,shader(gl.FRAGMENT_SHADER,fs));gl.linkProgram(prog);
 if(!gl.getProgramParameter(prog,gl.LINK_STATUS))throw new Error(gl.getProgramInfoLog(prog));
 gl.useProgram(prog);
-const loc={p:gl.getAttribLocation(prog,'p'),normal:gl.getAttribLocation(prog,'normal'),vp:gl.getUniformLocation(prog,'vp'),model:gl.getUniformLocation(prog,'model'),normalMatrix:gl.getUniformLocation(prog,'normalMatrix'),color:gl.getUniformLocation(prog,'color'),toon:gl.getUniformLocation(prog,'toon'),materialMode:gl.getUniformLocation(prog,'materialMode'),keyLightDir:gl.getUniformLocation(prog,'keyLightDir'),fillLightDir:gl.getUniformLocation(prog,'fillLightDir'),viewPos:gl.getUniformLocation(prog,'viewPos')};
+const loc={p:gl.getAttribLocation(prog,'p'),normal:gl.getAttribLocation(prog,'normal'),vp:gl.getUniformLocation(prog,'vp'),model:gl.getUniformLocation(prog,'model'),normalMatrix:gl.getUniformLocation(prog,'normalMatrix'),color:gl.getUniformLocation(prog,'color'),toon:gl.getUniformLocation(prog,'toon'),materialMode:gl.getUniformLocation(prog,'materialMode'),keyLightDir:gl.getUniformLocation(prog,'keyLightDir'),fillLightDir:gl.getUniformLocation(prog,'fillLightDir'),viewPos:gl.getUniformLocation(prog,'viewPos'),showroom:gl.getUniformLocation(prog,'showroom')};
 function mesh(data){
  const normals=new Float32Array(data.length);
  for(let i=0;i<data.length;i+=9){
@@ -535,7 +535,7 @@ function drawWorld(){
  const cam=cameraFor(carX,carZ);
  const vp=matMul(perspective(cam.fov*Math.PI/180,W/H,.1,650),lookAt(cam.x,cam.y,cam.z,cam.tx,cam.ty,cam.tz));
  gl.uniformMatrix4fv(loc.vp,false,new Float32Array(vp));
- gl.uniform3f(loc.keyLightDir,-.48,.82,.30);gl.uniform3f(loc.fillLightDir,.58,.34,-.72);gl.uniform3f(loc.viewPos,cam.x,cam.y,cam.z);
+ gl.uniform3f(loc.keyLightDir,-.48,.82,.30);gl.uniform3f(loc.fillLightDir,.58,.34,-.72);gl.uniform3f(loc.viewPos,cam.x,cam.y,cam.z);gl.uniform1f(loc.showroom,garageMode?1:0);
  gl.enable(gl.DEPTH_TEST);gl.disable(gl.BLEND);gl.clearColor(0,0,0,0);gl.clear(gl.COLOR_BUFFER_BIT|gl.DEPTH_BUFFER_BIT);
  if(garageMode){
   // Dark showroom floor with a raised circular display stage.
