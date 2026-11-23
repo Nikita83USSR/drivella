@@ -87,13 +87,13 @@
 <body>
 <canvas id="scene"></canvas><canvas id="sun"></canvas>
 <div id="hud">
- <div class="top"><div class="logo">DRIVELLA<small>3D SYNTHWAVE DRIFT RACING</small></div><div class="version-label" id="version-label">v0.8.0 · BUILD 011</div><div class="stat">DISTANCE<b id="distance">000.0 KM</b></div><div class="stat">LOCATION<b>VIOLET COAST</b></div></div>
+ <div class="top"><div class="logo">DRIVELLA<small>3D SYNTHWAVE DRIFT RACING</small></div><div class="version-label" id="version-label">v0.8.1 · BUILD 012</div><div class="stat">DISTANCE<b id="distance">000.0 KM</b></div><div class="stat">LOCATION<b>VIOLET COAST</b></div></div>
  <div class="right"><div id="speed">000 <span>KM/H</span></div><div id="direction">▶ FORWARD</div><div id="music">♫ MUSIC SCANNING…</div></div>
  <div class="bottom"><div class="hint"><strong>W / ↑</strong> ACCELERATE　<strong>S / ↓</strong> BRAKE / REVERSE<br><strong>A / ←　D / →</strong> STEER　<strong>SPACE</strong> HANDBRAKE　<strong>M</strong> MUSIC　<strong>1–4</strong> CAMERA</div><div>3D NEON HIGHWAY // BUILD 009</div></div>
 </div>
 <div id="tools-ui"><button id="cam-prev" aria-label="Previous camera">◀</button><span id="cam-label">CAM 2 · CLOSE</span><button id="cam-next" aria-label="Next camera">▶</button><button id="debug-toggle">DEBUG</button></div>
 <div id="debug-panel"><div class="debug-title">DRIVELLA DIAGNOSTICS</div><div id="debug-data">Initializing…</div></div>
-<div id="boot-screen"><div class="boot-content"><div class="boot-kicker">NIGHT DRIVE SYSTEMS // INITIALIZING</div><div class="boot-logo">DRIVELLA</div><div class="boot-subtitle">3D SYNTHWAVE DRIFT RACING</div><div class="boot-mark"></div><div class="boot-status" id="boot-status">BUILDING THE 3D WORLD</div><div class="boot-track"><div class="boot-progress" id="boot-progress"></div></div><div class="boot-meta"><span>3D ENGINE ONLINE</span><span id="boot-percent">00%</span></div><div class="boot-footer">ENGINE STARTUP // v0.8.0 · BUILD 011</div></div></div>
+<div id="boot-screen"><div class="boot-content"><div class="boot-kicker">NIGHT DRIVE SYSTEMS // INITIALIZING</div><div class="boot-logo">DRIVELLA</div><div class="boot-subtitle">3D SYNTHWAVE DRIFT RACING</div><div class="boot-mark"></div><div class="boot-status" id="boot-status">BUILDING THE 3D WORLD</div><div class="boot-track"><div class="boot-progress" id="boot-progress"></div></div><div class="boot-meta"><span>3D ENGINE ONLINE</span><span id="boot-percent">00%</span></div><div class="boot-footer">ENGINE STARTUP // v0.8.1 · BUILD 012</div></div></div>
 <div id="main-menu"><div class="menu-content"><div class="menu-brand">DRIVELLA</div><div class="menu-sub">SYNTHWAVE DRIFT RACING</div><div class="menu-actions"><button class="menu-btn" id="menu-start">СТАРТ ИГРЫ</button><button class="menu-btn" id="menu-garage">ГАРАЖ</button><button class="menu-btn" id="menu-options">ОПЦИИ</button></div></div><div class="menu-footer">РАЗРАБОТЧИК — <b>НИКИТА МАРКИН</b></div></div>
 <div id="garage-screen"><div class="garage-head">ГАРАЖ // INFERNO GT</div><div class="garage-copy">ТЕКУЩИЙ АВТОМОБИЛЬ<br>INFERNO GT · CLASSIC SUPERCAR<br>ПОКАЖИ ЕЁ СО ВСЕХ СТОРОН</div><div class="garage-controls"><button id="garage-back">← НАЗАД В МЕНЮ</button></div><div class="garage-tip">ЗАЖМИ И ТЯНИ — ВРАЩЕНИЕ<br>КОЛЁСИКО — ПРИБЛИЗИТЬ / ОТДАЛИТЬ</div></div>
 <div id="options-screen"><div class="options-head">ОПЦИИ</div><div class="options-card"><div class="option-row"><span>МУЗЫКА</span><button id="option-music">ВКЛЮЧЕНА</button></div><div class="option-row"><span>ГРОМКОСТЬ</span><input id="option-volume" type="range" min="0" max="100" value="52"></div><div class="option-row"><span>ЗВУК ДВИГАТЕЛЯ</span><button id="option-sfx">ВКЛЮЧЁН</button></div><div class="option-row"><span>КАМЕРА</span><span>КЛАВИШИ 1–4</span></div><button id="options-back" style="width:100%;margin-top:18px">← НАЗАД В МЕНЮ</button></div></div>
@@ -101,7 +101,7 @@
 <script>
 (()=>{
 'use strict';
-const VERSION='v0.8.0',BUILD='011';
+const VERSION='v0.8.1',BUILD='012';
 const canvas=document.getElementById('scene'),gl=canvas.getContext('webgl',{antialias:true,alpha:true}),sun=document.getElementById('sun'),sctx=sun.getContext('2d');
 const $=id=>document.getElementById(id);
 let W=innerWidth,H=innerHeight,DPR=1;
@@ -331,9 +331,9 @@ function drawWorld(){
  const rStart=Math.floor((distance-40)/10),rEnd=Math.ceil((distance+230)/10);
  for(let i=rStart;i<=rEnd;i++){
   const z=i*10,cx=roadX(z);
-  draw(cube,cx,-.105,z,7.65,.11,5,C.road);
-  draw(cube,cx-7.42,.015,z,.075,.10,5,C.pink);
-  draw(cube,cx+7.42,.015,z,.075,.10,5,C.cyan);
+  draw(cube,cx,-.105,z,9.4,.11,5,C.road);
+  draw(cube,cx-9.15,.015,z,.075,.10,5,C.pink);
+  draw(cube,cx+9.15,.015,z,.075,.10,5,C.cyan);
   if(i%2===0){
    draw(cube,cx-2.55,.018,z, .045,.018,1.55,C.white);
    draw(cube,cx+2.55,.018,z, .045,.018,1.55,C.white);
@@ -511,28 +511,30 @@ function frame(now){
   if(handbrakeActive)speed=Math.max(0,speed-10*dt);
   speed=clamp(speed,-75,310);
 
-  // Arcade-rally bicycle model: steering creates yaw momentum; grip controls how
-  // much lateral velocity the tyres can scrub away. No artificial spinout force.
+  // Speed-sensitive arcade rally dynamics: steering changes heading gradually,
+  // while lateral tyre force determines whether the car grips or actually slides.
   const steerInput=readSteeringInput();
-  steer+=(steerInput-steer)*Math.min(1,dt*7.5);
+  steer+=(steerInput-steer)*Math.min(1,dt*5.2);
   const v=Math.abs(speed)/3.6;
   const reverseSign=speed< -1?-1:1;
-  const steerAngle=steer*.36/(1+v/92);
-  const gripFactor=handbrakeActive?.30:1;
-  const yawTarget=clamp((v/2.75)*Math.tan(steerAngle)*reverseSign,-1.45,1.45);
-  const yawResponse=handbrakeActive?4.8:7.2;
+  const steerAngle=steer*.30/(1+v/105);
+  const yawTarget=clamp((v/3.1)*Math.tan(steerAngle)*reverseSign,-.78,.78);
+  const yawResponse=handbrakeActive?2.8:4.2;
   yawRate+=(yawTarget-yawRate)*Math.min(1,dt*yawResponse);
-  // The rear axle loses grip under the handbrake, allowing a progressive,
-  // catchable slide. Countersteering naturally rotates the car back.
-  const lateralGrip=handbrakeActive?1.65:7.8;
+  // Handbrake unloads the rear axle. The resulting side velocity persists
+  // until countersteer and tyre grip bring it back under control.
+  const lateralGrip=handbrakeActive?1.05:6.2;
   const lateralAccel=-yawRate*(speed/3.6)-lateralVelocity*lateralGrip;
   lateralVelocity+=lateralAccel*dt;
-  lateralVelocity=clamp(lateralVelocity,-v*.58,v*.58);
+  lateralVelocity=clamp(lateralVelocity,-v*.42,v*.42);
   carYaw+=yawRate*dt;
-  carYaw=clamp(carYaw,-1.35,1.35);
-  // Convert local forward/sideways velocity into world-space lateral movement.
+  carYaw=clamp(carYaw,-.92,.92);
+  const oldRoadX=roadX(distance);
   const worldLateral=(speed/3.6)*Math.sin(carYaw)+lateralVelocity*Math.cos(carYaw);
-  playerX=clamp(playerX+worldLateral*dt,-8.5,8.5);
+  distance+=speed*dt*.12;
+  // playerX is measured from the road centre, so compensate for the road's
+  // own curvature instead of letting a bend throw the car to the screen edge.
+  playerX=clamp(playerX+worldLateral*dt-(roadX(distance)-oldRoadX),-10.5,10.5);
   const slipAngle=Math.atan2(lateralVelocity,Math.max(2,v));
   driftIntensity=clamp((Math.abs(slipAngle)-.055)/.48,0,1);
   const lateralLoad=clamp(-lateralAccel/24,-1,1);
