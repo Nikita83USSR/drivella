@@ -60,18 +60,18 @@
 <body>
 <canvas id="scene"></canvas><canvas id="sun"></canvas>
 <div id="hud">
- <div class="top"><div class="logo">DRIVELLA<small>3D SYNTHWAVE DRIFT RACING</small></div><div class="version-label" id="version-label">v0.3.2 · BUILD 005</div><div class="stat">DISTANCE<b id="distance">000.0 KM</b></div><div class="stat">LOCATION<b>VIOLET COAST</b></div></div>
- <div class="right"><div id="speed">000 <span>KM/H</span></div><div id="direction">▶ FORWARD</div><div id="music">♫ MUSIC OFF</div></div>
- <div class="bottom"><div class="hint"><strong>W / ↑</strong> ACCELERATE　<strong>S / ↓</strong> BRAKE / REVERSE<br><strong>A / ←　D / →</strong> STEER　<strong>SPACE</strong> NITRO　<strong>M</strong> MUSIC　<strong>1–4</strong> CAMERA</div><div>3D NEON HIGHWAY // BUILD 005</div></div>
+ <div class="top"><div class="logo">DRIVELLA<small>3D SYNTHWAVE DRIFT RACING</small></div><div class="version-label" id="version-label">v0.4.0 · BUILD 006</div><div class="stat">DISTANCE<b id="distance">000.0 KM</b></div><div class="stat">LOCATION<b>VIOLET COAST</b></div></div>
+ <div class="right"><div id="speed">000 <span>KM/H</span></div><div id="direction">▶ FORWARD</div><div id="music">♫ MUSIC SCANNING…</div></div>
+ <div class="bottom"><div class="hint"><strong>W / ↑</strong> ACCELERATE　<strong>S / ↓</strong> BRAKE / REVERSE<br><strong>A / ←　D / →</strong> STEER　<strong>SPACE</strong> NITRO　<strong>M</strong> MUSIC　<strong>1–4</strong> CAMERA</div><div>3D NEON HIGHWAY // BUILD 006</div></div>
 </div>
 <div id="tools-ui"><button id="cam-prev" aria-label="Previous camera">◀</button><span id="cam-label">CAM 2 · CLOSE</span><button id="cam-next" aria-label="Next camera">▶</button><button id="debug-toggle">DEBUG</button></div>
 <div id="debug-panel"><div class="debug-title">DRIVELLA DIAGNOSTICS</div><div id="debug-data">Initializing…</div></div>
-<div id="boot-screen"><div class="boot-content"><div class="boot-kicker">NIGHT DRIVE SYSTEMS // INITIALIZING</div><div class="boot-logo">DRIVELLA</div><div class="boot-subtitle">3D SYNTHWAVE DRIFT RACING</div><div class="boot-mark"></div><div class="boot-status" id="boot-status">BUILDING THE 3D WORLD</div><div class="boot-track"><div class="boot-progress" id="boot-progress"></div></div><div class="boot-meta"><span>3D ENGINE ONLINE</span><span id="boot-percent">00%</span></div><div class="boot-footer">ENGINE STARTUP // v0.3.2 · BUILD 005</div></div></div>
+<div id="boot-screen"><div class="boot-content"><div class="boot-kicker">NIGHT DRIVE SYSTEMS // INITIALIZING</div><div class="boot-logo">DRIVELLA</div><div class="boot-subtitle">3D SYNTHWAVE DRIFT RACING</div><div class="boot-mark"></div><div class="boot-status" id="boot-status">BUILDING THE 3D WORLD</div><div class="boot-track"><div class="boot-progress" id="boot-progress"></div></div><div class="boot-meta"><span>3D ENGINE ONLINE</span><span id="boot-percent">00%</span></div><div class="boot-footer">ENGINE STARTUP // v0.4.0 · BUILD 006</div></div></div>
 <div id="overlay"><div class="panel"><h1>DRIVELLA</h1><p>VIOLET COAST // NIGHT DRIVE</p><p class="start">PRESS W / ↑ TO DRIVE</p><p>W FORWARD · S REVERSE · A/D STEER · SPACE NITRO</p></div></div>
 <script>
 (()=>{
 'use strict';
-const VERSION='v0.3.2',BUILD='005';
+const VERSION='v0.4.0',BUILD='005';
 const canvas=document.getElementById('scene'),gl=canvas.getContext('webgl',{antialias:true,alpha:true}),sun=document.getElementById('sun'),sctx=sun.getContext('2d');
 const $=id=>document.getElementById(id);
 let W=innerWidth,H=innerHeight,DPR=1;
@@ -124,30 +124,31 @@ function makeLoft(sections){
 }
 function quad(a,b,c,d){return mesh([...a,...b,...c,...a,...c,...d]);}
 const bodyMesh=makeLoft([
- {z:-2.42,w:1.04,tw:.83,y0:.16,ym:.57,yt:.65},
- {z:-1.92,w:1.34,tw:1.02,y0:.16,ym:.70,yt:.80},
- {z:-.92,w:1.39,tw:1.08,y0:.16,ym:.72,yt:.77},
- {z:.48,w:1.31,tw:1.02,y0:.16,ym:.66,yt:.69},
- {z:1.58,w:1.22,tw:.94,y0:.15,ym:.58,yt:.60},
- {z:2.36,w:1.02,tw:.78,y0:.15,ym:.47,yt:.50}
+ // Long low wedge nose (+Z), pinched front fenders and muscular rear haunches (-Z).
+ {z:-2.62,w:1.20,tw:.91,y0:.15,ym:.59,yt:.68},
+ {z:-2.02,w:1.48,tw:1.13,y0:.15,ym:.73,yt:.82},
+ {z:-1.10,w:1.47,tw:1.12,y0:.15,ym:.72,yt:.78},
+ {z:.10,w:1.31,tw:1.00,y0:.15,ym:.60,yt:.65},
+ {z:1.45,w:1.13,tw:.86,y0:.13,ym:.48,yt:.53},
+ {z:2.72,w:.91,tw:.69,y0:.12,ym:.34,yt:.39}
 ]);
 const cabinMesh=makeLoft([
- {z:-1.32,w:.76,tw:.58,y0:.66,ym:1.02,yt:1.39},
- {z:-.88,w:.88,tw:.68,y0:.66,ym:1.12,yt:1.52},
- {z:.28,w:.88,tw:.69,y0:.64,ym:1.12,yt:1.52},
- {z:.86,w:.73,tw:.57,y0:.61,ym:.98,yt:1.32}
+ {z:-1.78,w:.70,tw:.52,y0:.64,ym:.91,yt:1.18},
+ {z:-1.20,w:.82,tw:.63,y0:.62,ym:1.02,yt:1.34},
+ {z:.12,w:.80,tw:.62,y0:.56,ym:.99,yt:1.31},
+ {z:.92,w:.67,tw:.51,y0:.48,ym:.82,yt:1.08}
 ]);
-const windshield=quad([-.62,1.31,.89],[.62,1.31,.89],[.83,.76,1.48],[-.83,.76,1.48]);
-const rearGlass=quad([-.62,1.31,-1.34],[.62,1.31,-1.34],[.82,.76,-1.79],[-.82,.76,-1.79]);
-const sideGlassL=quad([-.885,.78,-1.12],[-.885,.78,.73],[-.695,1.34,.25],[-.695,1.34,-.82]);
-const sideGlassR=quad([.885,.78,.73],[.885,.78,-1.12],[.695,1.34,-.82],[.695,1.34,.25]);
+const windshield=quad([-.57,1.12,.94],[.57,1.12,.94],[.78,.57,1.52],[-.78,.57,1.52]);
+const rearGlass=quad([-.55,1.12,-1.76],[.55,1.12,-1.76],[.76,.65,-1.20],[-.76,.65,-1.20]);
+const sideGlassL=quad([-.82,.65,-1.38],[-.82,.59,.62],[-.65,1.08,.28],[-.65,1.08,-1.08]);
+const sideGlassR=quad([.82,.59,.62],[.82,.65,-1.38],[.65,1.08,-1.08],[.65,1.08,.28]);
 const C={
  ground:[.025,.025,.065,1],grid:[.09,.34,.48,.72],grid2:[.34,.10,.40,.55],
  road:[.055,.055,.105,1],road2:[.075,.07,.13,1],pink:[1,.13,.60,1],cyan:[.20,.88,1,1],white:[.92,.96,1,1],
  body:[.72,.025,.075,1],bodyLight:[1,.16,.20,1],glass:[.012,.075,.12,1],trim:[.018,.022,.035,1],
  tire:[.012,.014,.022,1],hub:[.78,.53,.25,1],city:[.085,.045,.12,1],mount:[.08,.045,.14,1]
 };
-let keys={},started=false,speed=0,playerX=0,steer=0,bodyRoll=0,distance=0,boost=0,last=performance.now(),musicOn=false,track=0,audio=null;
+let keys={},started=false,speed=0,playerX=0,steer=0,bodyRoll=0,distance=0,boost=0,last=performance.now(),musicOn=true,track=0,audio=null,musicPending=true,foundTracks=[],audioCtx=null,engineOsc=null,engineOsc2=null,engineGain=null,engineFilter=null,skidGain=null,skidFilter=null,roadGain=null,roadFilter=null,audioNoise=null;
 // One axis convention shared by controls, car movement, body lean and indicators.
 const STEER_AXIS=Object.freeze({left:-1,right:1,screenRight:1,bodyLean:-1});
 function readSteeringInput(){return (keys.d||keys.arrowright?STEER_AXIS.right:0)+(keys.a||keys.arrowleft?STEER_AXIS.left:0);}
@@ -159,18 +160,67 @@ addEventListener('keydown',e=>{
  const k=e.key.toLowerCase();keys[k]=true;
  if(['arrowup','arrowdown','arrowleft','arrowright',' '].includes(e.key))e.preventDefault();
  if(k==='m'&&bootDone)toggleMusic();
+ if(bootDone){initAudio();if(musicPending&&musicOn)tryStartMusic();}
  if(k==='f3'){e.preventDefault();toggleDebug();}
  if(['1','2','3','4'].includes(k))setCamera(Number(k)-1);
  if(!started&&bootDone&&(k==='w'||k==='arrowup'))start();
 });
 addEventListener('keyup',e=>keys[e.key.toLowerCase()]=false);
+addEventListener('pointerdown',()=>{if(bootDone){initAudio();if(musicPending&&musicOn)tryStartMusic();}},{passive:true});
 $('cam-prev').addEventListener('click',()=>setCamera(cameraMode-1));
 $('cam-next').addEventListener('click',()=>setCamera(cameraMode+1));
 $('debug-toggle').addEventListener('click',toggleDebug);
-function start(){started=true;$('overlay').classList.add('hidden');}
-const musicFiles=['assets/music/1.mp3','assets/music/2.mp3','assets/music/3.mp3','assets/music/4.mp3'];
-function toggleMusic(){musicOn=!musicOn;if(musicOn){if(!audio)audio=new Audio();playTrack();}else if(audio)audio.pause();$('music').textContent=musicOn?'♫ TRACK '+(track+1)+' / 4':'♫ MUSIC OFF';}
-function playTrack(){audio.src=musicFiles[track];audio.volume=.6;audio.onended=()=>{track=(track+1)%4;playTrack();};audio.play().catch(()=>{});}
+function start(){started=true;initAudio();if(musicPending&&musicOn)tryStartMusic();$('overlay').classList.add('hidden');}
+const musicFiles=Array.from({length:20},(_,i)=>'assets/music/'+(i+1)+'.mp3');
+async function scanMusic(){
+ const checks=await Promise.all(musicFiles.map(async url=>{
+  try{const r=await fetch(url,{method:'HEAD',cache:'no-store'});return r.ok?url:null;}catch{return null;}
+ }));
+ foundTracks=checks.filter(Boolean);
+ $('music').textContent='♫ MUSIC '+foundTracks.length+' TRACK'+(foundTracks.length===1?'':'S')+' FOUND';
+ if(foundTracks.length){track=0;tryStartMusic();}
+}
+function tryStartMusic(){
+ if(!musicOn||!foundTracks.length)return;
+ if(!audio)audio=new Audio();
+ audio.src=foundTracks[track%foundTracks.length];audio.volume=.52;audio.loop=false;
+ audio.onended=()=>{track=(track+1)%foundTracks.length;playTrack();};
+ audio.play().then(()=>{musicPending=false;updateMusicLabel();}).catch(()=>{musicPending=true;$('music').textContent='♫ '+foundTracks.length+' TRACKS · PRESS ANY KEY';});
+}
+function playTrack(){if(!foundTracks.length)return;audio.src=foundTracks[track%foundTracks.length];audio.volume=.52;audio.onended=()=>{track=(track+1)%foundTracks.length;playTrack();};audio.play().catch(()=>{musicPending=true;});}
+function updateMusicLabel(){$('music').textContent=!musicOn?'♫ MUSIC OFF':foundTracks.length?'♫ TRACK '+(track+1)+' / '+foundTracks.length:'♫ NO MUSIC FILES';}
+function toggleMusic(){musicOn=!musicOn;if(musicOn)tryStartMusic();else if(audio)audio.pause();updateMusicLabel();}
+function initAudio(){
+ if(audioCtx){if(audioCtx.state==='suspended')audioCtx.resume();return;}
+ const AC=window.AudioContext||window.webkitAudioContext;if(!AC)return;
+ audioCtx=new AC();
+ engineOsc=audioCtx.createOscillator();engineOsc.type='sawtooth';engineOsc.frequency.value=48;
+ engineOsc2=audioCtx.createOscillator();engineOsc2.type='triangle';engineOsc2.frequency.value=24;
+ engineFilter=audioCtx.createBiquadFilter();engineFilter.type='lowpass';engineFilter.frequency.value=180;
+ engineGain=audioCtx.createGain();engineGain.gain.value=0;
+ engineOsc.connect(engineFilter);engineOsc2.connect(engineFilter);engineFilter.connect(engineGain);engineGain.connect(audioCtx.destination);
+ const n=Math.floor(audioCtx.sampleRate*2),buf=audioCtx.createBuffer(1,n,audioCtx.sampleRate),data=buf.getChannelData(0);
+ for(let i=0;i<n;i++)data[i]=(Math.random()*2-1)*.7;
+ audioNoise=buf;
+ const noise=()=>{const src=audioCtx.createBufferSource();src.buffer=audioNoise;src.loop=true;return src;};
+ const skidSrc=noise();skidFilter=audioCtx.createBiquadFilter();skidFilter.type='bandpass';skidFilter.frequency.value=1450;skidFilter.Q.value=.7;
+ skidGain=audioCtx.createGain();skidGain.gain.value=0;skidSrc.connect(skidFilter);skidFilter.connect(skidGain);skidGain.connect(audioCtx.destination);skidSrc.start();
+ const roadSrc=noise();roadFilter=audioCtx.createBiquadFilter();roadFilter.type='lowpass';roadFilter.frequency.value=260;
+ roadGain=audioCtx.createGain();roadGain.gain.value=0;roadSrc.connect(roadFilter);roadFilter.connect(roadGain);roadGain.connect(audioCtx.destination);roadSrc.start();
+ engineOsc.start();engineOsc2.start();audioCtx.resume();
+}
+function updateCarAudio(){
+ if(!audioCtx)return;
+ const now=audioCtx.currentTime,spd=Math.abs(speed),drift=started&&spd>32&&Math.abs(steer)>.23;
+ const rpm=48+spd*.92+boost*38;
+ engineOsc.frequency.setTargetAtTime(rpm,now,.07);engineOsc2.frequency.setTargetAtTime(rpm*.48,now,.09);
+ engineFilter.frequency.setTargetAtTime(130+spd*3.3,now,.12);
+ engineGain.gain.setTargetAtTime(started?.065+Math.min(spd/310,.22)*.10:0,now,.12);
+ skidGain.gain.setTargetAtTime(drift?Math.min(.17,(Math.abs(steer)-.18)*.30+spd/1800):0,now,.08);
+ skidFilter.frequency.setTargetAtTime(950+Math.abs(steer)*1200+spd*2,now,.08);
+ roadGain.gain.setTargetAtTime(drift?Math.min(.105,spd/1800):0,now,.12);
+ roadFilter.frequency.setTargetAtTime(170+spd*2.2,now,.15);
+}
 const clamp=(v,a,b)=>Math.max(a,Math.min(b,v));
 function roadX(z){return Math.sin(z*.0032)*8+Math.sin(z*.0011+1.4)*4.5;}
 function draw(shape,x,y,z,sx,sy,sz,color,yaw=0,roll=0){
@@ -256,7 +306,7 @@ function drawWorld(){
   draw(cube,tx,1.75,tz,.78,1.02,.78,[.035,.22,.20,1]);
   draw(cube,tx,2.55,tz,.53,.72,.53,[.04,.31,.27,1]);
  }
- // VESPER GT: wider, sharp-edged 80s sports coupe with a clean red/graphite silhouette.
+ // INFERNO GT: wider, sharp-edged 80s sports coupe with a clean red/graphite silhouette.
  const yaw=steer*.11,roll=-steer*.105;
  drawCarMesh(bodyMesh,carX,carZ,C.body,yaw);
  // Hood facets and center power bulge.
@@ -274,23 +324,25 @@ function drawWorld(){
  drawCarMesh(sideGlassL,carX,carZ,[.018,.12,.19,1],yaw);
  drawCarMesh(sideGlassR,carX,carZ,[.018,.12,.19,1],yaw);
  // Bumpers, front splitter, rear diffuser and side skirts.
- drawCarPart(carX,carZ,0,.19,2.27,1.02,.12,.15,C.trim,yaw);
- drawCarPart(carX,carZ,0,.17,-2.30,1.00,.13,.16,C.trim,yaw);
- drawCarPart(carX,carZ,0,.12,2.38,1.17,.045,.12,C.pink,yaw);
- drawCarPart(carX,carZ,0,.12,-2.39,1.14,.045,.12,C.pink,yaw);
+ drawCarPart(carX,carZ,0,.16,2.60,.91,.10,.18,C.trim,yaw);
+ drawCarPart(carX,carZ,0,.13,2.70,1.04,.035,.14,C.bodyLight,yaw);
+ drawCarPart(carX,carZ,0,.17,-2.56,1.20,.13,.18,C.trim,yaw);
+ drawCarPart(carX,carZ,0,.12,2.72,1.05,.045,.13,C.pink,yaw);
+ drawCarPart(carX,carZ,0,.12,-2.68,1.34,.045,.13,C.pink,yaw);
  for(const side of [-1,1]){
   drawCarPart(carX,carZ,side*1.12,.26,0,.12,.12,1.52,[.12,.12,.17,1],yaw);
   // Mirrors and squared wheel-arch highlights.
   drawCarPart(carX,carZ,side*.99,1.03,.48,.20,.095,.24,C.bodyLight,yaw);
   drawCarPart(carX,carZ,side*1.22,.80,1.35,.055,.08,.48,C.trim,yaw);
   // Front and rear wheels with visible cyan hubs.
-  for(const wz of [-1.40,1.36]){
-   drawCarPart(carX,carZ,side*1.17,.43,wz,.43,.23,.43,C.tire,yaw,wheel);
-   drawCarPart(carX,carZ,side*1.32,.43,wz,.25,.055,.25,C.hub,yaw,wheel);
-   drawCarPart(carX,carZ,side*1.355,.43,wz,.13,.025,.13,C.trim,yaw,wheel);
+  for(const wz of [-1.78,1.55]){
+   const rear=wz<0,wx=rear?1.37:1.13,wy=rear?.45:.40;
+   drawCarPart(carX,carZ,side*wx,wy,wz,rear?.47:.39,rear?.25:.21,rear?.47:.39,C.tire,yaw,wheel);
+   drawCarPart(carX,carZ,side*(wx+.14),wy,wz,rear?.27:.23,.06,rear?.27:.23,C.hub,yaw,wheel);
+   drawCarPart(carX,carZ,side*(wx+.17),wy,wz,.13,.027,.13,C.trim,yaw,wheel);
   }
  }
- // VESPER GT signature: recessed side intakes with four crisp floating strakes per side.
+ // INFERNO GT signature: recessed side intakes with four crisp floating strakes per side.
  for(const side of [-1,1]){
   drawCarPart(carX,carZ,side*1.275,.69,-.38,.035,.235,.70,C.trim,yaw);
   for(let fin=0;fin<4;fin++)drawCarPart(carX,carZ,side*1.315,.69,-.88+fin*.34,.055,.035,.255,C.bodyLight,yaw);
@@ -318,10 +370,12 @@ function drawWorld(){
  drawCarPart(carX,carZ,-1.02,.43,-2.20,.10,.075,.055,blink&&steer<0?sig:C.bodyLight,yaw);
  drawCarPart(carX,carZ,1.02,.43,-2.20,.10,.075,.055,blink&&steer>0?sig:C.bodyLight,yaw);
  // Rear deck wing: a straight, squared 80s-style spoiler with two supports.
- drawCarPart(carX,carZ,0,.89,-1.93,1.08,.055,.16,C.trim,yaw);
- drawCarPart(carX,carZ,0,.96,-1.93,1.13,.035,.19,C.bodyLight,yaw);
- drawCarPart(carX,carZ,-.68,.82,-1.88,.055,.20,.055,C.trim,yaw);
- drawCarPart(carX,carZ,.68,.82,-1.88,.055,.20,.055,C.trim,yaw);
+ drawCarPart(carX,carZ,0,1.00,-2.20,1.25,.065,.18,C.trim,yaw);
+ drawCarPart(carX,carZ,0,1.10,-2.20,1.43,.045,.22,C.bodyLight,yaw);
+ drawCarPart(carX,carZ,-.84,.87,-2.12,.065,.25,.07,C.trim,yaw);
+ drawCarPart(carX,carZ,.84,.87,-2.12,.065,.25,.07,C.trim,yaw);
+ drawCarPart(carX,carZ,-.84,1.10,-2.20,.07,.045,.17,C.hub,yaw);
+ drawCarPart(carX,carZ,.84,1.10,-2.20,.07,.045,.17,C.hub,yaw);
  if(boost>.05){
   drawCarPart(carX,carZ,-.48,.20,-2.72,.10,.09,.90,[.04,.60,1,boost],yaw);
   drawCarPart(carX,carZ,.48,.20,-2.72,.10,.09,.90,[.04,.60,1,boost],yaw);
@@ -329,13 +383,13 @@ function drawWorld(){
 }
 function drawSun(){
  sctx.clearRect(0,0,W,H);
- const x=W*.5,y=H*.285,r=Math.min(W,H)*.205;
- const halo=sctx.createRadialGradient(x,y,r*.18,x,y,r*2.35);halo.addColorStop(0,'rgba(255,151,187,.30)');halo.addColorStop(.42,'rgba(255,74,177,.15)');halo.addColorStop(1,'rgba(255,40,150,0)');
+ const x=W*.5,y=H*.225,r=Math.min(W,H)*.155;
+ const halo=sctx.createRadialGradient(x,y,r*.12,x,y,r*2.05);halo.addColorStop(0,'rgba(255,222,170,.32)');halo.addColorStop(.34,'rgba(255,105,163,.22)');halo.addColorStop(.68,'rgba(181,65,255,.10)');halo.addColorStop(1,'rgba(255,40,150,0)');
  sctx.fillStyle=halo;sctx.fillRect(x-r*2.4,y-r*2.4,r*4.8,r*4.8);
  // Crisp circular sun with a warm cream-to-coral-to-magenta synthwave palette.
  sctx.save();sctx.shadowColor='#ff5da9';sctx.shadowBlur=46;
  const disk=sctx.createLinearGradient(x,y-r,x,y+r);
- disk.addColorStop(0,'#fff5d9');disk.addColorStop(.30,'#ffd29a');disk.addColorStop(.60,'#ff927f');disk.addColorStop(1,'#ed3c9b');
+ disk.addColorStop(0,'#fff9d9');disk.addColorStop(.24,'#ffe2a1');disk.addColorStop(.48,'#ffae85');disk.addColorStop(.72,'#ff668f');disk.addColorStop(1,'#d936a7');
  sctx.fillStyle=disk;sctx.beginPath();sctx.arc(x,y,r,0,Math.PI*2);sctx.fill();sctx.restore();
  // Fine upper rim and a soft inner reflection.
  sctx.save();sctx.beginPath();sctx.arc(x,y,r*.965,Math.PI*1.08,Math.PI*1.92);sctx.strokeStyle='rgba(255,255,238,.82)';sctx.lineWidth=Math.max(1.2,r*.018);sctx.shadowColor='#fff2cf';sctx.shadowBlur=16;sctx.stroke();sctx.restore();
@@ -343,7 +397,7 @@ function drawSun(){
  sctx.save();sctx.beginPath();sctx.arc(x,y,r*.94,0,Math.PI*2);sctx.clip();sctx.fillStyle=reflection;sctx.fillRect(x-r,y-r,r*2,r*2);
  // Horizontal cutouts are clean, evenly spaced, and confined to the lower half of the disk.
  sctx.globalCompositeOperation='destination-out';
- for(let i=0;i<6;i++){const yy=y+r*(.22+i*.19),hh=Math.max(2,r*(.027+i*.004));sctx.fillRect(x-r-2,yy,r*2+4,hh);}
+ for(let i=0;i<7;i++){const yy=y+r*(.18+i*.145),hh=Math.max(2,r*(.025+i*.003));const inset=r*(i*.035);sctx.fillRect(x-r+inset,yy,r*2-2*inset,hh);}
  sctx.restore();
  // Small optical flares and a restrained horizontal lens streak.
  sctx.save();sctx.globalCompositeOperation='lighter';
@@ -361,6 +415,7 @@ function updateDebug(dt){
   debugTime=performance.now();
   $('debug-data').innerHTML=
    '<strong>VERSION</strong> '+VERSION+' / BUILD '+BUILD+'<br>'+
+   '<strong>MUSIC FILES</strong> '+foundTracks.length+' FOUND · '+(musicPending?'WAITING':'READY')+'<br>'+
    '<strong>FPS</strong> '+fps.toFixed(1)+'<br>'+
    '<strong>DRAW CALLS</strong> '+drawCalls+'<br>'+
    '<strong>CAMERA</strong> '+(cameraMode+1)+' / 4 — '+CAMERA_NAMES[cameraMode]+'<br>'+
@@ -385,13 +440,14 @@ function frame(now){
   distance+=speed*dt*.12;
  }
  drawWorld();drawSun();updateDebug(dt);
+ updateCarAudio();
  $('speed').innerHTML=String(Math.round(Math.abs(speed))).padStart(3,'0')+' <span>KM/H</span>';
  $('direction').textContent=speed< -1?'◀ REVERSE':'▶ FORWARD';$('direction').style.color=speed< -1?'#ffb56f':'#ff8de9';
  $('distance').textContent=Math.max(0,distance).toFixed(1).padStart(5,'0')+' KM';
  requestAnimationFrame(frame);
 }
 resize();setCamera(1);requestAnimationFrame(frame);
-const bootSteps=[[20,'BUILDING THE 3D WORLD'],[42,'ASSEMBLING VESPER GT'],[68,'CALIBRATING THE ROAD GRID'],[88,'TUNING THE CAMERA SYSTEM'],[100,'THE ROAD IS YOURS']];
+const bootSteps=[[20,'BUILDING THE 3D WORLD'],[42,'ASSEMBLING INFERNO GT'],[68,'CALIBRATING THE ROAD GRID'],[88,'TUNING THE CAMERA SYSTEM'],[100,'THE ROAD IS YOURS']];
 let bootStart=performance.now();
 function bootFrame(now){
  let t=clamp((now-bootStart)/2600,0,1),p=Math.round((1-Math.pow(1-t,2))*100),step=bootSteps[0];
@@ -400,6 +456,7 @@ function bootFrame(now){
  if(t<1)requestAnimationFrame(bootFrame);else{bootDone=true;$('boot-screen').classList.add('done');}
 }
 requestAnimationFrame(bootFrame);
+scanMusic();
 })();
 </script>
 </body>
