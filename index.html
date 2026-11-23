@@ -94,7 +94,7 @@
 <body>
 <canvas id="scene"></canvas><canvas id="sun"></canvas>
 <div id="hud">
- <div class="top"><div class="logo">DRIVELLA<small>3D SYNTHWAVE DRIFT RACING</small></div><div class="version-label" id="version-label">v0.14.2 · BUILD 029</div><div class="stat">DISTANCE<b id="distance">000.0 KM</b></div><div class="stat">LOCATION<b>VIOLET COAST</b></div></div>
+ <div class="top"><div class="logo">DRIVELLA<small>3D SYNTHWAVE DRIFT RACING</small></div><div class="version-label" id="version-label">v0.14.3 · BUILD 030</div><div class="stat">DISTANCE<b id="distance">000.0 KM</b></div><div class="stat">LOCATION<b>VIOLET COAST</b></div></div>
  <div class="right"><div id="speed">000 <span>KM/H</span></div><div id="direction">▶ FORWARD</div><div id="music">♫ MUSIC SCANNING…</div></div>
  <div class="bottom"><div class="hint"><strong>W / ↑</strong> ACCELERATE　<strong>S / ↓</strong> BRAKE / REVERSE<br><strong>A / ←　D / →</strong> STEER　<strong>SPACE</strong> HANDBRAKE　<strong>M</strong> MUSIC　<strong>1–4</strong> CAMERA</div><div>3D NEON HIGHWAY // BUILD 029</div></div>
 </div>
@@ -364,7 +364,7 @@ let keys={},started=false,paused=true,speed=0,playerX=0,steer=0,bodyRoll=0,dista
 // One axis convention shared by controls, car movement, body lean and indicators.
 const STEER_AXIS=Object.freeze({left:-1,right:1,screenRight:1,bodyLean:-1});
 function readSteeringInput(){return (keys.d||keys.arrowright?STEER_AXIS.right:0)+(keys.a||keys.arrowleft?STEER_AXIS.left:0);}
-let cameraMode=1,debugVisible=false,drawCalls=0,fps=0,fpsFrames=0,fpsTime=0,debugTime=0,bootDone=false,garageMode=false,garageAngle=0,garageZoom=11,garageDrag=false,garageLastX=0,musicVolume=.52,sfxEnabled=true;
+let cameraMode=1,debugVisible=false,drawCalls=0,fps=0,fpsFrames=0,fpsTime=0,debugTime=0,bootDone=false,garageMode=false,garageAngle=0,garageTilt=.24,garageZoom=11,garageDrag=false,garageLastX=0,garageLastY=0,musicVolume=.52,sfxEnabled=true;
 const CAMERA_NAMES=['HOOD / FIRST PERSON','CLOSE CHASE','WIDE CHASE','LOW CHASE'];
 function setCamera(n){cameraMode=(n+4)%4;$('cam-label').textContent='CAM '+(cameraMode+1)+' · '+['HOOD','CLOSE','WIDE','LOW'][cameraMode];}
 function toggleDebug(){debugVisible=!debugVisible;$('debug-panel').classList.toggle('visible',debugVisible);$('debug-toggle').textContent=debugVisible?'DEBUG ON':'DEBUG';}
@@ -394,7 +394,7 @@ function showMenu(){
  garageMode=false;document.body.classList.remove('playing');
  $('garage-screen').classList.remove('show');$('options-screen').classList.remove('show');$('main-menu').classList.add('show');
 }
-function showGarage(){garageMode=true;garageAngle=0;garageZoom=11;document.body.classList.remove('playing');$('main-menu').classList.remove('show');$('options-screen').classList.remove('show');$('garage-screen').classList.add('show');}
+function showGarage(){garageMode=true;garageAngle=0;garageTilt=.24;garageZoom=11;document.body.classList.remove('playing');$('main-menu').classList.remove('show');$('options-screen').classList.remove('show');$('garage-screen').classList.add('show');}
 function showOptions(){document.body.classList.remove('playing');$('main-menu').classList.remove('show');$('garage-screen').classList.remove('show');$('options-screen').classList.add('show');}
 function pauseGame(){
  if(!started||paused)return;
@@ -409,8 +409,8 @@ $('menu-start').addEventListener('click',start);$('menu-garage').addEventListene
 $('option-music').addEventListener('click',()=>{toggleMusic();$('option-music').textContent=musicOn?'ВКЛЮЧЕНА':'ВЫКЛЮЧЕНА';});
 $('option-volume').addEventListener('input',e=>{musicVolume=Number(e.target.value)/100;if(audio)audio.volume=musicVolume;});
 $('option-sfx').addEventListener('click',()=>{sfxEnabled=!sfxEnabled;$('option-sfx').textContent=sfxEnabled?'ВКЛЮЧЁН':'ВЫКЛЮЧЕН';});
-$('garage-screen').addEventListener('pointerdown',e=>{if(e.target.closest('button'))return;garageDrag=true;garageLastX=e.clientX;$('garage-screen').classList.add('dragging');});
-addEventListener('pointermove',e=>{if(garageDrag)garageAngle+=(e.clientX-garageLastX)*.009,garageLastX=e.clientX;});
+$('garage-screen').addEventListener('pointerdown',e=>{if(e.target.closest('button'))return;garageDrag=true;garageLastX=e.clientX;garageLastY=e.clientY;$('garage-screen').classList.add('dragging');});
+addEventListener('pointermove',e=>{if(garageDrag){garageAngle+=(e.clientX-garageLastX)*.009;garageTilt=clamp(garageTilt+(e.clientY-garageLastY)*.006,-.04,1.28);garageLastX=e.clientX;garageLastY=e.clientY;}});
 addEventListener('pointerup',()=>{garageDrag=false;$('garage-screen').classList.remove('dragging');});
 $('garage-screen').addEventListener('wheel',e=>{if(!garageMode)return;e.preventDefault();garageZoom=clamp(garageZoom+Math.sign(e.deltaY)*.8,7,17);},{passive:false});
 const musicFiles=Array.from({length:20},(_,i)=>'assets/music/'+(i+1)+'.mp3');
@@ -519,7 +519,7 @@ function lookAt(ex,ey,ez,cx,cy,cz){
   -(rx*ex+ry*ey+rz*ez),-(ux*ex+uy*ey+uz*ez),-(fx*ex+fy*ey+fz*ez),1];
 }
 function cameraFor(carX,carZ){
- if(garageMode){const gx=Math.sin(garageAngle)*garageZoom,gz=Math.cos(garageAngle)*garageZoom;return{x:carX+gx,y:3.1,z:carZ+gz,tx:carX,ty:.78,tz:carZ,fov:43};}
+ if(garageMode){const orbit=garageZoom*Math.cos(garageTilt),gx=Math.sin(garageAngle)*orbit,gz=Math.cos(garageAngle)*orbit;return{x:carX+gx,y:.82+garageZoom*Math.sin(garageTilt),z:carZ+gz,tx:carX,ty:.68,tz:carZ,fov:43};}
  const fx=Math.sin(carYaw),fz=Math.cos(carYaw);
  const modes=[
   {x:carX+fx*1.28,y:1.38,z:carZ+fz*1.28,tx:carX+fx*48,ty:1.08,tz:carZ+fz*48,fov:76},
@@ -538,8 +538,23 @@ function drawWorld(){
  gl.uniform3f(loc.keyLightDir,-.48,.82,.30);gl.uniform3f(loc.fillLightDir,.58,.34,-.72);gl.uniform3f(loc.viewPos,cam.x,cam.y,cam.z);
  gl.enable(gl.DEPTH_TEST);gl.disable(gl.BLEND);gl.clearColor(0,0,0,0);gl.clear(gl.COLOR_BUFFER_BIT|gl.DEPTH_BUFFER_BIT);
  if(garageMode){
-  draw(cube,0,-.48,0,22,.18,22,C.ground);draw(cube,0,-.37,0,8,.12,8,C.trim);
-  draw(cube,0,-.29,0,7.6,.025,7.6,C.grid);draw(cube,-9,-.27,0,.035,.025,18,C.cyan);draw(cube,9,-.27,0,.035,.025,18,C.pink);
+  // Dark showroom floor with a raised circular display stage.
+  draw(cube,0,-.55,0,32,.24,32,[.025,.035,.075,1]);
+  draw(cylinder,0,-.43,0,8.2,.18,8.2,[.055,.065,.12,1]);
+  draw(cylinder,0,-.30,0,7.7,.12,7.7,[.10,.12,.21,1]);
+  draw(cylinder,0,-.215,0,7.42,.045,7.42,[.22,.045,.20,1]);
+  draw(cylinder,0,-.17,0,7.25,.035,7.25,[.035,.12,.22,1]);
+  draw(cylinder,0,-.12,0,7.08,.035,7.08,[.12,.15,.25,1]);
+  draw(cube,0,-.08,0,6.9,.018,6.9,[.055,.065,.11,1]);
+  // Neon perimeter strips and soft reflected pools.
+  draw(cube,-7.48,-.19,0,.035,.026,14.8,[.06,.80,1,1]);draw(cube,7.48,-.19,0,.035,.026,14.8,[1,.08,.62,1]);
+  draw(cylinder,-3.8,-.08,0,1.55,.018,1.55,[.05,.32,.72,.38]);draw(cylinder,3.8,-.08,0,1.55,.018,1.55,[.62,.08,.35,.38]);
+  // Ceiling spotlights, visible beams aimed down to the car, plus light fixtures.
+  gl.enable(gl.BLEND);gl.blendFunc(gl.SRC_ALPHA,gl.ONE);gl.depthMask(false);
+  draw(cube,-4.7,5.9,1.1,.12,.14,.12,[.30,.82,1,.95]);draw(cube,4.7,5.9,1.1,.12,.14,.12,[1,.22,.72,.95]);
+  draw(cube,-4.7,5.8,1.1,.055,2.85,.055,[.20,.75,1,.45]);draw(cube,4.7,5.8,1.1,.055,2.85,.055,[1,.22,.68,.45]);
+  draw(cube,-4.7,2.95,1.1,1.05,.025,1.05,[.08,.40,.70,.11]);draw(cube,4.7,2.95,1.1,1.05,.025,1.05,[.50,.08,.40,.11]);
+  gl.depthMask(true);gl.disable(gl.BLEND);
  }else{
  // Continuous dark ground plane: it follows the world, not a snapped scrolling tile.
  draw(cube,0,-.56,distance+115,150,.30,185,C.ground);
