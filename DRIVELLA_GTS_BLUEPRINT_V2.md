@@ -1,7 +1,7 @@
 # DRIVELLA GTS — Blueprint v2
 
 Status: approved visual and modeling reference  
-Build target: v0.11.0 / BUILD 019  
+Build target: v0.11.1 / BUILD 020  
 Design intent: stylized synthwave arcade supercar; deliberately not photorealistic and not a replica of a production vehicle.
 
 ## Design language
