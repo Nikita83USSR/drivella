@@ -58,7 +58,8 @@
 #main-menu{position:fixed;inset:0;z-index:12;display:none;align-items:flex-end;justify-content:center;padding:0 18px 7.5vh;background:linear-gradient(180deg,rgba(4,5,19,.08),rgba(4,5,19,.12)),url('assets/menu-background.svg') center/cover no-repeat;}
 #main-menu.show{display:flex;animation:menuIn .65s ease both}
 .menu-content{position:absolute;left:50%;bottom:7.5vh;transform:translateX(-50%);width:min(560px,90vw);margin:0}
-.menu-brand,.menu-sub{display:none}
+.menu-brand{display:block;position:fixed;left:clamp(22px,4.2vw,68px);top:clamp(22px,3.5vw,54px);white-space:nowrap;color:#ff5bce;font:italic 900 clamp(38px,5.4vw,76px)/.88 Arial,sans-serif;letter-spacing:.035em;text-shadow:0 0 9px #ff40c9,0 0 24px #f328bb,0 0 48px #8b31ff}
+.menu-sub{display:block;position:fixed;left:clamp(26px,4.5vw,72px);top:clamp(82px,9.6vw,126px);margin:0;color:#83efff;font:700 clamp(9px,.95vw,13px)/1 Consolas,monospace;letter-spacing:.38em;text-shadow:0 0 12px #1acfff}
 .menu-actions{display:grid;gap:10px;width:100%}
 .menu-btn{position:relative;width:100%;height:68px;min-height:68px;padding:0 54px;text-align:center;border:1px solid #a5f7ffb8;background:linear-gradient(105deg,rgba(5,7,25,.985),rgba(13,8,34,.985));color:#f4f0ff;font:900 clamp(15px,1.4vw,20px) Consolas,monospace;letter-spacing:.24em;cursor:pointer;clip-path:polygon(4% 0,96% 0,100% 50%,96% 100%,4% 100%,0 50%);transition:transform .2s,border-color .2s,filter .2s;box-shadow:inset 0 0 24px #3e39a344,0 0 16px #25cfff30;backdrop-filter:blur(12px);animation:menuNeon 2.8s ease-in-out infinite}
 .menu-btn:before{content:'›';position:absolute;left:28px;top:50%;transform:translateY(-53%);color:#8af8ff;font-size:30px;text-shadow:0 0 12px #22ddff}
@@ -93,21 +94,21 @@
 <body>
 <canvas id="scene"></canvas><canvas id="sun"></canvas>
 <div id="hud">
- <div class="top"><div class="logo">DRIVELLA<small>3D SYNTHWAVE DRIFT RACING</small></div><div class="version-label" id="version-label">v0.12.1 · BUILD 023</div><div class="stat">DISTANCE<b id="distance">000.0 KM</b></div><div class="stat">LOCATION<b>VIOLET COAST</b></div></div>
+ <div class="top"><div class="logo">DRIVELLA<small>3D SYNTHWAVE DRIFT RACING</small></div><div class="version-label" id="version-label">v0.12.2 · BUILD 024</div><div class="stat">DISTANCE<b id="distance">000.0 KM</b></div><div class="stat">LOCATION<b>VIOLET COAST</b></div></div>
  <div class="right"><div id="speed">000 <span>KM/H</span></div><div id="direction">▶ FORWARD</div><div id="music">♫ MUSIC SCANNING…</div></div>
  <div class="bottom"><div class="hint"><strong>W / ↑</strong> ACCELERATE　<strong>S / ↓</strong> BRAKE / REVERSE<br><strong>A / ←　D / →</strong> STEER　<strong>SPACE</strong> HANDBRAKE　<strong>M</strong> MUSIC　<strong>1–4</strong> CAMERA</div><div>3D NEON HIGHWAY // BUILD 009</div></div>
 </div>
 <div id="tools-ui"><button id="cam-prev" aria-label="Previous camera">◀</button><span id="cam-label">CAM 2 · CLOSE</span><button id="cam-next" aria-label="Next camera">▶</button><button id="debug-toggle">DEBUG</button></div>
 <div id="debug-panel"><div class="debug-title">DRIVELLA DIAGNOSTICS</div><div id="debug-data">Initializing…</div></div>
 <div id="boot-screen"><div class="boot-content"><div class="boot-kicker">NIGHT DRIVE SYSTEMS // INITIALIZING</div><div class="boot-logo">DRIVELLA</div><div class="boot-subtitle">3D SYNTHWAVE DRIFT RACING</div><div class="boot-mark"></div><div class="boot-status" id="boot-status">BUILDING THE 3D WORLD</div><div class="boot-track"><div class="boot-progress" id="boot-progress"></div></div><div class="boot-meta"><span>3D ENGINE ONLINE</span><span id="boot-percent">00%</span></div><div class="boot-footer">ENGINE STARTUP // v0.12.0 · BUILD 022</div></div></div>
-<div id="main-menu"><div class="menu-content"><div class="menu-brand">DRIVELLA</div><div class="menu-sub">SYNTHWAVE DRIFT RACING</div><div class="menu-actions"><button class="menu-btn" id="menu-start">СТАРТ</button><button class="menu-btn" id="menu-garage">ГАРАЖ</button><button class="menu-btn" id="menu-options">НАСТРОЙКИ</button></div></div><div class="menu-footer">РАЗРАБОТЧИК — <b>НИКИТА МАРКИН</b></div></div>
+<div id="main-menu"><div class="menu-content"><div class="menu-brand">DRIVELLA GTS</div><div class="menu-sub">RIDE THE RETRO FUTURE</div><div class="menu-actions"><button class="menu-btn" id="menu-start">СТАРТ</button><button class="menu-btn" id="menu-garage">ГАРАЖ</button><button class="menu-btn" id="menu-options">НАСТРОЙКИ</button></div></div><div class="menu-footer">РАЗРАБОТЧИК — <b>НИКИТА МАРКИН</b></div></div>
 <div id="garage-screen"><div class="garage-head">ГАРАЖ // DRIVELLA GTS</div><div class="garage-copy">ТЕКУЩИЙ АВТОМОБИЛЬ<br>DRIVELLA GTS · RETRO GT COUPE<br>ПОКАЖИ ЕЁ СО ВСЕХ СТОРОН</div><div class="garage-controls"><button id="garage-back">← НАЗАД В МЕНЮ</button></div><div class="garage-tip">ЗАЖМИ И ТЯНИ — ВРАЩЕНИЕ<br>КОЛЁСИКО — ПРИБЛИЗИТЬ / ОТДАЛИТЬ</div></div>
 <div id="options-screen"><div class="options-head">ОПЦИИ</div><div class="options-card"><div class="option-row"><span>МУЗЫКА</span><button id="option-music">ВКЛЮЧЕНА</button></div><div class="option-row"><span>ГРОМКОСТЬ</span><input id="option-volume" type="range" min="0" max="100" value="52"></div><div class="option-row"><span>ЗВУК ДВИГАТЕЛЯ</span><button id="option-sfx">ВКЛЮЧЁН</button></div><div class="option-row"><span>КАМЕРА</span><span>КЛАВИШИ 1–4</span></div><button id="options-back" style="width:100%;margin-top:18px">← НАЗАД В МЕНЮ</button></div></div>
 <div id="overlay" class="hidden"><div class="panel"><h1>DRIVELLA</h1><p>VIOLET COAST // NIGHT DRIVE</p><p class="start">PRESS W / ↑ TO DRIVE</p><p>W FORWARD · S REVERSE · A/D STEER · SPACE HANDBRAKE</p></div></div>
 <script>
 (()=>{
 'use strict';
-const VERSION='v0.12.1',BUILD='023';
+const VERSION='v0.12.2',BUILD='024';
 const canvas=document.getElementById('scene'),gl=canvas.getContext('webgl',{antialias:true,alpha:true}),sun=document.getElementById('sun'),sctx=sun.getContext('2d');
 const $=id=>document.getElementById(id);
 const clamp=(v,a,b)=>Math.max(a,Math.min(b,v));
