@@ -87,13 +87,13 @@
 <body>
 <canvas id="scene"></canvas><canvas id="sun"></canvas>
 <div id="hud">
- <div class="top"><div class="logo">DRIVELLA<small>3D SYNTHWAVE DRIFT RACING</small></div><div class="version-label" id="version-label">v0.7.0 · BUILD 010</div><div class="stat">DISTANCE<b id="distance">000.0 KM</b></div><div class="stat">LOCATION<b>VIOLET COAST</b></div></div>
+ <div class="top"><div class="logo">DRIVELLA<small>3D SYNTHWAVE DRIFT RACING</small></div><div class="version-label" id="version-label">v0.8.0 · BUILD 011</div><div class="stat">DISTANCE<b id="distance">000.0 KM</b></div><div class="stat">LOCATION<b>VIOLET COAST</b></div></div>
  <div class="right"><div id="speed">000 <span>KM/H</span></div><div id="direction">▶ FORWARD</div><div id="music">♫ MUSIC SCANNING…</div></div>
  <div class="bottom"><div class="hint"><strong>W / ↑</strong> ACCELERATE　<strong>S / ↓</strong> BRAKE / REVERSE<br><strong>A / ←　D / →</strong> STEER　<strong>SPACE</strong> HANDBRAKE　<strong>M</strong> MUSIC　<strong>1–4</strong> CAMERA</div><div>3D NEON HIGHWAY // BUILD 009</div></div>
 </div>
 <div id="tools-ui"><button id="cam-prev" aria-label="Previous camera">◀</button><span id="cam-label">CAM 2 · CLOSE</span><button id="cam-next" aria-label="Next camera">▶</button><button id="debug-toggle">DEBUG</button></div>
 <div id="debug-panel"><div class="debug-title">DRIVELLA DIAGNOSTICS</div><div id="debug-data">Initializing…</div></div>
-<div id="boot-screen"><div class="boot-content"><div class="boot-kicker">NIGHT DRIVE SYSTEMS // INITIALIZING</div><div class="boot-logo">DRIVELLA</div><div class="boot-subtitle">3D SYNTHWAVE DRIFT RACING</div><div class="boot-mark"></div><div class="boot-status" id="boot-status">BUILDING THE 3D WORLD</div><div class="boot-track"><div class="boot-progress" id="boot-progress"></div></div><div class="boot-meta"><span>3D ENGINE ONLINE</span><span id="boot-percent">00%</span></div><div class="boot-footer">ENGINE STARTUP // v0.7.0 · BUILD 010</div></div></div>
+<div id="boot-screen"><div class="boot-content"><div class="boot-kicker">NIGHT DRIVE SYSTEMS // INITIALIZING</div><div class="boot-logo">DRIVELLA</div><div class="boot-subtitle">3D SYNTHWAVE DRIFT RACING</div><div class="boot-mark"></div><div class="boot-status" id="boot-status">BUILDING THE 3D WORLD</div><div class="boot-track"><div class="boot-progress" id="boot-progress"></div></div><div class="boot-meta"><span>3D ENGINE ONLINE</span><span id="boot-percent">00%</span></div><div class="boot-footer">ENGINE STARTUP // v0.8.0 · BUILD 011</div></div></div>
 <div id="main-menu"><div class="menu-content"><div class="menu-brand">DRIVELLA</div><div class="menu-sub">SYNTHWAVE DRIFT RACING</div><div class="menu-actions"><button class="menu-btn" id="menu-start">СТАРТ ИГРЫ</button><button class="menu-btn" id="menu-garage">ГАРАЖ</button><button class="menu-btn" id="menu-options">ОПЦИИ</button></div></div><div class="menu-footer">РАЗРАБОТЧИК — <b>НИКИТА МАРКИН</b></div></div>
 <div id="garage-screen"><div class="garage-head">ГАРАЖ // INFERNO GT</div><div class="garage-copy">ТЕКУЩИЙ АВТОМОБИЛЬ<br>INFERNO GT · CLASSIC SUPERCAR<br>ПОКАЖИ ЕЁ СО ВСЕХ СТОРОН</div><div class="garage-controls"><button id="garage-back">← НАЗАД В МЕНЮ</button></div><div class="garage-tip">ЗАЖМИ И ТЯНИ — ВРАЩЕНИЕ<br>КОЛЁСИКО — ПРИБЛИЗИТЬ / ОТДАЛИТЬ</div></div>
 <div id="options-screen"><div class="options-head">ОПЦИИ</div><div class="options-card"><div class="option-row"><span>МУЗЫКА</span><button id="option-music">ВКЛЮЧЕНА</button></div><div class="option-row"><span>ГРОМКОСТЬ</span><input id="option-volume" type="range" min="0" max="100" value="52"></div><div class="option-row"><span>ЗВУК ДВИГАТЕЛЯ</span><button id="option-sfx">ВКЛЮЧЁН</button></div><div class="option-row"><span>КАМЕРА</span><span>КЛАВИШИ 1–4</span></div><button id="options-back" style="width:100%;margin-top:18px">← НАЗАД В МЕНЮ</button></div></div>
@@ -101,7 +101,7 @@
 <script>
 (()=>{
 'use strict';
-const VERSION='v0.6.1',BUILD='009';
+const VERSION='v0.8.0',BUILD='011';
 const canvas=document.getElementById('scene'),gl=canvas.getContext('webgl',{antialias:true,alpha:true}),sun=document.getElementById('sun'),sctx=sun.getContext('2d');
 const $=id=>document.getElementById(id);
 let W=innerWidth,H=innerHeight,DPR=1;
@@ -434,26 +434,53 @@ function drawWorld(){
 }
 function drawSun(){
  sctx.clearRect(0,0,W,H);
- const x=W*.5,r=Math.min(W,H)*.235,y=H*.475;
- const halo=sctx.createRadialGradient(x,y,r*.12,x,y,r*2.05);halo.addColorStop(0,'rgba(255,222,170,.32)');halo.addColorStop(.34,'rgba(255,105,163,.22)');halo.addColorStop(.68,'rgba(181,65,255,.10)');halo.addColorStop(1,'rgba(255,40,150,0)');
- sctx.fillStyle=halo;sctx.fillRect(x-r*2.4,y-r*2.4,r*4.8,r*4.8);
- // Crisp circular sun with a warm cream-to-coral-to-magenta synthwave palette.
- sctx.save();sctx.shadowColor='#ff5da9';sctx.shadowBlur=46;
- const disk=sctx.createLinearGradient(x,y-r,x,y+r);
- disk.addColorStop(0,'#fff36b');disk.addColorStop(.24,'#ffd04a');disk.addColorStop(.48,'#ff963f');disk.addColorStop(.72,'#ff5b55');disk.addColorStop(1,'#e92c91');
- sctx.fillStyle=disk;sctx.beginPath();sctx.arc(x,y,r,0,Math.PI*2);sctx.fill();sctx.restore();
- // Fine upper rim and a soft inner reflection.
- sctx.save();sctx.beginPath();sctx.arc(x,y,r*.965,Math.PI*1.08,Math.PI*1.92);sctx.strokeStyle='rgba(255,255,238,.82)';sctx.lineWidth=Math.max(1.2,r*.018);sctx.shadowColor='#fff2cf';sctx.shadowBlur=16;sctx.stroke();sctx.restore();
- const reflection=sctx.createRadialGradient(x-r*.28,y-r*.36,1,x-r*.20,y-r*.23,r*.72);reflection.addColorStop(0,'rgba(255,255,255,.46)');reflection.addColorStop(1,'rgba(255,255,255,0)');
- sctx.save();sctx.beginPath();sctx.arc(x,y,r*.94,0,Math.PI*2);sctx.clip();sctx.fillStyle=reflection;sctx.fillRect(x-r,y-r,r*2,r*2);
- sctx.restore();
- // Small optical flares and a restrained horizontal lens streak.
- sctx.save();sctx.globalCompositeOperation='lighter';
- const streak=sctx.createLinearGradient(x-r*1.7,y,x+r*1.7,y);streak.addColorStop(0,'rgba(255,100,190,0)');streak.addColorStop(.5,'rgba(255,210,225,.42)');streak.addColorStop(1,'rgba(255,100,190,0)');
- sctx.fillStyle=streak;sctx.fillRect(x-r*1.7,y-1,W<600?1.5:2.2,r>0?2.2:1);
- for(const [dx,dy,rr,a] of [[-1.45,-.08,.018,.33],[1.38,.12,.024,.24],[-.92,.95,.012,.30],[.93,-.92,.013,.35]]){
-  const fx=x+dx*r,fy=y+dy*r,fr=r*rr;sctx.beginPath();sctx.arc(fx,fy,fr,0,Math.PI*2);sctx.fillStyle='rgba(255,220,239,'+a+')';sctx.shadowColor='#ff9bd5';sctx.shadowBlur=12;sctx.fill();
+ // The sun is a distant world landmark: camera yaw shifts it with the horizon.
+ const roadHeading=Math.atan((roadX(distance+90)-roadX(distance-30))/120);
+ const viewYaw=garageMode?0:carYaw+roadHeading;
+ const x=W*.5-viewYaw*W*.48;
+ const y=H*(cameraMode===0?.405:cameraMode===3?.445:.425);
+ const r=Math.min(W,H)*.245;
+ const pulse=.94+.06*Math.sin(performance.now()*.0007);
+ const halo=sctx.createRadialGradient(x,y,r*.12,x,y,r*2.35);
+ halo.addColorStop(0,'rgba(226,105,255,.34)');
+ halo.addColorStop(.28,'rgba(174,53,255,.24)');
+ halo.addColorStop(.62,'rgba(105,35,220,.12)');
+ halo.addColorStop(1,'rgba(80,20,180,0)');
+ sctx.save();sctx.globalCompositeOperation='screen';sctx.fillStyle=halo;sctx.fillRect(x-r*2.5,y-r*2.5,r*5,r*5);sctx.restore();
+ // Deep violet sphere with a luminous magenta crown and shaded lower hemisphere.
+ sctx.save();
+ sctx.shadowColor='#d52cff';sctx.shadowBlur=42*pulse;
+ const sphere=sctx.createRadialGradient(x-r*.34,y-r*.48,r*.025,x+r*.08,y+r*.12,r*1.18);
+ sphere.addColorStop(0,'#ffb7ff');sphere.addColorStop(.16,'#e879ff');
+ sphere.addColorStop(.38,'#a936f2');sphere.addColorStop(.68,'#5720b5');sphere.addColorStop(.88,'#28105f');sphere.addColorStop(1,'#12082f');
+ sctx.fillStyle=sphere;sctx.beginPath();sctx.arc(x,y,r,0,Math.PI*2);sctx.fill();sctx.restore();
+ // A subtle 3D rim and specular reflection make the disc read as a sphere.
+ sctx.save();sctx.beginPath();sctx.arc(x,y,r*.975,Math.PI*1.08,Math.PI*1.92);
+ sctx.strokeStyle='rgba(255,194,255,.9)';sctx.lineWidth=Math.max(1.5,r*.014);
+ sctx.shadowColor='#f05bff';sctx.shadowBlur=18;sctx.stroke();sctx.restore();
+ sctx.save();sctx.beginPath();sctx.arc(x,y,r*.94,0,Math.PI*2);sctx.clip();
+ const sheen=sctx.createRadialGradient(x-r*.30,y-r*.43,1,x-r*.18,y-r*.20,r*.82);
+ sheen.addColorStop(0,'rgba(255,244,255,.42)');sheen.addColorStop(.28,'rgba(255,160,255,.13)');sheen.addColorStop(1,'rgba(255,100,255,0)');
+ sctx.fillStyle=sheen;sctx.fillRect(x-r,y-r,r*2,r*2);
+ // Classic synthwave cut-lines, clipped to the sphere; wider gaps toward the bottom.
+ const bands=[[-.34,.025],[-.22,.035],[-.075,.048],[.105,.064],[.33,.082],[.60,.105]];
+ sctx.globalCompositeOperation='destination-out';
+ for(const [yy,hh] of bands){const yy0=y+yy*r,h=hh*r;sctx.fillRect(x-r,yy0-h*.5,r*2,h);}
+ sctx.globalCompositeOperation='screen';
+ for(const [yy,hh] of bands){
+  const yy0=y+yy*r,h=hh*r;
+  const glow=sctx.createLinearGradient(x-r,yy0-h*.5,x+r,yy0+h*.5);
+  glow.addColorStop(0,'rgba(255,90,255,0)');glow.addColorStop(.5,'rgba(255,130,255,.22)');glow.addColorStop(1,'rgba(255,90,255,0)');
+  sctx.fillStyle=glow;sctx.fillRect(x-r,yy0-h*.5,r*2,h);
  }
+ sctx.restore();
+ // Thin atmospheric corona and a restrained lens flare.
+ sctx.save();sctx.globalCompositeOperation='screen';
+ sctx.beginPath();sctx.arc(x,y,r*1.055,0,Math.PI*2);sctx.strokeStyle='rgba(222,105,255,.42)';
+ sctx.lineWidth=Math.max(1,r*.012);sctx.shadowColor='#d82cff';sctx.shadowBlur=22;sctx.stroke();
+ const streak=sctx.createLinearGradient(x-r*1.8,y,x+r*1.8,y);
+ streak.addColorStop(0,'rgba(220,70,255,0)');streak.addColorStop(.5,'rgba(238,145,255,.28)');streak.addColorStop(1,'rgba(220,70,255,0)');
+ sctx.fillStyle=streak;sctx.fillRect(x-r*1.8,y-1.2,r*3.6,2.4);
  sctx.restore();
 }
 function updateDebug(dt){
