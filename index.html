@@ -60,18 +60,18 @@
 <body>
 <canvas id="scene"></canvas><canvas id="sun"></canvas>
 <div id="hud">
- <div class="top"><div class="logo">DRIVELLA<small>3D SYNTHWAVE DRIFT RACING</small></div><div class="version-label" id="version-label">v0.3.1 · BUILD 004</div><div class="stat">DISTANCE<b id="distance">000.0 KM</b></div><div class="stat">LOCATION<b>VIOLET COAST</b></div></div>
+ <div class="top"><div class="logo">DRIVELLA<small>3D SYNTHWAVE DRIFT RACING</small></div><div class="version-label" id="version-label">v0.3.2 · BUILD 005</div><div class="stat">DISTANCE<b id="distance">000.0 KM</b></div><div class="stat">LOCATION<b>VIOLET COAST</b></div></div>
  <div class="right"><div id="speed">000 <span>KM/H</span></div><div id="direction">▶ FORWARD</div><div id="music">♫ MUSIC OFF</div></div>
- <div class="bottom"><div class="hint"><strong>W / ↑</strong> ACCELERATE　<strong>S / ↓</strong> BRAKE / REVERSE<br><strong>A / ←　D / →</strong> STEER　<strong>SPACE</strong> NITRO　<strong>M</strong> MUSIC　<strong>1–4</strong> CAMERA</div><div>3D NEON HIGHWAY // BUILD 004</div></div>
+ <div class="bottom"><div class="hint"><strong>W / ↑</strong> ACCELERATE　<strong>S / ↓</strong> BRAKE / REVERSE<br><strong>A / ←　D / →</strong> STEER　<strong>SPACE</strong> NITRO　<strong>M</strong> MUSIC　<strong>1–4</strong> CAMERA</div><div>3D NEON HIGHWAY // BUILD 005</div></div>
 </div>
 <div id="tools-ui"><button id="cam-prev" aria-label="Previous camera">◀</button><span id="cam-label">CAM 2 · CLOSE</span><button id="cam-next" aria-label="Next camera">▶</button><button id="debug-toggle">DEBUG</button></div>
 <div id="debug-panel"><div class="debug-title">DRIVELLA DIAGNOSTICS</div><div id="debug-data">Initializing…</div></div>
-<div id="boot-screen"><div class="boot-content"><div class="boot-kicker">NIGHT DRIVE SYSTEMS // INITIALIZING</div><div class="boot-logo">DRIVELLA</div><div class="boot-subtitle">3D SYNTHWAVE DRIFT RACING</div><div class="boot-mark"></div><div class="boot-status" id="boot-status">BUILDING THE 3D WORLD</div><div class="boot-track"><div class="boot-progress" id="boot-progress"></div></div><div class="boot-meta"><span>3D ENGINE ONLINE</span><span id="boot-percent">00%</span></div><div class="boot-footer">ENGINE STARTUP // v0.3.1 · BUILD 004</div></div></div>
+<div id="boot-screen"><div class="boot-content"><div class="boot-kicker">NIGHT DRIVE SYSTEMS // INITIALIZING</div><div class="boot-logo">DRIVELLA</div><div class="boot-subtitle">3D SYNTHWAVE DRIFT RACING</div><div class="boot-mark"></div><div class="boot-status" id="boot-status">BUILDING THE 3D WORLD</div><div class="boot-track"><div class="boot-progress" id="boot-progress"></div></div><div class="boot-meta"><span>3D ENGINE ONLINE</span><span id="boot-percent">00%</span></div><div class="boot-footer">ENGINE STARTUP // v0.3.2 · BUILD 005</div></div></div>
 <div id="overlay"><div class="panel"><h1>DRIVELLA</h1><p>VIOLET COAST // NIGHT DRIVE</p><p class="start">PRESS W / ↑ TO DRIVE</p><p>W FORWARD · S REVERSE · A/D STEER · SPACE NITRO</p></div></div>
 <script>
 (()=>{
 'use strict';
-const VERSION='v0.3.1',BUILD='004';
+const VERSION='v0.3.2',BUILD='005';
 const canvas=document.getElementById('scene'),gl=canvas.getContext('webgl',{antialias:true,alpha:true}),sun=document.getElementById('sun'),sctx=sun.getContext('2d');
 const $=id=>document.getElementById(id);
 let W=innerWidth,H=innerHeight,DPR=1;
@@ -124,12 +124,12 @@ function makeLoft(sections){
 }
 function quad(a,b,c,d){return mesh([...a,...b,...c,...a,...c,...d]);}
 const bodyMesh=makeLoft([
- {z:-2.35,w:.96,tw:.78,y0:.17,ym:.55,yt:.64},
- {z:-1.85,w:1.18,tw:.94,y0:.16,ym:.65,yt:.76},
- {z:-.85,w:1.22,tw:1.00,y0:.16,ym:.68,yt:.73},
- {z:.55,w:1.28,tw:1.07,y0:.16,ym:.65,yt:.68},
- {z:1.55,w:1.31,tw:1.02,y0:.15,ym:.58,yt:.60},
- {z:2.30,w:1.08,tw:.78,y0:.15,ym:.48,yt:.50}
+ {z:-2.42,w:1.04,tw:.83,y0:.16,ym:.57,yt:.65},
+ {z:-1.92,w:1.34,tw:1.02,y0:.16,ym:.70,yt:.80},
+ {z:-.92,w:1.39,tw:1.08,y0:.16,ym:.72,yt:.77},
+ {z:.48,w:1.31,tw:1.02,y0:.16,ym:.66,yt:.69},
+ {z:1.58,w:1.22,tw:.94,y0:.15,ym:.58,yt:.60},
+ {z:2.36,w:1.02,tw:.78,y0:.15,ym:.47,yt:.50}
 ]);
 const cabinMesh=makeLoft([
  {z:-1.32,w:.76,tw:.58,y0:.66,ym:1.02,yt:1.39},
@@ -144,10 +144,13 @@ const sideGlassR=quad([.885,.78,.73],[.885,.78,-1.12],[.695,1.34,-.82],[.695,1.3
 const C={
  ground:[.025,.025,.065,1],grid:[.09,.34,.48,.72],grid2:[.34,.10,.40,.55],
  road:[.055,.055,.105,1],road2:[.075,.07,.13,1],pink:[1,.13,.60,1],cyan:[.20,.88,1,1],white:[.92,.96,1,1],
- body:[.48,.055,.105,1],bodyLight:[.78,.105,.16,1],glass:[.018,.085,.14,1],trim:[.025,.025,.045,1],
- tire:[.012,.014,.022,1],hub:[.18,.68,.77,1],city:[.085,.045,.12,1],mount:[.08,.045,.14,1]
+ body:[.72,.025,.075,1],bodyLight:[1,.16,.20,1],glass:[.012,.075,.12,1],trim:[.018,.022,.035,1],
+ tire:[.012,.014,.022,1],hub:[.78,.53,.25,1],city:[.085,.045,.12,1],mount:[.08,.045,.14,1]
 };
-let keys={},started=false,speed=0,playerX=0,steer=0,distance=0,boost=0,last=performance.now(),musicOn=false,track=0,audio=null;
+let keys={},started=false,speed=0,playerX=0,steer=0,bodyRoll=0,distance=0,boost=0,last=performance.now(),musicOn=false,track=0,audio=null;
+// One axis convention shared by controls, car movement, body lean and indicators.
+const STEER_AXIS=Object.freeze({left:-1,right:1,screenRight:1,bodyLean:-1});
+function readSteeringInput(){return (keys.d||keys.arrowright?STEER_AXIS.right:0)+(keys.a||keys.arrowleft?STEER_AXIS.left:0);}
 let cameraMode=1,debugVisible=false,drawCalls=0,fps=0,fpsFrames=0,fpsTime=0,debugTime=0,bootDone=false;
 const CAMERA_NAMES=['HOOD / FIRST PERSON','CLOSE CHASE','WIDE CHASE','LOW CHASE'];
 function setCamera(n){cameraMode=(n+4)%4;$('cam-label').textContent='CAM '+(cameraMode+1)+' · '+['HOOD','CLOSE','WIDE','LOW'][cameraMode];}
@@ -175,12 +178,11 @@ function draw(shape,x,y,z,sx,sy,sz,color,yaw=0,roll=0){
  gl.uniformMatrix4fv(loc.model,false,new Float32Array(model));gl.uniform4fv(loc.color,color);gl.bindBuffer(gl.ARRAY_BUFFER,shape.b);gl.enableVertexAttribArray(loc.p);gl.vertexAttribPointer(loc.p,3,gl.FLOAT,false,0,0);gl.drawArrays(gl.TRIANGLES,0,shape.n);drawCalls++;
 }
 function drawCarPart(cx,cz,x,y,z,sx,sy,sz,color,yaw=0,shape=cube){
- let partRotation=shape===wheel?matMul(rotateY(yaw),rotateZ(Math.PI/2)):rotateY(yaw);
- const model=matMul(translate(cx,0,cz),matMul(rotateY(yaw),matMul(rotateZ(steer*.105),matMul(translate(x,y,z),matMul(shape===wheel?rotateZ(Math.PI/2):matIdentity(),scale(sx,sy,sz))))));
+ const model=matMul(translate(cx,0,cz),matMul(rotateY(yaw),matMul(rotateZ(bodyRoll),matMul(translate(x,y,z),matMul(shape===wheel?rotateZ(Math.PI/2):matIdentity(),scale(sx,sy,sz))))));
  gl.uniformMatrix4fv(loc.model,false,new Float32Array(model));gl.uniform4fv(loc.color,color);gl.bindBuffer(gl.ARRAY_BUFFER,shape.b);gl.enableVertexAttribArray(loc.p);gl.vertexAttribPointer(loc.p,3,gl.FLOAT,false,0,0);gl.drawArrays(gl.TRIANGLES,0,shape.n);drawCalls++;
 }
 function drawCarMesh(shape,cx,cz,color,yaw=0){
- const model=matMul(translate(cx,0,cz),matMul(rotateY(yaw),matMul(rotateZ(steer*.105),matIdentity())));
+ const model=matMul(translate(cx,0,cz),matMul(rotateY(yaw),matMul(rotateZ(bodyRoll),matIdentity())));
  gl.uniformMatrix4fv(loc.model,false,new Float32Array(model));gl.uniform4fv(loc.color,color);gl.bindBuffer(gl.ARRAY_BUFFER,shape.b);gl.enableVertexAttribArray(loc.p);gl.vertexAttribPointer(loc.p,3,gl.FLOAT,false,0,0);gl.drawArrays(gl.TRIANGLES,0,shape.n);drawCalls++;
 }
 function matIdentity(){return [1,0,0,0,0,1,0,0,0,0,1,0,0,0,0,1];}
@@ -254,7 +256,7 @@ function drawWorld(){
   draw(cube,tx,1.75,tz,.78,1.02,.78,[.035,.22,.20,1]);
   draw(cube,tx,2.55,tz,.53,.72,.53,[.04,.31,.27,1]);
  }
- // NIGHT INTERCEPTOR: wider, sharp-edged 80s sports coupe with a clean red/graphite silhouette.
+ // VESPER GT: wider, sharp-edged 80s sports coupe with a clean red/graphite silhouette.
  const yaw=steer*.11,roll=-steer*.105;
  drawCarMesh(bodyMesh,carX,carZ,C.body,yaw);
  // Hood facets and center power bulge.
@@ -287,6 +289,21 @@ function drawWorld(){
    drawCarPart(carX,carZ,side*1.32,.43,wz,.25,.055,.25,C.hub,yaw,wheel);
    drawCarPart(carX,carZ,side*1.355,.43,wz,.13,.025,.13,C.trim,yaw,wheel);
   }
+ }
+ // VESPER GT signature: recessed side intakes with four crisp floating strakes per side.
+ for(const side of [-1,1]){
+  drawCarPart(carX,carZ,side*1.275,.69,-.38,.035,.235,.70,C.trim,yaw);
+  for(let fin=0;fin<4;fin++)drawCarPart(carX,carZ,side*1.315,.69,-.88+fin*.34,.055,.035,.255,C.bodyLight,yaw);
+  drawCarPart(carX,carZ,side*1.30,.72,-1.55,.035,.035,.48,[1,.30,.24,1],yaw);
+ }
+ // Six engine-cover louvers, twin exhausts and a narrow rear light signature.
+ for(let fin=0;fin<6;fin++)drawCarPart(carX,carZ,0,.735,-.62+fin*.19,.73,.018,.055,C.trim,yaw);
+ for(const side of [-1,1])drawCarPart(carX,carZ,side*.53,.245,-2.43,.17,.075,.07,C.hub,yaw);
+ drawCarPart(carX,carZ,0,.59,-2.425,.58,.045,.035,[1,.08,.19,1],yaw);
+ // Front lamps: twin projector strips under a sharp brow.
+ for(const side of [-1,1]){
+  drawCarPart(carX,carZ,side*.72,.49,2.12,.30,.07,.055,[.84,.96,1,1],yaw);
+  drawCarPart(carX,carZ,side*.72,.57,2.08,.34,.025,.045,C.trim,yaw);
  }
  // Front headlights are on +Z; rear lamps are on -Z, with amber indicators at the outer corners.
  drawCarPart(carX,carZ,-.73,.48,2.05,.25,.085,.055,[.88,.96,1,1],yaw);
@@ -349,7 +366,7 @@ function updateDebug(dt){
    '<strong>CAMERA</strong> '+(cameraMode+1)+' / 4 — '+CAMERA_NAMES[cameraMode]+'<br>'+
    '<strong>SPEED</strong> '+speed.toFixed(1)+' km/h<br>'+
    '<strong>WORLD Z</strong> '+distance.toFixed(2)+'<br>'+
-   '<strong>STEER / X</strong> '+steer.toFixed(2)+' / '+playerX.toFixed(2)+'<br>'+
+   '<strong>STEER / X / ROLL</strong> '+steer.toFixed(2)+' / '+playerX.toFixed(2)+' / '+bodyRoll.toFixed(3)+'<br>'+
    '<strong>WEBGL</strong> '+(gl.getParameter(gl.VERSION)||'OK')+'<br>'+
    '<strong>RESOLUTION</strong> '+canvas.width+' × '+canvas.height;
  }
@@ -361,9 +378,10 @@ function frame(now){
   if(up)speed+=58*dt;else if(down)speed-=78*dt;else speed*=Math.pow(.985,dt*60);
   if(nitro&&speed>20){boost=Math.min(1,boost+dt*2.4);speed+=72*dt;}else boost=Math.max(0,boost-dt*2);
   speed=clamp(speed,-75,310);
-  const steerInput=(right?1:0)-(left?1:0);
+  const steerInput=readSteeringInput();
   steer+=(steerInput-steer)*Math.min(1,dt*5.5);
-  playerX=clamp(playerX+steer*dt*(.75+Math.abs(speed)/145),-4.5,4.5);
+  bodyRoll+=((STEER_AXIS.bodyLean*steer*.14)-bodyRoll)*Math.min(1,dt*7);
+  playerX=clamp(playerX+steer*STEER_AXIS.screenRight*dt*(.75+Math.abs(speed)/145),-4.5,4.5);
   distance+=speed*dt*.12;
  }
  drawWorld();drawSun();updateDebug(dt);
@@ -373,7 +391,7 @@ function frame(now){
  requestAnimationFrame(frame);
 }
 resize();setCamera(1);requestAnimationFrame(frame);
-const bootSteps=[[20,'BUILDING THE 3D WORLD'],[42,'ASSEMBLING NIGHT INTERCEPTOR'],[68,'CALIBRATING THE ROAD GRID'],[88,'TUNING THE CAMERA SYSTEM'],[100,'THE ROAD IS YOURS']];
+const bootSteps=[[20,'BUILDING THE 3D WORLD'],[42,'ASSEMBLING VESPER GT'],[68,'CALIBRATING THE ROAD GRID'],[88,'TUNING THE CAMERA SYSTEM'],[100,'THE ROAD IS YOURS']];
 let bootStart=performance.now();
 function bootFrame(now){
  let t=clamp((now-bootStart)/2600,0,1),p=Math.round((1-Math.pow(1-t,2))*100),step=bootSteps[0];
