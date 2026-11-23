@@ -87,7 +87,7 @@
 <body>
 <canvas id="scene"></canvas><canvas id="sun"></canvas>
 <div id="hud">
- <div class="top"><div class="logo">DRIVELLA<small>3D SYNTHWAVE DRIFT RACING</small></div><div class="version-label" id="version-label">v0.11.0 · BUILD 019</div><div class="stat">DISTANCE<b id="distance">000.0 KM</b></div><div class="stat">LOCATION<b>VIOLET COAST</b></div></div>
+ <div class="top"><div class="logo">DRIVELLA<small>3D SYNTHWAVE DRIFT RACING</small></div><div class="version-label" id="version-label">v0.11.1 · BUILD 020</div><div class="stat">DISTANCE<b id="distance">000.0 KM</b></div><div class="stat">LOCATION<b>VIOLET COAST</b></div></div>
  <div class="right"><div id="speed">000 <span>KM/H</span></div><div id="direction">▶ FORWARD</div><div id="music">♫ MUSIC SCANNING…</div></div>
  <div class="bottom"><div class="hint"><strong>W / ↑</strong> ACCELERATE　<strong>S / ↓</strong> BRAKE / REVERSE<br><strong>A / ←　D / →</strong> STEER　<strong>SPACE</strong> HANDBRAKE　<strong>M</strong> MUSIC　<strong>1–4</strong> CAMERA</div><div>3D NEON HIGHWAY // BUILD 009</div></div>
 </div>
@@ -101,7 +101,7 @@
 <script>
 (()=>{
 'use strict';
-const VERSION='v0.11.0',BUILD='019';
+const VERSION='v0.11.1',BUILD='020';
 const canvas=document.getElementById('scene'),gl=canvas.getContext('webgl',{antialias:true,alpha:true}),sun=document.getElementById('sun'),sctx=sun.getContext('2d');
 const $=id=>document.getElementById(id);
 const clamp=(v,a,b)=>Math.max(a,Math.min(b,v));
@@ -231,10 +231,11 @@ function makeWheelArch(center,side){
  }return mesh(out);
 }
 function sideRibbon(side,points,width){
- const out=[],x=side*1.115;
+ const out=[];
  for(let i=0;i<points.length-1;i++){
-  const a=points[i],b=points[i+1],dz=b[1]-a[1],dy=b[0]-a[0],len=Math.hypot(dz,dy)||1,ny=dz/len*width*.5,nz=-dy/len*width*.5;
-  out.push(x,a[0]+ny,a[1]+nz,x,a[0]-ny,a[1]-nz,x,b[0]-ny,b[1]-nz,x,a[0]+ny,a[1]+nz,x,b[0]-ny,b[1]-nz,x,b[0]+ny,b[1]+nz);
+  const a=points[i],b=points[i+1],dz=b[1]-a[1],dy=b[0]-a[0],len=Math.hypot(dz,dy)||1,ny=dz/len*width*.5,nz=-dy/len*width*.5,xa=side*a[2],xb=side*b[2];
+  out.push(xa,a[0]+ny,a[1]+nz,xa,a[0]-ny,a[1]-nz,xb,b[0]-ny,b[1]-nz,
+           xa,a[0]+ny,a[1]+nz,xb,b[0]-ny,b[1]-nz,xb,b[0]+ny,b[1]+nz);
  }return mesh(out);
 }
 // Scaled 1.25x from the design sheet: 5.75 x 2.475 x 1.40 game units.
@@ -269,20 +270,20 @@ const sideGlassLF=quad([-.50,.91,1.00],[-.34,1.29,.29],[-.62,1.30,-.70],[-.74,.9
 const sideGlassLR=quad([-.74,.91,-.84],[-.62,1.30,-.76],[-.35,1.23,-1.38],[-.64,.79,-1.66]);
 const sideGlassRF=quad([.50,.91,1.00],[.74,.91,-.78],[.62,1.30,-.70],[.34,1.29,.29]);
 const sideGlassRR=quad([.74,.91,-.84],[.64,.79,-1.66],[.35,1.23,-1.38],[.62,1.30,-.76]);
-const intakeUpperL=quad([-1.16,.83,-.76],[-1.16,.83,-1.26],[-1.16,.55,-1.18],[-1.16,.55,-.86]);
-const intakeUpperR=quad([1.16,.83,-.76],[1.16,.55,-.86],[1.16,.55,-1.18],[1.16,.83,-1.26]);
-const intakeLowerL=quad([-1.15,.46,-.88],[-1.15,.46,-1.20],[-1.15,.31,-1.14],[-1.15,.31,-.96]);
-const intakeLowerR=quad([1.15,.46,-.88],[1.15,.31,-.96],[1.15,.31,-1.14],[1.15,.46,-1.20]);
-const doorSeamL=sideRibbon(-1,[[.78,.85],[.72,-.68],[.40,-.78],[.39,.82]],.018);
-const doorSeamR=sideRibbon(1,[[.78,.85],[.39,.82],[.40,-.78],[.72,-.68]],.018);
-const frontLampL=quad([-.98,.75,2.66],[-.58,.75,2.70],[-.58,.66,2.72],[-.98,.66,2.68]);
-const frontLampR=quad([.98,.75,2.66],[.98,.66,2.68],[.58,.66,2.72],[.58,.75,2.70]);
-const frontLampCoreL=quad([-.91,.72,2.685],[-.62,.72,2.714],[-.62,.69,2.716],[-.91,.69,2.69]);
-const frontLampCoreR=quad([.91,.72,2.685],[.91,.69,2.69],[.62,.69,2.716],[.62,.72,2.714]);
+const intakeUpperL=quad([-1.00,.83,-.76],[-1.02,.83,-1.26],[-1.14,.55,-1.18],[-1.14,.55,-.86]);
+const intakeUpperR=quad([1.00,.83,-.76],[1.14,.55,-.86],[1.14,.55,-1.18],[1.02,.83,-1.26]);
+const intakeLowerL=quad([-1.14,.46,-.88],[-1.14,.46,-1.20],[-1.12,.31,-1.14],[-1.12,.31,-.96]);
+const intakeLowerR=quad([1.14,.46,-.88],[1.12,.31,-.96],[1.12,.31,-1.14],[1.14,.46,-1.20]);
+const doorSeamL=sideRibbon(-1,[[.78,.85,.95],[.72,-.68,1.03],[.40,-.78,1.12],[.39,.82,1.12]],.018);
+const doorSeamR=sideRibbon(1,[[.78,.85,.95],[.39,.82,1.12],[.40,-.78,1.12],[.72,-.68,1.03]],.018);
+const frontLampL=quad([-.86,.75,2.66],[-.52,.75,2.70],[-.52,.66,2.72],[-.86,.66,2.68]);
+const frontLampR=quad([.86,.75,2.66],[.86,.66,2.68],[.52,.66,2.72],[.52,.75,2.70]);
+const frontLampCoreL=quad([-.82,.72,2.685],[-.56,.72,2.714],[-.56,.69,2.716],[-.82,.69,2.69]);
+const frontLampCoreR=quad([.82,.72,2.685],[.82,.69,2.69],[.56,.69,2.716],[.56,.72,2.714]);
 const frontIntake=quad([-.58,.48,2.80],[.58,.48,2.80],[.48,.25,2.84],[-.48,.25,2.84]);
 const rearLampL=quad([-.96,.75,-2.73],[-.10,.75,-2.78],[-.10,.59,-2.78],[-.96,.59,-2.73]);
 const rearLampR=quad([.96,.75,-2.73],[.96,.59,-2.73],[.10,.59,-2.78],[.10,.75,-2.78]);
-const rearVent=quad([-.56,.77,-2.80],[.56,.77,-2.80],[.52,.48,-2.82],[-.52,.48,-2.82]);
+const rearVent=quad([-.54,.69,-2.76],[.54,.69,-2.76],[.50,.43,-2.80],[-.50,.43,-2.80]);
 const C={
  ground:[.025,.025,.065,1],grid:[.09,.34,.48,.72],grid2:[.34,.10,.40,.55],
  road:[.055,.055,.105,1],road2:[.075,.07,.13,1],pink:[1,.13,.60,1],cyan:[.20,.88,1,1],white:[.92,.96,1,1],
