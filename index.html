@@ -301,7 +301,7 @@ function updateCarAudio(){
 }
 const clamp=(v,a,b)=>Math.max(a,Math.min(b,v));
 // Seeded procedural road: linked waypoints form long, varied bends.
-const roadWaypoints=[0];let roadSeed=0x51f15e;
+const roadWaypoints=[0];let roadSeed=(Math.random()*4294967296)>>>0;
 function roadRand(){roadSeed=(roadSeed*1664525+1013904223)>>>0;return roadSeed/4294967296;}
 for(let i=1;i<=2400;i++)roadWaypoints.push(clamp(roadWaypoints[i-1]+(roadRand()-.5)*27,-34,34));
 function roadX(z){z=Math.max(0,z);const seg=Math.floor(z/170),t=(z-seg*170)/170,a=roadWaypoints[clamp(seg,0,roadWaypoints.length-1)]||0,b=roadWaypoints[clamp(seg+1,0,roadWaypoints.length-1)]||a,u=t*t*(3-2*t);return a+(b-a)*u;}
