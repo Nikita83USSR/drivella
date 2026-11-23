@@ -113,14 +113,25 @@ function resize(){
 }
 addEventListener('resize',resize);
 if(!gl){$('boot-status').textContent='WEBGL NOT AVAILABLE';throw new Error('WebGL unavailable');}
-const vs='attribute vec3 p;uniform mat4 vp;uniform mat4 model;void main(){gl_Position=vp*model*vec4(p,1.0);}';
-const fs='precision mediump float;uniform vec4 color;void main(){gl_FragColor=color;}';
+const vs='attribute vec3 p;attribute vec3 normal;uniform mat4 vp;uniform mat4 model;varying float vLight;void main(){vec3 N=normalize(mat3(model)*normal);vec3 L=normalize(vec3(-.38,.84,.39));vLight=.76+.24*abs(dot(N,L));gl_Position=vp*model*vec4(p,1.0);}';
+const fs='precision mediump float;uniform vec4 color;varying float vLight;void main(){gl_FragColor=vec4(color.rgb*vLight,color.a);}';
 function shader(type,src){const s=gl.createShader(type);gl.shaderSource(s,src);gl.compileShader(s);if(!gl.getShaderParameter(s,gl.COMPILE_STATUS))throw new Error(gl.getShaderInfoLog(s));return s;}
 const prog=gl.createProgram();gl.attachShader(prog,shader(gl.VERTEX_SHADER,vs));gl.attachShader(prog,shader(gl.FRAGMENT_SHADER,fs));gl.linkProgram(prog);
 if(!gl.getProgramParameter(prog,gl.LINK_STATUS))throw new Error(gl.getProgramInfoLog(prog));
 gl.useProgram(prog);
-const loc={p:gl.getAttribLocation(prog,'p'),vp:gl.getUniformLocation(prog,'vp'),model:gl.getUniformLocation(prog,'model'),color:gl.getUniformLocation(prog,'color')};
-function mesh(data){const b=gl.createBuffer();gl.bindBuffer(gl.ARRAY_BUFFER,b);gl.bufferData(gl.ARRAY_BUFFER,new Float32Array(data),gl.STATIC_DRAW);return {b,n:data.length/3};}
+const loc={p:gl.getAttribLocation(prog,'p'),normal:gl.getAttribLocation(prog,'normal'),vp:gl.getUniformLocation(prog,'vp'),model:gl.getUniformLocation(prog,'model'),color:gl.getUniformLocation(prog,'color')};
+function mesh(data){
+ const normals=new Float32Array(data.length);
+ for(let i=0;i<data.length;i+=9){
+  const ax=data[i],ay=data[i+1],az=data[i+2],bx=data[i+3],by=data[i+4],bz=data[i+5],cx=data[i+6],cy=data[i+7],cz=data[i+8];
+  const ux=bx-ax,uy=by-ay,uz=bz-az,vx=cx-ax,vy=cy-ay,vz=cz-az;
+  let nx=uy*vz-uz*vy,ny=uz*vx-ux*vz,nz=ux*vy-uy*vx,l=Math.hypot(nx,ny,nz)||1;nx/=l;ny/=l;nz/=l;
+  for(let j=0;j<3;j++){normals[i+j*3]=nx;normals[i+j*3+1]=ny;normals[i+j*3+2]=nz;}
+ }
+ const b=gl.createBuffer();gl.bindBuffer(gl.ARRAY_BUFFER,b);gl.bufferData(gl.ARRAY_BUFFER,new Float32Array(data),gl.STATIC_DRAW);
+ const nb=gl.createBuffer();gl.bindBuffer(gl.ARRAY_BUFFER,nb);gl.bufferData(gl.ARRAY_BUFFER,normals,gl.STATIC_DRAW);
+ return {b,nb,n:data.length/3};
+}
 const cube=mesh([
 -1,-1,-1,1,-1,-1,1,1,-1,-1,-1,-1,1,1,-1,-1,1,-1,
 -1,-1,1,1,1,1,1,-1,1,-1,-1,1,-1,1,1,1,1,1,
@@ -130,7 +141,7 @@ const cube=mesh([
 -1,-1,-1,-1,-1,1,1,-1,1,-1,-1,-1,1,-1,1,1,-1,-1
 ]);
 function cylinder(){
- let a=[],n=20;
+ let a=[],n=40;
  for(let i=0;i<n;i++){
   const p=i*2*Math.PI/n,q=(i+1)*2*Math.PI/n,x=Math.cos(p),z=Math.sin(p),X=Math.cos(q),Z=Math.sin(q);
   a.push(x,-1,z,X,-1,Z,X,1,Z,x,-1,z,X,1,Z,x,1,z);
@@ -173,39 +184,58 @@ function drawBiome(z,weight,type){
   }
  }
 }
-function makeLoft(sections){
- const out=[],N=6,rings=sections.map(s=>[
-  [-s.w,s.y0,s.z],[s.w,s.y0,s.z],[s.w*.94,s.ym,s.z],[s.tw,s.yt,s.z],[-s.tw,s.yt,s.z],[-s.w*.94,s.ym,s.z]
- ]);
- const tri=(a,b,c)=>out.push(...a,...b,...c);
- for(let i=0;i<rings.length-1;i++)for(let j=0;j<N;j++){
-  const a=rings[i][j],b=rings[i][(j+1)%N],c=rings[i+1][j],d=rings[i+1][(j+1)%N];
-  tri(a,c,d);tri(a,d,b);
- }
- const cap=(ring,reverse)=>{const center=[0,ring.reduce((v,p)=>v+p[1],0)/N,ring[0][2]];for(let j=0;j<N;j++){const a=ring[j],b=ring[(j+1)%N];if(reverse)tri(center,b,a);else tri(center,a,b);}};
- cap(rings[0],true);cap(rings[rings.length-1],false);
- return mesh(out);
-}
 function quad(a,b,c,d){return mesh([...a,...b,...c,...a,...c,...d]);}
-const bodyMesh=makeLoft([
- // Long low wedge nose (+Z), pinched front fenders and muscular rear haunches (-Z).
- {z:-2.62,w:1.20,tw:.91,y0:.15,ym:.59,yt:.68},
- {z:-2.02,w:1.48,tw:1.13,y0:.15,ym:.73,yt:.82},
- {z:-1.10,w:1.47,tw:1.12,y0:.15,ym:.72,yt:.78},
- {z:.10,w:1.31,tw:1.00,y0:.15,ym:.60,yt:.65},
- {z:1.45,w:1.13,tw:.86,y0:.13,ym:.48,yt:.53},
- {z:2.72,w:.91,tw:.69,y0:.12,ym:.34,yt:.39}
-]);
-const cabinMesh=makeLoft([
- {z:-1.78,w:.70,tw:.52,y0:.64,ym:.91,yt:1.18},
- {z:-1.20,w:.82,tw:.63,y0:.62,ym:1.02,yt:1.34},
- {z:.12,w:.80,tw:.62,y0:.56,ym:.99,yt:1.31},
- {z:.92,w:.67,tw:.51,y0:.48,ym:.82,yt:1.08}
-]);
-const windshield=quad([-.57,1.12,.94],[.57,1.12,.94],[.78,.57,1.52],[-.78,.57,1.52]);
-const rearGlass=quad([-.55,1.12,-1.76],[.55,1.12,-1.76],[.76,.65,-1.20],[-.76,.65,-1.20]);
-const sideGlassL=quad([-.82,.65,-1.38],[-.82,.59,.62],[-.65,1.08,.28],[-.65,1.08,-1.08]);
-const sideGlassR=quad([.82,.59,.62],[.82,.65,-1.38],[.65,1.08,-1.08],[.65,1.08,.28]);
+function profileValue(z,keys){let i=0;while(i<keys.length-2&&z>keys[i+1].z)i++;const a=keys[i],b=keys[i+1],t=clamp((z-a.z)/(b.z-a.z),0,1),u=t*t*(3-2*t),o={z};for(const k of ['w','floor','side','mid','shoulder','upper','top'])o[k]=a[k]+(b[k]-a[k])*u;return o;}
+function makeCarHull(keys,wheelArches=false){
+ const out=[],z0=keys[0].z,z1=keys[keys.length-1].z,steps=Math.ceil((z1-z0)/.105),N=16,rings=[];
+ const archEdge=(z,center)=>{const d=Math.abs(z-center),r=.49,base=.34;if(d<=r)return .46+Math.sqrt(Math.max(0,r*r-d*d))+.045;if(d>=r+.18)return base;const t=(d-r)/.18,u=t*t*(3-2*t);return (.46+.045)*(1-u)+base*u;};
+ for(let i=0;i<=steps;i++){
+  const z=z0+(z1-z0)*i/steps,p=profileValue(z,keys);let side=p.side;if(wheelArches)side=Math.max(side,archEdge(z,-1.66),archEdge(z,1.66));
+  const w=p.w,pts=[[0,p.floor,z],[w*.42,p.floor,z],[w*.80,p.floor,z],[w*.96,side,z],[w,p.mid,z],[w*.98,p.shoulder,z],[w*.82,p.upper,z],[w*.52,p.top,z],[0,p.top+.026,z],[-w*.52,p.top,z],[-w*.82,p.upper,z],[-w*.98,p.shoulder,z],[-w,p.mid,z],[-w*.96,side,z],[-w*.80,p.floor,z],[-w*.42,p.floor,z]];rings.push(pts);
+ }
+ for(let i=0;i<rings.length-1;i++)for(let j=0;j<N;j++){const a=rings[i][j],b=rings[i][(j+1)%N],c=rings[i+1][j],d=rings[i+1][(j+1)%N];out.push(...a,...c,...d,...a,...d,...b);}
+ const cap=(ring,reverse)=>{const center=[0,ring.reduce((v,p)=>v+p[1],0)/N,ring[0][2]];for(let j=0;j<N;j++){const a=ring[j],b=ring[(j+1)%N];if(reverse)out.push(...center,...b,...a);else out.push(...center,...a,...b);}};
+ cap(rings[0],true);cap(rings[rings.length-1],false);return mesh(out);
+}
+function makeRoof(keys){const out=[],steps=52;for(let i=0;i<steps;i++){const zA=keys[0].z+(keys[keys.length-1].z-keys[0].z)*i/steps,zB=keys[0].z+(keys[keys.length-1].z-keys[0].z)*(i+1)/steps,a=profileValue(zA,keys),b=profileValue(zB,keys),pa=[[-a.w*.5,a.top,zA],[0,a.top+.025,zA],[a.w*.5,a.top,zA]],pb=[[-b.w*.5,b.top,zB],[0,b.top+.025,zB],[b.w*.5,b.top,zB]];for(let j=0;j<2;j++)out.push(...pa[j],...pb[j],...pb[j+1],...pa[j],...pb[j+1],...pa[j+1]);}return mesh(out);}
+function makeWheelFace(){
+ const out=[],seg=48,tri=(a,b,c)=>out.push(...a,...b,...c);
+ for(const face of [-1,1]){
+  for(let i=0;i<seg;i++){const a=i*Math.PI*2/seg,b=(i+1)*Math.PI*2/seg,p=[Math.cos(a),face*.10,Math.sin(a)],q=[Math.cos(b),face*.10,Math.sin(b)],p2=[Math.cos(a)*.70,face*.10,Math.sin(a)*.70],q2=[Math.cos(b)*.70,face*.10,Math.sin(b)*.70];tri(p,p2,q2);tri(p,q2,q);}
+  for(let k=0;k<5;k++){const angle=k*Math.PI*2/5+.12,half=.075,ri=.16,ro=.69,p1=[Math.cos(angle-half)*ri,face*.105,Math.sin(angle-half)*ri],p2=[Math.cos(angle+half)*ri,face*.105,Math.sin(angle+half)*ri],p3=[Math.cos(angle+half*.60)*ro,face*.105,Math.sin(angle+half*.60)*ro],p4=[Math.cos(angle-half*.60)*ro,face*.105,Math.sin(angle-half*.60)*ro];tri(p1,p2,p3);tri(p1,p3,p4);}
+  for(let i=0;i<24;i++){const a=i*Math.PI*2/24,b=(i+1)*Math.PI*2/24,ri=.14;tri([0,face*.11,0],[Math.cos(a)*ri,face*.11,Math.sin(a)*ri],[Math.cos(b)*ri,face*.11,Math.sin(b)*ri]);}
+ }return mesh(out);
+}
+function makeWheelArch(center,side){const out=[],steps=30;for(let i=0;i<steps;i++){const d0=-.49+.98*i/steps,d1=-.49+.98*(i+1)/steps,y0=.46+Math.sqrt(Math.max(0,.49*.49-d0*d0))+.045,y1=.46+Math.sqrt(Math.max(0,.49*.49-d1*d1))+.045,x=side*1.348,x2=side*1.315,a=[x,y0,center+d0],b=[x2,y0-.012,center+d0],c=[x2,y1-.012,center+d1],d=[x,y1,center+d1];out.push(...a,...b,...c,...a,...c,...d);}return mesh(out);}
+const bodyMesh=makeCarHull([
+ {z:-2.96,w:.90,floor:.19,side:.33,mid:.45,shoulder:.61,upper:.66,top:.68},
+ {z:-2.66,w:1.15,floor:.19,side:.34,mid:.55,shoulder:.73,upper:.77,top:.79},
+ {z:-2.16,w:1.30,floor:.18,side:.34,mid:.61,shoulder:.82,upper:.86,top:.88},
+ {z:-1.66,w:1.34,floor:.18,side:.34,mid:.64,shoulder:.85,upper:.89,top:.91},
+ {z:-.86,w:1.29,floor:.18,side:.33,mid:.61,shoulder:.80,upper:.84,top:.85},
+ {z:0,w:1.23,floor:.18,side:.32,mid:.57,shoulder:.74,upper:.78,top:.80},
+ {z:.92,w:1.25,floor:.18,side:.33,mid:.58,shoulder:.75,upper:.79,top:.81},
+ {z:1.58,w:1.33,floor:.18,side:.34,mid:.63,shoulder:.82,upper:.86,top:.88},
+ {z:2.16,w:1.27,floor:.18,side:.34,mid:.61,shoulder:.79,upper:.82,top:.84},
+ {z:2.66,w:1.11,floor:.18,side:.33,mid:.53,shoulder:.70,upper:.73,top:.75},
+ {z:2.96,w:.80,floor:.18,side:.30,mid:.42,shoulder:.55,upper:.57,top:.59}
+],true);
+const cabinProfile=[
+ {z:-1.78,w:.68,floor:.65,side:.68,mid:.86,shoulder:1.03,upper:1.09,top:1.15},
+ {z:-1.48,w:.78,floor:.65,side:.69,mid:.99,shoulder:1.26,upper:1.33,top:1.38},
+ {z:-.92,w:.81,floor:.64,side:.68,mid:1.05,shoulder:1.44,upper:1.52,top:1.56},
+ {z:-.12,w:.79,floor:.63,side:.67,mid:1.04,shoulder:1.45,upper:1.53,top:1.57},
+ {z:.56,w:.70,floor:.59,side:.65,mid:.94,shoulder:1.28,upper:1.35,top:1.39},
+ {z:1.12,w:.53,floor:.51,side:.59,mid:.82,shoulder:.99,upper:1.05,top:1.09}
+];
+const cabinMesh=makeCarHull(cabinProfile,false),roofMesh=makeRoof(cabinProfile),wheelFace=makeWheelFace();
+const archFrontL=makeWheelArch(1.66,-1),archFrontR=makeWheelArch(1.66,1),archRearL=makeWheelArch(-1.66,-1),archRearR=makeWheelArch(-1.66,1);
+const windshield=quad([-.49,1.49,.38],[.49,1.49,.38],[.63,.91,1.04],[-.63,.91,1.04]);
+const rearGlass=quad([-.48,1.48,-1.38],[.48,1.48,-1.38],[.66,.87,-1.72],[-.66,.87,-1.72]);
+const sideGlassLF=quad([-.765,1.03,.43],[-.67,1.38,.32],[-.70,1.39,-.42],[-.785,1.02,-.43]);
+const sideGlassLR=quad([-.785,1.02,-.54],[-.70,1.37,-.52],[-.68,1.30,-1.27],[-.75,.91,-1.55]);
+const sideGlassRF=quad([.765,1.03,.43],[.785,1.02,-.43],[.70,1.39,-.42],[.67,1.38,.32]);
+const sideGlassRR=quad([.785,1.02,-.54],[.75,.91,-1.55],[.68,1.30,-1.27],[.70,1.37,-.52]);
 const C={
  ground:[.025,.025,.065,1],grid:[.09,.34,.48,.72],grid2:[.34,.10,.40,.55],
  road:[.055,.055,.105,1],road2:[.075,.07,.13,1],pink:[1,.13,.60,1],cyan:[.20,.88,1,1],white:[.92,.96,1,1],
@@ -307,15 +337,15 @@ for(let i=1;i<=2400;i++)roadWaypoints.push(clamp(roadWaypoints[i-1]+(roadRand()-
 function roadX(z){z=Math.max(0,z);const seg=Math.floor(z/170),t=(z-seg*170)/170,a=roadWaypoints[clamp(seg,0,roadWaypoints.length-1)]||0,b=roadWaypoints[clamp(seg+1,0,roadWaypoints.length-1)]||a,u=t*t*(3-2*t);return a+(b-a)*u;}
 function draw(shape,x,y,z,sx,sy,sz,color,yaw=0,roll=0){
  const model=matMul(translate(x,y,z),matMul(rotateY(yaw),matMul(rotateZ(roll),scale(sx,sy,sz))));
- gl.uniformMatrix4fv(loc.model,false,new Float32Array(model));gl.uniform4fv(loc.color,color);gl.bindBuffer(gl.ARRAY_BUFFER,shape.b);gl.enableVertexAttribArray(loc.p);gl.vertexAttribPointer(loc.p,3,gl.FLOAT,false,0,0);gl.drawArrays(gl.TRIANGLES,0,shape.n);drawCalls++;
+ gl.uniformMatrix4fv(loc.model,false,new Float32Array(model));gl.uniform4fv(loc.color,color);gl.bindBuffer(gl.ARRAY_BUFFER,shape.b);gl.enableVertexAttribArray(loc.p);gl.vertexAttribPointer(loc.p,3,gl.FLOAT,false,0,0);gl.bindBuffer(gl.ARRAY_BUFFER,shape.nb);gl.enableVertexAttribArray(loc.normal);gl.vertexAttribPointer(loc.normal,3,gl.FLOAT,false,0,0);gl.drawArrays(gl.TRIANGLES,0,shape.n);drawCalls++;
 }
 function drawCarPart(cx,cz,x,y,z,sx,sy,sz,color,yaw=0,shape=cube){
- const model=matMul(translate(cx,0,cz),matMul(rotateY(yaw),matMul(rotateZ(bodyRoll),matMul(translate(x,y,z),matMul(shape===wheel?rotateZ(Math.PI/2):matIdentity(),scale(sx,sy,sz))))));
- gl.uniformMatrix4fv(loc.model,false,new Float32Array(model));gl.uniform4fv(loc.color,color);gl.bindBuffer(gl.ARRAY_BUFFER,shape.b);gl.enableVertexAttribArray(loc.p);gl.vertexAttribPointer(loc.p,3,gl.FLOAT,false,0,0);gl.drawArrays(gl.TRIANGLES,0,shape.n);drawCalls++;
+ const model=matMul(translate(cx,0,cz),matMul(rotateY(yaw),matMul(rotateZ(bodyRoll),matMul(translate(x,y,z),matMul((shape===wheel||shape===wheelFace)?rotateZ(Math.PI/2):matIdentity(),scale(sx,sy,sz))))));
+ gl.uniformMatrix4fv(loc.model,false,new Float32Array(model));gl.uniform4fv(loc.color,color);gl.bindBuffer(gl.ARRAY_BUFFER,shape.b);gl.enableVertexAttribArray(loc.p);gl.vertexAttribPointer(loc.p,3,gl.FLOAT,false,0,0);gl.bindBuffer(gl.ARRAY_BUFFER,shape.nb);gl.enableVertexAttribArray(loc.normal);gl.vertexAttribPointer(loc.normal,3,gl.FLOAT,false,0,0);gl.drawArrays(gl.TRIANGLES,0,shape.n);drawCalls++;
 }
 function drawCarMesh(shape,cx,cz,color,yaw=0){
  const model=matMul(translate(cx,0,cz),matMul(rotateY(yaw),matMul(rotateZ(bodyRoll),matIdentity())));
- gl.uniformMatrix4fv(loc.model,false,new Float32Array(model));gl.uniform4fv(loc.color,color);gl.bindBuffer(gl.ARRAY_BUFFER,shape.b);gl.enableVertexAttribArray(loc.p);gl.vertexAttribPointer(loc.p,3,gl.FLOAT,false,0,0);gl.drawArrays(gl.TRIANGLES,0,shape.n);drawCalls++;
+ gl.uniformMatrix4fv(loc.model,false,new Float32Array(model));gl.uniform4fv(loc.color,color);gl.bindBuffer(gl.ARRAY_BUFFER,shape.b);gl.enableVertexAttribArray(loc.p);gl.vertexAttribPointer(loc.p,3,gl.FLOAT,false,0,0);gl.bindBuffer(gl.ARRAY_BUFFER,shape.nb);gl.enableVertexAttribArray(loc.normal);gl.vertexAttribPointer(loc.normal,3,gl.FLOAT,false,0,0);gl.drawArrays(gl.TRIANGLES,0,shape.n);drawCalls++;
 }
 function matIdentity(){return [1,0,0,0,0,1,0,0,0,0,1,0,0,0,0,1];}
 function matMul(a,b){let o=new Array(16);for(let c=0;c<4;c++)for(let r=0;r<4;r++)o[c*4+r]=a[r]*b[c*4]+a[4+r]*b[c*4+1]+a[8+r]*b[c*4+2]+a[12+r]*b[c*4+3];return o;}
