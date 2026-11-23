@@ -101,7 +101,7 @@
 <script>
 (()=>{
 'use strict';
-const VERSION='v0.9.0',BUILD='014';
+const VERSION='v0.10.0',BUILD='015';
 const canvas=document.getElementById('scene'),gl=canvas.getContext('webgl',{antialias:true,alpha:true}),sun=document.getElementById('sun'),sctx=sun.getContext('2d');
 const $=id=>document.getElementById(id);
 let W=innerWidth,H=innerHeight,DPR=1;
@@ -239,8 +239,9 @@ const sideGlassRR=quad([.785,1.02,-.54],[.75,.91,-1.55],[.68,1.30,-1.27],[.70,1.
 const C={
  ground:[.025,.025,.065,1],grid:[.09,.34,.48,.72],grid2:[.34,.10,.40,.55],
  road:[.055,.055,.105,1],road2:[.075,.07,.13,1],pink:[1,.13,.60,1],cyan:[.20,.88,1,1],white:[.92,.96,1,1],
- body:[.72,.025,.075,1],bodyLight:[1,.16,.20,1],glass:[.012,.075,.12,1],trim:[.018,.022,.035,1],
- tire:[.012,.014,.022,1],hub:[.78,.53,.25,1],city:[.085,.045,.12,1],mount:[.08,.045,.14,1]
+ body:[.66,.018,.045,1],bodyLight:[.94,.075,.105,1],bodyShade:[.26,.018,.035,1],
+ glass:[.012,.045,.073,1],glassLight:[.07,.22,.29,1],trim:[.014,.018,.026,1],
+ tire:[.012,.014,.019,1],hub:[.62,.68,.73,1],brake:[.22,.25,.29,1],city:[.085,.045,.12,1],mount:[.08,.045,.14,1]
 };
 let keys={},started=false,speed=0,playerX=0,steer=0,bodyRoll=0,distance=0,boost=0,carYaw=0,yawRate=0,lateralVelocity=0,driftIntensity=0,handbrakeActive=false,last=performance.now(),musicOn=true,track=0,trackOrder=[],trackPos=0,audio=null,musicPending=true,foundTracks=[],audioCtx=null,engineOsc=null,engineOsc2=null,engineGain=null,engineFilter=null,skidGain=null,skidFilter=null,roadGain=null,roadFilter=null,audioNoise=null;
 // One axis convention shared by controls, car movement, body lean and indicators.
@@ -414,80 +415,66 @@ function drawWorld(){
  drawBiome(distance,bw[0],0);drawBiome(distance,bw[1],1);drawBiome(distance,bw[2],2);
  gl.depthMask(true);gl.disable(gl.BLEND);
  }
- // INFERNO GT: wider, sharp-edged 80s sports coupe with a clean red/graphite silhouette.
- const yaw=garageMode?0:carYaw,roll=garageMode?0:-carYaw*.19-steer*.035;
+ // INFERNO GT — proportioned 1980s grand-tourer body, detailed glass, lighting and running gear.
+ const yaw=garageMode?0:carYaw;
  drawCarMesh(bodyMesh,carX,carZ,C.body,yaw);
- // Hood facets and center power bulge.
- drawCarPart(carX,carZ,0,.575,1.46,.73,.025,.78,C.bodyLight,yaw);
- drawCarPart(carX,carZ,-.58,.57,1.43,.018,.022,.77,C.bodyLight,yaw);
- drawCarPart(carX,carZ,.58,.57,1.43,.018,.022,.77,C.bodyLight,yaw);
- // Squared cabin, dark glazing and red roof panel.
- drawCarMesh(cabinMesh,carX,carZ,C.glass,yaw);
- drawCarPart(carX,carZ,0,1.535,-.24,.69,.055,.57,C.bodyLight,yaw);
- drawCarPart(carX,carZ,0,1.48,-.24,.60,.025,.49,[.12,.19,.25,1],yaw);
- drawCarPart(carX,carZ,0,.82,-1.30,.78,.055,.12,C.bodyLight,yaw);
- // Windscreens and side windows set into the cabin.
- drawCarMesh(windshield,carX,carZ,[.035,.20,.29,1],yaw);
- drawCarMesh(rearGlass,carX,carZ,[.025,.14,.22,1],yaw);
- drawCarMesh(sideGlassL,carX,carZ,[.018,.12,.19,1],yaw);
- drawCarMesh(sideGlassR,carX,carZ,[.018,.12,.19,1],yaw);
- // Bumpers, front splitter, rear diffuser and side skirts.
- drawCarPart(carX,carZ,0,.16,2.60,.91,.10,.18,C.trim,yaw);
- drawCarPart(carX,carZ,0,.13,2.70,1.04,.035,.14,C.bodyLight,yaw);
- drawCarPart(carX,carZ,0,.17,-2.56,1.20,.13,.18,C.trim,yaw);
- drawCarPart(carX,carZ,0,.12,2.72,1.05,.045,.13,C.pink,yaw);
- drawCarPart(carX,carZ,0,.12,-2.68,1.34,.045,.13,C.pink,yaw);
  for(const side of [-1,1]){
-  drawCarPart(carX,carZ,side*1.12,.26,0,.12,.12,1.52,[.12,.12,.17,1],yaw);
-  // Mirrors and squared wheel-arch highlights.
-  drawCarPart(carX,carZ,side*.99,1.03,.48,.20,.095,.24,C.bodyLight,yaw);
-  drawCarPart(carX,carZ,side*1.22,.80,1.35,.055,.08,.48,C.trim,yaw);
-  // Front and rear wheels with visible cyan hubs.
-  for(const wz of [-1.78,1.55]){
-   const rear=wz<0,wx=rear?1.37:1.13,wy=rear?.45:.40;
-   drawCarPart(carX,carZ,side*wx,wy,wz,rear?.47:.39,rear?.25:.21,rear?.47:.39,C.tire,yaw,wheel);
-   drawCarPart(carX,carZ,side*(wx+.14),wy,wz,rear?.27:.23,.06,rear?.27:.23,C.hub,yaw,wheel);
-   drawCarPart(carX,carZ,side*(wx+.17),wy,wz,.13,.027,.13,C.trim,yaw,wheel);
-  }
+  drawCarPart(carX,carZ,side*.69,.805,1.88,.022,.012,.76,C.bodyLight,yaw);
+  drawCarPart(carX,carZ,side*.29,.812,2.08,.018,.009,.48,[1,.22,.22,1],yaw);
  }
- // INFERNO GT signature: recessed side intakes with four crisp floating strakes per side.
+ drawCarMesh(cabinMesh,carX,carZ,C.glass,yaw);drawCarMesh(roofMesh,carX,carZ,C.body,yaw);
+ drawCarMesh(windshield,carX,carZ,C.glassLight,yaw);drawCarMesh(rearGlass,carX,carZ,[.035,.13,.18,1],yaw);
+ for(const win of [sideGlassLF,sideGlassLR,sideGlassRF,sideGlassRR])drawCarMesh(win,carX,carZ,[.028,.13,.18,1],yaw);
  for(const side of [-1,1]){
-  drawCarPart(carX,carZ,side*1.275,.69,-.38,.035,.235,.70,C.trim,yaw);
-  for(let fin=0;fin<4;fin++)drawCarPart(carX,carZ,side*1.315,.69,-.88+fin*.34,.055,.035,.255,C.bodyLight,yaw);
-  drawCarPart(carX,carZ,side*1.30,.72,-1.55,.035,.035,.48,[1,.30,.24,1],yaw);
+  drawCarPart(carX,carZ,side*.71,1.205,.40,.022,.205,.026,C.trim,yaw);
+  drawCarPart(carX,carZ,side*.785,1.18,-.48,.025,.19,.035,C.trim,yaw);
+  drawCarPart(carX,carZ,side*.77,1.13,-1.47,.025,.14,.028,C.trim,yaw);
+  drawCarPart(carX,carZ,side*.805,.91,-.52,.018,.32,.018,C.trim,yaw);
+  drawCarPart(carX,carZ,side*.83,.91,-.72,.055,.028,.16,C.hub,yaw);
+  drawCarPart(carX,carZ,side*.79,1.06,.64,.13,.035,.10,C.trim,yaw);
+  drawCarPart(carX,carZ,side*.91,1.13,.67,.17,.105,.13,C.body,yaw);
+  drawCarPart(carX,carZ,side*.94,1.15,.69,.13,.018,.075,C.glassLight,yaw);
+  drawCarPart(carX,carZ,side*1.25,.31,-.02,.075,.105,1.18,C.trim,yaw);
+  drawCarPart(carX,carZ,side*1.29,.34,-.02,.035,.035,1.13,C.bodyLight,yaw);
+  drawCarPart(carX,carZ,side*1.29,.68,-1.08,.025,.16,.46,C.bodyShade,yaw);
+  for(let vent=0;vent<3;vent++)drawCarPart(carX,carZ,side*1.315,.68,-1.26+vent*.17,.018,.018,.11,C.bodyLight,yaw);
  }
- // Six engine-cover louvers, twin exhausts and a narrow rear light signature.
- for(let fin=0;fin<6;fin++)drawCarPart(carX,carZ,0,.735,-.62+fin*.19,.73,.018,.055,C.trim,yaw);
- for(const side of [-1,1])drawCarPart(carX,carZ,side*.53,.245,-2.43,.17,.075,.07,C.hub,yaw);
- drawCarPart(carX,carZ,0,.59,-2.425,.58,.045,.035,[1,.08,.19,1],yaw);
- // Front lamps: twin projector strips under a sharp brow.
+ for(const arch of [archFrontL,archFrontR,archRearL,archRearR])drawCarMesh(arch,carX,carZ,C.bodyLight,yaw);
+ for(const side of [-1,1])for(const wz of [-1.66,1.66]){
+  const wx=1.20,wy=.46,tyreR=wz<0?.47:.455;
+  drawCarPart(carX,carZ,side*wx,wy,wz,tyreR,.175,tyreR,C.tire,yaw,wheel);
+  drawCarPart(carX,carZ,side*(wx+.153),wy,wz,.345,.025,.345,C.brake,yaw,wheelFace);
+  drawCarPart(carX,carZ,side*(wx+.177),wy,wz,.335,.018,.335,C.hub,yaw,wheelFace);
+  drawCarPart(carX,carZ,side*(wx+.192),wy,wz,.105,.022,.105,C.bodyLight,yaw,wheelFace);
+  for(let bolt=0;bolt<5;bolt++){const a=bolt*Math.PI*2/5;drawCarPart(carX,carZ,side*(wx+.195),wy+Math.cos(a)*.235,wz+Math.sin(a)*.235,.022,.022,.022,C.trim,yaw);}
+ }
+ drawCarPart(carX,carZ,0,.405,2.925,.51,.14,.035,C.trim,yaw);
+ for(let slat=0;slat<5;slat++)drawCarPart(carX,carZ,0,.335+slat*.034,2.963,.43,.008,.012,C.hub,yaw);
  for(const side of [-1,1]){
-  drawCarPart(carX,carZ,side*.72,.49,2.12,.30,.07,.055,[.84,.96,1,1],yaw);
-  drawCarPart(carX,carZ,side*.72,.57,2.08,.34,.025,.045,C.trim,yaw);
+  drawCarPart(carX,carZ,side*.82,.665,2.79,.285,.105,.055,C.trim,yaw);
+  drawCarPart(carX,carZ,side*.82,.682,2.825,.235,.060,.018,[.82,.93,1,1],yaw);
+  drawCarPart(carX,carZ,side*.82,.68,2.84,.17,.018,.012,[.97,.99,1,1],yaw);
+  drawCarPart(carX,carZ,side*.57,.34,2.88,.14,.09,.045,C.bodyShade,yaw);
+  drawCarPart(carX,carZ,side*.57,.35,2.925,.075,.045,.018,[.88,.94,1,1],yaw);
+  drawCarPart(carX,carZ,side*1.08,.54,2.70,.095,.06,.045,[1,.48,.08,1],yaw);
  }
- // Front headlights are on +Z; rear lamps are on -Z, with amber indicators at the outer corners.
- drawCarPart(carX,carZ,-.73,.48,2.05,.25,.085,.055,[.88,.96,1,1],yaw);
- drawCarPart(carX,carZ,.73,.48,2.05,.25,.085,.055,[.88,.96,1,1],yaw);
- drawCarPart(carX,carZ,0,.39,2.18,.36,.075,.05,C.trim,yaw);
- drawCarPart(carX,carZ,-.80,.43,-2.17,.25,.10,.055,[1,.055,.12,1],yaw);
- drawCarPart(carX,carZ,.80,.43,-2.17,.25,.10,.055,[1,.055,.12,1],yaw);
+ drawCarPart(carX,carZ,0,.205,2.80,1.17,.065,.18,C.trim,yaw);
+ drawCarPart(carX,carZ,0,.155,2.84,1.23,.025,.20,C.bodyLight,yaw);
+ drawCarPart(carX,carZ,0,.53,-2.89,.86,.095,.045,C.trim,yaw);
+ drawCarPart(carX,carZ,0,.55,-2.925,.77,.042,.025,[1,.035,.12,1],yaw);
+ for(const side of [-1,1]){
+  drawCarPart(carX,carZ,side*.91,.34,-2.76,.19,.085,.07,C.trim,yaw);
+  drawCarPart(carX,carZ,side*.91,.34,-2.805,.115,.05,.025,C.hub,yaw);
+  drawCarPart(carX,carZ,side*.55,.22,-2.88,.14,.07,.06,C.brake,yaw);
+  drawCarPart(carX,carZ,side*.55,.22,-2.92,.095,.045,.025,C.hub,yaw);
+  drawCarPart(carX,carZ,side*.90,.78,-2.12,.055,.17,.055,C.trim,yaw);
+ }
+ drawCarPart(carX,carZ,0,.85,-2.17,1.06,.045,.13,C.body,yaw);
+ drawCarPart(carX,carZ,0,.89,-2.17,1.12,.025,.11,C.bodyLight,yaw);
+ for(let fin=0;fin<5;fin++)drawCarPart(carX,carZ,0,.90,-1.92+fin*.13,.48,.012,.025,C.bodyShade,yaw);
  const blink=(Math.floor(performance.now()/330)%2===0)&&Math.abs(steer)>.16;
- const sig=[1,.48,.045,1];
- drawCarPart(carX,carZ,-1.02,.49,2.13,.105,.075,.055,blink&&steer<0?sig:C.bodyLight,yaw);
- drawCarPart(carX,carZ,1.02,.49,2.13,.105,.075,.055,blink&&steer>0?sig:C.bodyLight,yaw);
- drawCarPart(carX,carZ,-1.02,.43,-2.20,.10,.075,.055,blink&&steer<0?sig:C.bodyLight,yaw);
- drawCarPart(carX,carZ,1.02,.43,-2.20,.10,.075,.055,blink&&steer>0?sig:C.bodyLight,yaw);
- // Rear deck wing: a straight, squared 80s-style spoiler with two supports.
- drawCarPart(carX,carZ,0,1.00,-2.20,1.25,.065,.18,C.trim,yaw);
- drawCarPart(carX,carZ,0,1.10,-2.20,1.43,.045,.22,C.bodyLight,yaw);
- drawCarPart(carX,carZ,-.84,.87,-2.12,.065,.25,.07,C.trim,yaw);
- drawCarPart(carX,carZ,.84,.87,-2.12,.065,.25,.07,C.trim,yaw);
- drawCarPart(carX,carZ,-.84,1.10,-2.20,.07,.045,.17,C.hub,yaw);
- drawCarPart(carX,carZ,.84,1.10,-2.20,.07,.045,.17,C.hub,yaw);
- if(boost>.05){
-  drawCarPart(carX,carZ,-.48,.20,-2.72,.10,.09,.90,[.04,.60,1,boost],yaw);
-  drawCarPart(carX,carZ,.48,.20,-2.72,.10,.09,.90,[.04,.60,1,boost],yaw);
- }
+ if(blink){const signal=steer<0?-1:1;drawCarPart(carX,carZ,signal*1.08,.54,2.72,.09,.055,.025,[1,.62,.06,1],yaw);drawCarPart(carX,carZ,signal*1.08,.42,-2.77,.09,.05,.025,[1,.62,.06,1],yaw);}
+ if(boost>.05){drawCarPart(carX,carZ,-.48,.20,-2.98,.075,.065,.70,[.04,.58,1,boost],yaw);drawCarPart(carX,carZ,.48,.20,-2.98,.075,.065,.70,[.04,.58,1,boost],yaw);}
 }
 function drawSun(){
  sctx.clearRect(0,0,W,H);
