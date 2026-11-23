@@ -107,7 +107,7 @@ const $=id=>document.getElementById(id);
 const clamp=(v,a,b)=>Math.max(a,Math.min(b,v));
 function reportStartupError(message){
  const status=$('boot-status');
- if(status&&!bootDone){status.textContent='ОШИБКА ЗАПУСКА: '+String(message||'неизвестная ошибка').slice(0,110);status.style.color='#ff718a';}
+ if(status){status.textContent='ОШИБКА ЗАПУСКА: '+String(message||'неизвестная ошибка').slice(0,110);status.style.color='#ff718a';}
 }
 window.addEventListener('error',e=>reportStartupError(e.message||'JavaScript error'));
 window.addEventListener('unhandledrejection',e=>reportStartupError(e.reason&&e.reason.message||e.reason||'Promise rejected'));
