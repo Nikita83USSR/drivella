@@ -657,13 +657,12 @@ function drawWorld(){
  for(const win of [sideGlassLF,sideGlassLR,sideGlassRF,sideGlassRR])drawCarMesh(win,carX,carZ,[.025,.10,.17,1],yaw,2);
  // Cool specular streaks are separate from the warm body paint highlights.
  for(const glint of [frontGlassGlint,rearGlassGlint,sideGlassGlintL,sideGlassGlintR])drawCarMesh(glint,carX,carZ,[.24,.70,.91,1],yaw,2);
- drawCarMesh(roofGlint,carX,carZ,[1,.35,.70,1],yaw);
+ // Roof highlight is shader-driven; no coplanar overlay, preventing shimmer.
  for(const side of [-1,1]){
   drawCarPart(carX,carZ,side*.73,1.04,-.72,.018,.26,.022,C.trim,yaw);
   // Short mirrors sit at the base of the A-pillars.
   drawCarPart(carX,carZ,side*.77,1.03,.58,.10,.045,.095,C.trim,yaw);
   drawCarPart(carX,carZ,side*.85,1.08,.61,.13,.08,.10,C.body,yaw);
-  drawCarPart(carX,carZ,side*1.19,.25,-.10,.045,.08,1.50,C.trim,yaw);
   drawCarMesh(side<0?intakeUpperL:intakeUpperR,carX,carZ,C.trim,yaw);
   drawCarMesh(side<0?intakeLowerL:intakeLowerR,carX,carZ,C.trim,yaw);
  }
