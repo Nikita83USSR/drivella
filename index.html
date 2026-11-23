@@ -94,13 +94,13 @@
 <body>
 <canvas id="scene"></canvas><canvas id="sun"></canvas>
 <div id="hud">
- <div class="top"><div class="logo">DRIVELLA<small>3D SYNTHWAVE DRIFT RACING</small></div><div class="version-label" id="version-label">v0.14.0 · BUILD 027</div><div class="stat">DISTANCE<b id="distance">000.0 KM</b></div><div class="stat">LOCATION<b>VIOLET COAST</b></div></div>
+ <div class="top"><div class="logo">DRIVELLA<small>3D SYNTHWAVE DRIFT RACING</small></div><div class="version-label" id="version-label">v0.14.1 · BUILD 028</div><div class="stat">DISTANCE<b id="distance">000.0 KM</b></div><div class="stat">LOCATION<b>VIOLET COAST</b></div></div>
  <div class="right"><div id="speed">000 <span>KM/H</span></div><div id="direction">▶ FORWARD</div><div id="music">♫ MUSIC SCANNING…</div></div>
- <div class="bottom"><div class="hint"><strong>W / ↑</strong> ACCELERATE　<strong>S / ↓</strong> BRAKE / REVERSE<br><strong>A / ←　D / →</strong> STEER　<strong>SPACE</strong> HANDBRAKE　<strong>M</strong> MUSIC　<strong>1–4</strong> CAMERA</div><div>3D NEON HIGHWAY // BUILD 009</div></div>
+ <div class="bottom"><div class="hint"><strong>W / ↑</strong> ACCELERATE　<strong>S / ↓</strong> BRAKE / REVERSE<br><strong>A / ←　D / →</strong> STEER　<strong>SPACE</strong> HANDBRAKE　<strong>M</strong> MUSIC　<strong>1–4</strong> CAMERA</div><div>3D NEON HIGHWAY // BUILD 028</div></div>
 </div>
 <div id="tools-ui"><button id="cam-prev" aria-label="Previous camera">◀</button><span id="cam-label">CAM 2 · CLOSE</span><button id="cam-next" aria-label="Next camera">▶</button><button id="debug-toggle">DEBUG</button></div>
 <div id="debug-panel"><div class="debug-title">DRIVELLA DIAGNOSTICS</div><div id="debug-data">Initializing…</div></div>
-<div id="boot-screen"><div class="boot-content"><div class="boot-kicker">NIGHT DRIVE SYSTEMS // INITIALIZING</div><div class="boot-logo">DRIVELLA</div><div class="boot-subtitle">3D SYNTHWAVE DRIFT RACING</div><div class="boot-mark"></div><div class="boot-status" id="boot-status">BUILDING THE 3D WORLD</div><div class="boot-track"><div class="boot-progress" id="boot-progress"></div></div><div class="boot-meta"><span>3D ENGINE ONLINE</span><span id="boot-percent">00%</span></div><div class="boot-footer">ENGINE STARTUP // v0.12.0 · BUILD 022</div></div></div>
+<div id="boot-screen"><div class="boot-content"><div class="boot-kicker">NIGHT DRIVE SYSTEMS // INITIALIZING</div><div class="boot-logo">DRIVELLA</div><div class="boot-subtitle">3D SYNTHWAVE DRIFT RACING</div><div class="boot-mark"></div><div class="boot-status" id="boot-status">BUILDING THE 3D WORLD</div><div class="boot-track"><div class="boot-progress" id="boot-progress"></div></div><div class="boot-meta"><span>3D ENGINE ONLINE</span><span id="boot-percent">00%</span></div><div class="boot-footer">ENGINE STARTUP // v0.14.1 · BUILD 028</div></div></div>
 <div id="main-menu"><div class="menu-content"><div class="menu-brand">DRIVELLA GTS</div><div class="menu-sub">RIDE THE RETRO FUTURE</div><div class="menu-actions"><button class="menu-btn" id="menu-start">СТАРТ</button><button class="menu-btn" id="menu-garage">ГАРАЖ</button><button class="menu-btn" id="menu-options">НАСТРОЙКИ</button></div></div><div class="menu-footer">РАЗРАБОТЧИК — <b>НИКИТА МАРКИН</b></div></div>
 <div id="garage-screen"><div class="garage-head">ГАРАЖ // DRIVELLA GTS</div><div class="garage-copy">ТЕКУЩИЙ АВТОМОБИЛЬ<br>DRIVELLA GTS · RETRO GT COUPE<br>ПОКАЖИ ЕЁ СО ВСЕХ СТОРОН</div><div class="garage-controls"><button id="garage-back">← НАЗАД В МЕНЮ</button></div><div class="garage-tip">ЗАЖМИ И ТЯНИ — ВРАЩЕНИЕ<br>КОЛЁСИКО — ПРИБЛИЗИТЬ / ОТДАЛИТЬ</div></div>
 <div id="options-screen"><div class="options-head">ОПЦИИ</div><div class="options-card"><div class="option-row"><span>МУЗЫКА</span><button id="option-music">ВКЛЮЧЕНА</button></div><div class="option-row"><span>ГРОМКОСТЬ</span><input id="option-volume" type="range" min="0" max="100" value="52"></div><div class="option-row"><span>ЗВУК ДВИГАТЕЛЯ</span><button id="option-sfx">ВКЛЮЧЁН</button></div><div class="option-row"><span>КАМЕРА</span><span>КЛАВИШИ 1–4</span></div><button id="options-back" style="width:100%;margin-top:18px">← НАЗАД В МЕНЮ</button></div></div>
@@ -108,7 +108,7 @@
 <script>
 (()=>{
 'use strict';
-const VERSION='v0.14.0',BUILD='027';
+const VERSION='v0.14.1',BUILD='028';
 const canvas=document.getElementById('scene'),gl=canvas.getContext('webgl',{antialias:true,alpha:true}),sun=document.getElementById('sun'),sctx=sun.getContext('2d');
 const $=id=>document.getElementById(id);
 const clamp=(v,a,b)=>Math.max(a,Math.min(b,v));
@@ -129,12 +129,12 @@ function resize(){
 addEventListener('resize',resize);
 if(!gl){$('boot-status').textContent='WEBGL NOT AVAILABLE';throw new Error('WebGL unavailable');}
 const vs='attribute vec3 p;attribute vec3 normal;uniform mat4 vp;uniform mat4 model;uniform mat3 normalMatrix;varying vec3 vNormal;varying vec3 vWorldPos;void main(){vec4 world=model*vec4(p,1.0);vWorldPos=world.xyz;vNormal=normalize(normalMatrix*normal);gl_Position=vp*world;}';
-const fs='precision mediump float;uniform vec4 color;uniform float toon;uniform float materialMode;uniform vec3 lightDir;uniform vec3 viewPos;varying vec3 vNormal;varying vec3 vWorldPos;void main(){if(toon<0.5){gl_FragColor=color;return;}vec3 N=normalize(vNormal);vec3 L=normalize(lightDir);float ndl=abs(dot(N,L));float band=ndl<0.27?0.48:(ndl<0.62?0.78:1.08);vec3 V=normalize(viewPos-vWorldPos);vec3 H=normalize(L+V);float power=materialMode>1.5?54.0:28.0;float spec=pow(max(abs(dot(N,H)),0.0),power);float strength=materialMode>1.5?0.82:(materialMode>0.5?0.42:0.10);float fresnel=pow(1.0-clamp(abs(dot(N,V)),0.0,1.0),2.0);vec3 lit=color.rgb*band;lit+=vec3(1.0,0.78,0.92)*spec*strength;if(materialMode>1.5){lit+=vec3(0.12,0.62,0.92)*fresnel*0.34;lit+=vec3(0.70,0.92,1.0)*pow(spec,0.32)*0.10;}gl_FragColor=vec4(lit,color.a);}';
+const fs='precision mediump float;uniform vec4 color;uniform float toon;uniform float materialMode;uniform vec3 keyLightDir;uniform vec3 fillLightDir;uniform vec3 viewPos;varying vec3 vNormal;varying vec3 vWorldPos;void main(){if(toon<0.5){gl_FragColor=color;return;}vec3 N=normalize(vNormal);vec3 K=normalize(keyLightDir);vec3 F=normalize(fillLightDir);float key=abs(dot(N,K));float fill=abs(dot(N,F));float illum=clamp(key*0.78+fill*0.30,0.0,1.0);float band=illum<0.27?0.46:(illum<0.59?0.78:1.12);vec3 V=normalize(viewPos-vWorldPos);vec3 HK=normalize(K+V);vec3 HF=normalize(F+V);float power=materialMode>1.5?44.0:20.0;float specK=pow(max(abs(dot(N,HK)),0.0),power);float specF=pow(max(abs(dot(N,HF)),0.0),power*0.78);float strength=materialMode>1.5?1.05:(materialMode>0.5?0.72:0.06);float fresnel=pow(1.0-clamp(abs(dot(N,V)),0.0,1.0),2.0);vec3 lit=color.rgb*band;lit+=vec3(1.0,0.78,0.92)*specK*strength;lit+=vec3(0.22,0.78,1.0)*specF*(materialMode>1.5?0.55:0.20);if(materialMode>1.5){lit+=vec3(0.12,0.62,0.92)*fresnel*0.48;lit+=vec3(0.70,0.92,1.0)*pow(specK,0.34)*0.13;}gl_FragColor=vec4(lit,color.a);}';
 function shader(type,src){const s=gl.createShader(type);gl.shaderSource(s,src);gl.compileShader(s);if(!gl.getShaderParameter(s,gl.COMPILE_STATUS))throw new Error(gl.getShaderInfoLog(s));return s;}
 const prog=gl.createProgram();gl.attachShader(prog,shader(gl.VERTEX_SHADER,vs));gl.attachShader(prog,shader(gl.FRAGMENT_SHADER,fs));gl.linkProgram(prog);
 if(!gl.getProgramParameter(prog,gl.LINK_STATUS))throw new Error(gl.getProgramInfoLog(prog));
 gl.useProgram(prog);
-const loc={p:gl.getAttribLocation(prog,'p'),normal:gl.getAttribLocation(prog,'normal'),vp:gl.getUniformLocation(prog,'vp'),model:gl.getUniformLocation(prog,'model'),normalMatrix:gl.getUniformLocation(prog,'normalMatrix'),color:gl.getUniformLocation(prog,'color'),toon:gl.getUniformLocation(prog,'toon'),materialMode:gl.getUniformLocation(prog,'materialMode'),lightDir:gl.getUniformLocation(prog,'lightDir'),viewPos:gl.getUniformLocation(prog,'viewPos')};
+const loc={p:gl.getAttribLocation(prog,'p'),normal:gl.getAttribLocation(prog,'normal'),vp:gl.getUniformLocation(prog,'vp'),model:gl.getUniformLocation(prog,'model'),normalMatrix:gl.getUniformLocation(prog,'normalMatrix'),color:gl.getUniformLocation(prog,'color'),toon:gl.getUniformLocation(prog,'toon'),materialMode:gl.getUniformLocation(prog,'materialMode'),keyLightDir:gl.getUniformLocation(prog,'keyLightDir'),fillLightDir:gl.getUniformLocation(prog,'fillLightDir'),viewPos:gl.getUniformLocation(prog,'viewPos')};
 function mesh(data){
  const normals=new Float32Array(data.length);
  for(let i=0;i<data.length;i+=9){
@@ -535,7 +535,7 @@ function drawWorld(){
  const cam=cameraFor(carX,carZ);
  const vp=matMul(perspective(cam.fov*Math.PI/180,W/H,.1,650),lookAt(cam.x,cam.y,cam.z,cam.tx,cam.ty,cam.tz));
  gl.uniformMatrix4fv(loc.vp,false,new Float32Array(vp));
- gl.uniform3f(loc.lightDir,-.42,.82,.38);gl.uniform3f(loc.viewPos,cam.x,cam.y,cam.z);
+ gl.uniform3f(loc.keyLightDir,-.48,.82,.30);gl.uniform3f(loc.fillLightDir,.58,.34,-.72);gl.uniform3f(loc.viewPos,cam.x,cam.y,cam.z);
  gl.enable(gl.DEPTH_TEST);gl.disable(gl.BLEND);gl.clearColor(0,0,0,0);gl.clear(gl.COLOR_BUFFER_BIT|gl.DEPTH_BUFFER_BIT);
  if(garageMode){
   draw(cube,0,-.48,0,22,.18,22,C.ground);draw(cube,0,-.37,0,8,.12,8,C.trim);
