@@ -94,13 +94,13 @@
 <body>
 <canvas id="scene"></canvas><canvas id="sun"></canvas>
 <div id="hud">
- <div class="top"><div class="logo">DRIVELLA<small>3D SYNTHWAVE DRIFT RACING</small></div><div class="version-label" id="version-label">v0.14.8 · BUILD 035</div><div class="stat">DISTANCE<b id="distance">000.0 KM</b></div><div class="stat">LOCATION<b>VIOLET COAST</b></div></div>
+ <div class="top"><div class="logo">DRIVELLA<small>3D SYNTHWAVE DRIFT RACING</small></div><div class="version-label" id="version-label">v0.15.0 · BUILD 036</div><div class="stat">DISTANCE<b id="distance">000.0 KM</b></div><div class="stat">LOCATION<b>VIOLET COAST</b></div></div>
  <div class="right"><div id="speed">000 <span>KM/H</span></div><div id="direction">▶ FORWARD</div><div id="music">♫ MUSIC SCANNING…</div></div>
- <div class="bottom"><div class="hint"><strong>W / ↑</strong> ACCELERATE　<strong>S / ↓</strong> BRAKE / REVERSE<br><strong>A / ←　D / →</strong> STEER　<strong>SPACE</strong> HANDBRAKE　<strong>M</strong> MUSIC　<strong>1–4</strong> CAMERA</div><div>3D NEON HIGHWAY // BUILD 034</div></div>
+ <div class="bottom"><div class="hint"><strong>W / ↑</strong> ACCELERATE　<strong>S / ↓</strong> BRAKE / REVERSE<br><strong>A / ←　D / →</strong> STEER　<strong>SPACE</strong> HANDBRAKE　<strong>M</strong> MUSIC　<strong>1–4</strong> CAMERA</div><div>3D NEON HIGHWAY // BUILD 036</div></div>
 </div>
 <div id="tools-ui"><button id="cam-prev" aria-label="Previous camera">◀</button><span id="cam-label">CAM 2 · CLOSE</span><button id="cam-next" aria-label="Next camera">▶</button><button id="debug-toggle">DEBUG</button></div>
 <div id="debug-panel"><div class="debug-title">DRIVELLA DIAGNOSTICS</div><div id="debug-data">Initializing…</div></div>
-<div id="boot-screen"><div class="boot-content"><div class="boot-kicker">NIGHT DRIVE SYSTEMS // INITIALIZING</div><div class="boot-logo">DRIVELLA</div><div class="boot-subtitle">3D SYNTHWAVE DRIFT RACING</div><div class="boot-mark"></div><div class="boot-status" id="boot-status">BUILDING THE 3D WORLD</div><div class="boot-track"><div class="boot-progress" id="boot-progress"></div></div><div class="boot-meta"><span>3D ENGINE ONLINE</span><span id="boot-percent">00%</span></div><div class="boot-footer">ENGINE STARTUP // v0.14.2 · BUILD 029</div></div></div>
+<div id="boot-screen"><div class="boot-content"><div class="boot-kicker">NIGHT DRIVE SYSTEMS // INITIALIZING</div><div class="boot-logo">DRIVELLA</div><div class="boot-subtitle">3D SYNTHWAVE DRIFT RACING</div><div class="boot-mark"></div><div class="boot-status" id="boot-status">BUILDING THE 3D WORLD</div><div class="boot-track"><div class="boot-progress" id="boot-progress"></div></div><div class="boot-meta"><span>3D ENGINE ONLINE</span><span id="boot-percent">00%</span></div><div class="boot-footer">ENGINE STARTUP // v0.15.0 · BUILD 036</div></div></div>
 <div id="main-menu"><div class="menu-content"><div class="menu-brand">DRIVELLA GTS</div><div class="menu-sub">RIDE THE RETRO FUTURE</div><div class="menu-actions"><button class="menu-btn" id="menu-start">СТАРТ</button><button class="menu-btn" id="menu-garage">ГАРАЖ</button><button class="menu-btn" id="menu-options">НАСТРОЙКИ</button></div></div><div class="menu-footer">РАЗРАБОТЧИК — <b>НИКИТА МАРКИН</b></div></div>
 <div id="garage-screen"><div class="garage-head">ГАРАЖ // DRIVELLA GTS</div><div class="garage-copy">ТЕКУЩИЙ АВТОМОБИЛЬ<br>DRIVELLA GTS · RETRO GT COUPE<br>ПОКАЖИ ЕЁ СО ВСЕХ СТОРОН</div><div class="garage-controls"><button id="garage-back">← НАЗАД В МЕНЮ</button></div><div class="garage-tip">ЗАЖМИ И ТЯНИ — ВРАЩЕНИЕ<br>КОЛЁСИКО — ПРИБЛИЗИТЬ / ОТДАЛИТЬ</div></div>
 <div id="options-screen"><div class="options-head">ОПЦИИ</div><div class="options-card"><div class="option-row"><span>МУЗЫКА</span><button id="option-music">ВКЛЮЧЕНА</button></div><div class="option-row"><span>ГРОМКОСТЬ</span><input id="option-volume" type="range" min="0" max="100" value="52"></div><div class="option-row"><span>ЗВУК ДВИГАТЕЛЯ</span><button id="option-sfx">ВКЛЮЧЁН</button></div><div class="option-row"><span>КАМЕРА</span><span>КЛАВИШИ 1–4</span></div><button id="options-back" style="width:100%;margin-top:18px">← НАЗАД В МЕНЮ</button></div></div>
@@ -108,7 +108,7 @@
 <script>
 (()=>{
 'use strict';
-const VERSION='v0.14.2',BUILD='029';
+const VERSION='v0.15.0',BUILD='036';
 const canvas=document.getElementById('scene'),gl=canvas.getContext('webgl',{antialias:true,alpha:true}),sun=document.getElementById('sun'),sctx=sun.getContext('2d');
 const $=id=>document.getElementById(id);
 const clamp=(v,a,b)=>Math.max(a,Math.min(b,v));
@@ -129,12 +129,12 @@ function resize(){
 addEventListener('resize',resize);
 if(!gl){$('boot-status').textContent='WEBGL NOT AVAILABLE';throw new Error('WebGL unavailable');}
 const vs='attribute vec3 p;attribute vec3 normal;uniform mat4 vp;uniform mat4 model;uniform mat3 normalMatrix;varying vec3 vNormal;varying vec3 vWorldPos;void main(){vec4 world=model*vec4(p,1.0);vWorldPos=world.xyz;vNormal=normalize(normalMatrix*normal);gl_Position=vp*world;}';
-const fs='precision mediump float;uniform vec4 color;uniform float toon;uniform float materialMode;uniform vec3 keyLightDir;uniform vec3 fillLightDir;uniform vec3 viewPos;uniform float showroom;varying vec3 vNormal;varying vec3 vWorldPos;void main(){if(toon<0.5){gl_FragColor=color;return;}vec3 N=normalize(vNormal);vec3 K=normalize(keyLightDir);vec3 F=normalize(fillLightDir);float key=abs(dot(N,K));float fill=abs(dot(N,F));float illum=clamp(key*0.78+fill*0.30,0.0,1.0);float band=illum<0.27?0.46:(illum<0.59?0.78:1.12);vec3 V=normalize(viewPos-vWorldPos);vec3 HK=normalize(K+V);vec3 HF=normalize(F+V);float power=materialMode>1.5?44.0:20.0;float specK=pow(max(abs(dot(N,HK)),0.0),power);float specF=pow(max(abs(dot(N,HF)),0.0),power*0.78);float strength=materialMode>1.5?1.05:(materialMode>0.5?0.72:0.06);float fresnel=pow(1.0-clamp(abs(dot(N,V)),0.0,1.0),2.0);vec3 lit=color.rgb*band;lit+=vec3(1.0,0.78,0.92)*specK*strength;if(showroom>0.5&&materialMode<1.5){float sunSharp=pow(max(abs(dot(N,HK)),0.0),92.0);float sunSoft=pow(max(abs(dot(N,HK)),0.0),26.0);lit+=vec3(1.0,0.96,0.82)*(sunSharp*1.55+sunSoft*0.24);float edgeGlint=pow(fresnel,1.65)*sunSoft;lit+=vec3(1.0,0.48,0.22)*edgeGlint*0.20;}lit+=vec3(0.22,0.78,1.0)*specF*(materialMode>1.5?0.55:0.20);if(materialMode>1.5){lit+=vec3(0.12,0.62,0.92)*fresnel*0.48;lit+=vec3(0.70,0.92,1.0)*pow(specK,0.34)*0.13;}gl_FragColor=vec4(lit,color.a);}';
+const fs='precision mediump float;uniform vec4 color;uniform float toon;uniform float materialMode;uniform vec3 keyLightDir;uniform vec3 fillLightDir;uniform vec3 viewPos;uniform float showroom;uniform float time;varying vec3 vNormal;varying vec3 vWorldPos;void main(){if(toon<0.5){gl_FragColor=color;return;}vec3 N=normalize(vNormal);vec3 K=normalize(keyLightDir);vec3 F=normalize(fillLightDir);float key=abs(dot(N,K));float fill=abs(dot(N,F));float illum=clamp(key*0.78+fill*0.30,0.0,1.0);float band=illum<0.27?0.46:(illum<0.59?0.78:1.12);vec3 V=normalize(viewPos-vWorldPos);vec3 HK=normalize(K+V);vec3 HF=normalize(F+V);float power=materialMode>1.5?58.0:26.0;float specK=pow(max(abs(dot(N,HK)),0.0),power);float specF=pow(max(abs(dot(N,HF)),0.0),power*0.78);float strength=materialMode>1.5?1.28:(materialMode>0.5?0.92:0.06);float fresnel=pow(1.0-clamp(abs(dot(N,V)),0.0,1.0),2.0);vec3 lit=color.rgb*band;lit+=vec3(1.0,0.82,0.86)*specK*strength;if(materialMode>0.5&&materialMode<1.5){float topFacing=clamp(N.y*0.72+0.28,0.0,1.0);float sweep=pow(max(0.0,1.0-abs(fract(vWorldPos.z*0.20-time*0.035)-0.5)*2.0),22.0);lit+=vec3(1.0,0.60,0.70)*sweep*topFacing*0.19;lit+=vec3(0.92,0.18,0.36)*fresnel*0.16;}if(showroom>0.5&&materialMode<1.5){float sunSharp=pow(max(abs(dot(N,HK)),0.0),110.0);float sunSoft=pow(max(abs(dot(N,HK)),0.0),28.0);lit+=vec3(1.0,0.97,0.88)*(sunSharp*1.75+sunSoft*0.28);float edgeGlint=pow(fresnel,1.55)*sunSoft;lit+=vec3(1.0,0.48,0.24)*edgeGlint*0.22;}lit+=vec3(0.22,0.78,1.0)*specF*(materialMode>1.5?0.62:0.24);if(materialMode>1.5){lit+=vec3(0.12,0.62,0.92)*fresnel*0.58;lit+=vec3(0.78,0.94,1.0)*pow(specK,0.32)*0.16;}gl_FragColor=vec4(lit,color.a);}';
 function shader(type,src){const s=gl.createShader(type);gl.shaderSource(s,src);gl.compileShader(s);if(!gl.getShaderParameter(s,gl.COMPILE_STATUS))throw new Error(gl.getShaderInfoLog(s));return s;}
 const prog=gl.createProgram();gl.attachShader(prog,shader(gl.VERTEX_SHADER,vs));gl.attachShader(prog,shader(gl.FRAGMENT_SHADER,fs));gl.linkProgram(prog);
 if(!gl.getProgramParameter(prog,gl.LINK_STATUS))throw new Error(gl.getProgramInfoLog(prog));
 gl.useProgram(prog);
-const loc={p:gl.getAttribLocation(prog,'p'),normal:gl.getAttribLocation(prog,'normal'),vp:gl.getUniformLocation(prog,'vp'),model:gl.getUniformLocation(prog,'model'),normalMatrix:gl.getUniformLocation(prog,'normalMatrix'),color:gl.getUniformLocation(prog,'color'),toon:gl.getUniformLocation(prog,'toon'),materialMode:gl.getUniformLocation(prog,'materialMode'),keyLightDir:gl.getUniformLocation(prog,'keyLightDir'),fillLightDir:gl.getUniformLocation(prog,'fillLightDir'),viewPos:gl.getUniformLocation(prog,'viewPos'),showroom:gl.getUniformLocation(prog,'showroom')};
+const loc={p:gl.getAttribLocation(prog,'p'),normal:gl.getAttribLocation(prog,'normal'),vp:gl.getUniformLocation(prog,'vp'),model:gl.getUniformLocation(prog,'model'),normalMatrix:gl.getUniformLocation(prog,'normalMatrix'),color:gl.getUniformLocation(prog,'color'),toon:gl.getUniformLocation(prog,'toon'),materialMode:gl.getUniformLocation(prog,'materialMode'),keyLightDir:gl.getUniformLocation(prog,'keyLightDir'),fillLightDir:gl.getUniformLocation(prog,'fillLightDir'),viewPos:gl.getUniformLocation(prog,'viewPos'),showroom:gl.getUniformLocation(prog,'showroom'),time:gl.getUniformLocation(prog,'time')};
 function mesh(data){
  const normals=new Float32Array(data.length);
  for(let i=0;i<data.length;i+=9){
@@ -334,8 +334,8 @@ function makeArchLine(center,side,width,offset=.012){
 }
 // Scaled 1.25x from the design sheet: 5.75 x 2.475 x 1.40 game units.
 const bodyProfile=[
- {z:-2.875,w:1.20,floor:.18,side:.34,mid:.66,shoulder:.94,upper:.98,top:1.00},
- {z:-2.70,w:1.235,floor:.18,side:.35,mid:.68,shoulder:.96,upper:1.00,top:1.02},
+ {z:-2.875,w:1.24,floor:.20,side:.36,mid:.70,shoulder:.94,upper:.99,top:1.01},
+ {z:-2.70,w:1.29,floor:.20,side:.37,mid:.72,shoulder:.98,upper:1.03,top:1.05},
  {z:-2.20,w:1.23,floor:.18,side:.35,mid:.65,shoulder:.90,upper:.95,top:.97},
  {z:-1.6375,w:1.235,floor:.18,side:.34,mid:.68,shoulder:.96,upper:1.00,top:1.02},
  {z:-1.25,w:1.18,floor:.18,side:.33,mid:.65,shoulder:.88,upper:.93,top:.95},
@@ -345,8 +345,8 @@ const bodyProfile=[
  {z:1.31,w:1.20,floor:.18,side:.34,mid:.68,shoulder:.92,upper:.97,top:.99},
  {z:1.6375,w:1.235,floor:.18,side:.34,mid:.70,shoulder:.96,upper:1.00,top:1.02},
  {z:2.15,w:1.18,floor:.18,side:.34,mid:.62,shoulder:.86,upper:.91,top:.93},
- {z:2.55,w:1.00,floor:.18,side:.30,mid:.50,shoulder:.70,upper:.74,top:.76},
- {z:2.875,w:.76,floor:.18,side:.26,mid:.38,shoulder:.52,upper:.55,top:.57}
+ {z:2.55,w:1.08,floor:.18,side:.29,mid:.51,shoulder:.72,upper:.76,top:.78},
+ {z:2.875,w:.94,floor:.18,side:.27,mid:.42,shoulder:.61,upper:.65,top:.67}
  ];
 const bodyMesh=makeCarHull(bodyProfile,true);
 const cabinProfile=[
@@ -371,14 +371,36 @@ const intakeLowerL=quad([-1.14,.46,-.88],[-1.14,.46,-1.20],[-1.12,.31,-1.14],[-1
 const intakeLowerR=quad([1.14,.46,-.88],[1.12,.31,-.96],[1.12,.31,-1.14],[1.14,.46,-1.20]);
 const doorSeamL=sideRibbon(-1,[[.78,.85,.95],[.72,-.68,1.03],[.40,-.78,1.12],[.39,.82,1.12]],.018);
 const doorSeamR=sideRibbon(1,[[.78,.85,.95],[.39,.82,1.12],[.40,-.78,1.12],[.72,-.68,1.03]],.018);
-const frontLampL=quad([-.99,.82,2.655],[-.48,.82,2.705],[-.48,.59,2.725],[-.99,.59,2.675]);
-const frontLampR=quad([.99,.82,2.655],[.99,.59,2.675],[.48,.59,2.725],[.48,.82,2.705]);
-const frontLampCoreL=quad([-.92,.775,2.69],[-.55,.775,2.728],[-.55,.635,2.74],[-.92,.635,2.70]);
-const frontLampCoreR=quad([.92,.775,2.69],[.92,.635,2.70],[.55,.635,2.74],[.55,.775,2.728]);
-const frontIntake=quad([-.58,.48,2.80],[.58,.48,2.80],[.48,.25,2.84],[-.48,.25,2.84]);
-const rearLampL=quad([-1.12,.79,-2.735],[-.70,.79,-2.755],[-.70,.49,-2.755],[-1.12,.49,-2.735]);
-const rearLampR=quad([1.12,.79,-2.735],[1.12,.49,-2.735],[.70,.49,-2.755],[.70,.79,-2.755]);
-const rearVent=quad([-.65,.77,-2.79],[.65,.77,-2.79],[.65,.30,-2.82],[-.65,.30,-2.82]);
+// Front light clusters are placed on the outer nose plane, above a broad intake.
+const frontLampL=quad([-.94,.53,2.91],[-.94,.31,2.91],[-.50,.31,2.935],[-.50,.53,2.935]);
+const frontLampR=quad([.50,.53,2.935],[.50,.31,2.935],[.94,.31,2.91],[.94,.53,2.91]);
+const frontLampCoreL=quad([-.87,.485,2.945],[-.87,.405,2.945],[-.57,.405,2.955],[-.57,.485,2.955]);
+const frontLampCoreR=quad([.57,.485,2.955],[.57,.405,2.955],[.87,.405,2.945],[.87,.485,2.945]);
+const frontLampGlowL=quad([-.99,.57,2.90],[-.99,.27,2.90],[-.45,.27,2.94],[-.45,.57,2.94]);
+const frontLampGlowR=quad([.45,.57,2.94],[.45,.27,2.94],[.99,.27,2.90],[.99,.57,2.90]);
+const frontIntake=quad([-.56,.43,2.945],[-.56,.22,2.945],[.56,.22,2.945],[.56,.43,2.945]);
+const headlightBeamL=quad([-.84,.018,2.96],[-.52,.018,2.96],[-2.35,.018,13.5],[.08,.018,13.5]);
+const headlightBeamR=quad([.52,.018,2.96],[.84,.018,2.96],[-.08,.018,13.5],[2.35,.018,13.5]);
+// This flat, full-width rear panel is intentionally proud of the hull: the silhouette reads as a squared tail.
+const rearFascia=quad([-1.16,.93,-2.905],[1.16,.93,-2.905],[1.16,.30,-2.905],[-1.16,.30,-2.905]);
+const rearLampFrameL=quad([-1.14,.87,-2.92],[-.72,.87,-2.92],[-.72,.47,-2.92],[-1.14,.47,-2.92]);
+const rearLampFrameR=quad([1.14,.87,-2.92],[1.14,.47,-2.92],[.72,.47,-2.92],[.72,.87,-2.92]);
+const rearLampL=quad([-1.105,.82,-2.935],[-.755,.82,-2.935],[-.755,.52,-2.935],[-1.105,.52,-2.935]);
+const rearLampR=quad([1.105,.82,-2.935],[1.105,.52,-2.935],[.755,.52,-2.935],[.755,.82,-2.935]);
+const rearLampGlowL=quad([-1.16,.90,-2.93],[-.70,.90,-2.93],[-.70,.43,-2.93],[-1.16,.43,-2.93]);
+const rearLampGlowR=quad([1.16,.90,-2.93],[1.16,.43,-2.93],[.70,.43,-2.93],[.70,.90,-2.93]);
+const rearVent=quad([-.68,.84,-2.935],[.68,.84,-2.935],[.68,.34,-2.935],[-.68,.34,-2.935]);
+const rearDiffuser=quad([-.90,.36,-2.94],[.90,.36,-2.94],[.82,.235,-2.94],[-.82,.235,-2.94]);
+const rearLedL1=quad([-1.06,.755,-2.95],[-.80,.755,-2.95],[-.80,.715,-2.95],[-1.06,.715,-2.95]);
+const rearLedL2=quad([-1.06,.665,-2.95],[-.80,.665,-2.95],[-.80,.625,-2.95],[-1.06,.625,-2.95]);
+const rearLedL3=quad([-1.06,.575,-2.95],[-.80,.575,-2.95],[-.80,.535,-2.95],[-1.06,.535,-2.95]);
+const rearLedR1=quad([1.06,.755,-2.95],[1.06,.715,-2.95],[.80,.715,-2.95],[.80,.755,-2.95]);
+const rearLedR2=quad([1.06,.665,-2.95],[1.06,.625,-2.95],[.80,.625,-2.95],[.80,.665,-2.95]);
+const rearLedR3=quad([1.06,.575,-2.95],[1.06,.535,-2.95],[.80,.535,-2.95],[.80,.575,-2.95]);
+const rearSignalL=quad([-1.105,.785,-2.955],[-1.065,.785,-2.955],[-1.065,.555,-2.955],[-1.105,.555,-2.955]);
+const rearSignalR=quad([1.105,.785,-2.955],[1.105,.555,-2.955],[1.065,.555,-2.955],[1.065,.785,-2.955]);
+const spoilerBlade=quad([-1.34,1.31,-2.38],[1.34,1.31,-2.38],[1.25,1.31,-2.72],[-1.25,1.31,-2.72]);
+const spoilerTopGlint=quad([-1.12,1.322,-2.42],[1.12,1.322,-2.42],[1.08,1.322,-2.63],[-1.08,1.322,-2.63]);
 // Dark backing frames leave a crisp ink border around each glass opening.
 const windshieldFrame=quad([-.39,1.345,.265],[.39,1.345,.265],[.57,.855,1.055],[-.57,.855,1.055]);
 const rearGlassFrame=quad([-.42,1.335,-1.355],[.42,1.335,-1.355],[.70,.815,-1.755],[-.70,.815,-1.755]);
@@ -414,7 +436,7 @@ const hoodSheenR=sideRibbon(1,[[.73,2.55,.47],[.86,2.15,.59],[.91,1.72,.60],[.88
 const C={
  ground:[.025,.025,.065,1],grid:[.09,.34,.48,.72],grid2:[.34,.10,.40,.55],
  road:[.055,.055,.105,1],road2:[.075,.07,.13,1],pink:[1,.13,.60,1],cyan:[.20,.88,1,1],white:[.92,.96,1,1],
- body:[.86,.025,.17,1],bodyLight:[1,.16,.48,1],bodyShade:[.28,.015,.09,1],
+ body:[.72,.018,.095,1],bodyLight:[1,.12,.29,1],bodyShade:[.19,.006,.035,1],
  glass:[.012,.035,.075,1],glassLight:[.055,.17,.28,1],trim:[.012,.016,.026,1],
  tire:[.012,.014,.019,1],hub:[.55,.52,.68,1],brake:[.20,.20,.28,1],city:[.085,.045,.12,1],mount:[.08,.045,.14,1]
 };
@@ -593,7 +615,7 @@ function drawWorld(){
  const cam=cameraFor(carX,carZ);
  const vp=matMul(perspective(cam.fov*Math.PI/180,W/H,.1,650),lookAt(cam.x,cam.y,cam.z,cam.tx,cam.ty,cam.tz));
  gl.uniformMatrix4fv(loc.vp,false,new Float32Array(vp));
- gl.uniform3f(loc.keyLightDir,-.48,.82,.30);gl.uniform3f(loc.fillLightDir,.58,.34,-.72);gl.uniform3f(loc.viewPos,cam.x,cam.y,cam.z);gl.uniform1f(loc.showroom,garageMode?1:0);
+ gl.uniform3f(loc.keyLightDir,-.48,.82,.30);gl.uniform3f(loc.fillLightDir,.58,.34,-.72);gl.uniform3f(loc.viewPos,cam.x,cam.y,cam.z);gl.uniform1f(loc.showroom,garageMode?1:0);gl.uniform1f(loc.time,performance.now()*.001);
  gl.enable(gl.DEPTH_TEST);gl.disable(gl.BLEND);gl.clearColor(0,0,0,0);gl.clear(gl.COLOR_BUFFER_BIT|gl.DEPTH_BUFFER_BIT);
  if(garageMode){
   // Dark showroom floor with a raised circular display stage.
@@ -640,35 +662,41 @@ function drawWorld(){
  drawBiome(distance,bw[0],0);drawBiome(distance,bw[1],1);drawBiome(distance,bw[2],2);
  gl.depthMask(true);gl.disable(gl.BLEND);
  }
- // DRIVELLA GTS — original low, angular mid-engine coupe built to the approved four-view blueprint.
+ // DRIVELLA GTS — original angular GT, now with a squared rear and real light mounting planes.
  const yaw=garageMode?0:carYaw;
+ // Contact shadow and coloured floor bounce.
+ const shadowY=garageMode?-.052:.018;
+ gl.enable(gl.BLEND);gl.blendFunc(gl.SRC_ALPHA,gl.ONE_MINUS_SRC_ALPHA);gl.depthMask(false);
+ draw(cylinder,carX,shadowY,carZ,1.52,.012,2.66,[.004,.002,.012,.68]);
+ gl.blendFunc(gl.SRC_ALPHA,gl.ONE);
+ draw(cylinder,carX,shadowY+.008,carZ,1.58,.014,2.55,[.02,.42,.92,.17]);
+ draw(cylinder,carX-.88,shadowY+.009,carZ,.72,.010,1.88,[.95,.025,.28,.11]);
+ draw(cylinder,carX+.88,shadowY+.009,carZ,.72,.010,1.88,[.02,.62,.95,.11]);
+ if(!garageMode){
+  drawCarMesh(headlightBeamL,carX,carZ,[.72,.88,1,.075],yaw,0);
+  drawCarMesh(headlightBeamR,carX,carZ,[.72,.88,1,.075],yaw,0);
+ }
+ gl.depthMask(true);gl.disable(gl.BLEND);
+ // Continuous hull with broad painted planes and shader-driven clear-coat highlights.
  drawCarMesh(bodyMesh,carX,carZ,C.body,yaw);
- // Hand-painted cel-shaded planes: a cool dark flank shadow and two angular hood facets.
- for(const line of [flankShadeL,flankShadeR])drawCarMesh(line,carX,carZ,C.bodyShade,yaw);
- drawCarMesh(hoodFacetL,carX,carZ,[1,.105,.39,1],yaw);drawCarMesh(hoodFacetR,carX,carZ,[1,.105,.39,1],yaw);
- drawCarMesh(hoodSheenL,carX,carZ,[1,.42,.72,1],yaw);drawCarMesh(hoodSheenR,carX,carZ,[1,.42,.72,1],yaw);
- drawCarMesh(hoodEdgeL,carX,carZ,C.trim,yaw);drawCarMesh(hoodEdgeR,carX,carZ,C.trim,yaw);
- drawCarMesh(hoodCenterInk,carX,carZ,C.trim,yaw);
- // Cabin shell, black glass beds, painted roof and fitted panes.
+ drawCarMesh(flankShadeL,carX,carZ,C.bodyShade,yaw);drawCarMesh(flankShadeR,carX,carZ,C.bodyShade,yaw);
+ drawCarMesh(hoodFacetL,carX,carZ,[.91,.045,.18,1],yaw);drawCarMesh(hoodFacetR,carX,carZ,[.91,.045,.18,1],yaw);
+ // Cabin shell, glass and restrained cool reflections.
  drawCarMesh(cabinMesh,carX,carZ,C.glass,yaw);
  drawCarMesh(windshieldFrame,carX,carZ,C.trim,yaw);drawCarMesh(rearGlassFrame,carX,carZ,C.trim,yaw);
- drawCarMesh(roofMesh,carX,carZ,[.78,.035,.23,1],yaw);
+ drawCarMesh(roofMesh,carX,carZ,[.66,.022,.075,1],yaw);
  drawCarMesh(windshield,carX,carZ,C.glassLight,yaw,2);drawCarMesh(rearGlass,carX,carZ,[.025,.095,.16,1],yaw,2);
  for(const win of [sideGlassLF,sideGlassLR,sideGlassRF,sideGlassRR])drawCarMesh(win,carX,carZ,[.025,.10,.17,1],yaw,2);
- // Cool specular streaks are separate from the warm body paint highlights.
  for(const glint of [frontGlassGlint,rearGlassGlint,sideGlassGlintL,sideGlassGlintR])drawCarMesh(glint,carX,carZ,[.24,.70,.91,1],yaw,2);
- // Roof highlight is shader-driven; no coplanar overlay, preventing shimmer.
  for(const side of [-1,1]){
   drawCarPart(carX,carZ,side*.73,1.04,-.72,.018,.26,.022,C.trim,yaw);
-  // Short mirrors sit at the base of the A-pillars.
   drawCarPart(carX,carZ,side*.77,1.03,.58,.10,.045,.095,C.trim,yaw);
-  drawCarPart(carX,carZ,side*.85,1.08,.61,.13,.08,.10,C.body,yaw);
+  drawCarPart(carX,carZ,side*.85,1.08,.61,.13,.08,.10,C.bodyLight,yaw);
   drawCarMesh(side<0?intakeUpperL:intakeUpperR,carX,carZ,C.trim,yaw);
   drawCarMesh(side<0?intakeLowerL:intakeLowerR,carX,carZ,C.trim,yaw);
  }
- // Clean cartoon body rendering: no long decorative side stripes or silhouette ribbons.
  for(const arch of [archFrontL,archFrontR,archRearL,archRearR])drawCarMesh(arch,carX,carZ,C.bodyShade,yaw);
- // Four 18-inch wheels: low-profile tyres and five-spoke alloy faces.
+ // Four low-profile tyres with machined five-spoke alloy faces.
  for(const side of [-1,1])for(const wz of [-1.6375,1.6375]){
   const wx=1.015,wy=.465,tyreR=.455;
   drawCarPart(carX,carZ,side*wx,wy,wz,tyreR,.145,tyreR,C.tire,yaw,wheel);
@@ -676,40 +704,43 @@ function drawWorld(){
   drawCarPart(carX,carZ,side*(wx+.148),wy,wz,.318,.018,.318,C.hub,yaw,wheelFace);
   drawCarPart(carX,carZ,side*(wx+.163),wy,wz,.092,.020,.092,C.bodyLight,yaw,wheelFace);
  }
- // Front split-blade light units and broad three-zone intake.
- drawCarMesh(frontLampL,carX,carZ,C.trim,yaw);drawCarMesh(frontLampR,carX,carZ,C.trim,yaw);
- drawCarMesh(frontLampCoreL,carX,carZ,[1,.018,.045,1],yaw);drawCarMesh(frontLampCoreR,carX,carZ,[1,.018,.045,1],yaw);
- drawCarMesh(frontIntake,carX,carZ,C.trim,yaw);
- for(const x of [-.19,.19])drawCarPart(carX,carZ,x,.365,2.82,.018,.12,.012,C.bodyLight,yaw);
+ // Front: cool white LED blades, amber markers and a black lower intake.
+ gl.enable(gl.BLEND);gl.blendFunc(gl.SRC_ALPHA,gl.ONE);gl.depthMask(false);
+ drawCarMesh(frontLampGlowL,carX,carZ,[.30,.78,1,.30],yaw,0);drawCarMesh(frontLampGlowR,carX,carZ,[.30,.78,1,.30],yaw,0);
+ gl.depthMask(true);gl.disable(gl.BLEND);
+ drawCarMesh(frontLampL,carX,carZ,C.trim,yaw,0);drawCarMesh(frontLampR,carX,carZ,C.trim,yaw,0);
+ drawCarMesh(frontLampCoreL,carX,carZ,[.78,.94,1,1],yaw,2);drawCarMesh(frontLampCoreR,carX,carZ,[.78,.94,1,1],yaw,2);
+ drawCarMesh(frontIntake,carX,carZ,C.trim,yaw,0);
  for(const side of [-1,1]){
-  drawCarPart(carX,carZ,side*.55,.79,2.00,.018,.012,.62,C.bodyLight,yaw);
-  drawCarPart(carX,carZ,side*.82,.36,2.72,.13,.035,.06,C.trim,yaw);
-  drawCarPart(carX,carZ,side*.82,.37,2.75,.08,.018,.025,[.96,.55,.22,1],yaw);
+  drawCarPart(carX,carZ,side*.78,.365,2.95,.035,.035,.018,[1,.42,.13,1],yaw);
+  drawCarPart(carX,carZ,side*.94,.35,2.96,.075,.025,.055,C.bodyLight,yaw);
  }
- drawCarPart(carX,carZ,0,.18,2.77,1.02,.035,.13,C.trim,yaw);
- // Rear: segmented tail lamps, central louver panel, diffuser and four exhaust tips.
+ drawCarPart(carX,carZ,0,.18,2.97,1.00,.035,.085,C.trim,yaw);
+ // Rear: a genuinely flat full-width fascia. Every light now sits OUTSIDE the body cap.
+ drawCarMesh(rearFascia,carX,carZ,C.body,yaw,1);
+ gl.enable(gl.BLEND);gl.blendFunc(gl.SRC_ALPHA,gl.ONE);gl.depthMask(false);
+ drawCarMesh(rearLampGlowL,carX,carZ,[1,.012,.025,.28],yaw,0);drawCarMesh(rearLampGlowR,carX,carZ,[1,.012,.025,.28],yaw,0);
+ gl.depthMask(true);gl.disable(gl.BLEND);
+ drawCarMesh(rearLampFrameL,carX,carZ,C.trim,yaw,0);drawCarMesh(rearLampFrameR,carX,carZ,C.trim,yaw,0);
+ drawCarMesh(rearLampL,carX,carZ,[.46,.008,.025,1],yaw,0);drawCarMesh(rearLampR,carX,carZ,[.46,.008,.025,1],yaw,0);
+ const brakeLevel=keys.s?1.0:.72,ledColor=[brakeLevel,.018,.035,1];
+ for(const led of [rearLedL1,rearLedL2,rearLedL3])drawCarMesh(led,carX,carZ,ledColor,yaw,2);
+ for(const led of [rearLedR1,rearLedR2,rearLedR3])drawCarMesh(led,carX,carZ,ledColor,yaw,2);
+ const signalOn=Math.sin(performance.now()*.012)>-.15,steerNow=readSteeringInput();
+ drawCarMesh(rearSignalL,carX,carZ,steerNow<0&&signalOn?[1,.52,.035,1]:[.19,.075,.018,1],yaw,2);
+ drawCarMesh(rearSignalR,carX,carZ,steerNow>0&&signalOn?[1,.52,.035,1]:[.19,.075,.018,1],yaw,2);
  drawCarMesh(rearVent,carX,carZ,C.trim,yaw,0);
- const signalPulse=(Math.sin(performance.now()*.012)>-.15)?1:.48;
- const steerNow=readSteeringInput();
- drawCarMesh(rearLampL,carX,carZ,[1,.012,.035,1],yaw);drawCarMesh(rearLampR,carX,carZ,[1,.012,.035,1],yaw);
- drawCarPart(carX,carZ,-.91,.64,-2.765,.18,.105,.018,[1,.045,.065,1],yaw);
- drawCarPart(carX,carZ,.91,.64,-2.765,.18,.105,.018,[1,.045,.065,1],yaw);
- drawCarPart(carX,carZ,-1.035,.63,-2.77,.045,.19,.025,steerNow<0?[1,.48,.035,signalPulse]:[.32,.10,.025,1],yaw);
- drawCarPart(carX,carZ,1.035,.63,-2.77,.045,.19,.025,steerNow>0?[1,.48,.035,signalPulse]:[.32,.10,.025,1],yaw);
- for(let i=0;i<9;i++)drawCarPart(carX,carZ,-.45+i*.112,.63,-2.83,.012,.012,.012,C.hub,yaw);
+ for(let i=0;i<5;i++)drawCarPart(carX,carZ,0,.43+i*.075,-2.955,.52,.012,.012,[.17,.20,.28,1],yaw);
+ drawCarMesh(rearDiffuser,carX,carZ,[.018,.022,.038,1],yaw,0);
  for(const side of [-1,1]){
-  for(let i=0;i<3;i++)drawCarPart(carX,carZ,side*.69,.69,-2.78+i*.085,.075,.025,.018,[1,.075,.18,1],yaw);
-  drawCarPart(carX,carZ,side*.58,.22,-2.82,.12,.065,.055,C.trim,yaw);
-  drawCarPart(carX,carZ,side*.58,.22,-2.86,.085,.045,.025,C.hub,yaw);
-  drawCarPart(carX,carZ,side*.88,1.03,-2.18,.075,.25,.10,C.trim,yaw);
+  drawCarPart(carX,carZ,side*.58,.235,-2.965,.115,.065,.055,C.trim,yaw);
+  drawCarPart(carX,carZ,side*.58,.235,-2.982,.082,.040,.025,C.hub,yaw);
+  drawCarPart(carX,carZ,side*.84,1.19,-2.48,.065,.19,.085,C.body,yaw);
  }
- // Wide, sharp-edged rear wing: raised supports and a broad swept blade.
- const spoilerBlade=quad([-1.34,1.30,-2.38],[1.34,1.30,-2.38],[1.22,1.34,-2.70],[-1.22,1.34,-2.70]);
+ // Straight, level, body-colour rear wing.
  drawCarMesh(spoilerBlade,carX,carZ,C.body,yaw,1);
- drawCarPart(carX,carZ,-.83,1.20,-2.46,.055,.19,.075,C.body,yaw);
- drawCarPart(carX,carZ,.83,1.20,-2.46,.055,.19,.075,C.body,yaw);
- drawCarPart(carX,carZ,0,1.325,-2.54,1.18,.035,.055,C.bodyLight,yaw);
- if(boost>.05){drawCarPart(carX,carZ,-.42,.18,-2.94,.06,.055,.62,[.04,.58,1,boost],yaw);drawCarPart(carX,carZ,.42,.18,-2.94,.06,.055,.62,[.04,.58,1,boost],yaw);}
+ drawCarMesh(spoilerTopGlint,carX,carZ,C.bodyLight,yaw,1);
+ if(boost>.05){drawCarPart(carX,carZ,-.42,.18,-2.99,.06,.055,.62,[.04,.58,1,boost],yaw);drawCarPart(carX,carZ,.42,.18,-2.99,.06,.055,.62,[.04,.58,1,boost],yaw);}
 }
 function drawSun(){
  sctx.clearRect(0,0,W,H);
