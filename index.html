@@ -76,7 +76,7 @@
 .options-card{position:absolute;left:clamp(20px,4vw,58px);top:145px;width:min(360px,86vw);padding:22px;border:1px solid #6ceaff66;background:#080b20eF;box-shadow:0 0 40px #a100ff22;pointer-events:auto;color:#c9d9f1;font-size:11px;letter-spacing:.1em}
 .option-row{display:flex;justify-content:space-between;align-items:center;gap:15px;padding:13px 0;border-bottom:1px solid #78cfff22}
 .option-row input{accent-color:#ff48d5;width:130px}
-#garage-screen{cursor:grab}#garage-screen.dragging{cursor:grabbing}
+#garage-screen{cursor:grab}#garage-screen.show{pointer-events:auto}#garage-screen.dragging{cursor:grabbing}body:not(.playing) #hud,body:not(.playing) #tools-ui,body:not(.playing) #debug-panel{visibility:hidden}
 @keyframes menuIn{from{opacity:0;transform:scale(1.025)}to{opacity:1;transform:scale(1)}}
 @media(max-width:700px){#main-menu{background-position:58% center;padding:20px;align-items:flex-start}#main-menu:before{content:'';position:absolute;inset:0;background:linear-gradient(90deg,#050718ed,#050718a8 65%,transparent)}.menu-content{position:relative;margin-top:8vh}.menu-brand{font-size:clamp(42px,13vw,68px)}.menu-sub{margin:10px 0 25px;font-size:8px}.menu-actions{width:min(290px,88vw);gap:9px}.menu-btn{min-height:54px;font-size:13px}.menu-footer{left:20px;bottom:14px;font-size:9px}.garage-copy{top:95px;font-size:8px}.garage-tip{right:15px;bottom:15px;font-size:8px;max-width:42vw}.options-card{top:125px}}
 @media(max-width:700px){.top{gap:8px}.version-label{font-size:7px;margin-left:0}.stat{display:none}#tools-ui{right:8px;bottom:48px;gap:4px}#tools-ui button{padding:8px 7px;font-size:9px}#cam-label{min-width:90px;font-size:8px}#debug-panel{left:8px;bottom:98px;min-width:205px;font-size:9px}.bottom{max-width:75%}}
@@ -202,7 +202,7 @@ $('debug-toggle').addEventListener('click',toggleDebug);
 function showMenu(){garageMode=false;$('garage-screen').classList.remove('show');$('options-screen').classList.remove('show');$('main-menu').classList.add('show');}
 function showGarage(){garageMode=true;garageAngle=0;garageZoom=11;$('main-menu').classList.remove('show');$('options-screen').classList.remove('show');$('garage-screen').classList.add('show');}
 function showOptions(){$('main-menu').classList.remove('show');$('garage-screen').classList.remove('show');$('options-screen').classList.add('show');}
-function start(){garageMode=false;started=true;initAudio();if(musicPending&&musicOn)tryStartMusic();$('main-menu').classList.remove('show');$('garage-screen').classList.remove('show');$('options-screen').classList.remove('show');$('overlay').classList.add('hidden');}
+function start(){garageMode=false;started=true;document.body.classList.add('playing');initAudio();if(musicPending&&musicOn)tryStartMusic();$('main-menu').classList.remove('show');$('garage-screen').classList.remove('show');$('options-screen').classList.remove('show');$('overlay').classList.add('hidden');}
 $('menu-start').addEventListener('click',start);$('menu-garage').addEventListener('click',showGarage);$('menu-options').addEventListener('click',showOptions);$('garage-back').addEventListener('click',showMenu);$('options-back').addEventListener('click',showMenu);
 $('option-music').addEventListener('click',()=>{toggleMusic();$('option-music').textContent=musicOn?'ВКЛЮЧЕНА':'ВЫКЛЮЧЕНА';});
 $('option-volume').addEventListener('input',e=>{musicVolume=Number(e.target.value)/100;if(audio)audio.volume=musicVolume;});
