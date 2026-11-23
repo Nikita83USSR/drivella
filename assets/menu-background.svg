@@ -1,0 +1,93 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1600 900">
+<defs>
+ <linearGradient id="sky" x2="0" y2="1"><stop stop-color="#070b25"/><stop offset=".43" stop-color="#17123e"/><stop offset=".73" stop-color="#54205d"/><stop offset="1" stop-color="#080d25"/></linearGradient>
+ <radialGradient id="openGlow"><stop stop-color="#202052" stop-opacity=".18"/><stop offset=".66" stop-color="#0a1029" stop-opacity=".40"/><stop offset="1" stop-color="#070b20" stop-opacity=".08"/></radialGradient>
+ <linearGradient id="sun" x2="0" y2="1"><stop stop-color="#ffcb7b"/><stop offset=".48" stop-color="#ff5e83"/><stop offset="1" stop-color="#d81b9c"/></linearGradient>
+ <linearGradient id="road" x2="0" y2="1"><stop stop-color="#211543"/><stop offset="1" stop-color="#040817"/></linearGradient>
+ <linearGradient id="paint" x2=".22" y2="1"><stop stop-color="#ff6ed4"/><stop offset=".30" stop-color="#ed1a9e"/><stop offset=".72" stop-color="#98105f"/><stop offset="1" stop-color="#3b1046"/></linearGradient>
+ <linearGradient id="paintHi" x2="0" y2="1"><stop stop-color="#ff9de8"/><stop offset="1" stop-color="#e326a9"/></linearGradient>
+ <linearGradient id="glass" x2="0" y2="1"><stop stop-color="#335b83"/><stop offset=".38" stop-color="#111a3b"/><stop offset="1" stop-color="#070b1c"/></linearGradient>
+ <linearGradient id="metal" x2="0" y2="1"><stop stop-color="#8b8cb8"/><stop offset=".48" stop-color="#292949"/><stop offset="1" stop-color="#080b1b"/></linearGradient>
+ <filter id="glow"><feGaussianBlur stdDeviation="15"/></filter>
+ <filter id="soft"><feGaussianBlur stdDeviation="5"/></filter>
+ <pattern id="stars" width="180" height="140" patternUnits="userSpaceOnUse">
+  <circle cx="12" cy="23" r="1.2" fill="#b7dfff" opacity=".65"/><circle cx="75" cy="78" r=".9" fill="#fff" opacity=".45"/><circle cx="148" cy="35" r="1" fill="#ff9cde" opacity=".55"/><circle cx="116" cy="120" r=".8" fill="#a7c9ff" opacity=".55"/>
+ </pattern>
+</defs>
+<rect width="1600" height="900" fill="url(#sky)"/>
+<rect width="1600" height="540" fill="url(#stars)" opacity=".85"/>
+<circle cx="1275" cy="258" r="205" fill="#ff2aab" opacity=".22" filter="url(#glow)"/>
+<circle cx="1275" cy="258" r="166" fill="url(#sun)"/>
+<g fill="#321345" opacity=".58">
+ <path d="M1110 209h330v13h-330zm0 38h330v12h-330zm0 38h330v12h-330zm0 38h330v13h-330z"/>
+</g>
+<path d="M0 525 120 460 240 493 360 420 510 500 650 435 790 505 930 454 1080 510 1215 438 1370 500 1505 435 1600 478V670H0Z" fill="#151637"/>
+<path d="M0 565 130 510 265 540 405 478 548 552 710 485 865 550 1015 493 1175 555 1325 488 1475 546 1600 510V690H0Z" fill="#0c1330"/>
+<!-- distant city held to the far sides, leaving a calm central stage -->
+<g fill="#090e28">
+ <path d="M0 520h36v145H0zm44-80h45v225H44zm55 46h30v179H99zm42-91h52v270h-52zm61 74h35v196h-35zm42-48h43v244h-43z"/>
+ <path d="M1260 530h35v135h-35zm44-94h53v229h-53zm62 46h39v183h-39zm49-84h52v267h-52zm60 60h43v207h-43zm51-110h55v317h-55z"/>
+</g>
+<g fill="#57eaff" opacity=".58">
+ <path d="M53 477h5v8h-5zm22 35h5v8h-5zm73-82h5v8h-5zm22 45h5v8h-5zm28 53h5v8h-5zm-142 53h5v8h-5z"/>
+ <path d="M1316 476h5v8h-5zm25 37h5v8h-5zm75-65h5v8h-5zm22 44h5v8h-5zm42 54h5v8h-5zm49-104h5v8h-5z"/>
+</g>
+<path d="M0 633H1600V900H0Z" fill="url(#road)"/>
+<path d="M0 650H1600M0 735H1600M0 835H1600" stroke="#ec2fb7" stroke-width="2" opacity=".44"/>
+<path d="M0 670H1600M0 785H1600" stroke="#38dff8" stroke-width="2" opacity=".23"/>
+<g stroke-width="2" fill="none">
+ <path d="M0 900 800 633 1600 900" stroke="#f336c7" opacity=".65"/>
+ <path d="M180 900 800 633 1420 900M390 900 800 633 1210 900M560 900 800 633 1040 900" stroke="#3bdcf6" opacity=".45"/>
+ <path d="M0 705 800 705 1600 705M0 765 800 765 1600 765" stroke="#6134aa" opacity=".32"/>
+</g>
+<!-- central negative-space vignette for the actual interactive menu -->
+<rect x="480" y="250" width="650" height="610" rx="34" fill="url(#openGlow)"/>
+<path d="M500 285H1085M500 835H1085" stroke="#62eaff" stroke-width="1" opacity=".16"/>
+<path d="M500 285V835M1085 285V835" stroke="#ec3bbd" stroke-width="1" opacity=".10"/>
+<!-- a few edge palms frame the scene without entering the menu safe area -->
+<g fill="none" stroke="#11132c" stroke-width="16" stroke-linecap="round">
+ <path d="M95 670Q110 552 77 456M77 456Q20 405 8 435M77 456Q120 389 172 407M77 456Q45 365 55 335M77 456Q155 441 190 462"/>
+ <path d="M1530 670Q1505 545 1545 437M1545 437Q1480 395 1445 418M1545 437Q1580 370 1594 357M1545 437Q1550 365 1525 323M1545 437Q1608 437 1628 458"/>
+</g>
+<g fill="none" stroke="#2a1a4d" stroke-width="5" stroke-linecap="round">
+ <path d="M95 670Q110 552 77 456M77 456Q20 405 8 435M77 456Q120 389 172 407M77 456Q45 365 55 335"/>
+ <path d="M1530 670Q1505 545 1545 437M1545 437Q1480 395 1445 418M1545 437Q1580 370 1594 357M1545 437Q1550 365 1525 323"/>
+</g>
+<!-- Drivella GTS: original angular arcade coupe, deliberately compact in the corner -->
+<g transform="translate(1125 552)">
+ <ellipse cx="205" cy="256" rx="370" ry="36" fill="#ff23b7" opacity=".44" filter="url(#glow)"/>
+ <path d="M-80 205  -35 151 35 116 112 84 225 75 311 101 379 139 415 194 400 226 356 239 -55 239 -93 225Z" fill="url(#paint)" stroke="#ff7bdc" stroke-width="4"/>
+ <path d="M-78 204 -36 160 43 126 126 105 204 104 286 123 348 154 398 195 350 208 273 204 188 213 45 218 -55 215Z" fill="url(#paintHi)" opacity=".45"/>
+ <path d="M58 122 113 66 223 57 304 105 339 142 268 148 171 137 84 148Z" fill="url(#glass)" stroke="#d38bff" stroke-width="4"/>
+ <path d="M119 70 218 62 204 132 83 142Z" fill="#101831" opacity=".92"/>
+ <path d="M228 63 301 106 333 139 217 135Z" fill="#0a142b" opacity=".9"/>
+ <path d="M83 148 171 137 217 135 333 139 354 158 285 160 164 159Z" fill="#11132a"/>
+ <path d="M-47 173 17 151 47 159 14 189 -61 198Z" fill="#050a18" stroke="#ec52cd" stroke-width="3"/>
+ <path d="M-54 178 -5 163 20 163 3 175 -54 188Z" fill="#83f4ff"/>
+ <path d="M-51 184 -4 171 10 172 -7 182 -55 192Z" fill="#f8c2ff"/>
+ <path d="M340 151 397 174 408 199 354 194Z" fill="#080d1e" stroke="#e928aa" stroke-width="3"/>
+ <path d="M361 164 399 181 398 190 361 182Z" fill="#ff3d88"/>
+ <path d="M-64 216 357 216 389 229 348 240 -55 239 -90 227Z" fill="#090c1c"/>
+ <path d="M-73 223H378" stroke="#4beaff" stroke-width="4" opacity=".75"/>
+ <path d="M-38 146 17 129 84 121" stroke="#ffb0e8" stroke-width="4" fill="none" opacity=".7"/>
+ <path d="M-18 209 50 202 116 203 111 215 9 221Z" fill="#350d3e"/>
+ <path d="M256 204 339 196 371 208 341 223 250 225Z" fill="#230d35"/>
+ <g fill="#050817" stroke="#7c76bb" stroke-width="7">
+  <ellipse cx="45" cy="230" rx="53" ry="54"/><ellipse cx="310" cy="230" rx="53" ry="54"/>
+ </g>
+ <g fill="none" stroke="#c7a7eb" stroke-width="6">
+  <circle cx="45" cy="230" r="32"/><circle cx="310" cy="230" r="32"/>
+  <path d="M45 198V262M13 230H77M23 208 67 252M67 208 23 252"/>
+  <path d="M310 198V262M278 230H342M288 208 332 252M332 208 288 252"/>
+ </g>
+ <g fill="#ff5acb">
+  <circle cx="45" cy="230" r="9"/><circle cx="310" cy="230" r="9"/>
+ </g>
+ <path d="M130 86 193 83 182 94 117 99Z" fill="#f84fc8"/>
+ <path d="M266 91 303 112 286 116 245 98Z" fill="#c51b8b"/>
+ <path d="M382 154 404 177" stroke="#f0a3ff" stroke-width="4"/>
+ <path d="M-55 202 5 194 19 201 -50 212Z" fill="#ff49b4"/>
+</g>
+<path d="M0 872H1600" stroke="#ed35bd" opacity=".35" stroke-width="2"/>
+<path d="M0 880H1600" stroke="#39dff8" opacity=".17" stroke-width="1"/>
+</svg>
