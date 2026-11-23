@@ -87,13 +87,13 @@
 <body>
 <canvas id="scene"></canvas><canvas id="sun"></canvas>
 <div id="hud">
- <div class="top"><div class="logo">DRIVELLA<small>3D SYNTHWAVE DRIFT RACING</small></div><div class="version-label" id="version-label">v0.6.0 · BUILD 008</div><div class="stat">DISTANCE<b id="distance">000.0 KM</b></div><div class="stat">LOCATION<b>VIOLET COAST</b></div></div>
+ <div class="top"><div class="logo">DRIVELLA<small>3D SYNTHWAVE DRIFT RACING</small></div><div class="version-label" id="version-label">v0.6.1 · BUILD 009</div><div class="stat">DISTANCE<b id="distance">000.0 KM</b></div><div class="stat">LOCATION<b>VIOLET COAST</b></div></div>
  <div class="right"><div id="speed">000 <span>KM/H</span></div><div id="direction">▶ FORWARD</div><div id="music">♫ MUSIC SCANNING…</div></div>
- <div class="bottom"><div class="hint"><strong>W / ↑</strong> ACCELERATE　<strong>S / ↓</strong> BRAKE / REVERSE<br><strong>A / ←　D / →</strong> STEER　<strong>SPACE</strong> HANDBRAKE　<strong>M</strong> MUSIC　<strong>1–4</strong> CAMERA</div><div>3D NEON HIGHWAY // BUILD 008</div></div>
+ <div class="bottom"><div class="hint"><strong>W / ↑</strong> ACCELERATE　<strong>S / ↓</strong> BRAKE / REVERSE<br><strong>A / ←　D / →</strong> STEER　<strong>SPACE</strong> HANDBRAKE　<strong>M</strong> MUSIC　<strong>1–4</strong> CAMERA</div><div>3D NEON HIGHWAY // BUILD 009</div></div>
 </div>
 <div id="tools-ui"><button id="cam-prev" aria-label="Previous camera">◀</button><span id="cam-label">CAM 2 · CLOSE</span><button id="cam-next" aria-label="Next camera">▶</button><button id="debug-toggle">DEBUG</button></div>
 <div id="debug-panel"><div class="debug-title">DRIVELLA DIAGNOSTICS</div><div id="debug-data">Initializing…</div></div>
-<div id="boot-screen"><div class="boot-content"><div class="boot-kicker">NIGHT DRIVE SYSTEMS // INITIALIZING</div><div class="boot-logo">DRIVELLA</div><div class="boot-subtitle">3D SYNTHWAVE DRIFT RACING</div><div class="boot-mark"></div><div class="boot-status" id="boot-status">BUILDING THE 3D WORLD</div><div class="boot-track"><div class="boot-progress" id="boot-progress"></div></div><div class="boot-meta"><span>3D ENGINE ONLINE</span><span id="boot-percent">00%</span></div><div class="boot-footer">ENGINE STARTUP // v0.6.0 · BUILD 008</div></div></div>
+<div id="boot-screen"><div class="boot-content"><div class="boot-kicker">NIGHT DRIVE SYSTEMS // INITIALIZING</div><div class="boot-logo">DRIVELLA</div><div class="boot-subtitle">3D SYNTHWAVE DRIFT RACING</div><div class="boot-mark"></div><div class="boot-status" id="boot-status">BUILDING THE 3D WORLD</div><div class="boot-track"><div class="boot-progress" id="boot-progress"></div></div><div class="boot-meta"><span>3D ENGINE ONLINE</span><span id="boot-percent">00%</span></div><div class="boot-footer">ENGINE STARTUP // v0.6.1 · BUILD 009</div></div></div>
 <div id="main-menu"><div class="menu-content"><div class="menu-brand">DRIVELLA</div><div class="menu-sub">SYNTHWAVE DRIFT RACING</div><div class="menu-actions"><button class="menu-btn" id="menu-start">СТАРТ ИГРЫ</button><button class="menu-btn" id="menu-garage">ГАРАЖ</button><button class="menu-btn" id="menu-options">ОПЦИИ</button></div></div><div class="menu-footer">РАЗРАБОТЧИК — <b>НИКИТА МАРКИН</b></div></div>
 <div id="garage-screen"><div class="garage-head">ГАРАЖ // INFERNO GT</div><div class="garage-copy">ТЕКУЩИЙ АВТОМОБИЛЬ<br>INFERNO GT · CLASSIC SUPERCAR<br>ПОКАЖИ ЕЁ СО ВСЕХ СТОРОН</div><div class="garage-controls"><button id="garage-back">← НАЗАД В МЕНЮ</button></div><div class="garage-tip">ЗАЖМИ И ТЯНИ — ВРАЩЕНИЕ<br>КОЛЁСИКО — ПРИБЛИЗИТЬ / ОТДАЛИТЬ</div></div>
 <div id="options-screen"><div class="options-head">ОПЦИИ</div><div class="options-card"><div class="option-row"><span>МУЗЫКА</span><button id="option-music">ВКЛЮЧЕНА</button></div><div class="option-row"><span>ГРОМКОСТЬ</span><input id="option-volume" type="range" min="0" max="100" value="52"></div><div class="option-row"><span>ЗВУК ДВИГАТЕЛЯ</span><button id="option-sfx">ВКЛЮЧЁН</button></div><div class="option-row"><span>КАМЕРА</span><span>КЛАВИШИ 1–4</span></div><button id="options-back" style="width:100%;margin-top:18px">← НАЗАД В МЕНЮ</button></div></div>
@@ -101,7 +101,7 @@
 <script>
 (()=>{
 'use strict';
-const VERSION='v0.6.0',BUILD='008';
+const VERSION='v0.6.1',BUILD='009';
 const canvas=document.getElementById('scene'),gl=canvas.getContext('webgl',{antialias:true,alpha:true}),sun=document.getElementById('sun'),sctx=sun.getContext('2d');
 const $=id=>document.getElementById(id);
 let W=innerWidth,H=innerHeight,DPR=1;
@@ -434,26 +434,18 @@ function drawWorld(){
 }
 function drawSun(){
  sctx.clearRect(0,0,W,H);
- const x=W*.5,r=Math.min(W,H)*.194,y=H*.585;
+ const x=W*.5,r=Math.min(W,H)*.235,y=H*.475;
  const halo=sctx.createRadialGradient(x,y,r*.12,x,y,r*2.05);halo.addColorStop(0,'rgba(255,222,170,.32)');halo.addColorStop(.34,'rgba(255,105,163,.22)');halo.addColorStop(.68,'rgba(181,65,255,.10)');halo.addColorStop(1,'rgba(255,40,150,0)');
  sctx.fillStyle=halo;sctx.fillRect(x-r*2.4,y-r*2.4,r*4.8,r*4.8);
  // Crisp circular sun with a warm cream-to-coral-to-magenta synthwave palette.
  sctx.save();sctx.shadowColor='#ff5da9';sctx.shadowBlur=46;
  const disk=sctx.createLinearGradient(x,y-r,x,y+r);
- disk.addColorStop(0,'#fff9d9');disk.addColorStop(.24,'#ffe2a1');disk.addColorStop(.48,'#ffae85');disk.addColorStop(.72,'#ff668f');disk.addColorStop(1,'#d936a7');
+ disk.addColorStop(0,'#fff36b');disk.addColorStop(.24,'#ffd04a');disk.addColorStop(.48,'#ff963f');disk.addColorStop(.72,'#ff5b55');disk.addColorStop(1,'#e92c91');
  sctx.fillStyle=disk;sctx.beginPath();sctx.arc(x,y,r,0,Math.PI*2);sctx.fill();sctx.restore();
  // Fine upper rim and a soft inner reflection.
  sctx.save();sctx.beginPath();sctx.arc(x,y,r*.965,Math.PI*1.08,Math.PI*1.92);sctx.strokeStyle='rgba(255,255,238,.82)';sctx.lineWidth=Math.max(1.2,r*.018);sctx.shadowColor='#fff2cf';sctx.shadowBlur=16;sctx.stroke();sctx.restore();
  const reflection=sctx.createRadialGradient(x-r*.28,y-r*.36,1,x-r*.20,y-r*.23,r*.72);reflection.addColorStop(0,'rgba(255,255,255,.46)');reflection.addColorStop(1,'rgba(255,255,255,0)');
  sctx.save();sctx.beginPath();sctx.arc(x,y,r*.94,0,Math.PI*2);sctx.clip();sctx.fillStyle=reflection;sctx.fillRect(x-r,y-r,r*2,r*2);
- // Classic synthwave sun: crisp horizontal slots across the lower half only.
- sctx.globalCompositeOperation='destination-out';
- const stripeRows=[.12,.27,.43,.59,.75,.91];
- for(let i=0;i<stripeRows.length;i++){
-  const yy=y+r*stripeRows[i],hh=Math.max(2.5,r*(.026+i*.002));
-  const inset=r*(.02+i*.045);
-  sctx.fillRect(x-r+inset,yy,r*2-inset*2,hh);
- }
  sctx.restore();
  // Small optical flares and a restrained horizontal lens streak.
  sctx.save();sctx.globalCompositeOperation='lighter';
