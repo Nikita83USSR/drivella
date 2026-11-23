@@ -2,216 +2,146 @@
 <html lang="en">
 <head>
 <meta charset="utf-8">
-<meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no">
+<meta name="viewport" content="width=device-width,initial-scale=1,maximum-scale=1,user-scalable=no">
 <meta name="theme-color" content="#080817">
-<meta name="description" content="DRIVELLA — Synthwave drift racing prototype">
+<meta name="description" content="DRIVELLA — 3D synthwave drift racing">
 <title>DRIVELLA — Synthwave Drift Racing</title>
 <style>
-:root{color-scheme:dark}*{box-sizing:border-box}html,body{margin:0;width:100%;height:100%;overflow:hidden;background:#090817;font-family:Consolas,Monaco,monospace;color:#e9f7ff}
-canvas{display:block;width:100%;height:100%}
+:root{color-scheme:dark}*{box-sizing:border-box}html,body{margin:0;width:100%;height:100%;overflow:hidden;background:#080817;color:#eafaff;font-family:Consolas,Monaco,monospace}
+#scene{position:fixed;inset:0;width:100%;height:100%;display:block;background:linear-gradient(#080817 0%,#21133d 48%,#74305e 75%,#100d26 100%)}
+#sun{position:fixed;inset:0;width:100%;height:100%;pointer-events:none}
 #hud{position:fixed;inset:0;pointer-events:none}
-.top{position:absolute;left:26px;top:22px;display:flex;gap:20px;align-items:flex-start}
-.logo{font-size:clamp(17px,2.4vw,30px);letter-spacing:.22em;font-weight:900;color:#f6f7ff;text-shadow:0 0 8px #ff35e9,0 0 25px #a900ff}
+.top{position:absolute;left:24px;top:20px;display:flex;gap:20px;align-items:flex-start}
+.logo{font-size:clamp(18px,2.4vw,30px);letter-spacing:.22em;font-weight:900;color:#fff;text-shadow:0 0 8px #ff35e9,0 0 25px #a900ff}
 .logo small{display:block;font-size:10px;letter-spacing:.35em;color:#76f8ff;margin-top:5px}
-.stat{border-left:1px solid #54eaff70;padding-left:12px;color:#8ceeff;font-size:11px;letter-spacing:.12em}
-.stat b{display:block;font-size:20px;color:white;margin-top:5px;text-shadow:0 0 10px #00eaff}
-.right{position:absolute;right:24px;top:22px;text-align:right;font-size:11px;color:#91a6cb;letter-spacing:.15em}
-#speed{font-size:42px;line-height:1;color:#fff;text-shadow:0 0 10px #00eaff,0 0 25px #00eaff}
+.stat{border-left:1px solid #54eaff70;padding-left:12px;color:#8ceeff;font-size:10px;letter-spacing:.12em}
+.stat b{display:block;font-size:18px;color:#fff;margin-top:5px;text-shadow:0 0 10px #00eaff}
+.right{position:absolute;right:24px;top:20px;text-align:right;font-size:10px;color:#91a6cb;letter-spacing:.15em}
+#speed{font-size:clamp(34px,5vw,52px);line-height:1;color:#fff;text-shadow:0 0 10px #00eaff,0 0 25px #00eaff;font-weight:900}
 #speed span{font-size:12px;color:#83f5ff}
-#music{margin-top:10px;color:#ff87ed}
-.bottom{position:absolute;bottom:18px;left:24px;right:24px;display:flex;justify-content:space-between;align-items:flex-end;color:#9eb2d6;font-size:10px;letter-spacing:.12em}
+#direction{margin-top:8px;font-size:12px;letter-spacing:.22em;color:#ff8de9;text-shadow:0 0 10px #ff38d8}
+#music{margin-top:9px;color:#9cefff}
+.bottom{position:absolute;bottom:17px;left:22px;right:22px;display:flex;justify-content:space-between;align-items:flex-end;color:#9eb2d6;font-size:10px;letter-spacing:.1em}
 .hint{line-height:1.8}.hint strong{color:#e8f9ff}
-#toast{position:absolute;left:50%;top:25%;transform:translate(-50%,-50%);opacity:0;transition:opacity .35s;text-align:center;color:#fff;font-size:12px;letter-spacing:.3em;text-shadow:0 0 14px #ff28de}
-#toast.show{opacity:1}
-#overlay{position:fixed;inset:0;display:flex;align-items:center;justify-content:center;background:linear-gradient(180deg,#08071788,#08071722);pointer-events:none}
-.panel{text-align:center;padding:20px 30px;border:1px solid #72f5ff55;background:#08091ac9;box-shadow:0 0 35px #6c00ff22;backdrop-filter:blur(5px)}
-.panel h1{margin:0 0 8px;font-size:clamp(22px,4vw,42px);letter-spacing:.28em;text-shadow:0 0 15px #f32be9}
-.panel p{margin:0;color:#a7c6e9;font-size:11px;letter-spacing:.18em;line-height:1.8}
-.panel .start{color:#77f9ff;margin-top:16px;animation:pulse 1.2s infinite}
-@keyframes pulse{50%{opacity:.35}}
-.hidden{display:none!important}
-/* ===== DRIVELLA BOOT / LOADING SCREEN ===== */
-#boot-screen{position:fixed;inset:0;z-index:50;display:flex;align-items:center;justify-content:center;overflow:hidden;background:radial-gradient(ellipse at 50% 42%,#28103eeb 0%,#0a091bf5 48%,#050610 100%);transition:opacity .7s ease,visibility .7s ease}
+#overlay{position:fixed;inset:0;z-index:5;display:flex;align-items:center;justify-content:center;background:#08081742}
+.panel{text-align:center;padding:22px 32px;border:1px solid #72f5ff55;background:#08091ac9;box-shadow:0 0 35px #6c00ff22;backdrop-filter:blur(7px)}
+.panel h1{margin:0 0 8px;font-size:clamp(25px,4vw,44px);letter-spacing:.28em;text-shadow:0 0 15px #f32be9}
+.panel p{margin:0;color:#a7c6e9;font-size:11px;letter-spacing:.18em;line-height:1.9}
+.panel .start{color:#77f9ff;margin-top:14px;animation:pulse 1.2s infinite}
+@keyframes pulse{50%{opacity:.35}}.hidden{display:none!important}
+#boot-screen{position:fixed;inset:0;z-index:20;display:flex;align-items:center;justify-content:center;background:radial-gradient(ellipse at 50% 42%,#28103eeb 0%,#0a091bf5 48%,#050610 100%);transition:opacity .7s,visibility .7s}
 #boot-screen.done{opacity:0;visibility:hidden;pointer-events:none}
-#boot-screen:before{content:"";position:absolute;inset:-30%;background:repeating-linear-gradient(0deg,transparent 0 3px,#b45cff0a 4px,transparent 5px 8px);animation:scan 9s linear infinite;pointer-events:none}
-#boot-screen:after{content:"";position:absolute;left:-10%;right:-10%;bottom:-36%;height:65%;background:linear-gradient(180deg,#ff35d900,#ff35d91c 60%,#00eaff13);transform:perspective(360px) rotateX(58deg);transform-origin:top;mask-image:linear-gradient(transparent,#000 22%);pointer-events:none}
-.boot-content{position:relative;z-index:1;width:min(560px,86vw);text-align:center;padding:34px 28px 30px;border:1px solid #76f5ff45;background:linear-gradient(145deg,#11102bd9,#090817e8);box-shadow:0 0 70px #8b22ff2b,inset 0 0 35px #5e3cff12;backdrop-filter:blur(12px)}
+#boot-screen:before{content:"";position:absolute;inset:-30%;background:repeating-linear-gradient(0deg,transparent 0 3px,#b45cff0a 4px,transparent 5px 8px);animation:scan 9s linear infinite}
+.boot-content{position:relative;width:min(560px,86vw);text-align:center;padding:34px 28px 30px;border:1px solid #76f5ff45;background:linear-gradient(145deg,#11102bd9,#090817e8);box-shadow:0 0 70px #8b22ff2b,inset 0 0 35px #5e3cff12;backdrop-filter:blur(12px)}
 .boot-kicker{font-size:9px;letter-spacing:.48em;color:#78eaff;margin-bottom:18px}
-.boot-logo{font-family:Arial,sans-serif;font-size:clamp(34px,8vw,66px);font-weight:900;letter-spacing:.18em;line-height:1;color:#f8f5ff;text-shadow:0 0 8px #fff,0 0 22px #ff39df,0 0 48px #a000ff;animation:logoPulse 2.4s ease-in-out infinite}
-.boot-subtitle{margin-top:13px;font-size:10px;letter-spacing:.36em;color:#79f5ff;text-shadow:0 0 12px #00dfff}
-.boot-mark{width:100%;height:1px;margin:28px 0 20px;background:linear-gradient(90deg,transparent,#ff39dc,#72f8ff,transparent);box-shadow:0 0 12px #ff39dc}
-.boot-status{min-height:15px;color:#b9c8ed;font-size:10px;letter-spacing:.2em;text-transform:uppercase}
-.boot-track{height:5px;margin:15px 0 9px;padding:1px;background:#ffffff13;border:1px solid #8af5ff50;box-shadow:0 0 15px #00eaff18}
-.boot-progress{height:100%;width:0;background:linear-gradient(90deg,#a52dff,#ff3cce,#6ffaff);box-shadow:0 0 12px #ff38df;transition:width .12s linear}
-.boot-meta{display:flex;justify-content:space-between;color:#7085b2;font-size:9px;letter-spacing:.16em}
-#boot-percent{color:#8ffaff}
+.boot-logo{font-family:Arial,sans-serif;font-size:clamp(34px,8vw,66px);font-weight:900;letter-spacing:.18em;color:#f8f5ff;text-shadow:0 0 8px #fff,0 0 22px #ff39df,0 0 48px #a000ff;animation:pulse 2.4s infinite}
+.boot-subtitle{margin-top:13px;font-size:10px;letter-spacing:.36em;color:#79f5ff}
+.boot-mark{height:1px;margin:28px 0 20px;background:linear-gradient(90deg,transparent,#ff39dc,#72f8ff,transparent)}
+.boot-status{min-height:15px;color:#b9c8ed;font-size:10px;letter-spacing:.2em}
+.boot-track{height:5px;margin:15px 0 9px;padding:1px;background:#ffffff13;border:1px solid #8af5ff50}
+.boot-progress{height:100%;width:0;background:linear-gradient(90deg,#a52dff,#ff3cce,#6ffaff);box-shadow:0 0 12px #ff38df}
+.boot-meta{display:flex;justify-content:space-between;color:#7085b2;font-size:9px;letter-spacing:.16em}#boot-percent{color:#8ffaff}
 .boot-footer{margin-top:25px;color:#58668d;font-size:8px;letter-spacing:.3em}
 @keyframes scan{to{transform:translateY(80px)}}
-@keyframes logoPulse{50%{filter:brightness(1.28);text-shadow:0 0 12px #fff,0 0 32px #ff39df,0 0 68px #a000ff}}
-@media(max-width:520px){.boot-content{padding:28px 18px 24px}.boot-kicker{font-size:8px}.boot-subtitle{font-size:8px}.boot-footer{font-size:7px}}
-@media(max-width:700px){.top{left:12px;top:12px;gap:10px}.right{right:12px;top:12px}.bottom{left:12px;right:12px;bottom:12px}.stat{font-size:9px;padding-left:7px}.stat b{font-size:15px}#speed{font-size:32px}.hint{font-size:9px}}
+@media(max-width:700px){.top{left:10px;top:10px;gap:9px}.right{right:10px;top:10px}.bottom{left:10px;right:10px;bottom:9px}.stat{font-size:8px;padding-left:7px}.stat b{font-size:14px}.logo small{font-size:8px}.hint{font-size:8px}.boot-content{padding:28px 18px 24px}}
 </style>
 </head>
 <body>
-<canvas id="game"></canvas>
+<canvas id="scene"></canvas><canvas id="sun"></canvas>
 <div id="hud">
-  <div class="top">
-    <div class="logo">DRIVELLA<small>SYNTHWAVE DRIFT RACING</small></div>
-    <div class="stat">DISTANCE<b id="distance">000.0 KM</b></div>
-    <div class="stat">WORLD<b id="world">VIOLET COAST</b></div>
-  </div>
-  <div class="right"><div id="speed">000 <span>KM/H</span></div><div id="music">♫ MUSIC OFF</div></div>
-  <div class="bottom"><div class="hint"><strong>W / ↑</strong> ACCELERATE　 <strong>S / ↓</strong> BRAKE<br><strong>A / ←　D / →</strong> STEER　 <strong>SPACE</strong> BOOST　 <strong>M</strong> MUSIC</div><div>NEON HIGHWAY SYSTEM</div></div>
-  <div id="toast">NITRO // ENGAGED</div>
+ <div class="top"><div class="logo">DRIVELLA<small>3D SYNTHWAVE DRIFT RACING</small></div><div class="stat">DISTANCE<b id="distance">000.0 KM</b></div><div class="stat">LOCATION<b>VIOLET COAST</b></div></div>
+ <div class="right"><div id="speed">000 <span>KM/H</span></div><div id="direction">▶ FORWARD</div><div id="music">♫ MUSIC OFF</div></div>
+ <div class="bottom"><div class="hint"><strong>W / ↑</strong> ACCELERATE　<strong>S / ↓</strong> BRAKE / REVERSE<br><strong>A / ←　D / →</strong> STEER　<strong>SPACE</strong> NITRO　<strong>M</strong> MUSIC</div><div>3D NEON HIGHWAY // BUILD 0002</div></div>
 </div>
-<div id="boot-screen" aria-label="Loading DRIVELLA">
-  <div class="boot-content">
-    <div class="boot-kicker">NIGHT DRIVE SYSTEMS // INITIALIZING</div>
-    <div class="boot-logo">DRIVELLA</div>
-    <div class="boot-subtitle">SYNTHWAVE DRIFT RACING</div>
-    <div class="boot-mark"></div>
-    <div class="boot-status" id="boot-status">WAKING UP THE NEON HIGHWAY</div>
-    <div class="boot-track"><div class="boot-progress" id="boot-progress"></div></div>
-    <div class="boot-meta"><span>ROAD SYSTEM ONLINE</span><span id="boot-percent">00%</span></div>
-    <div class="boot-footer">ENGINE STARTUP // BUILD 0001</div>
-  </div>
-</div>
-<div id="overlay"><div class="panel"><h1>DRIVELLA</h1><p>SYNTHWAVE HIGHWAY // NIGHT DRIVE</p><p class="start">PRESS ANY DRIVE KEY TO START</p><p>ARROWS / WASD · SPACE BOOST · M MUSIC</p></div></div>
+<div id="boot-screen"><div class="boot-content"><div class="boot-kicker">NIGHT DRIVE SYSTEMS // INITIALIZING</div><div class="boot-logo">DRIVELLA</div><div class="boot-subtitle">3D SYNTHWAVE DRIFT RACING</div><div class="boot-mark"></div><div class="boot-status" id="boot-status">BUILDING THE 3D WORLD</div><div class="boot-track"><div class="boot-progress" id="boot-progress"></div></div><div class="boot-meta"><span>3D ENGINE ONLINE</span><span id="boot-percent">00%</span></div><div class="boot-footer">ENGINE STARTUP // BUILD 0002</div></div></div>
+<div id="overlay"><div class="panel"><h1>DRIVELLA</h1><p>VIOLET COAST // NIGHT DRIVE</p><p class="start">PRESS W / ↑ TO DRIVE</p><p>W FORWARD · S REVERSE · A/D STEER · SPACE NITRO</p></div></div>
 <script>
-(() => {
-'use strict';
-const canvas=document.getElementById('game'),ctx=canvas.getContext('2d');
-const $=id=>document.getElementById(id);
-let W=0,H=0,DPR=1;
-function resize(){DPR=Math.min(devicePixelRatio||1,2);W=innerWidth;H=innerHeight;canvas.width=W*DPR;canvas.height=H*DPR;ctx.setTransform(DPR,0,0,DPR,0,0);}
-addEventListener('resize',resize);resize();
-const keys={};addEventListener('keydown',e=>{keys[e.key.toLowerCase()]=true;if(['ArrowUp','ArrowDown','ArrowLeft','ArrowRight',' '].includes(e.key))e.preventDefault();if(!started&&bootComplete)start();if(e.key.toLowerCase()==='m'&&bootComplete)toggleMusic();});
+(()=>{'use strict';
+const canvas=document.getElementById('scene'),gl=canvas.getContext('webgl',{antialias:true,alpha:true}),sun=document.getElementById('sun'),sctx=sun.getContext('2d');
+const $=id=>document.getElementById(id);let W=innerWidth,H=innerHeight,DPR=1;
+function resize(){DPR=Math.min(devicePixelRatio||1,2);W=innerWidth;H=innerHeight;for(const c of [canvas,sun]){c.width=W*DPR;c.height=H*DPR;c.style.width=W+'px';c.style.height=H+'px';}gl.viewport(0,0,canvas.width,canvas.height);sctx.setTransform(DPR,0,0,DPR,0,0);}
+addEventListener('resize',resize);
+if(!gl){$('boot-status').textContent='WEBGL NOT AVAILABLE';throw new Error('WebGL unavailable');}
+const vs='attribute vec3 p;uniform mat4 vp;uniform mat4 model;void main(){gl_Position=vp*model*vec4(p,1.0);}';
+const fs='precision mediump float;uniform vec4 color;void main(){gl_FragColor=color;}';
+function shader(type,src){const s=gl.createShader(type);gl.shaderSource(s,src);gl.compileShader(s);if(!gl.getShaderParameter(s,gl.COMPILE_STATUS))throw new Error(gl.getShaderInfoLog(s));return s;}
+const prog=gl.createProgram();gl.attachShader(prog,shader(gl.VERTEX_SHADER,vs));gl.attachShader(prog,shader(gl.FRAGMENT_SHADER,fs));gl.linkProgram(prog);gl.useProgram(prog);
+const loc={p:gl.getAttribLocation(prog,'p'),vp:gl.getUniformLocation(prog,'vp'),model:gl.getUniformLocation(prog,'model'),color:gl.getUniformLocation(prog,'color')};
+function mesh(data){const b=gl.createBuffer();gl.bindBuffer(gl.ARRAY_BUFFER,b);gl.bufferData(gl.ARRAY_BUFFER,new Float32Array(data),gl.STATIC_DRAW);return {b,n:data.length/3};}
+const cube=mesh([
+-1,-1,-1,1,-1,-1,1,1,-1,-1,-1,-1,1,1,-1,-1,1,-1,
+-1,-1,1,1,1,1,1,-1,1,-1,-1,1,-1,1,1,1,1,1,
+-1,-1,-1,-1,1,-1,-1,1,1,-1,-1,-1,-1,1,1,-1,-1,1,
+1,-1,-1,1,-1,1,1,1,1,1,-1,-1,1,1,1,1,1,-1,
+-1,1,-1,1,1,-1,1,1,1,-1,1,-1,1,1,1,-1,1,1,
+-1,-1,-1,-1,-1,1,1,-1,1,-1,-1,-1,1,-1,1,1,-1,-1]);
+function cylinder(){let a=[];const n=16;for(let i=0;i<n;i++){let p=i*2*Math.PI/n,q=(i+1)*2*Math.PI/n;const x=Math.cos(p),z=Math.sin(p),X=Math.cos(q),Z=Math.sin(q);a.push(x,-1,z,X,-1,Z,X,1,Z,x,-1,z,X,1,Z,x,1,z);}return mesh(a);}
+const wheel=cylinder();
+function matIdentity(){return [1,0,0,0,0,1,0,0,0,0,1,0,0,0,0,1];}
+function matMul(a,b){let o=new Array(16);for(let c=0;c<4;c++)for(let r=0;r<4;r++)o[c*4+r]=a[r]*b[c*4]+a[4+r]*b[c*4+1]+a[8+r]*b[c*4+2]+a[12+r]*b[c*4+3];return o;}
+function translate(x,y,z){let m=matIdentity();m[12]=x;m[13]=y;m[14]=z;return m;}
+function scale(x,y,z){let m=matIdentity();m[0]=x;m[5]=y;m[10]=z;return m;}
+function rotateY(a){let c=Math.cos(a),s=Math.sin(a);return [c,0,-s,0,0,1,0,0,s,0,c,0,0,0,0,1];}
+function perspective(f,asp,n,far){let t=1/Math.tan(f/2),nf=1/(n-far);return [t/asp,0,0,0,0,t,0,0,0,0,(far+n)*nf,-1,0,0,2*far*n*nf,0];}
+function lookAt(ex,ey,ez,cx,cy,cz){let zx=ex-cx,zy=ey-cy,zz=ez-cz,l=Math.hypot(zx,zy,zz);zx/=l;zy/=l;zz/=l;let xx=zz,xy=0,xz=-zx;l=Math.hypot(xx,xz);xx/=l;xz/=l;let yx=zy*xz-zz*xy,yy=zz*xx-zx*xz,yz=zx*xy-zy*xx;return [xx,yx,zx,0,xy,yy,zy,0,xz,yz,zz,0,-(xx*ex+xy*ey+xz*ez),-(yx*ex+yy*ey+yz*ez),-(zx*ex+zy*ey+zz*ez),1];}
+function draw(m,x,y,z,sx,sy,sz,color,rot=0,shape=cube){let model=matMul(translate(x,y,z),matMul(rotateY(rot),scale(sx,sy,sz)));gl.uniformMatrix4fv(loc.model,false,new Float32Array(model));gl.uniform4fv(loc.color,color);gl.bindBuffer(gl.ARRAY_BUFFER,shape.b);gl.enableVertexAttribArray(loc.p);gl.vertexAttribPointer(loc.p,3,gl.FLOAT,false,0,0);gl.drawArrays(gl.TRIANGLES,0,shape.n);}
+const C={road:[.10,.09,.18,1],road2:[.14,.12,.23,1],pink:[1,.12,.72,1],cyan:[.18,.92,1,1],white:[.8,.92,1,1],dark:[.035,.035,.07,1],body:[.56,.08,.62,1],glass:[.035,.13,.23,1],tire:[.018,.02,.035,1],mount:[.12,.09,.23,1],city:[.10,.055,.16,1]};
+let keys={},started=false,speed=0,playerX=0,steer=0,distance=0,boost=0,last=performance.now(),musicOn=false,track=0,audio=null;
+addEventListener('keydown',e=>{let k=e.key.toLowerCase();keys[k]=true;if(['arrowup','arrowdown','arrowleft','arrowright',' '].includes(e.key))e.preventDefault();if(k==='m'&&bootDone)toggleMusic();if(!started&&bootDone&&(k==='w'||k==='arrowup'))start();});
 addEventListener('keyup',e=>keys[e.key.toLowerCase()]=false);
-let started=false, musicOn=false, track=0, audio=null, bootComplete=false;
+function start(){started=true;$('overlay').classList.add('hidden');}
 const musicFiles=['assets/music/1.mp3','assets/music/2.mp3','assets/music/3.mp3','assets/music/4.mp3'];
-function start(){if(!bootComplete)return;started=true;$('overlay').classList.add('hidden');}
-function toggleMusic(){musicOn=!musicOn;if(musicOn){if(!audio)audio=new Audio();loadTrack(track);audio.play().catch(()=>{});}else{if(audio)audio.pause();$('music').textContent='♫ MUSIC OFF';}}
-function loadTrack(i){if(!audio)return;track=(i+4)%4;audio.src=musicFiles[track];audio.volume=.65;audio.loop=false;audio.onended=()=>{track=(track+1)%4;loadTrack(track);audio.play().catch(()=>{});};$('music').textContent='♫ TRACK '+(track+1)+' / 4';}
+function toggleMusic(){musicOn=!musicOn;if(musicOn){if(!audio)audio=new Audio();playTrack();}else if(audio)audio.pause();$('music').textContent=musicOn?'♫ TRACK '+(track+1)+' / 4':'♫ MUSIC OFF';}
+function playTrack(){audio.src=musicFiles[track];audio.volume=.6;audio.onended=()=>{track=(track+1)%4;playTrack();};audio.play().catch(()=>{});}
 const clamp=(v,a,b)=>Math.max(a,Math.min(b,v));
-let speed=0,playerX=0,steerVel=0,roadPhase=0,distance=0,boost=0,toastTimer=0;
-let last=performance.now();
-const roadSegments=180;
-function curveAt(t){return Math.sin(t*.00065)*.42+Math.sin(t*.00021+1.5)*.28+Math.sin(t*.0015)*.1;}
-function horizon(){return H*.39;}
-function project(y,depth){const h=horizon();const p=clamp(depth,0,1);return {y:h+(H-h)*p,scale:.18+1.42*p,x:W/2+curveAt(roadPhase+depth*850)*W*.18};}
-function polygon(points,fill){ctx.fillStyle=fill;ctx.beginPath();ctx.moveTo(points[0][0],points[0][1]);for(let i=1;i<points.length;i++)ctx.lineTo(points[i][0],points[i][1]);ctx.closePath();ctx.fill();}
-function gradientSky(){const g=ctx.createLinearGradient(0,0,0,H);g.addColorStop(0,'#070817');g.addColorStop(.45,'#19133a');g.addColorStop(.7,'#56205c');g.addColorStop(1,'#f04d8c');ctx.fillStyle=g;ctx.fillRect(0,0,W,H);}
-function glowCircle(x,y,r,color,blur){ctx.save();ctx.shadowColor=color;ctx.shadowBlur=blur;ctx.fillStyle=color;ctx.beginPath();ctx.arc(x,y,r,0,Math.PI*2);ctx.fill();ctx.restore();}
-function drawSun(){
- const x=W*.5,y=H*.27,r=Math.min(W,H)*.115;
- const halo=ctx.createRadialGradient(x,y,r*.25,x,y,r*1.8);halo.addColorStop(0,'#ff9df6aa');halo.addColorStop(1,'#ff4fc000');
- ctx.fillStyle=halo;ctx.fillRect(x-r*2,y-r*2,r*4,r*4);
- ctx.save();ctx.shadowColor='#ff58dd';ctx.shadowBlur=40;
- const s=ctx.createLinearGradient(x,y-r,x,y+r);s.addColorStop(0,'#fff2c9');s.addColorStop(.35,'#ffb1d8');s.addColorStop(1,'#ff3fbd');
- ctx.fillStyle=s;ctx.beginPath();ctx.arc(x,y,r,Math.PI,0);ctx.rect(x-r,y,x+r*2,r);ctx.fill();ctx.restore();
- // striped sun cutouts
- ctx.save();ctx.globalCompositeOperation='destination-out';for(let i=0;i<7;i++){const yy=y+r*.2+i*r*.22;ctx.fillRect(x-r,yy,r*2,Math.max(1,r*.055));}ctx.restore();
-}
-function mountainLayer(base,amp,phase,color,step){
- ctx.beginPath();ctx.moveTo(0,H);
- for(let x=0;x<=W+step;x+=step){let xx=Math.min(x,W),n=Math.sin(xx*.004+phase)*.55+Math.sin(xx*.011+phase*2)*.24+Math.sin(xx*.0018+phase)*.4;ctx.lineTo(xx,base-n*amp);}
- ctx.lineTo(W,H);ctx.closePath();ctx.fillStyle=color;ctx.fill();
-}
-function drawStars(){for(let i=0;i<80;i++){const x=(i*197.3)%W,y=(i*83.7)%Math.max(1,horizon()*.65);ctx.fillStyle=`rgba(180,220,255,${.2+(i%5)*.12})`;ctx.fillRect(x,y,1.2,1.2);}}
-function drawLandscape(){
- mountainLayer(H*.43,H*.19,1,'#171b43',Math.max(22,W/40));
- mountainLayer(H*.48,H*.14,2.3,'#24204e',Math.max(18,W/55));
- // distant silhouettes of synth city
- const base=H*.51;ctx.fillStyle='#211638';for(let i=0;i<45;i++){let x=i*(W/45),bw=W/90+((i*7)%4)*3,bh=(i*37%100)/100*H*.12;ctx.fillRect(x,base-bh,bw,bh);}
-}
-function drawRoad(){
- const h=horizon(),segments=80;
- // terrain and road perspective bands
- for(let i=segments-1;i>=0;i--){
-  const d0=i/segments,d1=(i+1)/segments;
-  const p0=project(h,d0),p1=project(h,d1);
-  const y0=p0.y,y1=p1.y,half0=(W*.07+W*.47*d0),half1=(W*.07+W*.47*d1);
-  const band=(Math.floor((roadPhase/90+i)/2)%2===0);
-  polygon([[0,y0],[W,y0],[W,y1],[0,y1]],band?'#100e2c':'#14102e');
-  // roadside glow rails
-  const railCol=band?'#fb36d8':'#33e9ff';
-  ctx.save();ctx.shadowColor=railCol;ctx.shadowBlur=8;
-  ctx.strokeStyle=railCol;ctx.lineWidth=1+3*d1;ctx.beginPath();ctx.moveTo(p0.x-half0*1.22,y0);ctx.lineTo(p1.x-half1*1.22,y1);ctx.moveTo(p0.x+half0*1.22,y0);ctx.lineTo(p1.x+half1*1.22,y1);ctx.stroke();ctx.restore();
-  // road surface
-  polygon([[p0.x-half0,y0],[p0.x+half0,y0],[p1.x+half1,y1],[p1.x-half1,y1]],band?'#25213b':'#1c1934');
-  // edge line
-  ctx.strokeStyle='#f4a8ff';ctx.globalAlpha=.28+d1*.5;ctx.lineWidth=1+d1*2;ctx.beginPath();ctx.moveTo(p0.x-half0*.93,y0);ctx.lineTo(p1.x-half1*.93,y1);ctx.moveTo(p0.x+half0*.93,y0);ctx.lineTo(p1.x+half1*.93,y1);ctx.stroke();ctx.globalAlpha=1;
-  // center dash segments, perspective and animated
-  const dash=(Math.floor((roadPhase/18+i)/3)%2===0);
-  if(dash){ctx.save();ctx.shadowColor='#4cf6ff';ctx.shadowBlur=10;ctx.strokeStyle='#78f9ff';ctx.globalAlpha=.3+d1*.7;ctx.lineWidth=1+d1*4;ctx.beginPath();ctx.moveTo(p0.x,y0);ctx.lineTo(p1.x,y1);ctx.stroke();ctx.restore();}
+function roadX(z){return Math.sin(z*.004)*8+Math.sin(z*.0013+1.4)*5;}
+function drawWorld(){
+ const camZ=distance,base=Math.floor(camZ/5)*5,camX=roadX(camZ)+playerX*5;
+ const view=lookAt(camX,5.1,camZ-12,camX,1.1,camZ+18),vp=matMul(perspective( Math.PI/3, W/H,.1,700),view);
+ gl.uniformMatrix4fv(loc.vp,false,new Float32Array(vp));
+ gl.enable(gl.DEPTH_TEST);gl.clearColor(0,0,0,0);gl.clear(gl.COLOR_BUFFER_BIT|gl.DEPTH_BUFFER_BIT);
+ // Ground plane
+ draw(cube,0,-1.2,camZ+100,180,.5,180,C.dark);
+ // Rolling 3D road, rails and lane dividers
+ for(let i=-3;i<54;i++){let z=base+i*5,rel=z-camZ,cx=roadX(z);if(rel< -17)continue;
+  draw(cube,cx,-.25,z,7.8,.18,2.55,(Math.floor(z/10)%2===0)?C.road:C.road2);
+  draw(cube,cx-7.35,.04,z, .11,.12,2.55,C.pink);draw(cube,cx+7.35,.04,z,.11,.12,2.55,C.cyan);
+  if(Math.floor(z/15)%2===0){draw(cube,cx-2.5,.0,z, .055,.025,1.15,C.white);draw(cube,cx+2.5,.0,z,.055,.025,1.15,C.white);}
+  // roadside reflectors
+  if(i%3===0){draw(cube,cx-9,.4,z,.09,.55,.09,C.pink);draw(cube,cx+9,.4,z,.09,.55,.09,C.cyan);}
  }
- // bright near-road reflection wash
- const g=ctx.createLinearGradient(0,h,0,H);g.addColorStop(0,'#ff42db00');g.addColorStop(.7,'#ff42db05');g.addColorStop(1,'#ff42db24');ctx.fillStyle=g;ctx.fillRect(0,h,W,H-h);
-}
-function drawCar(){
- const x=W/2+playerX*W*.28,y=H*.79;
- const scale=Math.min(W/900,H/600),w=116*scale,h=142*scale;
- ctx.save();ctx.translate(x,y);ctx.rotate(-steerVel*.045);
- // glowing ground shadow
- ctx.save();ctx.shadowColor='#ff29d9';ctx.shadowBlur=30;ctx.fillStyle='#f62bd966';ctx.beginPath();ctx.ellipse(0,h*.34,w*.56,h*.15,0,0,Math.PI*2);ctx.fill();ctx.restore();
- // wheels
- ctx.fillStyle='#080812';ctx.shadowColor='#5c4aff';ctx.shadowBlur=12;
- for(const xx of [-w*.43,w*.43])for(const yy of [-h*.18,h*.23]){ctx.fillRect(xx-w*.12,yy-h*.1,w*.24,h*.2);}
- // body silhouette
- const body=ctx.createLinearGradient(-w/2,0,w/2,0);body.addColorStop(0,'#26144c');body.addColorStop(.45,'#a52dba');body.addColorStop(.52,'#f45adf');body.addColorStop(1,'#2c174f');
- ctx.fillStyle=body;ctx.shadowColor='#f23be9';ctx.shadowBlur=20;
- ctx.beginPath();ctx.moveTo(-w*.34,h*.43);ctx.lineTo(-w*.48,h*.12);ctx.lineTo(-w*.43,-h*.22);ctx.lineTo(-w*.25,-h*.48);ctx.lineTo(w*.25,-h*.48);ctx.lineTo(w*.43,-h*.22);ctx.lineTo(w*.48,h*.12);ctx.lineTo(w*.34,h*.43);ctx.closePath();ctx.fill();
- // hood & windshield
- ctx.shadowBlur=6;ctx.fillStyle='#151b42';ctx.beginPath();ctx.moveTo(-w*.28,-h*.22);ctx.lineTo(-w*.2,-h*.42);ctx.lineTo(w*.2,-h*.42);ctx.lineTo(w*.28,-h*.22);ctx.closePath();ctx.fill();ctx.strokeStyle='#55edff';ctx.lineWidth=2;ctx.stroke();
- ctx.fillStyle='#291a54';polygon([[-w*.33,h*.03],[-w*.23,-h*.16],[w*.23,-h*.16],[w*.33,h*.03]],'#281954');
- // light accents
- ctx.shadowColor='#55efff';ctx.shadowBlur=14;ctx.strokeStyle='#67faff';ctx.lineWidth=2.2;ctx.beginPath();ctx.moveTo(-w*.33,h*.28);ctx.lineTo(-w*.24,h*.32);ctx.moveTo(w*.33,h*.28);ctx.lineTo(w*.24,h*.32);ctx.stroke();
- ctx.shadowColor='#ff4be6';ctx.shadowBlur=15;ctx.strokeStyle='#ff4be6';ctx.lineWidth=2;ctx.beginPath();ctx.moveTo(-w*.35,-h*.05);ctx.lineTo(-w*.42,h*.06);ctx.moveTo(w*.35,-h*.05);ctx.lineTo(w*.42,h*.06);ctx.stroke();
- ctx.restore();
-}
-function drawBoost(){
- if(boost<=0)return;ctx.save();ctx.globalAlpha=boost*.35;const g=ctx.createLinearGradient(0,H*.55,0,H);g.addColorStop(0,'#00eaff00');g.addColorStop(1,'#00eaff88');ctx.fillStyle=g;ctx.fillRect(0,H*.55,W,H*.45);ctx.restore();
-}
-function frame(now){
- const dt=Math.min(.04,(now-last)/1000);last=now;
- const accelerating=keys['w']||keys['arrowup'],braking=keys['s']||keys['arrowdown'],left=keys['a']||keys['arrowleft'],right=keys['d']||keys['arrowright'],nitro=keys[' '];
- if(started){
-  speed+= (accelerating?42:0)-(braking?95:0)-(!accelerating&&!braking?13:0);speed=clamp(speed,0,290);
-  if(nitro&&speed>30){boost=Math.min(1,boost+dt*2.5);speed=Math.min(330,speed+dt*80);}else boost=Math.max(0,boost-dt*2);
-  const steer=(right?1:0)-(left?1:0);
-  steerVel+=(steer*2.6-steerVel*2.1)*dt;playerX+=steerVel*dt*(.32+speed/210);
-  playerX=clamp(playerX,-1.35,1.35);if(Math.abs(playerX)>1.08)speed=Math.max(45,speed-65*dt);
-  roadPhase+=speed*dt*1.45;distance+=speed*dt/3600;
+ // 3D mountains on both sides, plus neon city blocks
+ for(let i=-2;i<25;i++){let z=base+i*12,rel=z-camZ;if(rel< -18)continue;let cx=roadX(z);
+  draw(cube,cx-25,2,z,5,3+(i%4)*.6,4,C.mount,(i%2)*.18);
+  draw(cube,cx+27,2.4,z+5,6,3.5+(i%3),5,C.mount,-.15);
+  if(i%2===0){draw(cube,cx-15,1.3,z+8,1.1,1.4+(i%4),1.2,C.city);draw(cube,cx+16,1.5,z+4,1.4,1.8+(i%3),1.3,C.city);}
  }
- gradientSky();drawStars();drawSun();drawLandscape();drawRoad();drawBoost();drawCar();
- // light streaks during nitro
- if(boost>.15){ctx.save();ctx.globalAlpha=boost*.65;ctx.strokeStyle='#65f7ff';ctx.lineWidth=1;for(let i=0;i<22;i++){let x=(i*127+now*.25)%W,y=(i*83)%H;ctx.beginPath();ctx.moveTo(x,y);ctx.lineTo(x+(x-W/2)*.12,y+40+speed*.18);ctx.stroke();}ctx.restore();}
- $('speed').innerHTML=String(Math.round(speed)).padStart(3,'0')+' <span>KM/H</span>'; $('distance').textContent=distance.toFixed(1).padStart(5,'0')+' KM';
- if(toastTimer>0){toastTimer-=dt;if(toastTimer<=0)$('toast').classList.remove('show');}
- requestAnimationFrame(frame);
+ // Player car: low sports coupe, modeled from separate 3D body parts
+ const carX=camX,carZ=camZ;
+ draw(cube,carX,.28,carZ,1.05,.36,2.05,C.body,-steer*.08);
+ draw(cube,carX,.64,carZ+.25,.77,.34,.94,C.glass,-steer*.08);
+ draw(cube,carX,.2,carZ+1.45,.94,.12,.48,[.26,.035,.26,1]);
+ // hood ridge and rear spoiler
+ draw(cube,carX,.68,carZ-1.15,.78,.055,.65,[.8,.17,.78,1]);
+ draw(cube,carX,.65,carZ-1.95,1.05,.08,.15,C.dark);
+ draw(cube,carX,.77,carZ-1.95,.95,.045,.08,C.pink);
+ // wheels, hubs, head and tail lights
+ for(let side of [-1,1])for(let zz of [-1.25,1.2]){
+  draw(cube,carX+side*1.02,.05,carZ+zz,.26,.55,.48,C.tire,Math.PI/2,wheel);
+  draw(cube,carX+side*1.29,.05,carZ+zz,.04,.24,.24,C.cyan,Math.PI/2,wheel);
+ }
+ draw(cube,carX-.68,.36,carZ+1.99,.23,.09,.045,C.pink);draw(cube,carX+.68,.36,carZ+1.99,.23,.09,.045,C.pink);
+ draw(cube,carX-.68,.36,carZ-2.02,.2,.07,.045,[.55,.9,1,1]);draw(cube,carX+.68,.36,carZ-2.02,.2,.07,.045,[.55,.9,1,1]);
+ // nitro exhaust trails
+ if(boost>.05){draw(cube,carX-.5,.12,carZ+2.8,.09,.08,1.2,[.05,.7,1,boost]);draw(cube,carX+.5,.12,carZ+2.8,.09,.08,1.2,[.05,.7,1,boost]);}
 }
-requestAnimationFrame(frame);
-// Short, polished startup sequence; the scene is already rendering behind it.
-const bootSteps=[
-  [18,'WAKING UP THE NEON HIGHWAY'],
-  [39,'CALIBRATING DRIFT CONTROL'],
-  [63,'SYNCHRONIZING NIGHT DRIVE'],
-  [84,'CHARGING NITRO SYSTEM'],
-  [100,'THE ROAD IS YOURS']
-];
-const bootStart=performance.now(),bootDuration=2350;
-function bootFrame(now){
- const t=clamp((now-bootStart)/bootDuration,0,1);
- const eased=1-Math.pow(1-t,2.2);
- const pct=Math.round(eased*100);
- $('boot-progress').style.width=pct+'%';
- $('boot-percent').textContent=String(pct).padStart(2,'0')+'%';
- let step=bootSteps[0];for(const candidate of bootSteps){if(pct>=candidate[0])step=candidate;}
- $('boot-status').textContent=step[1];
- if(t<1){requestAnimationFrame(bootFrame);return;}
- bootComplete=true;
- $('boot-screen').classList.add('done');
-}
+function drawSun(){sctx.clearRect(0,0,W,H);const x=W*.5,y=H*.255,r=Math.min(W,H)*.12;let halo=sctx.createRadialGradient(x,y,r*.2,x,y,r*2);halo.addColorStop(0,'#ff82e688');halo.addColorStop(1,'#ff4fc000');sctx.fillStyle=halo;sctx.fillRect(x-r*2,y-r*2,r*4,r*4);sctx.save();sctx.shadowColor='#ff58dd';sctx.shadowBlur=40;let g=sctx.createLinearGradient(x,y-r,x,y+r);g.addColorStop(0,'#fff2c9');g.addColorStop(.4,'#ffb1d8');g.addColorStop(1,'#ff3fbd');sctx.fillStyle=g;sctx.beginPath();sctx.arc(x,y,r,Math.PI,0);sctx.lineTo(x+r,y+r);sctx.lineTo(x-r,y+r);sctx.closePath();sctx.fill();sctx.restore();sctx.save();sctx.globalCompositeOperation='destination-out';for(let i=0;i<7;i++)sctx.fillRect(x-r,y+r*.15+i*r*.22,r*2,r*.055);sctx.restore();}
+function frame(now){let dt=Math.min(.04,(now-last)/1000);last=now;let up=keys.w||keys.arrowup,down=keys.s||keys.arrowdown,left=keys.a||keys.arrowleft,right=keys.d||keys.arrowright,nitro=keys[' '];
+ if(started){if(up)speed+=55*dt;else if(down)speed-=75*dt;else speed*=Math.pow(.985,dt*60);if(nitro&&speed>20){boost=Math.min(1,boost+dt*2.4);speed+=70*dt;}else boost=Math.max(0,boost-dt*2);speed=clamp(speed,-75,310);let steerInput=(right?1:0)-(left?1:0);steer+=(steerInput-steer)*Math.min(1,dt*5);playerX=clamp(playerX+steer*dt*(.9+Math.abs(speed)/95),-5.2,5.2);distance+=speed*dt*.12;}
+ drawWorld();drawSun();$('speed').innerHTML=String(Math.round(Math.abs(speed))).padStart(3,'0')+' <span>KM/H</span>';$('direction').textContent=speed< -1?'◀ REVERSE':'▶ FORWARD';$('direction').style.color=speed< -1?'#ffb56f':'#ff8de9';$('distance').textContent=Math.max(0,distance).toFixed(1).padStart(5,'0')+' KM';requestAnimationFrame(frame);}
+resize();requestAnimationFrame(frame);
+const bootSteps=[[20,'BUILDING THE 3D WORLD'],[42,'ASSEMBLING THE SPORTS CAR'],[68,'CALIBRATING THE ROAD'],[88,'IGNITING THE NEON SYSTEM'],[100,'THE ROAD IS YOURS']];
+let bootDone=false,bootStart=performance.now();function bootFrame(now){let t=clamp((now-bootStart)/2600,0,1),p=Math.round((1-Math.pow(1-t,2))*100),step=bootSteps[0];for(const s of bootSteps)if(p>=s[0])step=s;$('boot-progress').style.width=p+'%';$('boot-percent').textContent=String(p).padStart(2,'0')+'%';$('boot-status').textContent=step[1];if(t<1)requestAnimationFrame(bootFrame);else{bootDone=true;$('boot-screen').classList.add('done');}}
 requestAnimationFrame(bootFrame);
 })();
 </script>
