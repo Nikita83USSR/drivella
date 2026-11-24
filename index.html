@@ -94,13 +94,13 @@
 <body>
 <canvas id="scene"></canvas><canvas id="sun"></canvas>
 <div id="hud">
- <div class="top"><div class="logo">DRIVELLA<small>3D SYNTHWAVE DRIFT RACING</small></div><div class="version-label" id="version-label">v0.17.1 · BUILD 057</div><div class="stat">DISTANCE<b id="distance">000.0 KM</b></div><div class="stat">LOCATION<b>VIOLET COAST</b></div></div>
+ <div class="top"><div class="logo">DRIVELLA<small>3D SYNTHWAVE DRIFT RACING</small></div><div class="version-label" id="version-label">v0.17.2 · BUILD 058</div><div class="stat">DISTANCE<b id="distance">000.0 KM</b></div><div class="stat">LOCATION<b>VIOLET COAST</b></div></div>
  <div class="right"><div id="speed">000 <span>KM/H</span></div><div id="direction">▶ FORWARD</div><div id="music">♫ MUSIC SCANNING…</div></div>
- <div class="bottom"><div class="hint"><strong>W / ↑</strong> ACCELERATE　<strong>S / ↓</strong> BRAKE / REVERSE<br><strong>A / ←　D / →</strong> STEER　<strong>SPACE</strong> HANDBRAKE　<strong>M</strong> MUSIC　<strong>1–4</strong> CAMERA　<strong>L</strong> LIGHTS　<strong>K</strong> WIREFRAME</div><div>3D NEON HIGHWAY // BUILD 057</div></div>
+ <div class="bottom"><div class="hint"><strong>W / ↑</strong> ACCELERATE　<strong>S / ↓</strong> BRAKE / REVERSE<br><strong>A / ←　D / →</strong> STEER　<strong>SPACE</strong> HANDBRAKE　<strong>M</strong> MUSIC　<strong>1–4</strong> CAMERA　<strong>L</strong> LIGHTS　<strong>K</strong> WIREFRAME</div><div>3D NEON HIGHWAY // BUILD 058</div></div>
 </div>
 <div id="tools-ui"><button id="cam-prev" aria-label="Previous camera">◀</button><span id="cam-label">CAM 2 · CLOSE</span><button id="cam-next" aria-label="Next camera">▶</button><button id="debug-toggle">DEBUG</button></div>
 <div id="debug-panel"><div class="debug-title">DRIVELLA DIAGNOSTICS</div><div id="debug-data">Initializing…</div></div>
-<div id="boot-screen"><div class="boot-content"><div class="boot-kicker">NIGHT DRIVE SYSTEMS // INITIALIZING</div><div class="boot-logo">DRIVELLA</div><div class="boot-subtitle">3D SYNTHWAVE DRIFT RACING</div><div class="boot-mark"></div><div class="boot-status" id="boot-status">BUILDING THE 3D WORLD</div><div class="boot-track"><div class="boot-progress" id="boot-progress"></div></div><div class="boot-meta"><span>3D ENGINE ONLINE</span><span id="boot-percent">00%</span></div><div class="boot-footer">ENGINE STARTUP // v0.17.1 · BUILD 057</div></div></div>
+<div id="boot-screen"><div class="boot-content"><div class="boot-kicker">NIGHT DRIVE SYSTEMS // INITIALIZING</div><div class="boot-logo">DRIVELLA</div><div class="boot-subtitle">3D SYNTHWAVE DRIFT RACING</div><div class="boot-mark"></div><div class="boot-status" id="boot-status">BUILDING THE 3D WORLD</div><div class="boot-track"><div class="boot-progress" id="boot-progress"></div></div><div class="boot-meta"><span>3D ENGINE ONLINE</span><span id="boot-percent">00%</span></div><div class="boot-footer">ENGINE STARTUP // v0.17.2 · BUILD 058</div></div></div>
 <div id="main-menu"><div class="menu-content"><div class="menu-brand">DRIVELLA GTS</div><div class="menu-sub">RIDE THE RETRO FUTURE</div><div class="menu-actions"><button class="menu-btn" id="menu-start">СТАРТ</button><button class="menu-btn" id="menu-garage">ГАРАЖ</button><button class="menu-btn" id="menu-options">НАСТРОЙКИ</button></div></div><div class="menu-footer">РАЗРАБОТЧИК — <b>НИКИТА МАРКИН</b></div></div>
 <div id="garage-screen"><div class="garage-head">ГАРАЖ // DRIVELLA GTS</div><div class="garage-copy">ТЕКУЩИЙ АВТОМОБИЛЬ<br>DRIVELLA GTS · RETRO GT COUPE<br>ПОКАЖИ ЕЁ СО ВСЕХ СТОРОН</div><div class="garage-controls"><button id="garage-back">← НАЗАД В МЕНЮ</button></div><div class="garage-tip">ЗАЖМИ И ТЯНИ — ВРАЩЕНИЕ<br>КОЛЁСИКО — ПРИБЛИЗИТЬ / ОТДАЛИТЬ</div></div>
 <div id="options-screen"><div class="options-head">ОПЦИИ</div><div class="options-card"><div class="option-row"><span>МУЗЫКА</span><button id="option-music">ВКЛЮЧЕНА</button></div><div class="option-row"><span>ГРОМКОСТЬ</span><input id="option-volume" type="range" min="0" max="100" value="52"></div><div class="option-row"><span>ЗВУК ДВИГАТЕЛЯ</span><button id="option-sfx">ВКЛЮЧЁН</button></div><div class="option-row"><span>КАМЕРА</span><span>КЛАВИШИ 1–4</span></div><button id="options-back" style="width:100%;margin-top:18px">← НАЗАД В МЕНЮ</button></div></div>
@@ -108,7 +108,7 @@
 <script>
 (()=>{
 'use strict';
-const VERSION='v0.17.1',BUILD='057';
+const VERSION='v0.17.2',BUILD='058';
 const canvas=document.getElementById('scene'),gl=canvas.getContext('webgl',{antialias:true,alpha:true}),sun=document.getElementById('sun'),sctx=sun.getContext('2d');
 const $=id=>document.getElementById(id);
 const clamp=(v,a,b)=>Math.max(a,Math.min(b,v));
@@ -285,7 +285,7 @@ function profileValue(z,keys){
 function makeCarHull(keys,wheelArches=false,flatRoof=false){
  // Keep only designed profile stations. The two wheel arches add a few deliberate silhouette points.
  const out=[],N=14,rings=[],zSet=new Set(keys.map(p=>p.z));
- const archY=(z,center)=>{const d=Math.abs(z-center),r=.455,cy=.465,clear=.18;if(d<=r)return cy+Math.sqrt(Math.max(0,r*r-d*d))+clear;if(d>=r+.16)return .33;const t=(d-r)/.16,u=t*t*(3-2*t);return (cy+clear)*(1-u)+.33*u;};
+ const archY=(z,center)=>{const d=Math.abs(z-center),r=.455,cy=.465,clear=.025;if(d<=r)return cy+Math.sqrt(Math.max(0,r*r-d*d))+clear;if(d>=r+.16)return .33;const t=(d-r)/.16,u=t*t*(3-2*t);return (cy+clear)*(1-u)+.33*u;};
  if(wheelArches)for(const center of [-1.6375,1.6375])for(const offset of [-.615,-.55,-.455,-.34,-.2275,-.114,0,.114,.2275,.34,.455,.55,.615])zSet.add(center+offset);
  const zSamples=[...zSet].sort((a,b)=>a-b);
  for(const z of zSamples){
@@ -456,13 +456,13 @@ const archFrontL=makeWheelArch(1.6375,-1),archFrontR=makeWheelArch(1.6375,1),arc
 // Glazing follows the new wide, low cabin. Front and rear pillars are explicit and symmetric.
 // Windshield winding faces outward (+Z); its lower corners sit at the bonnet end.
 // Windshield margins sit 0.025 units inboard of the matching side-glass front edges.
-const windshield=quad([-.775,1.205,.18],[-.885,.91,.84],[.885,.91,.84],[.775,1.205,.18]);
+const windshield=quad([-.80,1.207,.235],[-.935,.914,.905],[.935,.914,.905],[.80,1.207,.235]);
 const rearGlass=quad([-.675,1.233,-1.35],[.675,1.233,-1.35],[.845,.906,-1.57],[-.845,.906,-1.57]);
 const [sideGlassLF,sideGlassRF]=mirroredQuadPair(
- [-.899,.920,.84],[-.80,1.216,.18],[-.83,1.217,-.68],[-.883,1.086,-.78]
+ [-.955,.920,.84],[-.855,1.216,.18],[-.885,1.217,-.68],[-.939,1.086,-.78]
 );
 const [sideGlassLR,sideGlassRR]=mirroredQuadPair(
- [-.882,1.086,-.84],[-.83,1.218,-.76],[-.70,1.233,-1.35],[-.81,1.013,-1.57]
+ [-.938,1.086,-.84],[-.885,1.218,-.76],[-.755,1.233,-1.35],[-.865,1.013,-1.57]
 );
 // Thick, clean A/B pillars separate windshield from side glass; frames follow the actual cabin rails.
 const [sideGlassFrameLF,sideGlassFrameRF]=mirroredQuadPair(
@@ -669,7 +669,7 @@ for(const side of [-1,1]){
 const C={
  ground:[.025,.025,.065,1],grid:[.09,.34,.48,.72],grid2:[.34,.10,.40,.55],
  road:[.055,.055,.105,1],road2:[.075,.07,.13,1],pink:[1,.13,.60,1],cyan:[.20,.88,1,1],white:[.92,.96,1,1],
- body:[.72,.018,.095,1],bodyLight:[1,.12,.29,1],bodyShade:[.19,.006,.035,1],
+ body:[.72,.018,.095,1],bodyLight:[.72,.018,.095,1],bodyShade:[.19,.006,.035,1],
  glass:[.012,.035,.075,1],glassLight:[.055,.17,.28,1],trim:[.012,.016,.026,1],
  tire:[.012,.014,.019,1],hub:[.55,.52,.68,1],brake:[.20,.20,.28,1],city:[.085,.045,.12,1],mount:[.08,.045,.14,1]
 };
@@ -931,9 +931,7 @@ function drawWorld(){
  // Bonnet remains a single continuous angular surface; no floating triangular overlays.
  // Cabin shell, glass and restrained cool reflections.
  drawCarMesh(cabinMesh,carX,carZ,C.body,yaw);
- drawCarMesh(windshieldFrame,carX,carZ,C.trim,yaw);drawCarMesh(rearGlassFrame,carX,carZ,C.trim,yaw);
- // Roof is part of the single cabin shell; do not overlay a second roof mesh.
- for(const frame of [sideGlassFrameLF,sideGlassFrameLR,sideGlassFrameRF,sideGlassFrameRR])drawCarMesh(frame,carX,carZ,C.trim,yaw,0);
+ // The cabin shell provides the pillars; the old filled glass backing plates are intentionally not drawn.
  drawCarMesh(windshield,carX,carZ,C.glassLight,yaw,3);
  drawCarMesh(rearGlass,carX,carZ,[.025,.095,.16,1],yaw,3);
  // Four individually mounted side panes: front-left, rear-left, front-right, rear-right.
