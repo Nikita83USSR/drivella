@@ -94,7 +94,7 @@
 <body>
 <canvas id="scene"></canvas><canvas id="sun"></canvas>
 <div id="hud">
- <div class="top"><div class="logo">DRIVELLA<small>3D SYNTHWAVE DRIFT RACING</small></div><div class="version-label" id="version-label">v0.15.6 · BUILD 042</div><div class="stat">DISTANCE<b id="distance">000.0 KM</b></div><div class="stat">LOCATION<b>VIOLET COAST</b></div></div>
+ <div class="top"><div class="logo">DRIVELLA<small>3D SYNTHWAVE DRIFT RACING</small></div><div class="version-label" id="version-label">v0.15.7 · BUILD 043</div><div class="stat">DISTANCE<b id="distance">000.0 KM</b></div><div class="stat">LOCATION<b>VIOLET COAST</b></div></div>
  <div class="right"><div id="speed">000 <span>KM/H</span></div><div id="direction">▶ FORWARD</div><div id="music">♫ MUSIC SCANNING…</div></div>
  <div class="bottom"><div class="hint"><strong>W / ↑</strong> ACCELERATE　<strong>S / ↓</strong> BRAKE / REVERSE<br><strong>A / ←　D / →</strong> STEER　<strong>SPACE</strong> HANDBRAKE　<strong>M</strong> MUSIC　<strong>1–4</strong> CAMERA</div><div>3D NEON HIGHWAY // BUILD 041</div></div>
 </div>
@@ -259,6 +259,10 @@ function drawBiome(z,weight,type){
  }
 }
 function quad(a,b,c,d){return mesh([...a,...b,...c,...a,...c,...d]);}
+function mirroredQuadPair(a,b,c,d){
+ const mirror=p=>[-p[0],p[1],p[2]];
+ return [quad(a,b,c,d),quad(mirror(a),mirror(d),mirror(c),mirror(b))];
+}
 function profileValue(z,keys){
  let i=0;while(i<keys.length-2&&z>keys[i+1].z)i++;
  const a=keys[i],b=keys[i+1],t=clamp((z-a.z)/(b.z-a.z),0,1),u=t,o={z};
@@ -266,15 +270,27 @@ function profileValue(z,keys){
  return o;
 }
 function makeCarHull(keys,wheelArches=false){
- const out=[],z0=keys[0].z,z1=keys[keys.length-1].z,steps=Math.ceil((z1-z0)/.065),N=16,rings=[];
+ // Keep only designed profile stations. The two wheel arches add a few deliberate silhouette points.
+ const out=[],N=14,rings=[],zSet=new Set(keys.map(p=>p.z));
  const archY=(z,center)=>{const d=Math.abs(z-center),r=.455,cy=.465,clear=.035;if(d<=r)return cy+Math.sqrt(Math.max(0,r*r-d*d))+clear;if(d>=r+.16)return .33;const t=(d-r)/.16,u=t*t*(3-2*t);return (cy+clear)*(1-u)+.33*u;};
- for(let i=0;i<=steps;i++){
-  const z=z0+(z1-z0)*i/steps,p=profileValue(z,keys);
-  let side=p.side,floor=p.floor;if(wheelArches){const arch=Math.max(archY(z,-1.6375),archY(z,1.6375));side=Math.max(side,arch);floor=Math.max(floor,arch);}
-  const w=p.w,pts=[[0,floor,z],[w*.42,floor,z],[w*.80,floor,z],[w*.96,side,z],[w,p.mid,z],[w*.985,p.shoulder,z],[w*.82,p.upper,z],[w*.50,p.top,z],[0,p.top+.026,z],[-w*.50,p.top,z],[-w*.82,p.upper,z],[-w*.985,p.shoulder,z],[-w,p.mid,z],[-w*.96,side,z],[-w*.80,p.floor,z],[-w*.42,p.floor,z]];
-  rings.push(pts);
+ if(wheelArches)for(const center of [-1.6375,1.6375])for(const offset of [-.615,-.455,-.2275,.2275,.455,.615])zSet.add(center+offset);
+ const zSamples=[...zSet].sort((a,b)=>a-b);
+ for(const z of zSamples){
+  const p=profileValue(z,keys);
+  let side=p.side,floor=p.floor;
+  if(wheelArches){const arch=Math.max(archY(z,-1.6375),archY(z,1.6375));side=Math.max(side,arch);floor=Math.max(floor,arch);}
+  const w=p.w;
+  rings.push([
+   [0,floor,z],[w*.72,floor,z],[w,side,z],[w,p.mid,z],
+   [w*.96,p.shoulder,z],[w*.66,p.upper,z],[w*.48,p.top,z],[0,p.top+.026,z],
+   [-w*.48,p.top,z],[-w*.66,p.upper,z],[-w*.96,p.shoulder,z],[-w,p.mid,z],
+   [-w,side,z],[-w*.72,floor,z]
+  ]);
  }
- for(let i=0;i<rings.length-1;i++)for(let j=0;j<N;j++){const a=rings[i][j],b=rings[i][(j+1)%N],c=rings[i+1][j],d=rings[i+1][(j+1)%N];out.push(...a,...c,...d,...a,...d,...b);}
+ for(let i=0;i<rings.length-1;i++)for(let j=0;j<N;j++){
+  const a=rings[i][j],b=rings[i][(j+1)%N],c=rings[i+1][j],d=rings[i+1][(j+1)%N];
+  out.push(...a,...c,...d,...a,...d,...b);
+ }
  const cap=(ring,reverse)=>{const center=[0,ring.reduce((v,p)=>v+p[1],0)/N,ring[0][2]];for(let j=0;j<N;j++){const a=ring[j],b=ring[(j+1)%N];if(reverse)out.push(...center,...b,...a);else out.push(...center,...a,...b);}};
  cap(rings[0],true);cap(rings[rings.length-1],false);return mesh(out);
 }
@@ -286,7 +302,7 @@ function makeRoof(){
   {z:-.25,w:.535,edge:1.405,crown:1.43},
   {z:.22,w:.34,edge:1.405,crown:1.425}
  ];
- const out=[],steps=72;
+ const out=[],steps=stations.length-1;
  const sample=t=>{
   const span=t*(stations.length-1),i=Math.min(stations.length-2,Math.floor(span)),u=span-i,a=stations[i],b=stations[i+1];
   return {z:a.z+(b.z-a.z)*u,w:a.w+(b.w-a.w)*u,edge:a.edge+(b.edge-a.edge)*u,crown:a.crown+(b.crown-a.crown)*u};
@@ -300,7 +316,7 @@ function makeRoof(){
  return mesh(out);
 }
 function makeExhaustTip(){
- const out=[],n=28,ro=.108,ri=.070,z0=-.005,z1=-.235;
+ const out=[],n=12,ro=.108,ri=.070,z0=-.005,z1=-.235;
  for(let i=0;i<n;i++){
   const a=i*Math.PI*2/n,b=(i+1)*Math.PI*2/n;
   const A=[Math.cos(a)*ro,Math.sin(a)*ro,z0],B=[Math.cos(b)*ro,Math.sin(b)*ro,z0];
@@ -315,7 +331,7 @@ function makeExhaustTip(){
  return mesh(out);
 }
 function makeExhaustCore(){
- const out=[],n=28,r=.069,z=-.238;
+ const out=[],n=12,r=.069,z=-.238;
  for(let i=0;i<n;i++){
   const a=i*Math.PI*2/n,b=(i+1)*Math.PI*2/n;
   out.push(0,0,z,Math.cos(a)*r,Math.sin(a)*r,z,Math.cos(b)*r,Math.sin(b)*r,z);
@@ -323,7 +339,7 @@ function makeExhaustCore(){
  return mesh(out);
 }
 function makeWheelFace(){
- const out=[],seg=64,tri=(a,b,c)=>out.push(...a,...b,...c);
+ const out=[],seg=24,tri=(a,b,c)=>out.push(...a,...b,...c);
  for(const face of [-1,1]){
   for(let i=0;i<seg;i++){
    const a=i*Math.PI*2/seg,b=(i+1)*Math.PI*2/seg,p=[Math.cos(a),face*.10,Math.sin(a)],q=[Math.cos(b),face*.10,Math.sin(b)],p2=[Math.cos(a)*.72,face*.10,Math.sin(a)*.72],q2=[Math.cos(b)*.72,face*.10,Math.sin(b)*.72];
@@ -333,11 +349,11 @@ function makeWheelFace(){
    const angle=k*Math.PI*2/5,half=.075,ri=.15,ro=.70,p1=[Math.cos(angle-half)*ri,face*.108,Math.sin(angle-half)*ri],p2=[Math.cos(angle+half)*ri,face*.108,Math.sin(angle+half)*ri],p3=[Math.cos(angle+half*.55)*ro,face*.108,Math.sin(angle+half*.55)*ro],p4=[Math.cos(angle-half*.55)*ro,face*.108,Math.sin(angle-half*.55)*ro];
    tri(p1,p2,p3);tri(p1,p3,p4);
   }
-  for(let i=0;i<24;i++){const a=i*Math.PI*2/24,b=(i+1)*Math.PI*2/24,ri=.135;tri([0,face*.112,0],[Math.cos(a)*ri,face*.112,Math.sin(a)*ri],[Math.cos(b)*ri,face*.112,Math.sin(b)*ri]);}
+  for(let i=0;i<12;i++){const a=i*Math.PI*2/12,b=(i+1)*Math.PI*2/12,ri=.135;tri([0,face*.112,0],[Math.cos(a)*ri,face*.112,Math.sin(a)*ri],[Math.cos(b)*ri,face*.112,Math.sin(b)*ri]);}
  }return mesh(out);
 }
 function makeWheelArch(center,side){
- const out=[],steps=48;
+ const out=[],steps=12;
  for(let i=0;i<steps;i++){
   const d0=-.465+.93*i/steps,d1=-.465+.93*(i+1)/steps,y0=.465+Math.sqrt(Math.max(0,.455*.455-d0*d0))+.045,y1=.465+Math.sqrt(Math.max(0,.455*.455-d1*d1))+.045,x=side*1.205,x2=side*1.175;
   const a=[x,y0,center+d0],b=[x2,y0-.012,center+d0],c=[x2,y1-.012,center+d1],d=[x,y1,center+d1];out.push(...a,...b,...c,...a,...c,...d);
@@ -352,15 +368,13 @@ function sideRibbon(side,points,width){
  }return mesh(out);
 }
 function makeProfileLine(keys,side,zStart,zEnd,yKey,xFactor,width,offset=0){
- const pts=[],steps=Math.max(12,Math.ceil((zEnd-zStart)/.11));
- for(let i=0;i<=steps;i++){
-  const z=zStart+(zEnd-zStart)*i/steps,p=profileValue(z,keys);
-  pts.push([p[yKey],z,p.w*xFactor+offset]);
- }
+ // Every contour point sits on an actual profile station, never on a guessed interpolated grid.
+ const zSamples=[zStart,...keys.map(p=>p.z).filter(z=>z>zStart&&z<zEnd),zEnd].sort((a,b)=>a-b);
+ const pts=zSamples.map(z=>{const p=profileValue(z,keys);return [p[yKey],z,p.w*xFactor+offset];});
  return sideRibbon(side,pts,width);
 }
 function makeArchLine(center,side,width,offset=.012){
- const pts=[],steps=48;
+ const pts=[],steps=12;
  for(let i=0;i<=steps;i++){
   const z=center-.48+.96*i/steps,d=z-center;
   const y=.465+Math.sqrt(Math.max(0,.455*.455-d*d))+.045;
@@ -397,15 +411,19 @@ const cabinMesh=makeCarHull(cabinProfile,false),roofMesh=makeRoof(),wheelFace=ma
 const archFrontL=makeWheelArch(1.6375,-1),archFrontR=makeWheelArch(1.6375,1),archRearL=makeWheelArch(-1.6375,-1),archRearR=makeWheelArch(-1.6375,1);
 const windshield=quad([-.35,1.435,.30],[.35,1.435,.30],[.265,.895,1.02],[-.265,.895,1.02]);
 const rearGlass=quad([-.35,1.30,-1.37],[.35,1.30,-1.37],[.64,.84,-1.73],[-.64,.84,-1.73]);
-const sideGlassLF=quad([-.47,1.105,.86],[-.405,1.405,.22],[-.565,1.405,-.66],[-.68,1.105,-.76]);
-const sideGlassLR=quad([-.68,1.105,-.83],[-.565,1.405,-.73],[-.36,1.30,-1.32],[-.59,.99,-1.57]);
-const sideGlassRF=quad([.47,1.105,.86],[.68,1.105,-.76],[.565,1.405,-.66],[.405,1.405,.22]);
-const sideGlassRR=quad([.68,1.105,-.83],[.59,.99,-1.57],[.36,1.30,-1.32],[.565,1.405,-.73]);
-// Narrow black surrounds make the A- and B-pillar divisions explicit on each side.
-const sideGlassFrameLF=quad([-.50,1.075,.90],[-.375,1.435,.18],[-.59,1.435,-.70],[-.72,1.075,-.80]);
-const sideGlassFrameLR=quad([-.72,1.075,-.86],[-.59,1.435,-.77],[-.335,1.325,-1.36],[-.625,.96,-1.62]);
-const sideGlassFrameRF=quad([.50,1.075,.90],[.72,1.075,-.80],[.59,1.435,-.70],[.375,1.435,.18]);
-const sideGlassFrameRR=quad([.72,1.075,-.86],[.625,.96,-1.62],[.335,1.325,-1.36],[.59,1.435,-.77]);
+const [sideGlassLF,sideGlassRF]=mirroredQuadPair(
+ [-.47,1.105,.86],[-.405,1.405,.22],[-.565,1.405,-.66],[-.68,1.105,-.76]
+);
+const [sideGlassLR,sideGlassRR]=mirroredQuadPair(
+ [-.68,1.105,-.83],[-.565,1.405,-.73],[-.36,1.30,-1.32],[-.59,.99,-1.57]
+);
+// Each left-side frame generates its right-side twin by exact mirroring.
+const [sideGlassFrameLF,sideGlassFrameRF]=mirroredQuadPair(
+ [-.50,1.075,.90],[-.375,1.435,.18],[-.59,1.435,-.70],[-.72,1.075,-.80]
+);
+const [sideGlassFrameLR,sideGlassFrameRR]=mirroredQuadPair(
+ [-.72,1.075,-.86],[-.59,1.435,-.77],[-.335,1.325,-1.36],[-.625,.96,-1.62]
+);
 const intakeUpperL=quad([-1.00,.83,-.76],[-1.02,.83,-1.26],[-1.14,.55,-1.18],[-1.14,.55,-.86]);
 const intakeUpperR=quad([1.00,.83,-.76],[1.14,.55,-.86],[1.14,.55,-1.18],[1.02,.83,-1.26]);
 const intakeLowerL=quad([-1.14,.46,-.88],[-1.14,.46,-1.20],[-1.12,.31,-1.14],[-1.12,.31,-.96]);
