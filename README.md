@@ -2,7 +2,7 @@
 
 A browser-based synthwave drift-racing prototype with a custom low-poly 3D car, a procedural neon environment, and a hand-built WebGL renderer.
 
-> **Status:** Playable prototype under active development. Current renderer reference: **v0.18.25 / BUILD 091**.
+> **Status:** Playable prototype under active development. Current renderer reference: **v0.18.26 / BUILD 092**.
 
 ## Current game
 
@@ -12,6 +12,7 @@ A browser-based synthwave drift-racing prototype with a custom low-poly 3D car, 
 - Procedural city, coastline, palms, mountains, road markings, and neon roadside elements.
 - Dynamic directional shadows with automatic environment participation, PCSS-style soft filtering, and camera-adaptive coverage.
 - Two animated, shader-based headlight spotlights that illuminate ordinary world materials and track the pop-up lamp mechanism.
+- Emissive front, rear, and indicator lamps with camera-facing screen-space lens flares.
 - Half-resolution full-scene SSAO, separate car contour pass, and layered neon underglow.
 - Speed / distance HUD, boot screen, garage, options, and optional local soundtrack.
 - No external rendering engine, JavaScript libraries, fonts, CDNs, or runtime network dependencies.
@@ -60,6 +61,7 @@ Core implementation completed: adaptive directional shadows, PCSS-style filterin
 ### Stage 2 — Lighting and material response
 
 - [x] Add two dynamic headlight spotlights tied to the animated pop-up headlight assembly.
+- [x] Add self-emissive lamp materials and camera-dependent lens flares for headlights, tail lights, and turn indicators.
 - [ ] Add reusable local lighting for garage fixtures and selected environment lights.
 - [ ] Improve emissive materials and introduce a controlled bloom pipeline.
 - [ ] Improve road, body, and glass reflections without breaking the shared scene renderer.
