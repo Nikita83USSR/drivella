@@ -3,6 +3,8 @@
 Current reference: **v0.18.48 / BUILD 114**  
 Main renderer: `index.html` — custom WebGL 1 renderer, no external rendering engine.
 
+**Release marker policy:** every published renderer/game change increments `BUILD` in `index.html` and updates the visible HUD, boot screen, README, and this document in the same release. Increment the patch version with the build when appropriate. Never publish a renderer change while leaving the visible build number unchanged.
+
 This document records the rendering decisions that future vehicle, environment, lighting, and effects work must preserve. The goal is a reusable scene pipeline: new world geometry should take part in shadows and ambient occlusion automatically when it uses the shared draw path.
 
 ## Frame pipeline
