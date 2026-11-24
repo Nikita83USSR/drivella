@@ -1,6 +1,6 @@
 # DRIVELLA — Rendering Architecture
 
-Current reference: **v0.18.25 / BUILD 091**  
+Current reference: **v0.18.26 / BUILD 092**  
 Main renderer: `index.html` — custom WebGL 1 renderer, no external rendering engine.
 
 This document records the rendering decisions that future vehicle, environment, lighting, and effects work must preserve. The goal is a reusable scene pipeline: new world geometry should take part in shadows and ambient occlusion automatically when it uses the shared draw path.
@@ -52,6 +52,14 @@ The first Stage 2 lighting layer adds two local spotlight sources for the pop-up
 
 This is a stylized real-time spotlight approximation, not a physically calibrated automotive photometric model. The two headlight sources do **not** yet create their own shadow maps, volumetric scattering, or reflective light transport. Painted car body and glass retain their dedicated material shader paths and do not receive this diffuse spotlight contribution in this iteration.
 
+### Emissive lamps and camera-dependent lens flare
+
+Vehicle lamp surfaces use material mode **8**. The main fragment shader outputs their authored colour as emission and bypasses directional shadow response and ordinary diffuse/specular lighting. The shared shadow-caster rule already accepts only material modes below 4.5, so emissive lamps do not cast solid shadows or enter the opaque scene AO capture. Mode 8 is intentionally separate from mode 7, which remains the procedural tyre-contact overlay.
+
+The 2D `sun` canvas draws a lens-flare overlay after the 3D and outline passes. It projects the transformed pop-up headlamp centres, lower front lamps, front indicators, rear lamp clusters, and rear indicators using the active camera view-projection matrix. Flare strength is modulated by the angle between the lamp-facing normal and camera direction, plus distance; screen position and ghost streak locations therefore change with camera mode and garage orbit. Front and rear indicators use the same blink phase and steering-side selection as their 3D lamp surfaces.
+
+This is a stylized screen-space glare effect rather than a physically simulated lens. It uses camera-facing direction and clip-range visibility, but does not yet test whether an unrelated object fully occludes a lamp. It does not add additional shadow maps or volumetric scattering.
+
 ## PCSS-style soft shadow filtering
 
 The receiver uses a bounded Percentage-Closer Soft Shadows approximation:
@@ -100,6 +108,7 @@ The numeric `materialMode` is shared by the main shader and draw helpers:
 | 5 | Disc-based underglow pool | No cast, no receive |
 | 6 | Linear neon side rails | No cast, no receive |
 | 7 | Tyre contact shadow overlay | No cast, no receive |
+| 8 | Emissive vehicle lamp surfaces | No cast, no receive |
 
 When adding a new material mode, define its casting, receiving, AO, and transparency behaviour in the shader and in this table.
 
@@ -111,6 +120,6 @@ When adding a new material mode, define its casting, receiving, AO, and transpar
 - SSAO is half-resolution and screen-space; it can miss off-screen occluders and may require tuning for unusually large or thin objects.
 - The map and post-process passes add GPU work. Any future change to resolution, sample count, or extra passes should be evaluated against frame time.
 - The main directional shadow light remains fixed; the new headlight spotlights illuminate surfaces but do not cast independent shadows. If dynamic sun or additional shadow-producing lights are introduced, shadow-camera generation and receiver sampling must be updated together.
-- Stage 2 still needs reusable garage/environment light sources, controlled emissive bloom, improved road/body/glass reflections, and atmospheric depth / grading.
+- Stage 2 still needs reusable garage/environment light sources, a general-purpose bloom pipeline, improved road/body/glass reflections, and atmospheric depth / grading.
 
 **Maintenance rule:** preserve the shared scene pipeline and central material policy. Future environment additions should become shadow casters and AO participants by using the normal scene draw functions, not by receiving bespoke shadow code.
