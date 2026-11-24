@@ -66,7 +66,7 @@ Receiving is independent of casting. Regular world materials and painted vehicle
 - The vehicle-receiver map uses the same solar direction and world geometry, but only selected raised vehicle details are allowed to cast onto other vehicle surfaces. The main body hull is intentionally excluded from this receiver map.
 - Current selected car casters are the cabin shell, A/B pillars, front bumper crease and splitter, pop-up lamp housings/caps, and the rear spoiler surfaces. They use the optional `vehicleShadowCaster=true` argument in the shared car draw helpers.
 - All other car details still cast into the full world map, but do not self-occlude the vehicle receiver map. When adding a raised detail that should visibly cast onto the body, tag it deliberately; do not re-enable the entire hull as a self-caster.
-- The receiver bias is now shared and modest. Bias is not used as a substitute for separating self-casters from vehicle receivers.
+- The receiver bias is now shared and modest. Its normal term uses `abs(dot(N, SUN_LIGHT.direction))`, matching the renderer's two-sided lighting convention and avoiding a different bias merely because a mirrored/box face has reversed winding. Bias is not used as a substitute for separating self-casters from vehicle receivers.
 
 This is a practical selective caster/receiver split for the current single vehicle. It is not a general solution for multiple interacting cars; if traffic is added, use per-object receiver layers or a more general caster/receiver mask rather than excluding every vehicle from every other vehicle.
 
@@ -164,6 +164,7 @@ The two effects use separate masks so environment geometry does not acquire the 
 - **Car contour mask:** full resolution and car-only. It preserves the existing normal/depth edge detection and the explicit roof seam treatment.
 - The fullscreen composite samples the car mask for ink contours and the scene mask for SSAO. Near and farther screen-space samples estimate depth discontinuities and normal creases; the resulting darkening is clamped to 0.12 alpha in BUILD 109 so AO remains local contact shading instead of a broad dim veil.
 - Glass, translucent fades, neon, and contact-shadow overlays are omitted from the opaque AO mask to avoid false occlusion.
+- The four procedural tyre-contact ovals (material mode 7) and the SSAO composite are ambient/contact shading approximations. They are intentionally not directional cast shadows and do not claim to come from the sun or a garage spotlight; all actual cast-shadow silhouettes must come from a registered light and its own shadow map.
 
 SSAO is screen-space: it only sees geometry represented in the current camera's normal/depth buffer. It cannot infer hidden geometry behind the camera or off-screen. It is a local contact/crease approximation, not global illumination.
 
