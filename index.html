@@ -94,7 +94,7 @@
 <body>
 <canvas id="scene"></canvas><canvas id="sun"></canvas>
 <div id="hud">
- <div class="top"><div class="logo">DRIVELLA<small>3D SYNTHWAVE DRIFT RACING</small></div><div class="version-label" id="version-label">v0.15.5 · BUILD 041</div><div class="stat">DISTANCE<b id="distance">000.0 KM</b></div><div class="stat">LOCATION<b>VIOLET COAST</b></div></div>
+ <div class="top"><div class="logo">DRIVELLA<small>3D SYNTHWAVE DRIFT RACING</small></div><div class="version-label" id="version-label">v0.15.6 · BUILD 042</div><div class="stat">DISTANCE<b id="distance">000.0 KM</b></div><div class="stat">LOCATION<b>VIOLET COAST</b></div></div>
  <div class="right"><div id="speed">000 <span>KM/H</span></div><div id="direction">▶ FORWARD</div><div id="music">♫ MUSIC SCANNING…</div></div>
  <div class="bottom"><div class="hint"><strong>W / ↑</strong> ACCELERATE　<strong>S / ↓</strong> BRAKE / REVERSE<br><strong>A / ←　D / →</strong> STEER　<strong>SPACE</strong> HANDBRAKE　<strong>M</strong> MUSIC　<strong>1–4</strong> CAMERA</div><div>3D NEON HIGHWAY // BUILD 041</div></div>
 </div>
@@ -279,12 +279,12 @@ function makeCarHull(keys,wheelArches=false){
  cap(rings[0],true);cap(rings[rings.length-1],false);return mesh(out);
 }
 function makeRoof(){
- // Continuous roof panel, shaped to the A/B/C-pillar lines. Ends stop short of both windscreens.
+ // Flat, narrow wedge roof: low edge rails and only a subtle center crown.
  const stations=[
-  {z:-1.325,w:.355,edge:1.345,crown:1.405},
-  {z:-.78,w:.615,edge:1.435,crown:1.485},
-  {z:-.30,w:.605,edge:1.435,crown:1.485},
-  {z:.235,w:.355,edge:1.435,crown:1.465}
+  {z:-1.30,w:.34,edge:1.385,crown:1.415},
+  {z:-.78,w:.535,edge:1.405,crown:1.43},
+  {z:-.25,w:.535,edge:1.405,crown:1.43},
+  {z:.22,w:.34,edge:1.405,crown:1.425}
  ];
  const out=[],steps=72;
  const sample=t=>{
@@ -386,26 +386,26 @@ const bodyProfile=[
  ];
 const bodyMesh=makeCarHull(bodyProfile,true);
 const cabinProfile=[
- {z:-1.78,w:.70,floor:.63,side:.67,mid:.82,shoulder:.96,upper:1.03,top:1.08},
- {z:-1.50,w:.78,floor:.63,side:.67,mid:.94,shoulder:1.15,upper:1.24,top:1.29},
- {z:-1.00,w:.78,floor:.62,side:.66,mid:1.00,shoulder:1.32,upper:1.38,top:1.42},
- {z:-.30,w:.76,floor:.62,side:.66,mid:.99,shoulder:1.33,upper:1.39,top:1.43},
- {z:.30,w:.70,floor:.59,side:.64,mid:.94,shoulder:1.30,upper:1.39,top:1.42},
- {z:1.00,w:.53,floor:.51,side:.57,mid:.74,shoulder:.88,upper:.96,top:1.02}
+ {z:-1.78,w:.60,floor:.68,side:.72,mid:.81,shoulder:.92,upper:1.00,top:1.05},
+ {z:-1.50,w:.68,floor:.67,side:.71,mid:.92,shoulder:1.12,upper:1.20,top:1.25},
+ {z:-1.00,w:.72,floor:.64,side:.68,mid:1.00,shoulder:1.20,upper:1.34,top:1.39},
+ {z:-.30,w:.72,floor:.63,side:.67,mid:1.00,shoulder:1.21,upper:1.35,top:1.40},
+ {z:.30,w:.66,floor:.60,side:.64,mid:.94,shoulder:1.13,upper:1.30,top:1.37},
+ {z:1.00,w:.48,floor:.52,side:.56,mid:.74,shoulder:.88,upper:.98,top:1.04}
 ];
 const cabinMesh=makeCarHull(cabinProfile,false),roofMesh=makeRoof(),wheelFace=makeWheelFace(),exhaustTip=makeExhaustTip(),exhaustCore=makeExhaustCore();
 const archFrontL=makeWheelArch(1.6375,-1),archFrontR=makeWheelArch(1.6375,1),archRearL=makeWheelArch(-1.6375,-1),archRearR=makeWheelArch(-1.6375,1);
 const windshield=quad([-.35,1.435,.30],[.35,1.435,.30],[.265,.895,1.02],[-.265,.895,1.02]);
 const rearGlass=quad([-.35,1.30,-1.37],[.35,1.30,-1.37],[.64,.84,-1.73],[-.64,.84,-1.73]);
-const sideGlassLF=quad([-.51,.925,1.00],[-.355,1.435,.30],[-.615,1.435,-.70],[-.755,.925,-.78]);
-const sideGlassLR=quad([-.755,.925,-.84],[-.615,1.435,-.76],[-.385,1.285,-1.38],[-.675,.805,-1.66]);
-const sideGlassRF=quad([.51,.925,1.00],[.755,.925,-.78],[.615,1.435,-.70],[.355,1.435,.30]);
-const sideGlassRR=quad([.755,.925,-.84],[.675,.805,-1.66],[.385,1.285,-1.38],[.615,1.435,-.76]);
-// Separate black inset surrounds for each side pane; the front and rear windows do not merge.
-const sideGlassFrameLF=quad([-.535,.89,1.04],[-.325,1.465,.255],[-.645,1.465,-.72],[-.79,.89,-.82]);
-const sideGlassFrameLR=quad([-.79,.89,-.86],[-.645,1.465,-.78],[-.405,1.315,-1.395],[-.70,.77,-1.69]);
-const sideGlassFrameRF=quad([.535,.89,1.04],[.79,.89,-.82],[.645,1.465,-.72],[.325,1.465,.255]);
-const sideGlassFrameRR=quad([.79,.89,-.86],[.70,.77,-1.69],[.405,1.315,-1.395],[.645,1.465,-.78]);
+const sideGlassLF=quad([-.47,1.105,.86],[-.405,1.405,.22],[-.565,1.405,-.66],[-.68,1.105,-.76]);
+const sideGlassLR=quad([-.68,1.105,-.83],[-.565,1.405,-.73],[-.36,1.30,-1.32],[-.59,.99,-1.57]);
+const sideGlassRF=quad([.47,1.105,.86],[.68,1.105,-.76],[.565,1.405,-.66],[.405,1.405,.22]);
+const sideGlassRR=quad([.68,1.105,-.83],[.59,.99,-1.57],[.36,1.30,-1.32],[.565,1.405,-.73]);
+// Narrow black surrounds make the A- and B-pillar divisions explicit on each side.
+const sideGlassFrameLF=quad([-.50,1.075,.90],[-.375,1.435,.18],[-.59,1.435,-.70],[-.72,1.075,-.80]);
+const sideGlassFrameLR=quad([-.72,1.075,-.86],[-.59,1.435,-.77],[-.335,1.325,-1.36],[-.625,.96,-1.62]);
+const sideGlassFrameRF=quad([.50,1.075,.90],[.72,1.075,-.80],[.59,1.435,-.70],[.375,1.435,.18]);
+const sideGlassFrameRR=quad([.72,1.075,-.86],[.625,.96,-1.62],[.335,1.325,-1.36],[.59,1.435,-.77]);
 const intakeUpperL=quad([-1.00,.83,-.76],[-1.02,.83,-1.26],[-1.14,.55,-1.18],[-1.14,.55,-.86]);
 const intakeUpperR=quad([1.00,.83,-.76],[1.14,.55,-.86],[1.14,.55,-1.18],[1.02,.83,-1.26]);
 const intakeLowerL=quad([-1.14,.46,-.88],[-1.14,.46,-1.20],[-1.12,.31,-1.14],[-1.12,.31,-.96]);
@@ -477,9 +477,9 @@ const windshieldFrame=quad([-.385,1.455,.265],[.385,1.455,.265],[.295,.865,1.055
 const rearGlassFrame=quad([-.42,1.335,-1.355],[.42,1.335,-1.355],[.70,.815,-1.755],[-.70,.815,-1.755]);
 const frontGlassGlint=quad([-.255,1.375,.405],[-.205,1.375,.405],[-.255,.985,.83],[-.305,.985,.83]);
 const rearGlassGlint=quad([-.19,1.225,-1.435],[-.135,1.225,-1.435],[-.39,.965,-1.675],[-.445,.965,-1.675]);
-const sideGlassGlintL=quad([-.455,1.205,.49],[-.405,1.215,.43],[-.565,1.175,-.36],[-.615,1.155,-.43]);
-const sideGlassGlintR=quad([.455,1.205,.49],[.615,1.155,-.43],[.565,1.175,-.36],[.405,1.215,.43]);
-const roofGlint=quad([-.075,1.445,-.77],[.075,1.445,-.77],[.14,1.355,.12],[-.14,1.355,.12]);
+const sideGlassGlintL=quad([-.455,1.335,.25],[-.425,1.335,.18],[-.515,1.18,-.38],[-.545,1.18,-.43]);
+const sideGlassGlintR=quad([.455,1.335,.25],[.545,1.18,-.43],[.515,1.18,-.38],[.425,1.335,.18]);
+const roofGlint=quad([-.06,1.418,-.77],[.06,1.418,-.77],[.12,1.405,.10],[-.12,1.405,.10]);
 // Black ink contours follow sampled body sections; every line shares the car profile.
 const shoulderInkL=makeProfileLine(bodyProfile,-1,-2.70,2.67,'shoulder',.985,.026,.012);
 const shoulderInkR=makeProfileLine(bodyProfile,1,-2.70,2.67,'shoulder',.985,.026,.012);
