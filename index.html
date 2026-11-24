@@ -94,13 +94,13 @@
 <body>
 <canvas id="scene"></canvas><canvas id="sun"></canvas>
 <div id="hud">
- <div class="top"><div class="logo">DRIVELLA<small>3D SYNTHWAVE DRIFT RACING</small></div><div class="version-label" id="version-label">v0.18.26 · BUILD 092</div><div class="stat">DISTANCE<b id="distance">000.0 KM</b></div><div class="stat">LOCATION<b>VIOLET COAST</b></div></div>
+ <div class="top"><div class="logo">DRIVELLA<small>3D SYNTHWAVE DRIFT RACING</small></div><div class="version-label" id="version-label">v0.18.27 · BUILD 093</div><div class="stat">DISTANCE<b id="distance">000.0 KM</b></div><div class="stat">LOCATION<b>VIOLET COAST</b></div></div>
  <div class="right"><div id="speed">000 <span>KM/H</span></div><div id="direction">▶ FORWARD</div><div id="music">♫ MUSIC SCANNING…</div></div>
- <div class="bottom"><div class="hint"><strong>W / ↑</strong> ACCELERATE　<strong>S / ↓</strong> BRAKE / REVERSE<br><strong>A / ←　D / →</strong> STEER　<strong>SPACE</strong> HANDBRAKE　<strong>M</strong> MUSIC　<strong>1–4</strong> CAMERA　<strong>L</strong> LIGHTS　<strong>K</strong> WIREFRAME</div><div>3D NEON HIGHWAY // BUILD 092</div></div>
+ <div class="bottom"><div class="hint"><strong>W / ↑</strong> ACCELERATE　<strong>S / ↓</strong> BRAKE / REVERSE<br><strong>A / ←　D / →</strong> STEER　<strong>SPACE</strong> HANDBRAKE　<strong>M</strong> MUSIC　<strong>1–4</strong> CAMERA　<strong>L</strong> LIGHTS　<strong>K</strong> WIREFRAME</div><div>3D NEON HIGHWAY // BUILD 093</div></div>
 </div>
 <div id="tools-ui"><button id="cam-prev" aria-label="Previous camera">◀</button><span id="cam-label">CAM 2 · CLOSE</span><button id="cam-next" aria-label="Next camera">▶</button><button id="debug-toggle">DEBUG</button></div>
 <div id="debug-panel"><div class="debug-title">DRIVELLA DIAGNOSTICS</div><div id="debug-data">Initializing…</div></div>
-<div id="boot-screen"><div class="boot-content"><div class="boot-kicker">NIGHT DRIVE SYSTEMS // INITIALIZING</div><div class="boot-logo">DRIVELLA</div><div class="boot-subtitle">3D SYNTHWAVE DRIFT RACING</div><div class="boot-mark"></div><div class="boot-status" id="boot-status">BUILDING THE 3D WORLD</div><div class="boot-track"><div class="boot-progress" id="boot-progress"></div></div><div class="boot-meta"><span>3D ENGINE ONLINE</span><span id="boot-percent">00%</span></div><div class="boot-footer">ENGINE STARTUP // v0.18.26 · BUILD 092</div></div></div>
+<div id="boot-screen"><div class="boot-content"><div class="boot-kicker">NIGHT DRIVE SYSTEMS // INITIALIZING</div><div class="boot-logo">DRIVELLA</div><div class="boot-subtitle">3D SYNTHWAVE DRIFT RACING</div><div class="boot-mark"></div><div class="boot-status" id="boot-status">BUILDING THE 3D WORLD</div><div class="boot-track"><div class="boot-progress" id="boot-progress"></div></div><div class="boot-meta"><span>3D ENGINE ONLINE</span><span id="boot-percent">00%</span></div><div class="boot-footer">ENGINE STARTUP // v0.18.27 · BUILD 093</div></div></div>
 <div id="main-menu"><div class="menu-content"><div class="menu-brand">DRIVELLA GTS</div><div class="menu-sub">RIDE THE RETRO FUTURE</div><div class="menu-actions"><button class="menu-btn" id="menu-start">СТАРТ</button><button class="menu-btn" id="menu-garage">ГАРАЖ</button><button class="menu-btn" id="menu-options">НАСТРОЙКИ</button></div></div><div class="menu-footer">РАЗРАБОТЧИК — <b>НИКИТА МАРКИН</b></div></div>
 <div id="garage-screen"><div class="garage-head">ГАРАЖ // DRIVELLA GTS</div><div class="garage-copy">ТЕКУЩИЙ АВТОМОБИЛЬ<br>DRIVELLA GTS · RETRO GT COUPE<br>ПОКАЖИ ЕЁ СО ВСЕХ СТОРОН</div><div class="garage-controls"><button id="garage-back">← НАЗАД В МЕНЮ</button></div><div class="garage-tip">ЗАЖМИ И ТЯНИ — ВРАЩЕНИЕ<br>КОЛЁСИКО — ПРИБЛИЗИТЬ / ОТДАЛИТЬ</div></div>
 <div id="options-screen"><div class="options-head">ОПЦИИ</div><div class="options-card"><div class="option-row"><span>МУЗЫКА</span><button id="option-music">ВКЛЮЧЕНА</button></div><div class="option-row"><span>ГРОМКОСТЬ</span><input id="option-volume" type="range" min="0" max="100" value="52"></div><div class="option-row"><span>ЗВУК ДВИГАТЕЛЯ</span><button id="option-sfx">ВКЛЮЧЁН</button></div><div class="option-row"><span>КАМЕРА</span><span>КЛАВИШИ 1–4</span></div><button id="options-back" style="width:100%;margin-top:18px">← НАЗАД В МЕНЮ</button></div></div>
@@ -108,7 +108,7 @@
 <script>
 (()=>{
 'use strict';
-const VERSION='v0.18.26',BUILD='092';
+const VERSION='v0.18.27',BUILD='093';
 const canvas=document.getElementById('scene'),gl=canvas.getContext('webgl',{antialias:true,alpha:true}),sun=document.getElementById('sun'),sctx=sun.getContext('2d');
 const $=id=>document.getElementById(id);
 const clamp=(v,a,b)=>Math.max(a,Math.min(b,v));
@@ -1381,45 +1381,84 @@ function drawVehicleLensFlares(){
  const lampPower=clamp((headlightDeploy-.12)/.88,0,1);
  if(lampPower>.02){
   const lampNormal=direction(lampRotation,[0,-POP_LAMP_DIAG,POP_LAMP_DIAG]);
-  sources.push({p:point(lampWorld,lampFrontPoint(-.67,POP_LAMP_FACE_H*.5,.018)),n:lampNormal,c:[.70,.86,1],power:1.28});
-  sources.push({p:point(lampWorld,lampFrontPoint(.67,POP_LAMP_FACE_H*.5,.018)),n:lampNormal,c:[.70,.86,1],power:1.28});
+  sources.push({kind:'headlight',p:point(lampWorld,lampFrontPoint(-.67,POP_LAMP_FACE_H*.5,.018)),n:lampNormal,c:[.72,.88,1],power:1.65});
+  sources.push({kind:'headlight',p:point(lampWorld,lampFrontPoint(.67,POP_LAMP_FACE_H*.5,.018)),n:lampNormal,c:[.72,.88,1],power:1.65});
  }
  const frontNormal=direction(bodyWorld,[0,0,1]),rearNormal=direction(bodyWorld,[0,0,-1]);
- for(const x of [-.805,-.605,.605,.805])sources.push({p:point(bodyWorld,[x,.315,2.986]),n:frontNormal,c:[.76,.90,1],power:.34});
- sources.push({p:point(bodyWorld,[-.795,.47,2.974]),n:frontNormal,c:[1,.52,.14],power:steerNowForFlare()<0&&Math.sin(performance.now()*.012)>-.15?1.0:0});
- sources.push({p:point(bodyWorld,[.795,.47,2.974]),n:frontNormal,c:[1,.52,.14],power:steerNowForFlare()>0&&Math.sin(performance.now()*.012)>-.15?1.0:0});
- sources.push({p:point(bodyWorld,[-.93,.665,-2.958]),n:rearNormal,c:[1,.055,.10],power:.72});
- sources.push({p:point(bodyWorld,[.93,.665,-2.958]),n:rearNormal,c:[1,.055,.10],power:.72});
- const signalActive=Math.sin(performance.now()*.012)>-.15,signalSide=readSteeringInput();
- if(signalActive&&signalSide<0)sources.push({p:point(bodyWorld,[-1.085,.67,-2.982]),n:rearNormal,c:[1,.55,.16],power:1.12});
- if(signalActive&&signalSide>0)sources.push({p:point(bodyWorld,[1.085,.67,-2.982]),n:rearNormal,c:[1,.55,.16],power:1.12});
+ for(const x of [-.805,-.605,.605,.805])sources.push({kind:'fog',p:point(bodyWorld,[x,.315,2.986]),n:frontNormal,c:[.78,.92,1],power:.48});
+ const blink=Math.sin(performance.now()*.012)>-.15,signalSide=readSteeringInput();
+ sources.push({kind:'signal',p:point(bodyWorld,[-.795,.47,2.974]),n:frontNormal,c:[1,.48,.10],power:signalSide<0&&blink?1.22:0});
+ sources.push({kind:'signal',p:point(bodyWorld,[.795,.47,2.974]),n:frontNormal,c:[1,.48,.10],power:signalSide>0&&blink?1.22:0});
+ sources.push({kind:'tail',p:point(bodyWorld,[-.93,.665,-2.982]),n:rearNormal,c:[1,.045,.085],power:.92});
+ sources.push({kind:'tail',p:point(bodyWorld,[.93,.665,-2.982]),n:rearNormal,c:[1,.045,.085],power:.92});
+ if(blink&&signalSide<0)sources.push({kind:'signal',p:point(bodyWorld,[-1.085,.67,-2.982]),n:rearNormal,c:[1,.56,.16],power:1.26});
+ if(blink&&signalSide>0)sources.push({kind:'signal',p:point(bodyWorld,[1.085,.67,-2.982]),n:rearNormal,c:[1,.56,.16],power:1.26});
  sctx.save();sctx.globalCompositeOperation='lighter';
  for(const src of sources){
   if(src.power<=0)continue;
   const screen=project(src.p);if(!screen)continue;
   const dx=cam.x-src.p[0],dy=cam.y-src.p[1],dz=cam.z-src.p[2],distance=Math.hypot(dx,dy,dz)||1;
   const facing=clamp(src.n[0]*dx/distance+src.n[1]*dy/distance+src.n[2]*dz/distance,0,1);
-  if(facing<.08)continue;
-  const intensity=clamp(src.power*Math.pow(facing,1.22)*clamp(18/distance,.48,1.45),0,1.45);
+  if(facing<.045)continue;
+  const facingGain=Math.pow(facing,src.kind==='headlight'?.62:.88);
+  const distanceGain=clamp(19/distance,.58,1.75);
+  const intensity=clamp(src.power*facingGain*distanceGain,0,2.35);
   if(intensity<.035)continue;
-  const radius=clamp(Math.min(W,H)*.024*clamp(15/distance,.55,1.45),7,34)*(0.72+intensity*.30);
-  const [cr,cg,cb]=src.c,rgba=(alpha)=>'rgba('+Math.round(cr*255)+','+Math.round(cg*255)+','+Math.round(cb*255)+','+clamp(alpha,0,1)+')';
-  const halo=sctx.createRadialGradient(screen.x,screen.y,0,screen.x,screen.y,radius*3.2);
-  halo.addColorStop(0,rgba(.34*intensity));halo.addColorStop(.18,rgba(.20*intensity));halo.addColorStop(.48,rgba(.075*intensity));halo.addColorStop(1,rgba(0));
-  sctx.fillStyle=halo;sctx.fillRect(screen.x-radius*3.3,screen.y-radius*3.3,radius*6.6,radius*6.6);
-  const streak=sctx.createLinearGradient(screen.x-radius*5,screen.y,screen.x+radius*5,screen.y);
-  streak.addColorStop(0,rgba(0));streak.addColorStop(.38,rgba(.025*intensity));streak.addColorStop(.5,rgba(.21*intensity));streak.addColorStop(.62,rgba(.025*intensity));streak.addColorStop(1,rgba(0));
-  sctx.fillStyle=streak;sctx.fillRect(screen.x-radius*5,screen.y-radius*.055,radius*10,radius*.11);
-  sctx.strokeStyle=rgba(.42*intensity);sctx.lineWidth=Math.max(1,radius*.055);sctx.beginPath();sctx.moveTo(screen.x-radius*.78,screen.y);sctx.lineTo(screen.x+radius*.78,screen.y);sctx.moveTo(screen.x,screen.y-radius*.58);sctx.lineTo(screen.x,screen.y+radius*.58);sctx.stroke();
-  const core=sctx.createRadialGradient(screen.x,screen.y,0,screen.x,screen.y,radius*.72);
-  core.addColorStop(0,'rgba(255,255,255,'+clamp(.62*intensity,0,.92)+')');core.addColorStop(.20,rgba(.76*intensity));core.addColorStop(1,rgba(0));
-  sctx.fillStyle=core;sctx.beginPath();sctx.arc(screen.x,screen.y,radius*.72,0,Math.PI*2);sctx.fill();
+  const main=src.kind==='headlight',radius=clamp(Math.min(W,H)*(main?.041:src.kind==='tail'?.030:.026)*clamp(17/distance,.58,1.6),main?15:9,main?68:43)*(0.82+intensity*.34);
+  const [cr,cg,cb]=src.c,rgba=alpha=>'rgba('+Math.round(cr*255)+','+Math.round(cg*255)+','+Math.round(cb*255)+','+clamp(alpha,0,1)+')';
+  // Broad luminous veil: a visible bloom-like glare around the real projected lamp.
+  const haze=sctx.createRadialGradient(screen.x,screen.y,0,screen.x,screen.y,radius*(main?4.8:3.9));
+  haze.addColorStop(0,rgba((main?.60:.42)*intensity));
+  haze.addColorStop(.12,rgba((main?.38:.25)*intensity));
+  haze.addColorStop(.34,rgba((main?.18:.12)*intensity));
+  haze.addColorStop(.68,rgba((main?.065:.045)*intensity));
+  haze.addColorStop(1,rgba(0));
+  sctx.fillStyle=haze;sctx.fillRect(screen.x-radius*5,screen.y-radius*5,radius*10,radius*10);
+  // Long anamorphic streak with a hot white centre and a coloured outer line.
+  const streakLength=radius*(main?17:10),streakHeight=radius*(main?.52:.34);
+  const streak=sctx.createLinearGradient(screen.x-streakLength,screen.y,screen.x+streakLength,screen.y);
+  streak.addColorStop(0,rgba(0));streak.addColorStop(.34,rgba(.055*intensity));streak.addColorStop(.46,rgba(.30*intensity));streak.addColorStop(.5,rgba((main?.86:.48)*intensity));streak.addColorStop(.54,rgba(.30*intensity));streak.addColorStop(.66,rgba(.055*intensity));streak.addColorStop(1,rgba(0));
+  sctx.fillStyle=streak;sctx.fillRect(screen.x-streakLength,screen.y-streakHeight*.5,streakLength*2,streakHeight);
+  if(main){
+   const hot=sctx.createLinearGradient(screen.x-radius*4,screen.y,screen.x+radius*4,screen.y);
+   hot.addColorStop(0,'rgba(255,255,255,0)');hot.addColorStop(.42,'rgba(220,244,255,'+clamp(.30*intensity,0,.8)+')');hot.addColorStop(.5,'rgba(255,255,255,'+clamp(.82*intensity,0,1)+')');hot.addColorStop(.58,'rgba(220,244,255,'+clamp(.30*intensity,0,.8)+')');hot.addColorStop(1,'rgba(255,255,255,0)');
+   sctx.fillStyle=hot;sctx.fillRect(screen.x-radius*4,screen.y-radius*.075,radius*8,radius*.15);
+  }
+  // Cross-star diffraction, brighter at the centre and tapered at the ends.
+  const rays=main?[[1,0,3.9,.115],[0,1,2.0,.075],[.707,.707,1.22,.045],[-.707,.707,1.22,.045]]:[[1,0,2.6,.07],[0,1,1.25,.045]];
+  for(const [vx,vy,lengthFactor,widthFactor] of rays){
+   const len=radius*lengthFactor,half=radius*widthFactor,grad=sctx.createLinearGradient(screen.x-vx*len,screen.y-vy*len,screen.x+vx*len,screen.y+vy*len);
+   grad.addColorStop(0,rgba(0));grad.addColorStop(.5,rgba((main?.52:.30)*intensity));grad.addColorStop(1,rgba(0));
+   sctx.strokeStyle=grad;sctx.lineWidth=Math.max(1,half*2);sctx.beginPath();sctx.moveTo(screen.x-vx*len,screen.y-vy*len);sctx.lineTo(screen.x+vx*len,screen.y+vy*len);sctx.stroke();
+  }
+  // Bright optical core and fine inner halo.
+  const core=sctx.createRadialGradient(screen.x,screen.y,0,screen.x,screen.y,radius*(main?1.35:.95));
+  core.addColorStop(0,'rgba(255,255,255,'+clamp((main?.98:.72)*intensity,0,1)+')');
+  core.addColorStop(.11,rgba((main?1.05:.82)*intensity));
+  core.addColorStop(.31,rgba((main?.70:.42)*intensity));
+  core.addColorStop(.66,rgba((main?.18:.12)*intensity));
+  core.addColorStop(1,rgba(0));
+  sctx.fillStyle=core;sctx.beginPath();sctx.arc(screen.x,screen.y,radius*(main?1.35:.95),0,Math.PI*2);sctx.fill();
+  // Subtle concentric diffraction rings add a camera-glass / photographic character.
+  if(main){
+   for(const ring of [1.72,2.18]){
+    sctx.strokeStyle=rgba(.12*intensity);sctx.lineWidth=Math.max(1,radius*.025);sctx.beginPath();sctx.arc(screen.x,screen.y,radius*ring,0,Math.PI*2);sctx.stroke();
+   }
+  }
+  // Chromatic lens ghosts are distributed along the optical axis through frame centre.
   const centerX=W*.5,centerY=H*.5;
-  for(const factor of [.34,.68]){
-   const gx=screen.x+(centerX-screen.x)*factor,gy=screen.y+(centerY-screen.y)*factor,gr=radius*(.24+factor*.16);
-   const ghost=sctx.createRadialGradient(gx,gy,0,gx,gy,gr*2.4);
-   ghost.addColorStop(0,rgba(.09*intensity));ghost.addColorStop(.5,rgba(.035*intensity));ghost.addColorStop(1,rgba(0));
-   sctx.fillStyle=ghost;sctx.beginPath();sctx.arc(gx,gy,gr*2.4,0,Math.PI*2);sctx.fill();
+  const ghosts=main?[
+   [.24,.34,[.55,.78,1],.48],[.52,.23,[1,.48,.72],.34],[.82,.16,[.50,.83,1],.28],[1.12,.105,[1,.68,.38],.20]
+  ]:[[.34,.26,[.72,.83,1],.22],[.72,.15,[1,.62,.42],.13]];
+  for(const [factor,size,tint,alpha] of ghosts){
+   const gx=screen.x+(centerX-screen.x)*factor,gy=screen.y+(centerY-screen.y)*factor,gr=radius*size;
+   const ghost=sctx.createRadialGradient(gx,gy,0,gx,gy,gr*3.2);
+   const ghostRgba=a=>'rgba('+Math.round(tint[0]*255)+','+Math.round(tint[1]*255)+','+Math.round(tint[2]*255)+','+clamp(a*intensity,0,.85)+')';
+   ghost.addColorStop(0,ghostRgba(alpha));ghost.addColorStop(.28,ghostRgba(alpha*.52));ghost.addColorStop(1,ghostRgba(0));
+   sctx.fillStyle=ghost;sctx.beginPath();sctx.arc(gx,gy,gr*3.2,0,Math.PI*2);sctx.fill();
+   if(main){
+    sctx.strokeStyle=ghostRgba(alpha*.38);sctx.lineWidth=Math.max(1,gr*.035);sctx.beginPath();sctx.arc(gx,gy,gr*1.7,0,Math.PI*2);sctx.stroke();
+   }
   }
  }
  sctx.restore();
