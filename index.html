@@ -967,7 +967,7 @@ $('cam-prev').addEventListener('click',()=>setCamera(cameraMode-1));
 $('cam-next').addEventListener('click',()=>setCamera(cameraMode+1));
 $('debug-toggle').addEventListener('click',toggleDebug);
 canvas.addEventListener('pointerdown',e=>{if(!started||paused||garageMode||e.button!==0)return;mouseLookActive=true;mouseLookPointerId=e.pointerId;mouseLookX=e.clientX;mouseLookY=e.clientY;mouseLookYaw=0;mouseLookPitch=0;canvas.style.cursor='grabbing';try{canvas.setPointerCapture(e.pointerId);}catch{}e.preventDefault();});
-canvas.addEventListener('pointermove',e=>{if(!mouseLookActive||e.pointerId!==mouseLookPointerId)return;const dx=e.clientX-mouseLookX,dy=e.clientY-mouseLookY;mouseLookX=e.clientX;mouseLookY=e.clientY;mouseLookYaw=clamp(mouseLookYaw+dx*.006,-1.32,1.32);mouseLookPitch=clamp(mouseLookPitch+dy*.0045,-.62,.62);});
+canvas.addEventListener('pointermove',e=>{if(!mouseLookActive||e.pointerId!==mouseLookPointerId)return;const dx=e.clientX-mouseLookX,dy=e.clientY-mouseLookY;mouseLookX=e.clientX;mouseLookY=e.clientY;mouseLookYaw=clamp(mouseLookYaw+dx*.006,-Math.PI,Math.PI);mouseLookPitch=clamp(mouseLookPitch+dy*.0045,-.62,.62);});
 const endMouseLook=e=>{if(!mouseLookActive||(e&&e.pointerId!==undefined&&e.pointerId!==mouseLookPointerId))return;const id=mouseLookPointerId;mouseLookActive=false;mouseLookPointerId=null;mouseLookYaw=0;mouseLookPitch=0;canvas.style.cursor='';try{if(id!==null&&canvas.hasPointerCapture(id))canvas.releasePointerCapture(id);}catch{}};
 canvas.addEventListener('pointerup',endMouseLook);canvas.addEventListener('pointercancel',endMouseLook);window.addEventListener('blur',endMouseLook);
 function showMenu(){
