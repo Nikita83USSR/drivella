@@ -1,6 +1,6 @@
 # DRIVELLA — Rendering Architecture
 
-Current reference: **v0.18.26 / BUILD 092**  
+Current reference: **v0.18.27 / BUILD 093**  
 Main renderer: `index.html` — custom WebGL 1 renderer, no external rendering engine.
 
 This document records the rendering decisions that future vehicle, environment, lighting, and effects work must preserve. The goal is a reusable scene pipeline: new world geometry should take part in shadows and ambient occlusion automatically when it uses the shared draw path.
@@ -56,7 +56,7 @@ This is a stylized real-time spotlight approximation, not a physically calibrate
 
 Vehicle lamp surfaces use material mode **8**. The main fragment shader outputs their authored colour as emission and bypasses directional shadow response and ordinary diffuse/specular lighting. The shared shadow-caster rule already accepts only material modes below 4.5, so emissive lamps do not cast solid shadows or enter the opaque scene AO capture. Mode 8 is intentionally separate from mode 7, which remains the procedural tyre-contact overlay.
 
-The 2D `sun` canvas draws a lens-flare overlay after the 3D and outline passes. It projects the transformed pop-up headlamp centres, lower front lamps, front indicators, rear lamp clusters, and rear indicators using the active camera view-projection matrix. Flare strength is modulated by the angle between the lamp-facing normal and camera direction, plus distance; screen position and ghost streak locations therefore change with camera mode and garage orbit. Front and rear indicators use the same blink phase and steering-side selection as their 3D lamp surfaces.
+The 2D `sun` canvas draws a lens-flare overlay after the 3D and outline passes. In BUILD 093 the main pop-up headlights use a deliberately stronger glare profile: broader multi-layer haze, a long anamorphic streak with a white-hot centre, cross-star diffraction, faint concentric rings, and chromatic ghosts travelling toward the frame centre. Main headlamp glare has its own intensity/radius profile; fog lamps, tail lamps, and indicators remain more restrained. The profile still depends on camera-facing angle and source distance. It projects the transformed pop-up headlamp centres, lower front lamps, front indicators, rear lamp clusters, and rear indicators using the active camera view-projection matrix. Flare strength is modulated by the angle between the lamp-facing normal and camera direction, plus distance; screen position and ghost streak locations therefore change with camera mode and garage orbit. Front and rear indicators use the same blink phase and steering-side selection as their 3D lamp surfaces.
 
 This is a stylized screen-space glare effect rather than a physically simulated lens. It uses camera-facing direction and clip-range visibility, but does not yet test whether an unrelated object fully occludes a lamp. It does not add additional shadow maps or volumetric scattering.
 
