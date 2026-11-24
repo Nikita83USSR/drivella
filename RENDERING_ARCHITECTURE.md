@@ -1,6 +1,6 @@
 # DRIVELLA — Rendering Architecture
 
-Current reference: **v0.18.55 / BUILD 121**  
+Current reference: **v0.18.56 / BUILD 122**  
 Main renderer: `index.html` — custom WebGL 1 renderer, no external rendering engine.
 
 **Release marker policy:** every published renderer/game change increments `BUILD` in `index.html` and updates the visible HUD, boot screen, README, and this document in the same release. Increment the patch version with the build when appropriate. Never publish a renderer change while leaving the visible build number unchanged.
@@ -324,3 +324,8 @@ The vehicle-only solar receiver still uses its separate 1024² packed-depth map 
 ## BUILD 121 — binary monochrome vehicle self-shadow
 
 Vehicle self-shadowing now uses a single packed-depth lookup and one binary receiver comparison. A receiver pixel is either lit normally or multiplied by one fixed visibility value (0.58); there is no multi-tap filtering, penumbra, or intermediate shadow tone. The resulting shadow is a flat monochrome region with a hard contour. This change is isolated to the vehicle self-shadow receiver path; world/road solar shadows and garage spot shadows are unchanged.
+
+
+## BUILD 122 — cabin outer-shell cleanup and backup
+
+Before modifying vehicle geometry, the complete BUILD 121 `index.html` was preserved at `backups/index_BUILD121_pre_vehicle_cleanup.html`. The cabin hull is now generated in `outerSkinOnly` mode: only the upper exterior ring faces are retained; lower inner sidewall/underside faces and front/rear end caps are omitted because the main body hull already covers that volume. The windshield/side glass, visible window surrounds, roofline and painted outer A/B-pillar joins remain. The retained cabin exterior still participates in the vehicle self-shadow caster pass. This removes coincident hidden surfaces rather than indiscriminately deleting visible exterior trim.
