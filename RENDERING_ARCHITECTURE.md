@@ -99,6 +99,43 @@ The `flare` canvas draws its lens-flare overlay after the 3D and outline passes.
 
 This is a stylized screen-space glare effect rather than a physically simulated lens. It uses camera-facing direction and clip-range visibility, but does not yet test whether an unrelated object fully occludes a lamp. It does not add additional shadow maps or volumetric scattering.
 
+## GPU sun, atmospheric rays and optical-effects roadmap — planned Stage 2 priority
+
+The current sunset disc is a Canvas 2D overlay behind the transparent WebGL scene, and vehicle lens flares are drawn on a separate Canvas 2D overlay above it. These are existing implementations, not GPU effects. The next major graphics task is to consolidate the sun and optical pipeline on the GPU before adding many more environment lights or expanding the scene.
+
+### Target visual
+
+- Preserve the authored sunset identity: clean horizontal cutout bands, warm orange through red/pink into magenta, a crisp circular silhouette, and a strong but controlled outer glow.
+- Add a layered solar corona: bright inner rim, irregular animated plasma filaments, fine radial spikes, and longer intermittent rays. Rays should have subtle motion and intensity variation rather than random flicker.
+- Add atmospheric light shafts / god rays that extend from the sun into the scene. They must be depth/occlusion-aware: opaque buildings, mountains, palms and other geometry should interrupt or attenuate shafts; rays must not look like a flat overlay.
+- Add restrained optical diffraction, anamorphic streaks, concentric rings and chromatic lens ghosts. Their position, scale and intensity must respond to camera orientation and source visibility.
+- Add atmospheric scattering and horizon haze to blend the sun into the sky and distant environment while keeping car and road contrast readable.
+- Drive the visible solar source and outdoor illumination from the same SUN_LIGHT record. If sun position or direction is animated later, the visual disc, rays, material key light and shadow camera must all follow that source.
+
+### Implementation sequence
+
+1. **GPU sun disc and corona:** replace Canvas 2D sunset drawing with a procedural WebGL shader layer. Reproduce the existing striped disc and gradient first, then add corona, animated radial filaments and fine rays. Keep the current look as the baseline; do not replace it with an unstriped photorealistic sun.
+2. **Depth-aware GPU god rays:** render a compact occlusion mask for the sun-facing opaque scene, then generate radial light scattering toward the projected sun position. Start at quarter resolution (or lower), use a bounded sample count and a small number of blur/composite passes. Buildings and terrain must occlude shafts. Avoid full-resolution high-sample ray marching.
+3. **GPU bloom and glare:** add a thresholded, downsampled bloom chain for the sun, emissive lamps and selected neon. Composite with controlled intensity so highlights glow without washing out the image. Reuse the bloom result for solar corona and headlight glare where practical.
+4. **GPU lens optics:** migrate existing Canvas 2D vehicle flare profiles to shader compositing: anamorphic streak, diffraction spikes, rings and chromatic ghost shapes. Preserve source-specific profiles and camera-facing/visibility rules; do not restore the old oversized headlight flare.
+5. **Atmospheric integration and grading:** add distance/horizon scattering and final colour grading after sun, occlusion and bloom are stable. Keep fog/scattering depth-aware and preserve the neon palette.
+6. **Retire overlays only after parity:** remove old Canvas 2D sun and flare paths only after GPU versions match or exceed their visual quality and pass performance comparison. Retain a fallback if a required GPU capability is unavailable.
+
+### Performance and compatibility rules
+
+- Keep the renderer WebGL 1 compatible initially; use shader passes and framebuffer textures supported by the current renderer. WebGL 2 must not be a prerequisite for this visual upgrade.
+- Run god rays and bloom at quarter/half resolution, not full resolution. Use bounded samples, separable blur where appropriate, and avoid redundant full-screen passes.
+- Reuse existing scene depth/normal or a dedicated low-resolution occlusion mask where possible. Do not rerender the full scene at full resolution solely for decorative glow.
+- Keep expensive rays and diffraction configurable by quality tier. The sun disc and compact corona should remain available on lower settings.
+- Profile GPU frame time and total FPS with effects individually enabled/disabled in garage and driving. Do not recreate the severe frame-time spike previously seen with oversized front-headlight flares.
+- Compare at the same camera, resolution and scene: baseline, GPU sun only, sun plus rays, and full optics.
+
+### Related GPU-rendering optimizations
+
+After the sun/optics pipeline is stable, prioritize instanced rendering for repeated road markings, lamps, vegetation and other repeated props. It can reduce CPU draw-call overhead, especially because scene geometry is replayed in multiple shadow/AO passes. Keep unique car geometry and physics on their existing paths. Move particle simulation to GPU only when particle counts justify the complexity; vehicle physics and gameplay state remain CPU-owned.
+
+**Important distinction:** the target is convincing real-time ray-like lighting ("mini RTX" in appearance), not hardware ray tracing or path tracing. WebGL shader-based screen-space scattering cannot reproduce full ray-traced global illumination or illuminate hidden/off-screen geometry. The occlusion mask and registered SUN_LIGHT source must keep the effect tied to the actual scene and light.
+
 ## BUILD 111–113 — Vehicle surface artifacts and source-bound shadows
 
 - BUILD 111 removed the mesh-local red lower-side paint mask, whose coordinate range restarted on each independent mesh and produced mismatched patches on the front bumper and rear quarter.
