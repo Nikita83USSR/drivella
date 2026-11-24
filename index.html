@@ -305,7 +305,7 @@ function renderShadowMap(){
  );
  const sceneCalls=drawCalls;
  renderShadowPassTo(shadowTarget,sunShadowVP,'all');
- // The vehicle samples an environment-only solar map: never let any car mesh shadow another car mesh.
+ // The vehicle receiver map uses the same sun matrix plus selected raised vehicle details; decorative slats/seams and overlapping base surfaces stay excluded.
  renderShadowPassTo(vehicleShadowTarget,sunShadowVP,'vehicle-solar-details',false);
  const localSources=garageMode?GARAGE_LOCAL_LIGHTS:[];
  for(let slot=0;slot<LOCAL_SHADOW_CAPACITY;slot++){
