@@ -306,7 +306,7 @@ function renderShadowMap(){
  const sceneCalls=drawCalls;
  renderShadowPassTo(shadowTarget,sunShadowVP,'all');
  // The vehicle samples an environment-only solar map: never let any car mesh shadow another car mesh.
- renderShadowPassTo(vehicleShadowTarget,sunShadowVP,'environment-only');
+ renderShadowPassTo(vehicleShadowTarget,sunShadowVP,'vehicle-solar-details');
  const localSources=garageMode?GARAGE_LOCAL_LIGHTS:[];
  for(let slot=0;slot<LOCAL_SHADOW_CAPACITY;slot++){
   const light=localSources.find(q=>q.castsShadow&&q.type==='spot'&&q.shadowSlot===slot);
@@ -1139,14 +1139,14 @@ function headlightAffectsMesh(shape,model){
  };
  return intersects(headlightCullL)||intersects(headlightCullR);
 }
-function bindMesh(shape,model,color,toon=0,material=0,vehicleShadowCaster=false){
+function bindMesh(shape,model,color,toon=0,material=0,vehicleShadowCaster=false,vehicleSolarShadowCaster=false){
  if(outlinePass){
   if(!aoScenePass&&toon<0.5)return;
   if(aoScenePass&&!shadowCasterAllowed(color,material))return;
   gl.disable(gl.BLEND);gl.depthMask(true);
  }
  if(shadowPass){
-  if((shadowCasterMode==='environment-only'&&toon>0.5)||(shadowCasterMode==='vehicle-details'&&toon>0.5&&!vehicleShadowCaster)||!shadowCasterAllowed(color,material)||!shadowBoundsVisible(shape,model))return;
+  if((shadowCasterMode==='environment-only'&&toon>0.5)||(shadowCasterMode==='vehicle-details'&&toon>0.5&&!vehicleShadowCaster)||(shadowCasterMode==='vehicle-solar-details'&&toon>0.5&&!vehicleSolarShadowCaster)||!shadowCasterAllowed(color,material)||!shadowBoundsVisible(shape,model))return;
   gl.disable(gl.BLEND);gl.depthMask(true);
  }
  if(!outlinePass&&!shadowPass&&!wireframeMode&&headlightBaseIntensity>0.001&&material<=2.5){
@@ -1173,23 +1173,23 @@ function draw(shape,x,y,z,sx,sy,sz,color,yaw=0,roll=0,material=0){
   const model=matMul(translate(x,y,z),matMul(rotateY(yaw),matMul(rotateZ(roll),scale(sx,sy,sz))));
   bindMesh(shape,model,color,0,material);
  }
- function drawCarPart(cx,cz,x,y,z,sx,sy,sz,color,yaw=0,shape=cube,material=1,spin=0,steering=0,steeringPivotX=null,vehicleShadowCaster=false){
+ function drawCarPart(cx,cz,x,y,z,sx,sy,sz,color,yaw=0,shape=cube,material=1,spin=0,steering=0,steeringPivotX=null,vehicleShadowCaster=false,vehicleSolarShadowCaster=false){
  const isWheel=shape===wheel||shape===wheelFace;
  const localPosition=steeringPivotX===null?translate(x,y,z):matMul(translate(steeringPivotX,y,z),matMul(rotateY(steering),translate(x-steeringPivotX,0,0)));
  const localRotation=isWheel?matMul(rotateZ(Math.PI/2),rotateY(spin)):matIdentity();
  const model=matMul(translate(cx,0,cz),matMul(rotateY(yaw),matMul(rotateZ(bodyRoll),matMul(localPosition,matMul(localRotation,scale(sx,sy,sz))))));
- bindMesh(shape,model,color,1,material,vehicleShadowCaster);
+ bindMesh(shape,model,color,1,material,vehicleShadowCaster,vehicleSolarShadowCaster);
 }
-function drawCarMesh(shape,cx,cz,color,yaw=0,material=1,vehicleShadowCaster=false){
+function drawCarMesh(shape,cx,cz,color,yaw=0,material=1,vehicleShadowCaster=false,vehicleSolarShadowCaster=false){
  const model=matMul(translate(cx,0,cz),matMul(rotateY(yaw),matMul(rotateZ(bodyRoll),matIdentity())));
- bindMesh(shape,model,color,1,material,vehicleShadowCaster);
+ bindMesh(shape,model,color,1,material,vehicleShadowCaster,vehicleSolarShadowCaster);
 }
-function drawCarHingedMesh(shape,cx,cz,color,yaw=0,material=1,vehicleShadowCaster=false){
+function drawCarHingedMesh(shape,cx,cz,color,yaw=0,material=1,vehicleShadowCaster=false,vehicleSolarShadowCaster=false){
  const deploy=clamp(headlightDeploy,0,1),ease=deploy*deploy*(3-2*deploy),angle=-Math.PI*.25*ease;
  // Every part shares one rigid transform; no scaling, vertex updates or independent deformation.
  const hinge=matMul(translate(0,POP_HINGE_Y,POP_HINGE_Z),matMul(rotateX(angle),translate(0,-POP_HINGE_Y,-POP_HINGE_Z)));
  const model=matMul(translate(cx,0,cz),matMul(rotateY(yaw),matMul(rotateZ(bodyRoll),hinge)));
- bindMesh(shape,model,color,1,material,vehicleShadowCaster);
+ bindMesh(shape,model,color,1,material,vehicleShadowCaster,vehicleSolarShadowCaster);
 }
 function matIdentity(){return [1,0,0,0,0,1,0,0,0,0,1,0,0,0,0,1];}
 function matMul(a,b){let o=new Array(16);for(let c=0;c<4;c++)for(let r=0;r<4;r++)o[c*4+r]=a[r]*b[c*4]+a[4+r]*b[c*4+1]+a[8+r]*b[c*4+2]+a[12+r]*b[c*4+3];return o;}
@@ -1404,7 +1404,7 @@ function drawWorld(){
   drawCarPart(carX,carZ,side*.84,1.115,-2.53,.060,.145,.065,C.body,yaw,cube,PAINT_MATERIAL);
  }
  // Straight, level, body-colour rear wing.
- drawCarMesh(spoilerBlade,carX,carZ,C.body,yaw,PAINT_MATERIAL,true);
+ drawCarMesh(spoilerBlade,carX,carZ,C.body,yaw,PAINT_MATERIAL,true,true);
  drawCarMesh(spoilerTopGlint,carX,carZ,C.bodyLight,yaw,PAINT_MATERIAL,true);
  if(boost>.05){drawCarPart(carX,carZ,-.42,.18,-2.99,.06,.055,.62,[.04,.58,1,boost],yaw);drawCarPart(carX,carZ,.42,.18,-2.99,.06,.055,.62,[.04,.58,1,boost],yaw);}
 }
