@@ -94,13 +94,13 @@
 <body>
 <canvas id="scene"></canvas><canvas id="sun"></canvas>
 <div id="hud">
- <div class="top"><div class="logo">DRIVELLA<small>3D SYNTHWAVE DRIFT RACING</small></div><div class="version-label" id="version-label">v0.18.0 · BUILD 066</div><div class="stat">DISTANCE<b id="distance">000.0 KM</b></div><div class="stat">LOCATION<b>VIOLET COAST</b></div></div>
+ <div class="top"><div class="logo">DRIVELLA<small>3D SYNTHWAVE DRIFT RACING</small></div><div class="version-label" id="version-label">v0.18.1 · BUILD 067</div><div class="stat">DISTANCE<b id="distance">000.0 KM</b></div><div class="stat">LOCATION<b>VIOLET COAST</b></div></div>
  <div class="right"><div id="speed">000 <span>KM/H</span></div><div id="direction">▶ FORWARD</div><div id="music">♫ MUSIC SCANNING…</div></div>
- <div class="bottom"><div class="hint"><strong>W / ↑</strong> ACCELERATE　<strong>S / ↓</strong> BRAKE / REVERSE<br><strong>A / ←　D / →</strong> STEER　<strong>SPACE</strong> HANDBRAKE　<strong>M</strong> MUSIC　<strong>1–4</strong> CAMERA　<strong>L</strong> LIGHTS　<strong>K</strong> WIREFRAME</div><div>3D NEON HIGHWAY // BUILD 066</div></div>
+ <div class="bottom"><div class="hint"><strong>W / ↑</strong> ACCELERATE　<strong>S / ↓</strong> BRAKE / REVERSE<br><strong>A / ←　D / →</strong> STEER　<strong>SPACE</strong> HANDBRAKE　<strong>M</strong> MUSIC　<strong>1–4</strong> CAMERA　<strong>L</strong> LIGHTS　<strong>K</strong> WIREFRAME</div><div>3D NEON HIGHWAY // BUILD 067</div></div>
 </div>
 <div id="tools-ui"><button id="cam-prev" aria-label="Previous camera">◀</button><span id="cam-label">CAM 2 · CLOSE</span><button id="cam-next" aria-label="Next camera">▶</button><button id="debug-toggle">DEBUG</button></div>
 <div id="debug-panel"><div class="debug-title">DRIVELLA DIAGNOSTICS</div><div id="debug-data">Initializing…</div></div>
-<div id="boot-screen"><div class="boot-content"><div class="boot-kicker">NIGHT DRIVE SYSTEMS // INITIALIZING</div><div class="boot-logo">DRIVELLA</div><div class="boot-subtitle">3D SYNTHWAVE DRIFT RACING</div><div class="boot-mark"></div><div class="boot-status" id="boot-status">BUILDING THE 3D WORLD</div><div class="boot-track"><div class="boot-progress" id="boot-progress"></div></div><div class="boot-meta"><span>3D ENGINE ONLINE</span><span id="boot-percent">00%</span></div><div class="boot-footer">ENGINE STARTUP // v0.18.0 · BUILD 066</div></div></div>
+<div id="boot-screen"><div class="boot-content"><div class="boot-kicker">NIGHT DRIVE SYSTEMS // INITIALIZING</div><div class="boot-logo">DRIVELLA</div><div class="boot-subtitle">3D SYNTHWAVE DRIFT RACING</div><div class="boot-mark"></div><div class="boot-status" id="boot-status">BUILDING THE 3D WORLD</div><div class="boot-track"><div class="boot-progress" id="boot-progress"></div></div><div class="boot-meta"><span>3D ENGINE ONLINE</span><span id="boot-percent">00%</span></div><div class="boot-footer">ENGINE STARTUP // v0.18.1 · BUILD 067</div></div></div>
 <div id="main-menu"><div class="menu-content"><div class="menu-brand">DRIVELLA GTS</div><div class="menu-sub">RIDE THE RETRO FUTURE</div><div class="menu-actions"><button class="menu-btn" id="menu-start">СТАРТ</button><button class="menu-btn" id="menu-garage">ГАРАЖ</button><button class="menu-btn" id="menu-options">НАСТРОЙКИ</button></div></div><div class="menu-footer">РАЗРАБОТЧИК — <b>НИКИТА МАРКИН</b></div></div>
 <div id="garage-screen"><div class="garage-head">ГАРАЖ // DRIVELLA GTS</div><div class="garage-copy">ТЕКУЩИЙ АВТОМОБИЛЬ<br>DRIVELLA GTS · RETRO GT COUPE<br>ПОКАЖИ ЕЁ СО ВСЕХ СТОРОН</div><div class="garage-controls"><button id="garage-back">← НАЗАД В МЕНЮ</button></div><div class="garage-tip">ЗАЖМИ И ТЯНИ — ВРАЩЕНИЕ<br>КОЛЁСИКО — ПРИБЛИЗИТЬ / ОТДАЛИТЬ</div></div>
 <div id="options-screen"><div class="options-head">ОПЦИИ</div><div class="options-card"><div class="option-row"><span>МУЗЫКА</span><button id="option-music">ВКЛЮЧЕНА</button></div><div class="option-row"><span>ГРОМКОСТЬ</span><input id="option-volume" type="range" min="0" max="100" value="52"></div><div class="option-row"><span>ЗВУК ДВИГАТЕЛЯ</span><button id="option-sfx">ВКЛЮЧЁН</button></div><div class="option-row"><span>КАМЕРА</span><span>КЛАВИШИ 1–4</span></div><button id="options-back" style="width:100%;margin-top:18px">← НАЗАД В МЕНЮ</button></div></div>
@@ -108,7 +108,7 @@
 <script>
 (()=>{
 'use strict';
-const VERSION='v0.18.0',BUILD='064';
+const VERSION='v0.18.1',BUILD='064';
 const canvas=document.getElementById('scene'),gl=canvas.getContext('webgl',{antialias:true,alpha:true}),sun=document.getElementById('sun'),sctx=sun.getContext('2d');
 const $=id=>document.getElementById(id);
 const clamp=(v,a,b)=>Math.max(a,Math.min(b,v));
@@ -295,7 +295,7 @@ function makeCarHull(keys,wheelArches=false,flatRoof=false,windowOpenings=false)
   const sideW=p.sideW??p.w,midW=p.midW??p.w,shoulderW=p.shoulderW??p.w*.96,upperW=p.upperW??p.w*.66,topW=p.topW??p.w*.48;
   rings.push([
    [0,floor,z],[sideW*.72,floor,z],[sideW,side,z],[midW,p.mid,z],
-   [shoulderW,p.shoulder,z],[upperW,p.upper,z],[topW,p.top,z],[0,p.top+(flatRoof||z>=1.8?0:.026),z],
+   [shoulderW,p.shoulder,z],[upperW,p.upper,z],[topW,p.top,z],[0,p.top+(flatRoof||z>=.72?0:.026),z],
    [-topW,p.top,z],[-upperW,p.upper,z],[-shoulderW,p.shoulder,z],[-midW,p.mid,z],
    [-sideW,side,z],[-sideW*.72,floor,z]
   ]);
@@ -430,12 +430,13 @@ const bodyProfile=[
  {z:-1.25,w:1.18,floor:.18,side:.33,mid:.65,shoulder:.88,upper:.97,top:.98},
  {z:-.70,w:1.12,floor:.18,side:.31,mid:.57,shoulder:.80,upper:.84,top:.86},
  {z:0,w:1.10,floor:.18,side:.30,mid:.55,shoulder:.77,upper:.82,top:.84},
- {z:.72,w:1.12,floor:.18,side:.31,mid:.57,shoulder:.81,upper:.85,top:.87},
- {z:1.31,w:1.20,floor:.18,side:.34,mid:.68,shoulder:.92,upper:.97,top:.99},
- {z:1.6375,w:1.235,floor:.18,side:.34,mid:.70,shoulder:.96,upper:1.00,top:1.02},
- {z:2.15,w:1.16,sideW:1.16,midW:1.13,shoulderW:1.04,upperW:.94,topW:.86,floor:.18,side:.34,mid:.62,shoulder:.86,upper:.91,top:.91},
- {z:2.55,w:1.03,sideW:1.03,midW:1.00,shoulderW:.92,upperW:.84,topW:.78,floor:.18,side:.29,mid:.51,shoulder:.72,upper:.74,top:.74},
- {z:2.875,w:.89,sideW:.89,midW:.87,shoulderW:.80,upperW:.74,topW:.68,floor:.18,side:.27,mid:.42,shoulder:.62,upper:.66,top:.66}
+ {z:.72,w:1.12,sideW:1.12,midW:1.10,shoulderW:1.02,upperW:.90,topW:.80,floor:.18,side:.31,mid:.57,shoulder:.81,upper:.85,top:.87},
+ {z:.945,w:1.16,sideW:1.16,midW:1.12,shoulderW:1.05,upperW:.98,topW:.90,floor:.18,side:.32,mid:.61,shoulder:.84,upper:.914,top:.914},
+ {z:1.31,w:1.20,sideW:1.20,midW:1.16,shoulderW:1.10,upperW:1.03,topW:.97,floor:.18,side:.34,mid:.65,shoulder:.86,upper:.915,top:.92},
+ {z:1.6375,w:1.235,sideW:1.235,midW:1.18,shoulderW:1.12,upperW:1.05,topW:.99,floor:.18,side:.34,mid:.68,shoulder:.88,upper:.915,top:.92},
+ {z:2.15,w:1.18,sideW:1.18,midW:1.14,shoulderW:1.08,upperW:1.02,topW:.98,floor:.18,side:.34,mid:.62,shoulder:.84,upper:.90,top:.91},
+ {z:2.55,w:1.08,sideW:1.08,midW:1.05,shoulderW:1.02,upperW:.98,topW:.95,floor:.18,side:.29,mid:.51,shoulder:.72,upper:.74,top:.74},
+ {z:2.875,w:1.00,sideW:1.00,midW:.97,shoulderW:.94,upperW:.91,topW:.87,floor:.18,side:.27,mid:.42,shoulder:.62,upper:.66,top:.66}
  ];
 const bodyMesh=makeCarHull(bodyProfile,true);
 const cabinProfile=[
@@ -496,7 +497,7 @@ const sideSillR=makeProfileLine(bodyProfile,1,-2.68,2.68,'side',1.012,.045,.014)
 // Twin Ferrari-style pop-up lamp pods: chamfered rectangular housings with real depth.
 function hoodSurfaceY(x,z){
  const p=profileValue(z,bodyProfile),ax=Math.abs(x);
- const stations=[[0,p.top+.026],[p.topW,p.top],[p.upperW,p.upper],[p.shoulderW,p.shoulder]];
+ const stations=[[0,p.top],[p.topW,p.top],[p.upperW,p.upper],[p.shoulderW,p.shoulder]];
  for(let i=0;i<stations.length-1;i++){
   const a=stations[i],b=stations[i+1];
   if(ax<=b[0]){const t=clamp((ax-a[0])/(b[0]-a[0]),0,1);return a[1]+(b[1]-a[1])*t;}
@@ -581,8 +582,8 @@ const frontGrilleSlats=makeFrontGrilleSlats();
 const frontBumperCrease=quad([-.88,.555,2.958],[.88,.555,2.958],[.84,.535,2.958],[-.84,.535,2.958]);
 const frontSplitter=quad([-.86,.185,2.979],[.86,.185,2.979],[.79,.145,2.979],[-.79,.145,2.979]);
 // Rectangular amber indicators outboard, with two compact fog / driving lamps on each side.
-const frontTurnSignalL=quad([-.99,.505,2.968],[-.77,.505,2.968],[-.77,.435,2.968],[-.99,.435,2.968]);
-const frontTurnSignalR=quad([.77,.505,2.968],[.99,.505,2.968],[.99,.435,2.968],[.77,.435,2.968]);
+const frontTurnSignalL=quad([-.87,.505,2.968],[-.72,.505,2.968],[-.72,.435,2.968],[-.87,.435,2.968]);
+const frontTurnSignalR=quad([.72,.505,2.968],[.87,.505,2.968],[.87,.435,2.968],[.72,.435,2.968]);
 const frontFogFrameL1=quad([-.88,.385,2.972],[-.73,.385,2.972],[-.73,.245,2.972],[-.88,.245,2.972]);
 const frontFogFrameL2=quad([-.68,.385,2.972],[-.53,.385,2.972],[-.53,.245,2.972],[-.68,.245,2.972]);
 const frontFogFrameR1=quad([.73,.385,2.972],[.88,.385,2.972],[.88,.245,2.972],[.73,.245,2.972]);
