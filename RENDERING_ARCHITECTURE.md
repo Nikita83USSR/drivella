@@ -1,6 +1,6 @@
 # DRIVELLA — Rendering Architecture
 
-Current reference: **v0.18.39 / BUILD 105**  
+Current reference: **v0.18.40 / BUILD 106**  
 Main renderer: `index.html` — custom WebGL 1 renderer, no external rendering engine.
 
 This document records the rendering decisions that future vehicle, environment, lighting, and effects work must preserve. The goal is a reusable scene pipeline: new world geometry should take part in shadows and ambient occlusion automatically when it uses the shared draw path.
@@ -61,10 +61,11 @@ The first Stage 2 lighting layer adds two local spotlight sources for the pop-up
 - **BUILD 099 FPS meter:** the always-running frame loop updates a compact on-screen FPS indicator in both garage and gameplay. FPS is measured from real `performance.now()` elapsed time rather than the clamped physics delta, so long frames are reflected accurately.
 - **BUILD 100–102 headlight diagnostics and fixes:** `H` disables only the upper pop-up headlight diffuse contribution by setting its per-mesh intensity to zero; the physical pop-up modules and emissive lamp cores remain active. The oversized upper-headlight screen-space flare sources were removed in BUILD 102, while smaller lower-front, rear and indicator flares remain. BUILD 103 restores two compact upper-headlight glints using the same lightweight `kind:'signal'` Canvas 2D profile as the indicators, with a cool white-blue tint and approximately 23% greater authored source power than the turn-signal profile. They use the compact secondary-source haze, short streak, two small rays and minimal secondary ghosts; they do not re-enable the former main-headlight radius, long anamorphic streak, extra diffraction rays, blurred concentric rings or four larger chromatic ghosts. BUILD 102 also removed the legacy translucent polygon beam meshes and changed spotlight diffuse response to `abs(dot(normal, lightDirection))`. The latter is intentional for this renderer's two-sided cube winding: the cube top-face normals point down, so a one-sided positive dot product prevented the asphalt top surface from receiving the headlights. The cone shape, range, source positions, culling and full-resolution shader illumination remain unchanged. The F3 panel reports the active `GARAGE` / `ROAD` scene, H diagnostic state, pop-up deployment, draw calls, and mesh-culling counts. The debug panel remains available in garage mode.
 - **Current garage-scene limitation:** `garageMode` does select a separate branch in `drawWorld()` and suppresses the road grid, road segments and biomes. However, that branch is currently only a dark oversized floor, a small layered circular display platform, and two ceiling-light fixtures with vertical beams. It is not yet a fully modelled enclosed showroom. The default orbit camera looks downward toward the car and the fixtures at Y≈5.8 m sit above its visible vertical frustum, so they are mostly or entirely out of view. The flat floor can look like a plain road surface, but the road geometry is not being drawn in garage mode. A proper visible garage enclosure, wall/ceiling architecture, and camera-framed lighting remain future work.
-- Because the lighting is evaluated in the shared material shader, new opaque environment meshes on the normal `drawWorld()` path receive the headlight illumination without per-object light code.
-- The existing translucent road beam meshes remain as a visual beam layer; they are not the source of surface illumination.
+- Because the headlight lighting is evaluated in the shared material shader, new eligible opaque environment meshes on the normal `drawWorld()` path receive the beam illumination without per-object light code.
+- The obsolete translucent polygon beam meshes were removed in BUILD 102. The road receives the actual shader spotlight contribution; there is no legacy triangle beam under the bumper.
+- BUILD 106 adds a separate reusable local-light path for garage and future environment fixtures. Unlike the pop-up headlight contribution, this path is evaluated in the world, painted-body, glass and generic lit-material branches.
 
-This is a stylized real-time spotlight approximation, not a physically calibrated automotive photometric model. The two headlight sources do **not** yet create their own shadow maps, volumetric scattering, or reflective light transport. Painted car body and glass retain their dedicated material shader paths and do not receive this diffuse spotlight contribution in this iteration.
+The pop-up headlight pair remains a stylized real-time spotlight approximation, not a physically calibrated automotive photometric model. Those two headlight sources do **not** create their own shadow maps or volumetric scattering, and their diffuse contribution remains restricted to the ordinary world-material path. Painted body and glass use dedicated shader branches; the separate BUILD 106 garage local lights can illuminate those branches, but this does not mean the headlight beams now cast light onto the car itself.
 
 ### Emissive lamps and camera-dependent lens flare
 
@@ -75,6 +76,30 @@ The sunset background remains on the `sun` canvas behind the transparent WebGL `
 The `flare` canvas draws its lens-flare overlay after the 3D and outline passes. BUILD 095 reduced the main pop-up headlight glare after the earlier profile proved too large and bright: its peak intensity, bloom radius, anamorphic streak, white centre and diffraction rays were restrained together. Its concentric optical rings use wider, low-opacity strokes with Canvas 2D blur, and rings around chromatic ghost reflections are also softened. BUILD 096 reduced the secondary sources as well: lower fog lamps, front and rear indicators, and rear tail-lamp lens flares now have lower overall intensity, smaller bloom radius, shorter and thinner anamorphic streaks, and more restrained diffraction and ghost reflections. These source-specific profiles still depend on camera-facing angle and distance. BUILD 097 adds brake-responsive rear lamps. A smoothed `brakeLight` value is driven by forward brake input (`S` / down arrow while moving forward) or the handbrake (Space); reverse acceleration does not trigger the brake lights. The rear red lamp panels, six LED bars and their additive red halo increase their emissive colour while braking, then return smoothly to the normal running-light level after release. Rear tail-lamp lens flare intensity rises slightly with the same brake state. This is a visual lamp response; it does not alter vehicle braking physics. The remaining effect projects lower auxiliary front lamps, front indicators, rear lamp clusters, and rear indicators using the active camera view-projection matrix. BUILD 102 removed the expensive oversized upper pop-up headlight profile after its per-frame Canvas 2D gradients, blurred rings, diffraction strokes and chromatic ghosts caused an excessive frame-time increase. BUILD 103 restores only two compact upper-headlight glints through the same lightweight secondary-source profile used by the indicators; their colour is cool white-blue and their authored power is slightly higher. The emissive 3D lamp cores and actual shader spotlights remain unchanged. Front and rear indicators use the same blink phase and steering-side selection as their 3D lamp surfaces.
 
 This is a stylized screen-space glare effect rather than a physically simulated lens. It uses camera-facing direction and clip-range visibility, but does not yet test whether an unrelated object fully occludes a lamp. It does not add additional shadow maps or volumetric scattering.
+
+## Reusable local lighting — BUILD 106
+
+A shared local-light evaluator is now available independently of the two moving headlight spotlights.
+
+- The shader supports **four simultaneous local sources** through fixed-size uniform arrays: position + range, RGB colour + power, and direction + cone cutoff.
+- A source with a direction is a spotlight; a source without a direction is treated as a point light. Both use the same range fade and distance attenuation.
+- Each source contributes a two-sided diffuse response and a view-dependent specular highlight. The same evaluator is used by ordinary world materials, painted body materials, glass, and the generic lit-material branch. Emissive lamps, outlines, shadow depth, and tyre-contact overlays keep their dedicated paths.
+- Source configuration stays on the JavaScript side in world coordinates. `uploadLocalLights(sources)` clears unused slots and uploads the active source records once per scene draw. New fixtures should add data to the source list rather than introducing one-off shader code.
+- **Current garage sources:** two aimed spotlights, one cool cyan and one magenta, at approximately `(-4.7, 4.15, 1.1)` and `(4.7, 4.15, 1.1)`. Both have a 13-unit range and point inward toward the display car. Their visible fixtures and shafts were moved down from the old ceiling position to bring them closer to the garage camera framing.
+- The local-light list is currently enabled for the garage scene only. Track and roadside sources remain inactive until selected environment objects are ready to use the same shared path.
+
+These local sources **do not cast shadows** and do not perform occlusion against intervening geometry. They add direct stylized lighting and specular response only; the existing directional shadow map remains the only shadow-producing light. Keep the four-source limit in mind when adding more fixtures, and prefer selecting a few visually important lights rather than enabling every neon prop at once.
+
+## Procedural glass reflections — BUILD 106
+
+Material mode **3** now produces a more visible synthwave environment reflection on the windshield, rear glass, and four side panes.
+
+- The reflection direction is derived from the camera-to-surface view vector and the glass normal, so the reflected response changes with camera movement rather than staying painted onto the window.
+- The procedural environment combines a deep blue sky gradient with a magenta horizon band, cyan and purple neon bands, a restrained directional sun highlight, and a small direction-dependent neon variation.
+- Reflection blend begins at approximately **0.54** and increases toward **0.88** at grazing view angles. This makes the environment visibly readable from ordinary driving cameras as well as close garage inspection.
+- The general local-light evaluator also adds a view-dependent coloured specular response to glass when garage spotlights are active.
+
+This is an intentional stylized environment-reflection approximation. It is **not** a cubemap, ray-traced reflection, or screen-space reflection (SSR): individual buildings and roadside objects are not reproduced as exact reflected geometry. Future reflection work still includes painted-body response and road/asphalt reflection.
 
 ## PCSS-style soft shadow filtering
 
@@ -158,7 +183,9 @@ When adding a new material mode, define its casting, receiving, AO, and transpar
 - PCSS is a bounded blocker-search approximation, not physically accurate penumbra from arbitrary area lights.
 - SSAO is half-resolution and screen-space; it can miss off-screen occluders and may require tuning for unusually large or thin objects.
 - The map and post-process passes add GPU work. Any future change to resolution, sample count, or extra passes should be evaluated against frame time.
-- The main directional shadow light remains fixed; the new headlight spotlights illuminate surfaces but do not cast independent shadows. If dynamic sun or additional shadow-producing lights are introduced, shadow-camera generation and receiver sampling must be updated together.
-- Stage 2 still needs reusable garage/environment light sources, a general-purpose bloom pipeline, improved road/body/glass reflections, and atmospheric depth / grading.
+- The main directional shadow light remains fixed. Neither the pop-up headlight spots nor the BUILD 106 local-light sources cast independent shadows; adding shadow-producing lights requires updating both shadow-camera generation and receiver sampling.
+- Local lighting currently supports four sources at once and is enabled for the garage fixtures only. Selected track/environment lights still need to be authored and budgeted against the per-fragment cost.
+- The glass reflection is a procedural view-dependent approximation, not SSR or a cubemap. Painted-body and road/asphalt reflections still need work.
+- Stage 2 still needs a controlled bloom pipeline, selected track/environment light sources, improved painted-body and road reflections, and atmospheric depth / final grading.
 
 **Maintenance rule:** preserve the shared scene pipeline and central material policy. Future environment additions should become shadow casters and AO participants by using the normal scene draw functions, not by receiving bespoke shadow code.
