@@ -2,12 +2,14 @@
 
 A browser-based synthwave drift-racing prototype with a custom low-poly 3D car, a procedural neon environment, and a hand-built WebGL renderer.
 
-> **Status:** Playable prototype under active development. Current renderer reference: **v0.18.39 / BUILD 105**.
+> **Status:** Playable prototype under active development. Current renderer reference: **v0.18.40 / BUILD 106**.
 
 ## Current game
 
 - Custom WebGL 1 renderer for the 3D vehicle, road, garage, and procedural environments.
 - All four wheels animate as a single rolling assembly: tyre, brake disc, alloy spokes, and hub share one spin phase, with the rotation direction matched to forward travel.
+- Windshield, rear and side glazing now show stronger view-dependent synthwave environment reflections: a blue sky gradient, magenta horizon, cyan neon bands, and garage-light specular response. This is a procedural reflection approximation, not ray-traced or screen-space reflection.
+- A reusable four-slot local-light system supports point and cone spot sources with colour, range falloff, diffuse response and specular highlights. Two coloured spotlights are currently active on the garage fixtures; the same source format can be reused for selected track and environment lights.
 - Front wheels visibly steer with the same speed-sensitive input angle used by the driving physics; inner and outer wheels use a small Ackermann angle correction, while the rear wheels remain fixed.
 - Canvas 2D overlay for the synthwave sunset.
 - Four camera modes, acceleration, braking, steering, drifting, and handbrake handling. During a race, hold and drag the left mouse button to temporarily look around; releasing it immediately restores the selected automatic camera. Press **C** to cycle camera modes.
@@ -68,9 +70,11 @@ Core implementation completed: adaptive directional shadows, PCSS-style filterin
 
 - [x] Add two dynamic headlight spotlights tied to the animated pop-up headlight assembly.
 - [x] Add self-emissive lamp materials and camera-dependent lens flares for headlights, tail lights, and turn indicators.
-- [ ] Add reusable local lighting for garage fixtures and selected environment lights.
+- [x] Build a reusable four-slot local-light shader and use it for the two coloured garage spotlights.
+- [x] Make environment reflections clearly visible on the windshield, rear glass and side glazing.
+- [ ] Add selected local lights to track and environment props, using the shared four-slot source format.
 - [ ] Improve emissive materials and introduce a controlled bloom pipeline.
-- [ ] Improve road, body, and glass reflections without breaking the shared scene renderer.
+- [ ] Improve painted-body and road reflections beyond the procedural glass environment.
 - [ ] Add atmospheric depth and final image grading.
 
 ### Later stages
