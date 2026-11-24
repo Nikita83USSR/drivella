@@ -9,7 +9,7 @@ This document records the rendering decisions that future vehicle, environment, 
 
 The render loop currently runs these passes in order:
 
-1. `renderShadowMap()` — render the full-scene solar map, the vehicle-safe solar receiver map, and (when the garage is active) the two fixture-specific spotlight maps into packed-depth textures.
+1. `renderShadowMap()` — render the full-scene solar map and garage spotlight maps into packed-depth textures, plus the vehicle self-shadow receiver map into a packed-moment texture.
 2. `drawWorld()` — render the visible scene using the active driving or garage camera and sample the shadow map on receiving materials.
 3. `renderCarOutlines()` — render a half-resolution normal/depth mask for the complete opaque scene, render a separate full-resolution mask for car contours, then composite full-scene AO and car-only ink edges.
 4. `drawSun()` — draw the 2D synthwave sun overlay.
@@ -44,8 +44,8 @@ const SUN_LIGHT = {
 - The light-space orthographic bounds adapt to viewport aspect ratio, active camera mode, driving look-ahead, and garage zoom. The camera follows the vehicle and shifts its focus forward in driving cameras.
 - Each mesh receives a local `boundsRadius` when `mesh(data)` is created. Each shadow pass transforms that bound and culls meshes outside its current light frustum before issuing draw calls.
 - The full solar map is **2048 × 2048** and includes the complete opaque car and world. World/road receivers sample this map, so the vehicle continues to cast a real shadow onto the road and the environment.
-- A separate **1024 × 1024 vehicle-receiver map** uses the exact same solar source and light-space matrix. Vehicle materials sample this map instead of the full map. It contains opaque world/garage casters plus only explicitly approved solar vehicle details. The main hull and all unselected car meshes are excluded, preventing the previous panel-to-panel mosaic while allowing a deliberate raised part such as the rear spoiler to cast onto the body.
-- Both solar maps use the same source and projection and are rebuilt from the current scene each frame. The vehicle map uses the `environment-only` caster mode; it is not a second light or a different shadow direction.
+- A separate **1024 × 1024 vehicle-receiver map** uses the exact same solar source and light-space matrix. Vehicle materials sample this map instead of the full map. It stores opaque world/garage casters plus solid vehicle details. Vehicle draw helpers opt into the solar self-shadow map by default; the continuous main hull, rear fascia and overlay glint geometry are explicitly excluded so overlapping base surfaces do not shadow themselves. This lets the cabin, pillars, spoiler, lamp pods, wheels and other raised details contribute natural self-shadowing.
+- Both solar maps use the same source and projection and are rebuilt from the current scene each frame. The vehicle map uses the `vehicle-solar-details` caster mode and VSM filtering; it is not a second light or a different shadow direction.
 
 ### Automatic caster classification
 
@@ -60,15 +60,15 @@ The central material policy remains `shadowCasterAllowed(color, material)`:
 
 Receiving is independent of casting. Regular world materials and painted vehicle materials sample their appropriate solar map; glass receives a reduced solar response. Emissive and tyre-contact modes bypass solar shadow reception.
 
-### Vehicle self-shadow isolation — BUILD 113
+### Vehicle self-shadow isolation — BUILD 113 and soft-filter revision
 
 - The full solar map keeps every eligible car mesh as a caster. This preserves the complete car silhouette on the road and nearby world geometry.
-- The vehicle-receiver map uses the same solar direction and world geometry, but vehicle meshes are excluded unless their draw call explicitly sets `vehicleSolarShadowCaster=true`. At present, only the solid rear spoiler blade is approved for solar self-shadowing; the main hull, spoiler glint overlay, cabin, pillars, lamp pods, bumper details, wheels and other car meshes are excluded.
-- This lets the spoiler cast a real sun shadow onto the rear body while preventing overlapping hull panels and numerous raised details from creating the previous mosaic. Add other solar self-casters one at a time and only after checking their contact geometry and shadow footprint.
-- `vehicleShadowCaster=true` remains a separate flag for the `vehicle-details` policy used by garage spotlight shadow passes. Do not treat it as permission to cast a solar self-shadow.
-- The receiver bias is now shared and modest. Its normal term uses `abs(dot(N, SUN_LIGHT.direction))`, matching the renderer's two-sided lighting convention and avoiding a different bias merely because a mirrored/box face has reversed winding. Bias is not used as a substitute for separating self-casters from vehicle receivers.
+- The vehicle-receiver map uses the same solar direction and world geometry but stores first and second depth moments (VSM) instead of a binary depth comparison. It uses a four-fetch manual bilinear filter and a variance/bleed-reduction test, avoiding the blocky 3 × 3 PCSS pattern on the body without a larger shadow texture or a large PCF kernel.
+- Vehicle helper calls cast into this map by default when the material is opaque. The continuous main hull, rear fascia and spoiler's duplicate glint overlay are explicitly excluded; cabin, pillars, spoiler blade, pop-up housings/caps, bumper details, wheels and other raised opaque parts can cast soft sunlight shadows onto the car.
+- `vehicleShadowCaster=true` remains a separate flag for the `vehicle-details` policy used by garage spotlight shadow passes. `vehicleSolarShadowCaster` controls outdoor solar self-shadow casters. Set the latter to `false` only for base hull surfaces, exact overlays, or parts whose cast would be geometrically invalid.
+- The VSM receiver keeps a modest normal-dependent bias. Its normal term uses `abs(dot(N, SUN_LIGHT.direction))`, matching the renderer's two-sided lighting convention and avoiding a different bias merely because a mirrored/box face has reversed winding.
 
-This is a deliberately narrow self-shadow policy for the current single vehicle. If traffic or multiple interacting cars are added, use per-object caster/receiver layers so other cars can cast onto this car without allowing arbitrary parts of the same car to self-shadow.
+This is a practical single-vehicle policy. If traffic or multiple interacting cars are added, use per-object caster/receiver layers so other cars can cast onto this car without allowing arbitrary parts of the same car to self-shadow.
 
 ## Stage 2 — Dynamic headlight illumination
 
@@ -144,16 +144,16 @@ BUILD 107 explicitly bounds the glass fragment branch to `2.5 < materialMode < 3
 
 This is an intentional stylized environment-reflection approximation. It is **not** a cubemap, ray-traced reflection, or screen-space reflection (SSR): individual buildings and roadside objects are not reproduced as exact reflected geometry. Future reflection work still includes painted-body response and road/asphalt reflection.
 
-## Solar PCSS and local spotlight PCF
+## Solar and spotlight shadow filtering
 
-The directional sun receiver uses a bounded Percentage-Closer Soft Shadows approximation:
+The full-scene directional solar map uses a bounded Percentage-Closer Soft Shadows (PCSS) approximation:
 
 1. A **3 × 3 blocker search** estimates the average depth of geometry between the light and receiver.
 2. The depth separation between blocker and receiver determines a variable penumbra radius.
 3. A second **3 × 3 comparison filter** samples using that radius; the radius is clamped to avoid unstable or excessively broad shadows.
 4. A normal-dependent bias reduces self-shadow acne.
 
-This PCSS approximation is used for the two directional solar maps. It is not a physically exact area-light simulation; keep both loops bounded for WebGL 1 compatibility.
+The vehicle-receiver solar map uses **Variance Shadow Mapping (VSM)** instead. Its RGBA8 texture packs two 16-bit values: mean light-space depth and mean squared depth. The fragment shader reconstructs a bilinear sample from four nearest texels, evaluates the variance bound, applies a small minimum variance and reduces light bleeding. This gives smooth transitions around raised vehicle details with four texture reads rather than the 18 reads used by the PCSS blocker/comparison loops. It needs no floating-point framebuffer extension and does not increase the 1024² receiver-map size. It is a stable soft-shadow approximation, not a physically exact area-light simulation.
 
 The garage spot maps use a cheaper **2 × 2 PCF** filter at each registered light's own perspective projection. Their receiver bias uses `abs(dot(N, L))`, matching the two-sided material convention used by the solar receiver. Their bias and visibility are applied to that specific spot contribution in `evalLocalLight()`; a garage lamp must not reuse the sun's matrix or its shadow result.
 
@@ -204,7 +204,7 @@ For a new environment object to participate automatically:
 6. The outdoor vehicle-receiver solar map excludes vehicle meshes unless a part is explicitly tagged with `vehicleSolarShadowCaster=true`; use this only for a clean raised part whose shadow should land on another car surface. Keep the list minimal to avoid self-shadow artifacts. The separate `vehicleShadowCaster=true` flag controls vehicle details in local spotlight maps. The full world solar map already includes the complete car for road/world shadows.
 7. Add shadow-casting lights through the real source registry: `SUN_LIGHT` for the outdoor directional source, or a registered spotlight with a dedicated source-specific matrix and map. Never create a new shadow direction independently of the light that illuminates the material.
 
-The same scene call is replayed during the full solar maps, spotlight maps and full-scene AO capture. Caster policy is selected per target: `all` for the full solar map, `vehicle-solar-details` for the car's solar receiver map, and `vehicle-details` for local spotlight maps. No hand-painted shadow decals or one-off object shadows are required.
+The same scene call is replayed during the full solar maps, spotlight maps and full-scene AO capture. Caster policy is selected per target: `all` for the full solar map, `vehicle-solar-details` for the car's VSM receiver map, and `vehicle-details` for local spotlight maps. No hand-painted shadow decals or one-off object shadows are required.
 
 ## Material mode reference
 
@@ -231,7 +231,7 @@ When adding a new material mode, define its casting, receiving, AO, and transpar
 - The sun uses a 2048² world map plus a 1024² vehicle-receiver-safe map. The extra map adds GPU draw cost and memory; evaluate frame time if map sizes or caster counts grow.
 - Two local spotlight shadow slots are implemented for the garage fixtures at 1024² each. The four-slot local-light shader does not imply four shadow maps.
 - Point lights do not cast shadows yet; they require omnidirectional/cubemap or six-face support. The animated pop-up headlight spots currently illuminate materials but do not have independent shadow maps.
-- The two solar maps use bounded PCSS; garage spot maps use bounded 2 × 2 PCF. Neither is a physically exact area-light solution.
+- The full-scene solar map uses bounded PCSS, the vehicle self-shadow receiver uses four-fetch VSM, and garage spot maps use bounded 2 × 2 PCF. These are efficient real-time approximations, not physically exact area-light solutions.
 - SSAO is half-resolution and screen-space. It is a contact/crease effect, not a cast-light shadow and not global illumination.
 - The main shader also has an explicitly non-shadowing specular fill direction. It is a style-only fill term and must not be treated as a shadow source.
 - The four-source material lighting and two-source local shadow arrays add per-fragment work. Additional shadow slots require matching matrices, samplers and receiver logic.
