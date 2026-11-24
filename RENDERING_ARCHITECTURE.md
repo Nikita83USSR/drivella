@@ -1,6 +1,6 @@
 # DRIVELLA — Rendering Architecture
 
-Current reference: **v0.18.54 / BUILD 120**  
+Current reference: **v0.18.55 / BUILD 121**  
 Main renderer: `index.html` — custom WebGL 1 renderer, no external rendering engine.
 
 **Release marker policy:** every published renderer/game change increments `BUILD` in `index.html` and updates the visible HUD, boot screen, README, and this document in the same release. Increment the patch version with the build when appropriate. Never publish a renderer change while leaving the visible build number unchanged.
@@ -319,3 +319,8 @@ When adding a new material mode, define its casting, receiving, AO, and transpar
 ## BUILD 120 — uniform vehicle self-shadow
 
 The vehicle-only solar receiver still uses its separate 1024² packed-depth map and the same directional sun projection. Its receiver filter is now deliberately simpler: four depth comparisons in a compact cross around the projected receiver, averaged into a single uniform shadow amount (maximum darkening 42%). This replaces the previous two-ring 16-tap PCF footprint and removes the layered, highly detailed penumbra pattern. The filter change affects only vehicle self-shadowing; full-scene road/environment solar shadows and garage spotlight shadows retain their existing filters. The goal is a cleaner, more even contact shade on the body, not a physically varying penumbra.
+
+
+## BUILD 121 — binary monochrome vehicle self-shadow
+
+Vehicle self-shadowing now uses a single packed-depth lookup and one binary receiver comparison. A receiver pixel is either lit normally or multiplied by one fixed visibility value (0.58); there is no multi-tap filtering, penumbra, or intermediate shadow tone. The resulting shadow is a flat monochrome region with a hard contour. This change is isolated to the vehicle self-shadow receiver path; world/road solar shadows and garage spot shadows are unchanged.
