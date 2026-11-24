@@ -94,13 +94,13 @@
 <body>
 <canvas id="scene"></canvas><canvas id="sun"></canvas>
 <div id="hud">
- <div class="top"><div class="logo">DRIVELLA<small>3D SYNTHWAVE DRIFT RACING</small></div><div class="version-label" id="version-label">v0.16.6 · BUILD 052</div><div class="stat">DISTANCE<b id="distance">000.0 KM</b></div><div class="stat">LOCATION<b>VIOLET COAST</b></div></div>
+ <div class="top"><div class="logo">DRIVELLA<small>3D SYNTHWAVE DRIFT RACING</small></div><div class="version-label" id="version-label">v0.16.7 · BUILD 053</div><div class="stat">DISTANCE<b id="distance">000.0 KM</b></div><div class="stat">LOCATION<b>VIOLET COAST</b></div></div>
  <div class="right"><div id="speed">000 <span>KM/H</span></div><div id="direction">▶ FORWARD</div><div id="music">♫ MUSIC SCANNING…</div></div>
- <div class="bottom"><div class="hint"><strong>W / ↑</strong> ACCELERATE　<strong>S / ↓</strong> BRAKE / REVERSE<br><strong>A / ←　D / →</strong> STEER　<strong>SPACE</strong> HANDBRAKE　<strong>M</strong> MUSIC　<strong>1–4</strong> CAMERA　<strong>L</strong> LIGHTS　<strong>K</strong> WIREFRAME</div><div>3D NEON HIGHWAY // BUILD 052</div></div>
+ <div class="bottom"><div class="hint"><strong>W / ↑</strong> ACCELERATE　<strong>S / ↓</strong> BRAKE / REVERSE<br><strong>A / ←　D / →</strong> STEER　<strong>SPACE</strong> HANDBRAKE　<strong>M</strong> MUSIC　<strong>1–4</strong> CAMERA　<strong>L</strong> LIGHTS　<strong>K</strong> WIREFRAME</div><div>3D NEON HIGHWAY // BUILD 053</div></div>
 </div>
 <div id="tools-ui"><button id="cam-prev" aria-label="Previous camera">◀</button><span id="cam-label">CAM 2 · CLOSE</span><button id="cam-next" aria-label="Next camera">▶</button><button id="debug-toggle">DEBUG</button></div>
 <div id="debug-panel"><div class="debug-title">DRIVELLA DIAGNOSTICS</div><div id="debug-data">Initializing…</div></div>
-<div id="boot-screen"><div class="boot-content"><div class="boot-kicker">NIGHT DRIVE SYSTEMS // INITIALIZING</div><div class="boot-logo">DRIVELLA</div><div class="boot-subtitle">3D SYNTHWAVE DRIFT RACING</div><div class="boot-mark"></div><div class="boot-status" id="boot-status">BUILDING THE 3D WORLD</div><div class="boot-track"><div class="boot-progress" id="boot-progress"></div></div><div class="boot-meta"><span>3D ENGINE ONLINE</span><span id="boot-percent">00%</span></div><div class="boot-footer">ENGINE STARTUP // v0.15.5 · BUILD 041</div></div></div>
+<div id="boot-screen"><div class="boot-content"><div class="boot-kicker">NIGHT DRIVE SYSTEMS // INITIALIZING</div><div class="boot-logo">DRIVELLA</div><div class="boot-subtitle">3D SYNTHWAVE DRIFT RACING</div><div class="boot-mark"></div><div class="boot-status" id="boot-status">BUILDING THE 3D WORLD</div><div class="boot-track"><div class="boot-progress" id="boot-progress"></div></div><div class="boot-meta"><span>3D ENGINE ONLINE</span><span id="boot-percent">00%</span></div><div class="boot-footer">ENGINE STARTUP // v0.16.7 · BUILD 053</div></div></div>
 <div id="main-menu"><div class="menu-content"><div class="menu-brand">DRIVELLA GTS</div><div class="menu-sub">RIDE THE RETRO FUTURE</div><div class="menu-actions"><button class="menu-btn" id="menu-start">СТАРТ</button><button class="menu-btn" id="menu-garage">ГАРАЖ</button><button class="menu-btn" id="menu-options">НАСТРОЙКИ</button></div></div><div class="menu-footer">РАЗРАБОТЧИК — <b>НИКИТА МАРКИН</b></div></div>
 <div id="garage-screen"><div class="garage-head">ГАРАЖ // DRIVELLA GTS</div><div class="garage-copy">ТЕКУЩИЙ АВТОМОБИЛЬ<br>DRIVELLA GTS · RETRO GT COUPE<br>ПОКАЖИ ЕЁ СО ВСЕХ СТОРОН</div><div class="garage-controls"><button id="garage-back">← НАЗАД В МЕНЮ</button></div><div class="garage-tip">ЗАЖМИ И ТЯНИ — ВРАЩЕНИЕ<br>КОЛЁСИКО — ПРИБЛИЗИТЬ / ОТДАЛИТЬ</div></div>
 <div id="options-screen"><div class="options-head">ОПЦИИ</div><div class="options-card"><div class="option-row"><span>МУЗЫКА</span><button id="option-music">ВКЛЮЧЕНА</button></div><div class="option-row"><span>ГРОМКОСТЬ</span><input id="option-volume" type="range" min="0" max="100" value="52"></div><div class="option-row"><span>ЗВУК ДВИГАТЕЛЯ</span><button id="option-sfx">ВКЛЮЧЁН</button></div><div class="option-row"><span>КАМЕРА</span><span>КЛАВИШИ 1–4</span></div><button id="options-back" style="width:100%;margin-top:18px">← НАЗАД В МЕНЮ</button></div></div>
@@ -108,7 +108,7 @@
 <script>
 (()=>{
 'use strict';
-const VERSION='v0.15.5',BUILD='041';
+const VERSION='v0.16.7',BUILD='053';
 const canvas=document.getElementById('scene'),gl=canvas.getContext('webgl',{antialias:true,alpha:true}),sun=document.getElementById('sun'),sctx=sun.getContext('2d');
 const $=id=>document.getElementById(id);
 const clamp=(v,a,b)=>Math.max(a,Math.min(b,v));
@@ -365,29 +365,30 @@ function makeWheelFace(){
   for(let i=0;i<12;i++){const a=i*Math.PI*2/12,b=(i+1)*Math.PI*2/12,ri=.135;tri([0,face*.112,0],[Math.cos(a)*ri,face*.112,Math.sin(a)*ri],[Math.cos(b)*ri,face*.112,Math.sin(b)*ri]);}
  }return mesh(out);
 }
-function makeMirrorShell(){
- const out=[],lat=8,seg=14;
- const point=(i,j)=>{
-  const theta=Math.PI*i/lat,phi=2*Math.PI*j/seg,r=Math.sin(theta);
-  const taper=0.90+0.10*Math.cos(phi);
-  return [Math.cos(phi)*r*taper,Math.cos(theta),Math.sin(phi)*r];
- };
- for(let i=0;i<lat;i++)for(let j=0;j<seg;j++){
-  const a=point(i,j),b=point(i,j+1),c=point(i+1,j+1),d=point(i+1,j);
-  out.push(...a,...d,...c,...a,...c,...b);
+function makeMirrorShell(side){
+ const out=[],outline=[[.50,-1],[.82,-.62],[.92,-.08],[.72,.55],[.34,.92],[-.30,.98],[-.76,.60],[-.94,.06],[-.72,-.56],[-.28,-.90]],inner=side*.14,outer=side;
+ for(let i=0;i<outline.length;i++){
+  const a=outline[i],b=outline[(i+1)%outline.length];
+  out.push(outer,0,0,outer,a[0],a[1],outer,b[0],b[1]);
+  out.push(inner,0,0,inner,b[0],b[1],inner,a[0],a[1]);
+  out.push(outer,a[0],a[1],inner,a[0],a[1],inner,b[0],b[1],outer,a[0],a[1],inner,b[0],b[1],outer,b[0],b[1]);
  }
  return mesh(out);
 }
 function makeMirrorFace(side){
- const out=[],n=16;
- for(let i=0;i<n;i++){
-  const a=i*Math.PI*2/n,b=(i+1)*Math.PI*2/n;
-  out.push(side,0,0,side,Math.cos(a),Math.sin(a),side,Math.cos(b),Math.sin(b));
- }
+ const out=[],outline=[[.38,-.72],[.68,-.42],[.76,.02],[.58,.47],[.20,.70],[-.38,.64],[-.66,.24],[-.62,-.34],[-.20,-.66]];
+ for(let i=0;i<outline.length;i++){const a=outline[i],b=outline[(i+1)%outline.length];out.push(side*1.012,0,0,side*1.012,a[0],a[1],side*1.012,b[0],b[1]);}
  return mesh(out);
 }
-const mirrorShell=makeMirrorShell(),mirrorFaceL=makeMirrorFace(-1),mirrorFaceR=makeMirrorFace(1);
-function makeWheelArch(center,side){
+function makeMirrorArm(side){
+ const out=[],lo=[-side*.72,-.92],hi=[side*.72,.92],px=.10,py=-side*.075,a=[lo[0]-px,lo[1]-py],b=[hi[0]-px,hi[1]-py],c=[hi[0]+px,hi[1]+py],d=[lo[0]+px,lo[1]+py];
+ const front=[a,b,c,d].map(p=>[p[0],p[1],-.42]),back=[a,b,c,d].map(p=>[p[0],p[1],.42]);
+ const push=(p,q,r,t)=>out.push(...p,...q,...r,...p,...r,...t);
+ push(front[0],front[1],front[2],front[3]);push(back[3],back[2],back[1],back[0]);
+ for(let i=0;i<4;i++)push(front[i],back[i],back[(i+1)%4],front[(i+1)%4]);
+ return mesh(out);
+}
+const mirrorShellL=makeMirrorShell(-1),mirrorShellR=makeMirrorShell(1),mirrorFaceL=makeMirrorFace(-1),mirrorFaceR=makeMirrorFace(1),mirrorArmL=makeMirrorArm(-1),mirrorArmR=makeMirrorArm(1);function makeWheelArch(center,side){
  const out=[],steps=12;
  for(let i=0;i<steps;i++){
   const d0=-.465+.93*i/steps,d1=-.465+.93*(i+1)/steps,y0=.465+Math.sqrt(Math.max(0,.455*.455-d0*d0))+.045,y1=.465+Math.sqrt(Math.max(0,.455*.455-d1*d1))+.045,x=side*1.205,x2=side*1.175;
@@ -470,45 +471,33 @@ const [sideGlassFrameLF,sideGlassFrameRF]=mirroredQuadPair(
 const [sideGlassFrameLR,sideGlassFrameRR]=mirroredQuadPair(
  [-1.01,.88,-.88],[-.79,1.235,-.80],[-.66,1.195,-1.39],[-.90,.80,-1.61]
 );
-const intakeUpperL=quad([-1.00,.83,-.76],[-1.02,.83,-1.26],[-1.14,.55,-1.18],[-1.14,.55,-.86]);
-const intakeUpperR=quad([1.00,.83,-.76],[1.14,.55,-.86],[1.14,.55,-1.18],[1.02,.83,-1.26]);
-const intakeLowerL=quad([-1.14,.46,-.88],[-1.14,.46,-1.20],[-1.12,.31,-1.14],[-1.12,.31,-.96]);
-const intakeLowerR=quad([1.14,.46,-.88],[1.12,.31,-.96],[1.12,.31,-1.14],[1.14,.46,-1.20]);
-const doorSeamL=sideRibbon(-1,[[.78,.85,.95],[.72,-.68,1.03],[.40,-.78,1.12],[.39,.82,1.12]],.018);
-const doorSeamR=sideRibbon(1,[[.78,.85,.95],[.39,.82,1.12],[.40,-.78,1.12],[.72,-.68,1.03]],.018);
-// DRIVELLA GTS front fascia — original interpretation of the early-90s wedge supercar layout.
-// Flush pop-up headlamp covers follow the sloping bonnet instead of floating above it.
-const hoodLampFrameL=quad([-.84,.895,2.17],[-.46,.895,2.17],[-.40,.745,2.53],[-.70,.745,2.53]);
-const hoodLampFrameR=quad([.46,.895,2.17],[.84,.895,2.17],[.70,.745,2.53],[.40,.745,2.53]);
-const hoodLampLensL=quad([-.80,.889,2.20],[-.50,.889,2.20],[-.44,.752,2.49],[-.67,.752,2.49]);
-const hoodLampLensR=quad([.50,.889,2.20],[.80,.889,2.20],[.67,.752,2.49],[.44,.752,2.49]);
-const hoodLampGlowL=quad([-.98,.888,2.19],[-.57,.888,2.19],[-.54,.749,2.50],[-.92,.749,2.50]);
-const hoodLampGlowR=quad([.57,.888,2.19],[.98,.888,2.19],[.92,.749,2.50],[.54,.749,2.50]);
-const hoodLampCoreL=quad([-.86,.881,2.25],[-.70,.881,2.25],[-.69,.762,2.47],[-.84,.762,2.47]);
-const hoodLampCoreR=quad([.70,.881,2.25],[.86,.881,2.25],[.84,.762,2.47],[.69,.762,2.47]);
-// One-piece hinged lamp pods. At zero deployment their front planes lie flush
-// with the bonnet; at full deployment the same faces stand upright.
-function makePopLampHousing(side){
- const x=v=>side*v,out=[];
- const front=[[x(.84),.752,2.49],[x(.46),.752,2.49],[x(.46),1.075,2.49],[x(.84),1.075,2.49]];
- const back=[[x(.82),.765,2.425],[x(.48),.765,2.425],[x(.48),1.088,2.425],[x(.82),1.088,2.425]];
- const pushQuad=(a,b,c,d)=>out.push(...a,...b,...c,...a,...c,...d);
- pushQuad(front[0],front[1],front[2],front[3]);
- pushQuad(back[3],back[2],back[1],back[0]);
- pushQuad(front[0],back[0],back[1],front[1]);
- pushQuad(front[1],back[1],back[2],front[2]);
- pushQuad(front[2],back[2],back[3],front[3]);
- pushQuad(front[3],back[3],back[0],front[0]);
+// Clean rear-quarter intake, fine door shut-lines and lower sills.
+const [sideVentL,sideVentR]=mirroredQuadPair([-1.075,.755,-.82],[-1.075,.755,-1.20],[-1.135,.575,-1.17],[-1.135,.575,-.86]);
+const [sideVentSlat1L,sideVentSlat1R]=mirroredQuadPair([-1.083,.710,-.88],[-1.083,.710,-1.145],[-1.096,.695,-1.14],[-1.096,.695,-.885]);
+const [sideVentSlat2L,sideVentSlat2R]=mirroredQuadPair([-1.105,.650,-.89],[-1.105,.650,-1.13],[-1.118,.635,-1.125],[-1.118,.635,-.895]);
+const doorSeamL=sideRibbon(-1,[[.78,.85,.95],[.72,-.68,1.03],[.40,-.78,1.12],[.39,.82,1.12]],.010);
+const doorSeamR=sideRibbon(1,[[.78,.85,.95],[.39,.82,1.12],[.40,-.78,1.12],[.72,-.68,1.03]],.010);
+const sideSillL=makeProfileLine(bodyProfile,-1,-2.68,2.68,'side',1.012,.045,.014);
+const sideSillR=makeProfileLine(bodyProfile,1,-2.68,2.68,'side',1.012,.045,.014);
+// Twin Ferrari-style pop-up lamps: square red lids rest directly on the bonnet.
+const POP_HINGE_Y=.895,POP_HINGE_Z=2.17;
+function hoodLampY(z){return .895-(z-2.17)*(.15/.36);}
+function makePopLampCap(side){
+ const out=[],top=[[side*.84,hoodLampY(2.17),2.17],[side*.46,hoodLampY(2.17),2.17],[side*.46,hoodLampY(2.53),2.53],[side*.84,hoodLampY(2.53),2.53]],bottom=top.map(p=>[p[0],p[1]-.028,p[2]]);
+ const push=(a,b,c,d)=>out.push(...a,...b,...c,...a,...c,...d);
+ push(top[0],top[1],top[2],top[3]);push(bottom[3],bottom[2],bottom[1],bottom[0]);
+ for(let i=0;i<4;i++)push(top[i],bottom[i],bottom[(i+1)%4],top[(i+1)%4]);
  return mesh(out);
 }
-const popLampHousingL=makePopLampHousing(-1),popLampHousingR=makePopLampHousing(1);
-const popLampFrameL=quad([-.84,.752,2.498],[-.46,.752,2.498],[-.46,1.075,2.498],[-.84,1.075,2.498]);
-const popLampFrameR=quad([.46,.752,2.498],[.84,.752,2.498],[.84,1.075,2.498],[.46,1.075,2.498]);
-const popLampLensL=quad([-.80,1.048,2.505],[-.50,1.048,2.505],[-.45,.785,2.505],[-.69,.785,2.505]);
-const popLampLensR=quad([.50,1.048,2.505],[.80,1.048,2.505],[.69,.785,2.505],[.45,.785,2.505]);
-const popLampCoreL=quad([-.70,1.00,2.510],[-.58,1.00,2.510],[-.56,.85,2.510],[-.68,.85,2.510]);
-const popLampCoreR=quad([.58,1.00,2.510],[.70,1.00,2.510],[.68,.85,2.510],[.56,.85,2.510]);
-// Wide central radiator with a bevelled surround and six horizontal cooling vanes.
+function makeLampInset(side,xOuter,xInner,zRear,zFront,offset){
+ const y=z=>hoodLampY(z)+offset;
+ return quad([side*xOuter,y(zRear),zRear],[side*xInner,y(zRear),zRear],[side*xInner,y(zFront),zFront],[side*xOuter,y(zFront),zFront]);
+}
+const popLampCapL=makePopLampCap(-1),popLampCapR=makePopLampCap(1);
+const popLampBezelL=makeLampInset(-1,.78,.52,2.23,2.47,-.030),popLampBezelR=makeLampInset(1,.78,.52,2.23,2.47,-.030);
+const popLampLensL=makeLampInset(-1,.735,.565,2.27,2.43,-.034),popLampLensR=makeLampInset(1,.735,.565,2.27,2.43,-.034);
+const popLampCoreL=makeLampInset(-1,.695,.605,2.305,2.395,-.037),popLampCoreR=makeLampInset(1,.695,.605,2.305,2.395,-.037);
+// Wide central radiator with a bevelled surround and six horizontal cooling vanes.// Wide central radiator with a bevelled surround and six horizontal cooling vanes.
 const frontGrilleFrame=quad([-.53,.47,2.963],[.53,.47,2.963],[.45,.205,2.963],[-.45,.205,2.963]);
 const frontIntake=quad([-.475,.425,2.972],[.475,.425,2.972],[.405,.245,2.972],[-.405,.245,2.972]);
 function makeFrontGrilleSlats(){
@@ -763,8 +752,8 @@ function drawCarMesh(shape,cx,cz,color,yaw=0,material=1){
  bindMesh(shape,model,color,1,material);
 }
 function drawCarHingedMesh(shape,cx,cz,color,yaw=0,material=1){
- const angle=-1.13*(1-headlightDeploy);
- const hinge=matMul(translate(0,.752,2.49),matMul(rotateX(angle),translate(0,-.752,-2.49)));
+ const angle=1.30*headlightDeploy;
+ const hinge=matMul(translate(0,POP_HINGE_Y,POP_HINGE_Z),matMul(rotateX(angle),translate(0,-POP_HINGE_Y,-POP_HINGE_Z)));
  const model=matMul(translate(cx,0,cz),matMul(rotateY(yaw),matMul(rotateZ(bodyRoll),hinge)));
  bindMesh(shape,model,color,1,material);
 }
@@ -866,8 +855,7 @@ function drawWorld(){
  gl.depthMask(true);gl.disable(gl.BLEND);
  // Continuous hull with broad painted planes and shader-driven clear-coat highlights.
  drawCarMesh(bodyMesh,carX,carZ,C.body,yaw);
- for(const decal of cornerSlashes)drawCarMesh(decal.mesh,carX,carZ,decal.color,yaw,0);
- // Long dark flank ribbons removed; corner slashes carry the graphic accent instead.
+ // Clean flanks without floating diagonal graphics.
  // Bonnet remains a single continuous angular surface; no floating triangular overlays.
  // Cabin shell, glass and restrained cool reflections.
  drawCarMesh(cabinMesh,carX,carZ,C.body,yaw);
@@ -879,12 +867,17 @@ function drawWorld(){
  // Four individually mounted side panes: front-left, rear-left, front-right, rear-right.
  for(const win of [sideGlassLF,sideGlassLR,sideGlassRF,sideGlassRR])drawCarMesh(win,carX,carZ,[.025,.10,.17,1],yaw,3);
   for(const side of [-1,1]){
-  drawCarPart(carX,carZ,side*.80,.985,.585,.025,.105,.024,C.trim,yaw);
-  drawCarPart(carX,carZ,side*.875,1.075,.61,.12,.065,.085,C.bodyLight,yaw,mirrorShell,1);
-  drawCarPart(carX,carZ,side*.875,1.075,.61,.12,.043,.061,[.055,.19,.27,1],yaw,side<0?mirrorFaceL:mirrorFaceR,3);
-  drawCarMesh(side<0?intakeUpperL:intakeUpperR,carX,carZ,C.trim,yaw);
-  drawCarMesh(side<0?intakeLowerL:intakeLowerR,carX,carZ,C.trim,yaw);
+  drawCarPart(carX,carZ,side*.82,1.015,.60,.105,.065,.030,C.trim,yaw,side<0?mirrorArmL:mirrorArmR,0);
+  drawCarPart(carX,carZ,side*.925,1.10,.60,.095,.065,.12,C.bodyLight,yaw,side<0?mirrorShellL:mirrorShellR,1);
+  drawCarPart(carX,carZ,side*.925,1.10,.60,.097,.047,.091,[.025,.095,.15,1],yaw,side<0?mirrorFaceL:mirrorFaceR,3);
+  drawCarMesh(side<0?sideVentL:sideVentR,carX,carZ,C.trim,yaw,0);
+  drawCarMesh(side<0?sideVentSlat1L:sideVentSlat1R,carX,carZ,[.42,.055,.095,1],yaw,0);
+  drawCarMesh(side<0?sideVentSlat2L:sideVentSlat2R,carX,carZ,[.30,.34,.42,1],yaw,0);
  }
+ drawCarMesh(doorSeamL,carX,carZ,[.025,.006,.018,1],yaw,0);
+ drawCarMesh(doorSeamR,carX,carZ,[.025,.006,.018,1],yaw,0);
+ drawCarMesh(sideSillL,carX,carZ,C.trim,yaw,0);
+ drawCarMesh(sideSillR,carX,carZ,C.trim,yaw,0);
  // Raised wheel-arch overlays removed to leave the tyres unobstructed.
  // Four low-profile tyres with machined five-spoke alloy faces. Spin follows world travel.
  const wheelSpin=garageMode?0:distance/.455;
@@ -895,13 +888,13 @@ function drawWorld(){
   drawCarPart(carX,carZ,side*(wx+.148),wy,wz,.318,.018,.318,C.hub,yaw,wheelFace);
   drawCarPart(carX,carZ,side*(wx+.163),wy,wz,.092,.020,.092,C.bodyLight,yaw,wheelFace);
  }
- // L smoothly raises the hinged lamp pods; when lowered, their faces sit flush with the bonnet.
- for(const housing of [popLampHousingL,popLampHousingR])drawCarHingedMesh(housing,carX,carZ,C.trim,yaw,0);
- for(const frame of [popLampFrameL,popLampFrameR])drawCarHingedMesh(frame,carX,carZ,C.trim,yaw,0);
- for(const lens of [popLampLensL,popLampLensR])drawCarHingedMesh(lens,carX,carZ,[.012,.035,.065,1],yaw,2);
- const lampPower=Math.max(0,Math.min(1,(headlightDeploy-.12)/.88));
+ // Twin red square bonnet lids raise from their rear hinge; the lamp units are on the underside.
+ for(const cap of [popLampCapL,popLampCapR])drawCarHingedMesh(cap,carX,carZ,C.bodyLight,yaw,1);
+ for(const bezel of [popLampBezelL,popLampBezelR])drawCarHingedMesh(bezel,carX,carZ,C.trim,yaw,0);
+ for(const lens of [popLampLensL,popLampLensR])drawCarHingedMesh(lens,carX,carZ,[.018,.055,.095,1],yaw,3);
+ const lampPower=clamp((headlightDeploy-.12)/.88,0,1);
  if(lampPower>.001){
-  const lampColor=[.012+.86*lampPower,.035+.91*lampPower,.065+.91*lampPower,1];
+  const lampColor=[.20+.80*lampPower,.32+.68*lampPower,.45+.55*lampPower,1];
   for(const core of [popLampCoreL,popLampCoreR])drawCarHingedMesh(core,carX,carZ,lampColor,yaw,2);
  }
  drawCarMesh(frontBumperCrease,carX,carZ,C.bodyLight,yaw,0);
