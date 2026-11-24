@@ -94,9 +94,9 @@
 <body>
 <canvas id="scene"></canvas><canvas id="sun"></canvas>
 <div id="hud">
- <div class="top"><div class="logo">DRIVELLA<small>3D SYNTHWAVE DRIFT RACING</small></div><div class="version-label" id="version-label">v0.16.1 · BUILD 047</div><div class="stat">DISTANCE<b id="distance">000.0 KM</b></div><div class="stat">LOCATION<b>VIOLET COAST</b></div></div>
+ <div class="top"><div class="logo">DRIVELLA<small>3D SYNTHWAVE DRIFT RACING</small></div><div class="version-label" id="version-label">v0.16.2 · BUILD 048</div><div class="stat">DISTANCE<b id="distance">000.0 KM</b></div><div class="stat">LOCATION<b>VIOLET COAST</b></div></div>
  <div class="right"><div id="speed">000 <span>KM/H</span></div><div id="direction">▶ FORWARD</div><div id="music">♫ MUSIC SCANNING…</div></div>
- <div class="bottom"><div class="hint"><strong>W / ↑</strong> ACCELERATE　<strong>S / ↓</strong> BRAKE / REVERSE<br><strong>A / ←　D / →</strong> STEER　<strong>SPACE</strong> HANDBRAKE　<strong>M</strong> MUSIC　<strong>1–4</strong> CAMERA　<strong>L</strong> LIGHTS　<strong>K</strong> WIREFRAME</div><div>3D NEON HIGHWAY // BUILD 047</div></div>
+ <div class="bottom"><div class="hint"><strong>W / ↑</strong> ACCELERATE　<strong>S / ↓</strong> BRAKE / REVERSE<br><strong>A / ←　D / →</strong> STEER　<strong>SPACE</strong> HANDBRAKE　<strong>M</strong> MUSIC　<strong>1–4</strong> CAMERA　<strong>L</strong> LIGHTS　<strong>K</strong> WIREFRAME</div><div>3D NEON HIGHWAY // BUILD 048</div></div>
 </div>
 <div id="tools-ui"><button id="cam-prev" aria-label="Previous camera">◀</button><span id="cam-label">CAM 2 · CLOSE</span><button id="cam-next" aria-label="Next camera">▶</button><button id="debug-toggle">DEBUG</button></div>
 <div id="debug-panel"><div class="debug-title">DRIVELLA DIAGNOSTICS</div><div id="debug-data">Initializing…</div></div>
@@ -430,7 +430,8 @@ const cabinMesh=makeCarHull(cabinProfile,false,true),roofMesh=makeRoof(),wheelFa
 const archFrontL=makeWheelArch(1.6375,-1),archFrontR=makeWheelArch(1.6375,1),archRearL=makeWheelArch(-1.6375,-1),archRearR=makeWheelArch(-1.6375,1);
 // Glazing follows the new wide, low cabin. Front and rear pillars are explicit and symmetric.
 // Windshield winding faces outward (+Z); its lower corners sit at the bonnet end.
-const windshield=quad([-.69,1.235,.18],[-.56,.70,.99],[.56,.70,.99],[.69,1.235,.18]);
+// Windshield margins sit 0.025 units inboard of the matching side-glass front edges.
+const windshield=quad([-.775,1.205,.18],[-.885,.91,.84],[.885,.91,.84],[.775,1.205,.18]);
 const rearGlass=quad([-.69,1.205,-1.43],[.69,1.205,-1.43],[.82,.75,-1.72],[-.82,.75,-1.72]);
 const [sideGlassLF,sideGlassRF]=mirroredQuadPair(
  [-.91,.91,.84],[-.80,1.205,.18],[-.83,1.205,-.68],[-.98,.91,-.78]
@@ -439,8 +440,9 @@ const [sideGlassLR,sideGlassRR]=mirroredQuadPair(
  [-.98,.91,-.84],[-.83,1.205,-.76],[-.70,1.17,-1.35],[-.87,.83,-1.57]
 );
 // Thick, clean A/B pillars separate windshield from side glass; no doubled cabin frames.
+// Side-window backing frames keep a constant 0.025-unit outboard lip around each pane.
 const [sideGlassFrameLF,sideGlassFrameRF]=mirroredQuadPair(
- [-.94,.88,.88],[-.76,1.235,.14],[-.79,1.235,-.72],[-1.01,.88,-.82]
+ [-.935,.91,.84],[-.825,1.205,.18],[-.855,1.205,-.68],[-1.005,.91,-.78]
 );
 const [sideGlassFrameLR,sideGlassFrameRR]=mirroredQuadPair(
  [-1.01,.88,-.88],[-.79,1.235,-.80],[-.66,1.195,-1.39],[-.90,.80,-1.61]
@@ -519,7 +521,7 @@ const rearSignalR=quad([1.105,.785,-2.955],[1.105,.555,-2.955],[1.065,.555,-2.95
 const spoilerBlade=quad([-1.34,1.31,-2.38],[1.34,1.31,-2.38],[1.25,1.31,-2.72],[-1.25,1.31,-2.72]);
 const spoilerTopGlint=quad([-1.12,1.322,-2.42],[1.12,1.322,-2.42],[1.08,1.322,-2.63],[-1.08,1.322,-2.63]);
 // Dark backing frames leave a crisp ink border around each glass opening.
-const windshieldFrame=quad([-.72,1.255,.15],[-.58,.685,1.02],[.58,.685,1.02],[.72,1.255,.15]);
+const windshieldFrame=quad([-.795,1.215,.16],[-.90,.90,.86],[.90,.90,.86],[.795,1.215,.16]);
 const rearGlassFrame=quad([-.72,1.225,-1.46],[.72,1.225,-1.46],[.85,.725,-1.76],[-.85,.725,-1.76]);
 // Removed floating glass glints and roof overlay: clean uninterrupted cabin surfaces.
 // Black ink contours follow sampled body sections; every line shares the car profile.
