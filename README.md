@@ -3,6 +3,7 @@
 A browser-based synthwave drift-racing prototype with a custom low-poly 3D car, a procedural neon environment, and a hand-built WebGL renderer.
 
 > **Status:** Playable prototype under active development. Current renderer reference: **v0.18.48 / BUILD 114**.
+> **Release identification:** every published game change increments the visible BUILD number in the HUD and startup screen; README and rendering architecture are updated in the same release.
 
 ## Current game
 
