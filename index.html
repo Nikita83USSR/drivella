@@ -752,7 +752,7 @@ function drawCarMesh(shape,cx,cz,color,yaw=0,material=1){
  bindMesh(shape,model,color,1,material);
 }
 function drawCarHingedMesh(shape,cx,cz,color,yaw=0,material=1){
- const angle=1.30*headlightDeploy;
+ const angle=-1.30*headlightDeploy; // Negative X rotation lifts the forward edge.
  const hinge=matMul(translate(0,POP_HINGE_Y,POP_HINGE_Z),matMul(rotateX(angle),translate(0,-POP_HINGE_Y,-POP_HINGE_Z)));
  const model=matMul(translate(cx,0,cz),matMul(rotateY(yaw),matMul(rotateZ(bodyRoll),hinge)));
  bindMesh(shape,model,color,1,material);
