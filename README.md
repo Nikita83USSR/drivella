@@ -2,7 +2,7 @@
 
 A browser-based synthwave drift-racing prototype with a custom low-poly 3D car, a procedural neon environment, and a hand-built WebGL renderer.
 
-> **Status:** Playable prototype under active development. Current renderer reference: **v0.18.36 / BUILD 102**.
+> **Status:** Playable prototype under active development. Current renderer reference: **v0.18.37 / BUILD 103**.
 
 ## Current game
 
@@ -11,8 +11,8 @@ A browser-based synthwave drift-racing prototype with a custom low-poly 3D car, 
 - Four camera modes, acceleration, braking, steering, drifting, and handbrake handling. During a race, hold and drag the left mouse button to temporarily look around; releasing it immediately restores the selected automatic camera. Press **C** to cycle camera modes.
 - Procedural city, coastline, palms, mountains, road markings, and neon roadside elements.
 - Dynamic directional shadows with automatic environment participation, PCSS-style soft filtering, and camera-adaptive coverage.
-- Two animated, shader-based headlight spotlights track the pop-up lamp mechanism and illuminate ordinary world materials. CPU-side mesh/cone culling skips per-pixel lighting outside the beams. BUILD 102 corrects two-sided diffuse response so the road surface receives the beams, removes the obsolete translucent polygon-beam meshes, and removes the expensive screen-space flares on the upper pop-up headlights. A live FPS meter and F3 renderer diagnostics are available in the garage and during races; **H** temporarily toggles diffuse spotlight illumination for testing.
-- Emissive front, rear, and indicator lamps. The smaller screen-space flares remain on lower auxiliary lamps, rear lamps and indicators; the large upper-headlight flares were removed in BUILD 102 after profiling showed a severe frame-rate cost. Rear red lamps and LED bars brighten smoothly while the brake pedal or handbrake is held.
+- Two animated, shader-based headlight spotlights track the pop-up lamp mechanism and illuminate ordinary world materials. CPU-side mesh/cone culling skips per-pixel lighting outside the beams. BUILD 102 corrects two-sided diffuse response so the road surface receives the beams and removes the obsolete translucent polygon-beam meshes. BUILD 103 restores compact white-blue upper-headlight lens glints using the same lightweight Canvas 2D profile as the indicators, at slightly higher intensity; the former large bloom, blur, long streaks, diffraction and chromatic ghosts remain removed. A live FPS meter and F3 renderer diagnostics are available in the garage and during races; **H** temporarily toggles diffuse spotlight illumination for testing.
+- Emissive front, rear, and indicator lamps. Compact screen-space glints are used for the upper headlights, lower auxiliary lamps, rear lamps and indicators; only the expensive oversized upper-headlight flare treatment is disabled. Rear red lamps and LED bars brighten smoothly while the brake pedal or handbrake is held.
 - Half-resolution full-scene SSAO, separate car contour pass, and layered neon underglow.
 - Speed / distance HUD, boot screen, garage, options, and optional local soundtrack.
 - No external rendering engine, JavaScript libraries, fonts, CDNs, or runtime network dependencies.
