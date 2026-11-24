@@ -94,13 +94,13 @@
 <body>
 <canvas id="scene"></canvas><canvas id="sun"></canvas>
 <div id="hud">
- <div class="top"><div class="logo">DRIVELLA<small>3D SYNTHWAVE DRIFT RACING</small></div><div class="version-label" id="version-label">v0.18.22 · BUILD 088</div><div class="stat">DISTANCE<b id="distance">000.0 KM</b></div><div class="stat">LOCATION<b>VIOLET COAST</b></div></div>
+ <div class="top"><div class="logo">DRIVELLA<small>3D SYNTHWAVE DRIFT RACING</small></div><div class="version-label" id="version-label">v0.18.23 · BUILD 089</div><div class="stat">DISTANCE<b id="distance">000.0 KM</b></div><div class="stat">LOCATION<b>VIOLET COAST</b></div></div>
  <div class="right"><div id="speed">000 <span>KM/H</span></div><div id="direction">▶ FORWARD</div><div id="music">♫ MUSIC SCANNING…</div></div>
- <div class="bottom"><div class="hint"><strong>W / ↑</strong> ACCELERATE　<strong>S / ↓</strong> BRAKE / REVERSE<br><strong>A / ←　D / →</strong> STEER　<strong>SPACE</strong> HANDBRAKE　<strong>M</strong> MUSIC　<strong>1–4</strong> CAMERA　<strong>L</strong> LIGHTS　<strong>K</strong> WIREFRAME</div><div>3D NEON HIGHWAY // BUILD 088</div></div>
+ <div class="bottom"><div class="hint"><strong>W / ↑</strong> ACCELERATE　<strong>S / ↓</strong> BRAKE / REVERSE<br><strong>A / ←　D / →</strong> STEER　<strong>SPACE</strong> HANDBRAKE　<strong>M</strong> MUSIC　<strong>1–4</strong> CAMERA　<strong>L</strong> LIGHTS　<strong>K</strong> WIREFRAME</div><div>3D NEON HIGHWAY // BUILD 089</div></div>
 </div>
 <div id="tools-ui"><button id="cam-prev" aria-label="Previous camera">◀</button><span id="cam-label">CAM 2 · CLOSE</span><button id="cam-next" aria-label="Next camera">▶</button><button id="debug-toggle">DEBUG</button></div>
 <div id="debug-panel"><div class="debug-title">DRIVELLA DIAGNOSTICS</div><div id="debug-data">Initializing…</div></div>
-<div id="boot-screen"><div class="boot-content"><div class="boot-kicker">NIGHT DRIVE SYSTEMS // INITIALIZING</div><div class="boot-logo">DRIVELLA</div><div class="boot-subtitle">3D SYNTHWAVE DRIFT RACING</div><div class="boot-mark"></div><div class="boot-status" id="boot-status">BUILDING THE 3D WORLD</div><div class="boot-track"><div class="boot-progress" id="boot-progress"></div></div><div class="boot-meta"><span>3D ENGINE ONLINE</span><span id="boot-percent">00%</span></div><div class="boot-footer">ENGINE STARTUP // v0.18.22 · BUILD 088</div></div></div>
+<div id="boot-screen"><div class="boot-content"><div class="boot-kicker">NIGHT DRIVE SYSTEMS // INITIALIZING</div><div class="boot-logo">DRIVELLA</div><div class="boot-subtitle">3D SYNTHWAVE DRIFT RACING</div><div class="boot-mark"></div><div class="boot-status" id="boot-status">BUILDING THE 3D WORLD</div><div class="boot-track"><div class="boot-progress" id="boot-progress"></div></div><div class="boot-meta"><span>3D ENGINE ONLINE</span><span id="boot-percent">00%</span></div><div class="boot-footer">ENGINE STARTUP // v0.18.23 · BUILD 089</div></div></div>
 <div id="main-menu"><div class="menu-content"><div class="menu-brand">DRIVELLA GTS</div><div class="menu-sub">RIDE THE RETRO FUTURE</div><div class="menu-actions"><button class="menu-btn" id="menu-start">СТАРТ</button><button class="menu-btn" id="menu-garage">ГАРАЖ</button><button class="menu-btn" id="menu-options">НАСТРОЙКИ</button></div></div><div class="menu-footer">РАЗРАБОТЧИК — <b>НИКИТА МАРКИН</b></div></div>
 <div id="garage-screen"><div class="garage-head">ГАРАЖ // DRIVELLA GTS</div><div class="garage-copy">ТЕКУЩИЙ АВТОМОБИЛЬ<br>DRIVELLA GTS · RETRO GT COUPE<br>ПОКАЖИ ЕЁ СО ВСЕХ СТОРОН</div><div class="garage-controls"><button id="garage-back">← НАЗАД В МЕНЮ</button></div><div class="garage-tip">ЗАЖМИ И ТЯНИ — ВРАЩЕНИЕ<br>КОЛЁСИКО — ПРИБЛИЗИТЬ / ОТДАЛИТЬ</div></div>
 <div id="options-screen"><div class="options-head">ОПЦИИ</div><div class="options-card"><div class="option-row"><span>МУЗЫКА</span><button id="option-music">ВКЛЮЧЕНА</button></div><div class="option-row"><span>ГРОМКОСТЬ</span><input id="option-volume" type="range" min="0" max="100" value="52"></div><div class="option-row"><span>ЗВУК ДВИГАТЕЛЯ</span><button id="option-sfx">ВКЛЮЧЁН</button></div><div class="option-row"><span>КАМЕРА</span><span>КЛАВИШИ 1–4</span></div><button id="options-back" style="width:100%;margin-top:18px">← НАЗАД В МЕНЮ</button></div></div>
@@ -108,7 +108,7 @@
 <script>
 (()=>{
 'use strict';
-const VERSION='v0.18.22',BUILD='088';
+const VERSION='v0.18.23',BUILD='089';
 const canvas=document.getElementById('scene'),gl=canvas.getContext('webgl',{antialias:true,alpha:true}),sun=document.getElementById('sun'),sctx=sun.getContext('2d');
 const $=id=>document.getElementById(id);
 const clamp=(v,a,b)=>Math.max(a,Math.min(b,v));
@@ -177,7 +177,7 @@ function ensureOutlineTarget(){
  outlineTarget={texture,depth,framebuffer,width,height};
  return true;
 }
-const SHADOW_MAP_SIZE=1536;
+const SHADOW_MAP_SIZE=2048;
 function ensureShadowTarget(){
  if(shadowTarget)return true;
  const size=SHADOW_MAP_SIZE,texture=gl.createTexture();
@@ -209,9 +209,11 @@ function ensureShadowTarget(){
 function renderShadowMap(){
  if(!ensureShadowTarget()){gl.uniform1f(loc.shadowEnabled,0);return false;}
  const carZ=garageMode?0:distance,trackCenter=garageMode?0:roadX(carZ),carX=garageMode?0:trackCenter+playerX;
- const lx=-.48,ly=.82,lz=.30,focusY=.46,lightDistance=28;
+ const lx=-.48,ly=.82,lz=.30,focusY=.46,lightDistance=46;
+ // A broad camera-following light frustum covers the nearby road and procedural environment.
+ // Newly added opaque meshes are included automatically through the shared scene draw path.
  shadowVP=matMul(
-  orthographic(-8.2,8.2,-7.2,7.2,.1,58),
+  orthographic(-38,38,-30,34,.1,120),
   lookAt(carX+lx*lightDistance,focusY+ly*lightDistance,carZ+lz*lightDistance,carX,focusY,carZ)
  );
  const sceneCalls=drawCalls;
@@ -310,7 +312,8 @@ function renderCarOutlines(){
 }
 
 function mesh(data){
- const normals=new Float32Array(data.length),edges=new Map();
+ const normals=new Float32Array(data.length),edges=new Map();let boundsRadius=0;
+ for(let i=0;i<data.length;i+=3)boundsRadius=Math.max(boundsRadius,Math.hypot(data[i],data[i+1],data[i+2]));
  const vertexKey=p=>p.map(v=>Number(v).toFixed(5)).join(',');
  for(let i=0;i<data.length;i+=9){
   const ax=data[i],ay=data[i+1],az=data[i+2],bx=data[i+3],by=data[i+4],bz=data[i+5],cx=data[i+6],cy=data[i+7],cz=data[i+8];
@@ -332,7 +335,7 @@ function mesh(data){
  const b=gl.createBuffer();gl.bindBuffer(gl.ARRAY_BUFFER,b);gl.bufferData(gl.ARRAY_BUFFER,new Float32Array(data),gl.STATIC_DRAW);
  const nb=gl.createBuffer();gl.bindBuffer(gl.ARRAY_BUFFER,nb);gl.bufferData(gl.ARRAY_BUFFER,normals,gl.STATIC_DRAW);
  const eb=gl.createBuffer();gl.bindBuffer(gl.ARRAY_BUFFER,eb);gl.bufferData(gl.ARRAY_BUFFER,new Float32Array(lineData),gl.STATIC_DRAW);
- return {b,nb,eb,n:data.length/3,en:lineData.length/3};
+ return {b,nb,eb,n:data.length/3,en:lineData.length/3,boundsRadius};
 }
 function makeGlowDisk(){
  const out=[],segments=64;
@@ -998,9 +1001,26 @@ function normalMatrix3(m){
  const det=ax*c0[0]+ay*c0[1]+az*c0[2],inv=1/(Math.abs(det)<1e-9?1:det);
  return new Float32Array([c0[0]*inv,c0[1]*inv,c0[2]*inv,c1[0]*inv,c1[1]*inv,c1[2]*inv,c2[0]*inv,c2[1]*inv,c2[2]*inv]);
 }
+const SHADOW_OPAQUE_ALPHA=0.78;
+function shadowCasterAllowed(color,material){
+ // Any regular opaque scene material casts automatically; translucent and glow passes do not.
+ return material<4.5&&color[3]>=SHADOW_OPAQUE_ALPHA;
+}
+function shadowBoundsVisible(shape,model){
+ if(!shadowVP)return true;
+ const scaleMax=Math.max(Math.hypot(model[0],model[1],model[2]),Math.hypot(model[4],model[5],model[6]),Math.hypot(model[8],model[9],model[10]));
+ const radius=(shape.boundsRadius||1)*scaleMax,x=model[12],y=model[13],z=model[14],m=shadowVP;
+ const cx=m[0]*x+m[4]*y+m[8]*z+m[12],cy=m[1]*x+m[5]*y+m[9]*z+m[13],cz=m[2]*x+m[6]*y+m[10]*z+m[14],cw=m[3]*x+m[7]*y+m[11]*z+m[15];
+ if(cw<=0.0001)return false;
+ const rx=radius*Math.hypot(m[0],m[4],m[8]),ry=radius*Math.hypot(m[1],m[5],m[9]),rz=radius*Math.hypot(m[2],m[6],m[10]);
+ return cx>=-cw-rx&&cx<=cw+rx&&cy>=-cw-ry&&cy<=cw+ry&&cz>=-cw-rz&&cz<=cw+rz;
+}
 function bindMesh(shape,model,color,toon=0,material=0){
- if((outlinePass||shadowPass)&&toon<0.5)return;
- if(shadowPass){gl.disable(gl.BLEND);gl.depthMask(true);}
+ if(outlinePass&&toon<0.5)return;
+ if(shadowPass){
+  if(!shadowCasterAllowed(color,material)||!shadowBoundsVisible(shape,model))return;
+  gl.disable(gl.BLEND);gl.depthMask(true);
+ }
  gl.uniformMatrix4fv(loc.model,false,new Float32Array(model));
  if(wireframeMode&&toon>0.5&&!outlinePass&&!shadowPass){
   gl.uniform4fv(loc.color,[.20,.92,1,1]);gl.uniform1f(loc.toon,0);gl.uniform1f(loc.materialMode,0);
@@ -1078,7 +1098,7 @@ function drawWorld(){
  if(shadowVP)gl.uniformMatrix4fv(loc.shadowVP,false,new Float32Array(shadowVP));
  gl.uniform3f(loc.keyLightDir,-.48,.82,.30);gl.uniform3f(loc.fillLightDir,.58,.34,-.72);gl.uniform3f(loc.viewPos,cam.x,cam.y,cam.z);gl.uniform1f(loc.showroom,garageMode?1:0);gl.uniform1f(loc.time,performance.now()*.001);
  gl.enable(gl.DEPTH_TEST);gl.disable(gl.BLEND);gl.clearColor(shadowPass?1:0,0,0,shadowPass?1:0);gl.clear(gl.COLOR_BUFFER_BIT|gl.DEPTH_BUFFER_BIT);
- if(!outlinePass&&!shadowPass){
+ if(!outlinePass){
  if(garageMode){
   // Dark showroom floor with a raised circular display stage.
   draw(cube,0,-.55,0,32,.24,32,[.025,.035,.075,1]);
