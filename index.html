@@ -13,6 +13,7 @@
 #scene{position:fixed;inset:0;width:100%;height:100%;display:block;background:transparent;z-index:1}
 #flare{position:fixed;inset:0;width:100%;height:100%;pointer-events:none;z-index:2}
 #hud{position:fixed;inset:0;pointer-events:none}
+#fps-counter{position:fixed;left:50%;top:15px;transform:translateX(-50%);z-index:14;display:none;padding:6px 10px;border:1px solid #66eaff55;background:#080b1dcc;color:#8fffff;font:700 10px Consolas,monospace;letter-spacing:.16em;text-shadow:0 0 9px currentColor;pointer-events:none;box-shadow:0 0 14px #00d9ff18}
 .top{position:absolute;left:24px;top:20px;display:flex;gap:20px;align-items:flex-start}
 .logo{font-size:clamp(18px,2.4vw,30px);letter-spacing:.22em;font-weight:900;color:#fff;text-shadow:0 0 8px #ff35e9,0 0 25px #a900ff}
 .logo small{display:block;font-size:10px;letter-spacing:.35em;color:#76f8ff;margin-top:5px}
@@ -95,13 +96,14 @@
 <body>
 <canvas id="scene"></canvas><canvas id="sun"></canvas><canvas id="flare"></canvas>
 <div id="hud">
- <div class="top"><div class="logo">DRIVELLA<small>3D SYNTHWAVE DRIFT RACING</small></div><div class="version-label" id="version-label">v0.18.32 · BUILD 098</div><div class="stat">DISTANCE<b id="distance">000.0 KM</b></div><div class="stat">LOCATION<b>VIOLET COAST</b></div></div>
+ <div class="top"><div class="logo">DRIVELLA<small>3D SYNTHWAVE DRIFT RACING</small></div><div class="version-label" id="version-label">v0.18.33 · BUILD 099</div><div class="stat">DISTANCE<b id="distance">000.0 KM</b></div><div class="stat">LOCATION<b>VIOLET COAST</b></div></div>
  <div class="right"><div id="speed">000 <span>KM/H</span></div><div id="direction">▶ FORWARD</div><div id="music">♫ MUSIC SCANNING…</div></div>
- <div class="bottom"><div class="hint"><strong>W / ↑</strong> ACCELERATE　<strong>S / ↓</strong> BRAKE / REVERSE<br><strong>A / ←　D / →</strong> STEER　<strong>SPACE</strong> HANDBRAKE　<strong>M</strong> MUSIC　<strong>1–4</strong> CAMERA　<strong>L</strong> LIGHTS　<strong>K</strong> WIREFRAME</div><div>3D NEON HIGHWAY // BUILD 098</div></div>
+ <div class="bottom"><div class="hint"><strong>W / ↑</strong> ACCELERATE　<strong>S / ↓</strong> BRAKE / REVERSE<br><strong>A / ←　D / →</strong> STEER　<strong>SPACE</strong> HANDBRAKE　<strong>M</strong> MUSIC　<strong>1–4</strong> CAMERA　<strong>L</strong> LIGHTS　<strong>K</strong> WIREFRAME</div><div>3D NEON HIGHWAY // BUILD 099</div></div>
 </div>
+<div id="fps-counter" aria-live="off">FPS --</div>
 <div id="tools-ui"><button id="cam-prev" aria-label="Previous camera">◀</button><span id="cam-label">CAM 2 · CLOSE</span><button id="cam-next" aria-label="Next camera">▶</button><button id="debug-toggle">DEBUG</button></div>
 <div id="debug-panel"><div class="debug-title">DRIVELLA DIAGNOSTICS</div><div id="debug-data">Initializing…</div></div>
-<div id="boot-screen"><div class="boot-content"><div class="boot-kicker">NIGHT DRIVE SYSTEMS // INITIALIZING</div><div class="boot-logo">DRIVELLA</div><div class="boot-subtitle">3D SYNTHWAVE DRIFT RACING</div><div class="boot-mark"></div><div class="boot-status" id="boot-status">BUILDING THE 3D WORLD</div><div class="boot-track"><div class="boot-progress" id="boot-progress"></div></div><div class="boot-meta"><span>3D ENGINE ONLINE</span><span id="boot-percent">00%</span></div><div class="boot-footer">ENGINE STARTUP // v0.18.32 · BUILD 098</div></div></div>
+<div id="boot-screen"><div class="boot-content"><div class="boot-kicker">NIGHT DRIVE SYSTEMS // INITIALIZING</div><div class="boot-logo">DRIVELLA</div><div class="boot-subtitle">3D SYNTHWAVE DRIFT RACING</div><div class="boot-mark"></div><div class="boot-status" id="boot-status">BUILDING THE 3D WORLD</div><div class="boot-track"><div class="boot-progress" id="boot-progress"></div></div><div class="boot-meta"><span>3D ENGINE ONLINE</span><span id="boot-percent">00%</span></div><div class="boot-footer">ENGINE STARTUP // v0.18.33 · BUILD 099</div></div></div>
 <div id="main-menu"><div class="menu-content"><div class="menu-brand">DRIVELLA GTS</div><div class="menu-sub">RIDE THE RETRO FUTURE</div><div class="menu-actions"><button class="menu-btn" id="menu-start">СТАРТ</button><button class="menu-btn" id="menu-garage">ГАРАЖ</button><button class="menu-btn" id="menu-options">НАСТРОЙКИ</button></div></div><div class="menu-footer">РАЗРАБОТЧИК — <b>НИКИТА МАРКИН</b></div></div>
 <div id="garage-screen"><div class="garage-head">ГАРАЖ // DRIVELLA GTS</div><div class="garage-copy">ТЕКУЩИЙ АВТОМОБИЛЬ<br>DRIVELLA GTS · RETRO GT COUPE<br>ПОКАЖИ ЕЁ СО ВСЕХ СТОРОН</div><div class="garage-controls"><button id="garage-back">← НАЗАД В МЕНЮ</button></div><div class="garage-tip">ЗАЖМИ И ТЯНИ — ВРАЩЕНИЕ<br>КОЛЁСИКО — ПРИБЛИЗИТЬ / ОТДАЛИТЬ</div></div>
 <div id="options-screen"><div class="options-head">ОПЦИИ</div><div class="options-card"><div class="option-row"><span>МУЗЫКА</span><button id="option-music">ВКЛЮЧЕНА</button></div><div class="option-row"><span>ГРОМКОСТЬ</span><input id="option-volume" type="range" min="0" max="100" value="52"></div><div class="option-row"><span>ЗВУК ДВИГАТЕЛЯ</span><button id="option-sfx">ВКЛЮЧЁН</button></div><div class="option-row"><span>КАМЕРА</span><span>КЛАВИШИ 1–4</span></div><button id="options-back" style="width:100%;margin-top:18px">← НАЗАД В МЕНЮ</button></div></div>
@@ -109,7 +111,7 @@
 <script>
 (()=>{
 'use strict';
-const VERSION='v0.18.32',BUILD='098';
+const VERSION='v0.18.33',BUILD='099';
 const canvas=document.getElementById('scene'),gl=canvas.getContext('webgl',{antialias:true,alpha:true}),sun=document.getElementById('sun'),sctx=sun.getContext('2d'),flare=document.getElementById('flare'),fctx=flare.getContext('2d');
 const $=id=>document.getElementById(id);
 const clamp=(v,a,b)=>Math.max(a,Math.min(b,v));
@@ -120,7 +122,7 @@ function reportStartupError(message){
 window.addEventListener('error',e=>reportStartupError(e.message||'JavaScript error'));
 window.addEventListener('unhandledrejection',e=>reportStartupError(e.reason&&e.reason.message||e.reason||'Promise rejected'));
 
-let W=innerWidth,H=innerHeight,DPR=1,outlinePass=false,shadowPass=false,aoScenePass=false,outlineTarget=null,aoTarget=null,shadowTarget=null,shadowVP=null,outlineCabinEdge=null;
+let W=innerWidth,H=innerHeight,DPR=1,outlinePass=false,shadowPass=false,aoScenePass=false,outlineTarget=null,aoTarget=null,shadowTarget=null,shadowVP=null,outlineCabinEdge=null,headlightCullL=[0,0,0],headlightCullR=[0,0,0],headlightCullDir=[0,0,1],headlightBaseIntensity=0,headlightMeshTests=0,headlightMeshCulled=0;
 function resize(){
  DPR=Math.min(devicePixelRatio||1,2);W=innerWidth;H=innerHeight;
  for(const c of [canvas,sun,flare]){c.width=Math.round(W*DPR);c.height=Math.round(H*DPR);c.style.width=W+'px';c.style.height=H+'px';}
@@ -933,7 +935,7 @@ let keys={},headlightsUp=false,headlightDeploy=0,wireframeMode=false,started=fal
 // One axis convention shared by controls, car movement, body lean and indicators.
 const STEER_AXIS=Object.freeze({left:-1,right:1,screenRight:1,bodyLean:-1});
 function readSteeringInput(){return (keys.d||keys.arrowright?STEER_AXIS.right:0)+(keys.a||keys.arrowleft?STEER_AXIS.left:0);}
-let cameraMode=1,debugVisible=false,drawCalls=0,fps=0,fpsFrames=0,fpsTime=0,debugTime=0,bootDone=false,garageMode=false,garageAngle=0,garageTilt=.24,garageZoom=11,garageDrag=false,garageLastX=0,garageLastY=0,musicVolume=.52,sfxEnabled=true;
+let cameraMode=1,debugVisible=false,drawCalls=0,fps=0,fpsFrames=0,fpsTime=performance.now(),debugTime=0,bootDone=false,garageMode=false,garageAngle=0,garageTilt=.24,garageZoom=11,garageDrag=false,garageLastX=0,garageLastY=0,musicVolume=.52,sfxEnabled=true;
 const CAMERA_NAMES=['HOOD / FIRST PERSON','CLOSE CHASE','WIDE CHASE','LOW CHASE'];
 function setCamera(n){cameraMode=(n+4)%4;$('cam-label').textContent='CAM '+(cameraMode+1)+' · '+['HOOD','CLOSE','WIDE','LOW'][cameraMode];}
 function toggleDebug(){debugVisible=!debugVisible;$('debug-panel').classList.toggle('visible',debugVisible);$('debug-toggle').textContent=debugVisible?'DEBUG ON':'DEBUG';}
@@ -962,17 +964,17 @@ $('cam-prev').addEventListener('click',()=>setCamera(cameraMode-1));
 $('cam-next').addEventListener('click',()=>setCamera(cameraMode+1));
 $('debug-toggle').addEventListener('click',toggleDebug);
 function showMenu(){
- garageMode=false;document.body.classList.remove('playing');
+ garageMode=false;$('fps-counter').style.display='none';document.body.classList.remove('playing');
  $('garage-screen').classList.remove('show');$('options-screen').classList.remove('show');$('main-menu').classList.add('show');
 }
-function showGarage(){garageMode=true;garageAngle=0;garageTilt=.24;garageZoom=11;document.body.classList.remove('playing');$('main-menu').classList.remove('show');$('options-screen').classList.remove('show');$('garage-screen').classList.add('show');}
-function showOptions(){document.body.classList.remove('playing');$('main-menu').classList.remove('show');$('garage-screen').classList.remove('show');$('options-screen').classList.add('show');}
+function showGarage(){garageMode=true;$('fps-counter').style.display='block';garageAngle=0;garageTilt=.24;garageZoom=11;document.body.classList.remove('playing');$('main-menu').classList.remove('show');$('options-screen').classList.remove('show');$('garage-screen').classList.add('show');}
+function showOptions(){$('fps-counter').style.display='none';document.body.classList.remove('playing');$('main-menu').classList.remove('show');$('garage-screen').classList.remove('show');$('options-screen').classList.add('show');}
 function pauseGame(){
  if(!started||paused)return;
  paused=true;keys={};showMenu();
 }
 function start(){
- garageMode=false;started=true;paused=false;document.body.classList.add('playing');
+ garageMode=false;$('fps-counter').style.display='block';started=true;paused=false;document.body.classList.add('playing');
  initAudio();if(musicPending&&musicOn)tryStartMusic();
  $('main-menu').classList.remove('show');$('garage-screen').classList.remove('show');$('options-screen').classList.remove('show');$('overlay').classList.add('hidden');
 }
@@ -1064,6 +1066,19 @@ function shadowBoundsVisible(shape,model){
  const rx=radius*Math.hypot(m[0],m[4],m[8]),ry=radius*Math.hypot(m[1],m[5],m[9]),rz=radius*Math.hypot(m[2],m[6],m[10]);
  return cx>=-cw-rx&&cx<=cw+rx&&cy>=-cw-ry&&cy<=cw+ry&&cz>=-cw-rz&&cz<=cw+rz;
 }
+function headlightAffectsMesh(shape,model){
+ const sx=Math.hypot(model[0],model[1],model[2]),sy=Math.hypot(model[4],model[5],model[6]),sz=Math.hypot(model[8],model[9],model[10]);
+ const radius=shape.boundsRadius*Math.max(sx,sy,sz),cx=model[12],cy=model[13],cz=model[14],tanHalf=.4557;
+ const intersects=lamp=>{
+  const dx=cx-lamp[0],dy=cy-lamp[1],dz=cz-lamp[2],distanceSq=dx*dx+dy*dy+dz*dz,reach=42+radius;
+  if(distanceSq>reach*reach)return false;
+  const axial=dx*headlightCullDir[0]+dy*headlightCullDir[1]+dz*headlightCullDir[2];
+  if(axial+radius<=0)return false;
+  const lateralSq=Math.max(0,distanceSq-axial*axial),coneRadius=Math.max(0,axial)*tanHalf+radius;
+  return lateralSq<=coneRadius*coneRadius;
+ };
+ return intersects(headlightCullL)||intersects(headlightCullR);
+}
 function bindMesh(shape,model,color,toon=0,material=0){
  if(outlinePass){
   if(!aoScenePass&&toon<0.5)return;
@@ -1073,6 +1088,12 @@ function bindMesh(shape,model,color,toon=0,material=0){
  if(shadowPass){
   if(!shadowCasterAllowed(color,material)||!shadowBoundsVisible(shape,model))return;
   gl.disable(gl.BLEND);gl.depthMask(true);
+ }
+ if(!outlinePass&&!shadowPass&&!wireframeMode&&headlightBaseIntensity>0.001&&material<=2.5){
+  headlightMeshTests++;
+  const receivesLight=color!==C.ground&&headlightAffectsMesh(shape,model);
+  if(!receivesLight)headlightMeshCulled++;
+  gl.uniform1f(loc.headlightIntensity,receivesLight?headlightBaseIntensity:0);
  }
  gl.uniformMatrix4fv(loc.model,false,new Float32Array(model));
  if(wireframeMode&&toon>0.5&&!outlinePass&&!shadowPass){
@@ -1143,6 +1164,7 @@ function cameraFor(carX,carZ){
 }
 function drawWorld(){
  drawCalls=0;
+ if(!outlinePass&&!shadowPass){headlightMeshTests=0;headlightMeshCulled=0;}
  const carZ=garageMode?0:distance,trackCenter=garageMode?0:roadX(carZ),carX=garageMode?0:trackCenter+playerX;
  const cam=cameraFor(carX,carZ);
  const vp=shadowPass&&shadowVP?shadowVP:matMul(perspective(cam.fov*Math.PI/180,W/H,.1,650),lookAt(cam.x,cam.y,cam.z,cam.tx,cam.ty,cam.tz));
@@ -1159,7 +1181,8 @@ function drawWorld(){
  const lampRotation=matMul(rotateY(heading),matMul(rotateZ(roll),rotateX(lampAngle))),lampDiag=POP_LAMP_DIAG;
  let lampDir=[lampRotation[4]*-lampDiag+lampRotation[8]*lampDiag,lampRotation[5]*-lampDiag+lampRotation[9]*lampDiag,lampRotation[6]*-lampDiag+lampRotation[10]*lampDiag];
  lampDir[1]-=.045;const lampDirLength=Math.hypot(lampDir[0],lampDir[1],lampDir[2])||1;lampDir=lampDir.map(v=>v/lampDirLength);
- gl.uniform3fv(loc.headlightPosL,new Float32Array(lampL));gl.uniform3fv(loc.headlightPosR,new Float32Array(lampR));gl.uniform3fv(loc.headlightDir,new Float32Array(lampDir));gl.uniform1f(loc.headlightIntensity,clamp((lampDeploy-.12)/.88,0,1)*3.0);
+ headlightCullL=lampL;headlightCullR=lampR;headlightCullDir=lampDir;headlightBaseIntensity=clamp((lampDeploy-.12)/.88,0,1)*3.0;
+ gl.uniform3fv(loc.headlightPosL,new Float32Array(lampL));gl.uniform3fv(loc.headlightPosR,new Float32Array(lampR));gl.uniform3fv(loc.headlightDir,new Float32Array(lampDir));gl.uniform1f(loc.headlightIntensity,headlightBaseIntensity);
  gl.enable(gl.DEPTH_TEST);gl.disable(gl.BLEND);gl.clearColor(shadowPass?1:0,0,0,shadowPass?1:0);gl.clear(gl.COLOR_BUFFER_BIT|gl.DEPTH_BUFFER_BIT);
  if((!outlinePass&&!shadowPass)||aoScenePass){
  if(garageMode){
@@ -1473,15 +1496,15 @@ function drawVehicleLensFlares(){
 }
 function steerNowForFlare(){return readSteeringInput();}
 function updateDebug(dt){
- fpsFrames++;fpsTime+=dt;
- if(fpsTime>=.5){fps=fpsFrames/fpsTime;fpsFrames=0;fpsTime=0;}
+ fpsFrames++;const fpsNow=performance.now(),fpsElapsed=(fpsNow-fpsTime)/1000;
+ if(fpsElapsed>=.5){fps=fpsFrames/fpsElapsed;fpsFrames=0;fpsTime=fpsNow;const meter=$('fps-counter');if(meter){meter.textContent='FPS '+Math.round(fps);meter.style.color=fps>=55?'#8fffff':fps>=35?'#ffdf82':'#ff8d9d';}}
  if(debugVisible&&performance.now()-debugTime>160){
   debugTime=performance.now();
   $('debug-data').innerHTML=
    '<strong>VERSION</strong> '+VERSION+' / BUILD '+BUILD+'<br>'+
    '<strong>MUSIC FILES</strong> '+foundTracks.length+' FOUND · '+(musicPending?'WAITING':'READY')+'<br>'+
    '<strong>FPS</strong> '+fps.toFixed(1)+'<br>'+
-   '<strong>DRAW CALLS</strong> '+drawCalls+'<br>'+
+   '<strong>DRAW CALLS</strong> '+drawCalls+'<br>'+'<strong>HEADLIGHT MESHES</strong> '+headlightMeshTests+' TESTED · '+headlightMeshCulled+' CULLED<br>'+ 
    '<strong>CAMERA</strong> '+(cameraMode+1)+' / 4 — '+CAMERA_NAMES[cameraMode]+'<br>'+
    '<strong>SPEED</strong> '+speed.toFixed(1)+' km/h<br>'+
    '<strong>WORLD Z</strong> '+distance.toFixed(2)+'<br>'+
