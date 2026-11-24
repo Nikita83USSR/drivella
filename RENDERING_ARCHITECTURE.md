@@ -1,6 +1,6 @@
 # DRIVELLA — Rendering Architecture
 
-Current reference: **v0.18.37 / BUILD 103**  
+Current reference: **v0.18.38 / BUILD 104**  
 Main renderer: `index.html` — custom WebGL 1 renderer, no external rendering engine.
 
 This document records the rendering decisions that future vehicle, environment, lighting, and effects work must preserve. The goal is a reusable scene pipeline: new world geometry should take part in shadows and ambient occlusion automatically when it uses the shared draw path.
@@ -97,6 +97,17 @@ The two effects use separate masks so environment geometry does not acquire the 
 - Glass, translucent fades, neon, and contact-shadow overlays are omitted from the opaque AO mask to avoid false occlusion.
 
 SSAO is screen-space: it only sees geometry represented in the current camera's normal/depth buffer. It cannot infer hidden geometry behind the camera or off-screen. It is a local contact/crease approximation, not global illumination.
+
+## Vehicle wheel animation — BUILD 104
+
+The four wheels use one rolling phase derived from the accumulated forward travel:
+
+`wheelSpin = garageMode ? 0 : -distance / WHEEL_RADIUS`
+
+- `drawCarPart()` applies the same wheel-local rotation to both `wheel` and `wheelFace` meshes.
+- The tyre, brake-disc face, alloy spoke face, and centre/hub details must all receive the exact same `wheelSpin` argument. Omitting it from any `wheelFace` call leaves that visible part stationary.
+- The wheel's local Y axis is mapped to the vehicle's transverse axis by the `rotateZ(Math.PI / 2)` transform. The negative sign is intentional: with forward travel along world +Z, it produces the physically correct rolling direction at the tyre contact patch.
+- Wheels remain stationary in the garage. Do not introduce per-wheel offsets or independent spin phases unless a future feature explicitly requires wheel slip or differential behaviour.
 
 ## Shared draw path — rules for future objects
 
