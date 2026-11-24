@@ -1,6 +1,6 @@
 # DRIVELLA — Rendering Architecture
 
-Current reference: **v0.18.45 / BUILD 111**  
+Current reference: **v0.18.46 / BUILD 112**  
 Main renderer: `index.html` — custom WebGL 1 renderer, no external rendering engine.
 
 This document records the rendering decisions that future vehicle, environment, lighting, and effects work must preserve. The goal is a reusable scene pipeline: new world geometry should take part in shadows and ambient occlusion automatically when it uses the shared draw path.
@@ -80,8 +80,8 @@ This is a stylized screen-space glare effect rather than a physically simulated 
 ## BUILD 111 — Remaining paint pattern and vehicle self-shadow cleanup
 
 - The painted-body shader no longer adds a procedural red lower-side mask from `vLocalPos.x/y`. The previous mask restarted its coordinate range for every independent mesh, so the body shell, rear-quarter pieces, bumper crease, and other painted overlays did not share one continuous boundary. Removing it eliminates those mesh-local patches without changing model geometry or the base paint material.
-- The directional shadow map remains shared and continues to include the car as an opaque caster. The receiver attenuation now uses the existing `toon` draw flag as a car/world classification: vehicle meshes receive at most 8% of the raw shadow darkening, while world and road meshes retain the 50% maximum. This suppresses unexplained one-sided self-shadowing from the car's own overlapping body, cabin, and trim geometry without removing the car's cast shadow from the road.
-- This is an intentional stylized vehicle-lighting policy, not an additional shadow map: new car meshes continue to cast by the normal material rule, but should not regain strong self-shadow response unless the renderer later adds separate caster/receiver masks.
+- The directional shadow map remains shared and continues to include the car as an opaque caster. BUILD 112 restores **50% maximum shadow reception** on vehicle meshes, so shadows from surrounding objects are no longer washed out. The existing `toon` draw flag still classifies car versus world receivers, but now controls a separate depth-bias profile: the minimum and slope-scaled bias are larger on car surfaces (`0.00034` / `0.0022`) than on world surfaces (`0.00024` / `0.00066`). This should suppress shallow-angle self-shadow acne without broadly reducing external shadow visibility. World/road receivers keep their previous bias and 50% maximum shadow strength.
+- This is an intentional stylized vehicle-lighting policy, not an additional shadow map. New car meshes continue to cast by the normal material rule and receive shadows at normal strength with the car-specific bias; if a distinct self-shadow silhouette remains, the next step is to isolate the offending caster/receiver meshes rather than globally weakening car shadows.
 
 ## Reusable local lighting — BUILD 106
 
