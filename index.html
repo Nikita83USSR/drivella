@@ -94,9 +94,9 @@
 <body>
 <canvas id="scene"></canvas><canvas id="sun"></canvas>
 <div id="hud">
- <div class="top"><div class="logo">DRIVELLA<small>3D SYNTHWAVE DRIFT RACING</small></div><div class="version-label" id="version-label">v0.15.9 · BUILD 045</div><div class="stat">DISTANCE<b id="distance">000.0 KM</b></div><div class="stat">LOCATION<b>VIOLET COAST</b></div></div>
+ <div class="top"><div class="logo">DRIVELLA<small>3D SYNTHWAVE DRIFT RACING</small></div><div class="version-label" id="version-label">v0.16.0 · BUILD 046</div><div class="stat">DISTANCE<b id="distance">000.0 KM</b></div><div class="stat">LOCATION<b>VIOLET COAST</b></div></div>
  <div class="right"><div id="speed">000 <span>KM/H</span></div><div id="direction">▶ FORWARD</div><div id="music">♫ MUSIC SCANNING…</div></div>
- <div class="bottom"><div class="hint"><strong>W / ↑</strong> ACCELERATE　<strong>S / ↓</strong> BRAKE / REVERSE<br><strong>A / ←　D / →</strong> STEER　<strong>SPACE</strong> HANDBRAKE　<strong>M</strong> MUSIC　<strong>1–4</strong> CAMERA</div><div>3D NEON HIGHWAY // BUILD 041</div></div>
+ <div class="bottom"><div class="hint"><strong>W / ↑</strong> ACCELERATE　<strong>S / ↓</strong> BRAKE / REVERSE<br><strong>A / ←　D / →</strong> STEER　<strong>SPACE</strong> HANDBRAKE　<strong>M</strong> MUSIC　<strong>1–4</strong> CAMERA　<strong>L</strong> LIGHTS　<strong>K</strong> WIREFRAME</div><div>3D NEON HIGHWAY // BUILD 046</div></div>
 </div>
 <div id="tools-ui"><button id="cam-prev" aria-label="Previous camera">◀</button><span id="cam-label">CAM 2 · CLOSE</span><button id="cam-next" aria-label="Next camera">▶</button><button id="debug-toggle">DEBUG</button></div>
 <div id="debug-panel"><div class="debug-title">DRIVELLA DIAGNOSTICS</div><div id="debug-data">Initializing…</div></div>
@@ -136,17 +136,29 @@ if(!gl.getProgramParameter(prog,gl.LINK_STATUS))throw new Error(gl.getProgramInf
 gl.useProgram(prog);
 const loc={p:gl.getAttribLocation(prog,'p'),normal:gl.getAttribLocation(prog,'normal'),vp:gl.getUniformLocation(prog,'vp'),model:gl.getUniformLocation(prog,'model'),normalMatrix:gl.getUniformLocation(prog,'normalMatrix'),color:gl.getUniformLocation(prog,'color'),toon:gl.getUniformLocation(prog,'toon'),materialMode:gl.getUniformLocation(prog,'materialMode'),keyLightDir:gl.getUniformLocation(prog,'keyLightDir'),fillLightDir:gl.getUniformLocation(prog,'fillLightDir'),viewPos:gl.getUniformLocation(prog,'viewPos'),showroom:gl.getUniformLocation(prog,'showroom'),time:gl.getUniformLocation(prog,'time')};
 function mesh(data){
- const normals=new Float32Array(data.length);
+ const normals=new Float32Array(data.length),edges=new Map();
+ const vertexKey=p=>p.map(v=>Number(v).toFixed(5)).join(',');
  for(let i=0;i<data.length;i+=9){
   const ax=data[i],ay=data[i+1],az=data[i+2],bx=data[i+3],by=data[i+4],bz=data[i+5],cx=data[i+6],cy=data[i+7],cz=data[i+8];
   const ux=bx-ax,uy=by-ay,uz=bz-az,vx=cx-ax,vy=cy-ay,vz=cz-az;
   let nx=uy*vz-uz*vy,ny=uz*vx-ux*vz,nz=ux*vy-uy*vx,len=Math.hypot(nx,ny,nz)||1;
   nx/=len;ny/=len;nz/=len;
   for(let j=0;j<3;j++){normals[i+j*3]=nx;normals[i+j*3+1]=ny;normals[i+j*3+2]=nz;}
+  const v=[[ax,ay,az],[bx,by,bz],[cx,cy,cz]];
+  for(const pair of [[0,1],[1,2],[2,0]]){
+   const a=v[pair[0]],b=v[pair[1]],ka=vertexKey(a),kb=vertexKey(b),key=ka<kb?ka+'|'+kb:kb+'|'+ka;
+   const old=edges.get(key);
+   if(old){old.count++;if(Math.abs(old.nx*nx+old.ny*ny+old.nz*nz)<.9995)old.crease=true;}
+   else edges.set(key,{a,b,count:1,crease:false,nx,ny,nz});
+  }
  }
+ // Keep silhouette and hard-angle edges; discard coplanar triangle diagonals.
+ const lineData=[];
+ for(const edge of edges.values())if(edge.count===1||edge.crease)lineData.push(...edge.a,...edge.b);
  const b=gl.createBuffer();gl.bindBuffer(gl.ARRAY_BUFFER,b);gl.bufferData(gl.ARRAY_BUFFER,new Float32Array(data),gl.STATIC_DRAW);
  const nb=gl.createBuffer();gl.bindBuffer(gl.ARRAY_BUFFER,nb);gl.bufferData(gl.ARRAY_BUFFER,normals,gl.STATIC_DRAW);
- return {b,nb,n:data.length/3};
+ const eb=gl.createBuffer();gl.bindBuffer(gl.ARRAY_BUFFER,eb);gl.bufferData(gl.ARRAY_BUFFER,new Float32Array(lineData),gl.STATIC_DRAW);
+ return {b,nb,eb,n:data.length/3,en:lineData.length/3};
 }
 const cube=mesh([
 -1,-1,-1,1,-1,-1,1,1,-1,-1,-1,-1,1,1,-1,-1,1,-1,
@@ -405,8 +417,11 @@ const cabinProfile=[
  {z:-1.50,w:.98,floor:.70,side:.75,mid:.91,shoulder:1.04,upper:1.16,top:1.20},
  {z:-1.00,w:1.02,floor:.68,side:.73,mid:.94,shoulder:1.08,upper:1.20,top:1.23},
  {z:-.30,w:1.02,floor:.67,side:.72,mid:.94,shoulder:1.08,upper:1.20,top:1.23},
- {z:.30,w:.94,floor:.64,side:.68,mid:.87,shoulder:1.00,upper:1.12,top:1.20},
- {z:1.00,w:.70,floor:.56,side:.60,mid:.73,shoulder:.83,upper:.91,top:.98}
+ {z:.30,w:.94,floor:.64,side:.68,mid:.87,shoulder:.98,upper:1.04,top:1.10},
+ {z:.50,w:.89,floor:.62,side:.66,mid:.81,shoulder:.90,upper:.95,top:.97},
+ {z:.70,w:.83,floor:.60,side:.64,mid:.75,shoulder:.82,upper:.84,top:.84},
+ {z:.85,w:.76,floor:.58,side:.62,mid:.69,shoulder:.73,upper:.74,top:.74},
+ {z:1.00,w:.70,floor:.56,side:.60,mid:.63,shoulder:.65,upper:.64,top:.64}
 ];
 const cabinMesh=makeCarHull(cabinProfile,false),roofMesh=makeRoof(),wheelFace=makeWheelFace(),exhaustTip=makeExhaustTip(),exhaustCore=makeExhaustCore();
 const archFrontL=makeWheelArch(1.6375,-1),archFrontR=makeWheelArch(1.6375,1),archRearL=makeWheelArch(-1.6375,-1),archRearR=makeWheelArch(-1.6375,1);
@@ -544,7 +559,7 @@ const C={
  glass:[.012,.035,.075,1],glassLight:[.055,.17,.28,1],trim:[.012,.016,.026,1],
  tire:[.012,.014,.019,1],hub:[.55,.52,.68,1],brake:[.20,.20,.28,1],city:[.085,.045,.12,1],mount:[.08,.045,.14,1]
 };
-let keys={},headlightsUp=false,started=false,paused=true,speed=0,playerX=0,steer=0,bodyRoll=0,distance=0,boost=0,carYaw=0,yawRate=0,lateralVelocity=0,driftIntensity=0,handbrakeActive=false,driftInstability=0,previousSteerInput=0,last=performance.now(),musicOn=true,track=0,trackOrder=[],trackPos=0,audio=null,musicPending=true,foundTracks=[],audioCtx=null,engineOsc=null,engineOsc2=null,engineGain=null,engineFilter=null,skidGain=null,skidFilter=null,roadGain=null,roadFilter=null,audioNoise=null;
+let keys={},headlightsUp=false,wireframeMode=false,started=false,paused=true,speed=0,playerX=0,steer=0,bodyRoll=0,distance=0,boost=0,carYaw=0,yawRate=0,lateralVelocity=0,driftIntensity=0,handbrakeActive=false,driftInstability=0,previousSteerInput=0,last=performance.now(),musicOn=true,track=0,trackOrder=[],trackPos=0,audio=null,musicPending=true,foundTracks=[],audioCtx=null,engineOsc=null,engineOsc2=null,engineGain=null,engineFilter=null,skidGain=null,skidFilter=null,roadGain=null,roadFilter=null,audioNoise=null;
 // One axis convention shared by controls, car movement, body lean and indicators.
 const STEER_AXIS=Object.freeze({left:-1,right:1,screenRight:1,bodyLean:-1});
 function readSteeringInput(){return (keys.d||keys.arrowright?STEER_AXIS.right:0)+(keys.a||keys.arrowleft?STEER_AXIS.left:0);}
@@ -564,7 +579,8 @@ addEventListener('keydown',e=>{
  keys[k]=true;
  if(['arrowup','arrowdown','arrowleft','arrowright',' '].includes(e.key))e.preventDefault();
  if(k==='m'&&bootDone)toggleMusic();
- if(k==='l'&&!e.repeat){headlightsUp=!headlightsUp;}
+ if(e.code==='KeyL'&&!e.repeat){headlightsUp=!headlightsUp;}
+ if(e.code==='KeyK'&&!e.repeat){wireframeMode=!wireframeMode;}
  if(bootDone){initAudio();if(musicPending&&musicOn)tryStartMusic();}
  if(k==='f3'){e.preventDefault();toggleDebug();}
  if(['1','2','3','4'].includes(k))setCamera(Number(k)-1);
@@ -666,11 +682,18 @@ function normalMatrix3(m){
 }
 function bindMesh(shape,model,color,toon=0,material=0){
  gl.uniformMatrix4fv(loc.model,false,new Float32Array(model));
- gl.uniformMatrix3fv(loc.normalMatrix,false,normalMatrix3(model));
- gl.uniform4fv(loc.color,color);gl.uniform1f(loc.toon,toon);gl.uniform1f(loc.materialMode,material);
- gl.bindBuffer(gl.ARRAY_BUFFER,shape.b);gl.enableVertexAttribArray(loc.p);gl.vertexAttribPointer(loc.p,3,gl.FLOAT,false,0,0);
- gl.bindBuffer(gl.ARRAY_BUFFER,shape.nb);gl.enableVertexAttribArray(loc.normal);gl.vertexAttribPointer(loc.normal,3,gl.FLOAT,false,0,0);
- gl.drawArrays(gl.TRIANGLES,0,shape.n);drawCalls++;
+ if(wireframeMode&&toon>0.5){
+  gl.uniform4fv(loc.color,[.20,.92,1,1]);gl.uniform1f(loc.toon,0);gl.uniform1f(loc.materialMode,0);
+  gl.bindBuffer(gl.ARRAY_BUFFER,shape.eb);gl.enableVertexAttribArray(loc.p);gl.vertexAttribPointer(loc.p,3,gl.FLOAT,false,0,0);
+  gl.drawArrays(gl.LINES,0,shape.en);
+ }else{
+  gl.uniformMatrix3fv(loc.normalMatrix,false,normalMatrix3(model));
+  gl.uniform4fv(loc.color,color);gl.uniform1f(loc.toon,toon);gl.uniform1f(loc.materialMode,material);
+  gl.bindBuffer(gl.ARRAY_BUFFER,shape.b);gl.enableVertexAttribArray(loc.p);gl.vertexAttribPointer(loc.p,3,gl.FLOAT,false,0,0);
+  gl.bindBuffer(gl.ARRAY_BUFFER,shape.nb);gl.enableVertexAttribArray(loc.normal);gl.vertexAttribPointer(loc.normal,3,gl.FLOAT,false,0,0);
+  gl.drawArrays(gl.TRIANGLES,0,shape.n);
+ }
+ drawCalls++;
 }
 function draw(shape,x,y,z,sx,sy,sz,color,yaw=0,roll=0){
  const model=matMul(translate(x,y,z),matMul(rotateY(yaw),matMul(rotateZ(roll),scale(sx,sy,sz))));
