@@ -834,11 +834,11 @@ function makeCabinRoofRail(side){
 const sideRoofRailL=makeCabinRoofRail(-1),sideRoofRailR=makeCabinRoofRail(1);
 
 // Front and rear windscreens connect the roof to the body end sections.
-const frontBody=profileValue(.945,bodyProfile),rearDeck=profileValue(-1.6375,bodyProfile);
+const rearDeck=profileValue(-1.6375,bodyProfile);
 const windshield=quad(
  [-.80,1.205,.275],
- [-((frontBody.shoulderW??frontBody.w*.96)+.008),frontBody.shoulder+.008,.945],
- [((frontBody.shoulderW??frontBody.w*.96)+.008),frontBody.shoulder+.008,.945],
+ [-CABIN_GLASS_BOTTOM_X,CABIN_GLASS_BOTTOM_Y,CABIN_GLASS_FRONT_BOTTOM_Z],
+ [CABIN_GLASS_BOTTOM_X,CABIN_GLASS_BOTTOM_Y,CABIN_GLASS_FRONT_BOTTOM_Z],
  [.80,1.205,.275]
 );
 // Rear screen closes the cabin against the actual rear deck top profile.
@@ -875,9 +875,9 @@ function lampXBounds(side){return side<0?[-POP_LAMP_OUTER_X,-POP_LAMP_INNER_X]:[
 function lampFrontPoint(x,t,offset=0){
  // The optic lies flat under the hood while stowed. A 90-degree lift turns its downward normal forward.
  const z=POP_LAMP_Z_REAR+(POP_LAMP_Z_FRONT-POP_LAMP_Z_REAR)*(t/POP_LAMP_FACE_H);
- return [x,hoodSurfaceY(x,z)-.037-offset,z];
+ return [x,hoodSurfaceY(x,z)+.003-offset,z];
 }
-function lampRearPoint(x){return [x,hoodSurfaceY(x,POP_LAMP_Z_REAR)-.037,POP_LAMP_Z_REAR];}
+function lampRearPoint(x){return [x,hoodSurfaceY(x,POP_LAMP_Z_REAR)+.003,POP_LAMP_Z_REAR];}
 function pushLampQuad(out,a,b,c,d){out.push(...a,...b,...c,...a,...c,...d);}
 function makeLampTrianglePod(side){
  const [x0,x1]=lampXBounds(side),out=[],A0=lampRearPoint(x0),A1=lampRearPoint(x1),B0=lampFrontPoint(x0,0),B1=lampFrontPoint(x1,0),C0=lampFrontPoint(x0,POP_LAMP_FACE_H),C1=lampFrontPoint(x1,POP_LAMP_FACE_H);
