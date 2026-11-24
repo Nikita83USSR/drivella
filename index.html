@@ -94,13 +94,13 @@
 <body>
 <canvas id="scene"></canvas><canvas id="sun"></canvas>
 <div id="hud">
- <div class="top"><div class="logo">DRIVELLA<small>3D SYNTHWAVE DRIFT RACING</small></div><div class="version-label" id="version-label">v0.15.3 · BUILD 039</div><div class="stat">DISTANCE<b id="distance">000.0 KM</b></div><div class="stat">LOCATION<b>VIOLET COAST</b></div></div>
+ <div class="top"><div class="logo">DRIVELLA<small>3D SYNTHWAVE DRIFT RACING</small></div><div class="version-label" id="version-label">v0.15.4 · BUILD 040</div><div class="stat">DISTANCE<b id="distance">000.0 KM</b></div><div class="stat">LOCATION<b>VIOLET COAST</b></div></div>
  <div class="right"><div id="speed">000 <span>KM/H</span></div><div id="direction">▶ FORWARD</div><div id="music">♫ MUSIC SCANNING…</div></div>
- <div class="bottom"><div class="hint"><strong>W / ↑</strong> ACCELERATE　<strong>S / ↓</strong> BRAKE / REVERSE<br><strong>A / ←　D / →</strong> STEER　<strong>SPACE</strong> HANDBRAKE　<strong>M</strong> MUSIC　<strong>1–4</strong> CAMERA</div><div>3D NEON HIGHWAY // BUILD 039</div></div>
+ <div class="bottom"><div class="hint"><strong>W / ↑</strong> ACCELERATE　<strong>S / ↓</strong> BRAKE / REVERSE<br><strong>A / ←　D / →</strong> STEER　<strong>SPACE</strong> HANDBRAKE　<strong>M</strong> MUSIC　<strong>1–4</strong> CAMERA</div><div>3D NEON HIGHWAY // BUILD 040</div></div>
 </div>
 <div id="tools-ui"><button id="cam-prev" aria-label="Previous camera">◀</button><span id="cam-label">CAM 2 · CLOSE</span><button id="cam-next" aria-label="Next camera">▶</button><button id="debug-toggle">DEBUG</button></div>
 <div id="debug-panel"><div class="debug-title">DRIVELLA DIAGNOSTICS</div><div id="debug-data">Initializing…</div></div>
-<div id="boot-screen"><div class="boot-content"><div class="boot-kicker">NIGHT DRIVE SYSTEMS // INITIALIZING</div><div class="boot-logo">DRIVELLA</div><div class="boot-subtitle">3D SYNTHWAVE DRIFT RACING</div><div class="boot-mark"></div><div class="boot-status" id="boot-status">BUILDING THE 3D WORLD</div><div class="boot-track"><div class="boot-progress" id="boot-progress"></div></div><div class="boot-meta"><span>3D ENGINE ONLINE</span><span id="boot-percent">00%</span></div><div class="boot-footer">ENGINE STARTUP // v0.15.3 · BUILD 039</div></div></div>
+<div id="boot-screen"><div class="boot-content"><div class="boot-kicker">NIGHT DRIVE SYSTEMS // INITIALIZING</div><div class="boot-logo">DRIVELLA</div><div class="boot-subtitle">3D SYNTHWAVE DRIFT RACING</div><div class="boot-mark"></div><div class="boot-status" id="boot-status">BUILDING THE 3D WORLD</div><div class="boot-track"><div class="boot-progress" id="boot-progress"></div></div><div class="boot-meta"><span>3D ENGINE ONLINE</span><span id="boot-percent">00%</span></div><div class="boot-footer">ENGINE STARTUP // v0.15.4 · BUILD 040</div></div></div>
 <div id="main-menu"><div class="menu-content"><div class="menu-brand">DRIVELLA GTS</div><div class="menu-sub">RIDE THE RETRO FUTURE</div><div class="menu-actions"><button class="menu-btn" id="menu-start">СТАРТ</button><button class="menu-btn" id="menu-garage">ГАРАЖ</button><button class="menu-btn" id="menu-options">НАСТРОЙКИ</button></div></div><div class="menu-footer">РАЗРАБОТЧИК — <b>НИКИТА МАРКИН</b></div></div>
 <div id="garage-screen"><div class="garage-head">ГАРАЖ // DRIVELLA GTS</div><div class="garage-copy">ТЕКУЩИЙ АВТОМОБИЛЬ<br>DRIVELLA GTS · RETRO GT COUPE<br>ПОКАЖИ ЕЁ СО ВСЕХ СТОРОН</div><div class="garage-controls"><button id="garage-back">← НАЗАД В МЕНЮ</button></div><div class="garage-tip">ЗАЖМИ И ТЯНИ — ВРАЩЕНИЕ<br>КОЛЁСИКО — ПРИБЛИЗИТЬ / ОТДАЛИТЬ</div></div>
 <div id="options-screen"><div class="options-head">ОПЦИИ</div><div class="options-card"><div class="option-row"><span>МУЗЫКА</span><button id="option-music">ВКЛЮЧЕНА</button></div><div class="option-row"><span>ГРОМКОСТЬ</span><input id="option-volume" type="range" min="0" max="100" value="52"></div><div class="option-row"><span>ЗВУК ДВИГАТЕЛЯ</span><button id="option-sfx">ВКЛЮЧЁН</button></div><div class="option-row"><span>КАМЕРА</span><span>КЛАВИШИ 1–4</span></div><button id="options-back" style="width:100%;margin-top:18px">← НАЗАД В МЕНЮ</button></div></div>
@@ -108,7 +108,7 @@
 <script>
 (()=>{
 'use strict';
-const VERSION='v0.15.3',BUILD='039';
+const VERSION='v0.15.4',BUILD='040';
 const canvas=document.getElementById('scene'),gl=canvas.getContext('webgl',{antialias:true,alpha:true}),sun=document.getElementById('sun'),sctx=sun.getContext('2d');
 const $=id=>document.getElementById(id);
 const clamp=(v,a,b)=>Math.max(a,Math.min(b,v));
@@ -412,14 +412,44 @@ const intakeLowerL=quad([-1.14,.46,-.88],[-1.14,.46,-1.20],[-1.12,.31,-1.14],[-1
 const intakeLowerR=quad([1.14,.46,-.88],[1.12,.31,-.96],[1.12,.31,-1.14],[1.14,.46,-1.20]);
 const doorSeamL=sideRibbon(-1,[[.78,.85,.95],[.72,-.68,1.03],[.40,-.78,1.12],[.39,.82,1.12]],.018);
 const doorSeamR=sideRibbon(1,[[.78,.85,.95],[.39,.82,1.12],[.40,-.78,1.12],[.72,-.68,1.03]],.018);
-// Front light clusters are placed on the outer nose plane, above a broad intake.
-const frontLampL=quad([-.94,.53,2.91],[-.94,.31,2.91],[-.50,.31,2.935],[-.50,.53,2.935]);
-const frontLampR=quad([.50,.53,2.935],[.50,.31,2.935],[.94,.31,2.91],[.94,.53,2.91]);
-const frontLampCoreL=quad([-.87,.485,2.945],[-.87,.405,2.945],[-.57,.405,2.955],[-.57,.485,2.955]);
-const frontLampCoreR=quad([.57,.485,2.955],[.57,.405,2.955],[.87,.405,2.945],[.87,.485,2.945]);
-const frontLampGlowL=quad([-.99,.57,2.90],[-.99,.27,2.90],[-.45,.27,2.94],[-.45,.57,2.94]);
-const frontLampGlowR=quad([.45,.57,2.94],[.45,.27,2.94],[.99,.27,2.90],[.99,.57,2.90]);
-const frontIntake=quad([-.56,.43,2.945],[-.56,.22,2.945],[.56,.22,2.945],[.56,.43,2.945]);
+// DRIVELLA GTS front fascia — original interpretation of the early-90s wedge supercar layout.
+// Flush pop-up headlamp covers follow the sloping bonnet instead of floating above it.
+const hoodLampFrameL=quad([-1.02,.895,2.17],[-.53,.895,2.17],[-.49,.745,2.53],[-.94,.745,2.53]);
+const hoodLampFrameR=quad([.53,.895,2.17],[1.02,.895,2.17],[.94,.745,2.53],[.49,.745,2.53]);
+const hoodLampLensL=quad([-.96,.889,2.20],[-.59,.889,2.20],[-.56,.752,2.49],[-.90,.752,2.49]);
+const hoodLampLensR=quad([.59,.889,2.20],[.96,.889,2.20],[.90,.752,2.49],[.56,.752,2.49]);
+const hoodLampGlowL=quad([-.98,.888,2.19],[-.57,.888,2.19],[-.54,.749,2.50],[-.92,.749,2.50]);
+const hoodLampGlowR=quad([.57,.888,2.19],[.98,.888,2.19],[.92,.749,2.50],[.54,.749,2.50]);
+const hoodLampCoreL=quad([-.86,.881,2.25],[-.70,.881,2.25],[-.69,.762,2.47],[-.84,.762,2.47]);
+const hoodLampCoreR=quad([.70,.881,2.25],[.86,.881,2.25],[.84,.762,2.47],[.69,.762,2.47]);
+// Wide central radiator with a bevelled surround and six horizontal cooling vanes.
+const frontGrilleFrame=quad([-.53,.47,2.963],[.53,.47,2.963],[.45,.205,2.963],[-.45,.205,2.963]);
+const frontIntake=quad([-.475,.425,2.972],[.475,.425,2.972],[.405,.245,2.972],[-.405,.245,2.972]);
+function makeFrontGrilleSlats(){
+ const out=[];
+ for(let i=0;i<6;i++){
+  const y=.265+i*.027,half=.425-(i/6)*.035,h=.009;
+  const pts=[[-half,y,2.979],[half,y,2.979],[half,y+h,2.979],[-half,y+h,2.979]];
+  out.push(...pts[0],...pts[1],...pts[2],...pts[0],...pts[2],...pts[3]);
+ }
+ return mesh(out);
+}
+const frontGrilleSlats=makeFrontGrilleSlats();
+// Separate upper bumper crease and lower splitter define the blunt, straight nose.
+const frontBumperCrease=quad([-.94,.555,2.958],[.94,.555,2.958],[.90,.535,2.958],[-.90,.535,2.958]);
+const frontSplitter=quad([-.91,.185,2.979],[.91,.185,2.979],[.84,.145,2.979],[-.84,.145,2.979]);
+// Rectangular amber indicators outboard, with two compact fog / driving lamps on each side.
+const frontTurnSignalL=quad([-.99,.505,2.968],[-.77,.505,2.968],[-.77,.435,2.968],[-.99,.435,2.968]);
+const frontTurnSignalR=quad([.77,.505,2.968],[.99,.505,2.968],[.99,.435,2.968],[.77,.435,2.968]);
+const frontFogFrameL1=quad([-.88,.385,2.972],[-.73,.385,2.972],[-.73,.245,2.972],[-.88,.245,2.972]);
+const frontFogFrameL2=quad([-.68,.385,2.972],[-.53,.385,2.972],[-.53,.245,2.972],[-.68,.245,2.972]);
+const frontFogFrameR1=quad([.73,.385,2.972],[.88,.385,2.972],[.88,.245,2.972],[.73,.245,2.972]);
+const frontFogFrameR2=quad([.53,.385,2.972],[.68,.385,2.972],[.68,.245,2.972],[.53,.245,2.972]);
+const frontFogLensL1=quad([-.855,.360,2.981],[-.755,.360,2.981],[-.755,.270,2.981],[-.855,.270,2.981]);
+const frontFogLensL2=quad([-.655,.360,2.981],[-.555,.360,2.981],[-.555,.270,2.981],[-.655,.270,2.981]);
+const frontFogLensR1=quad([.755,.360,2.981],[.855,.360,2.981],[.855,.270,2.981],[.755,.270,2.981]);
+const frontFogLensR2=quad([.555,.360,2.981],[.655,.360,2.981],[.655,.270,2.981],[.555,.270,2.981]);
+// Soft road beams begin at the nose and widen into the lane.
 const headlightBeamL=quad([-.84,.018,2.96],[-.52,.018,2.96],[-2.35,.018,13.5],[.08,.018,13.5]);
 const headlightBeamR=quad([.52,.018,2.96],[.84,.018,2.96],[-.08,.018,13.5],[2.35,.018,13.5]);
 // This flat, full-width rear panel is intentionally proud of the hull: the silhouette reads as a squared tail.
@@ -734,7 +764,7 @@ function drawWorld(){
  drawCarMesh(bodyMesh,carX,carZ,C.body,yaw);
  for(const decal of cornerSlashes)drawCarMesh(decal.mesh,carX,carZ,decal.color,yaw,0);
  // Long dark flank ribbons removed; corner slashes carry the graphic accent instead.
- drawCarMesh(hoodFacetL,carX,carZ,[.91,.045,.18,1],yaw);drawCarMesh(hoodFacetR,carX,carZ,[.91,.045,.18,1],yaw);
+ // Bonnet remains a single continuous angular surface; no floating triangular overlays.
  // Cabin shell, glass and restrained cool reflections.
  drawCarMesh(cabinMesh,carX,carZ,C.glass,yaw);
  drawCarMesh(windshieldFrame,carX,carZ,C.trim,yaw);drawCarMesh(rearGlassFrame,carX,carZ,C.trim,yaw);
@@ -762,18 +792,34 @@ function drawWorld(){
   drawCarPart(carX,carZ,side*(wx+.148),wy,wz,.318,.018,.318,C.hub,yaw,wheelFace);
   drawCarPart(carX,carZ,side*(wx+.163),wy,wz,.092,.020,.092,C.bodyLight,yaw,wheelFace);
  }
- // Front: cool white LED blades, amber markers and a black lower intake.
+ // Front: twin flush headlamp covers, separate bumper indicators, fog lamps and a slatted radiator.
  gl.enable(gl.BLEND);gl.blendFunc(gl.SRC_ALPHA,gl.ONE);gl.depthMask(false);
- drawCarMesh(frontLampGlowL,carX,carZ,[.32,.82,1,.48],yaw,0);drawCarMesh(frontLampGlowR,carX,carZ,[.32,.82,1,.48],yaw,0);
+ drawCarMesh(hoodLampGlowL,carX,carZ,[.22,.72,1,.18],yaw,0);
+ drawCarMesh(hoodLampGlowR,carX,carZ,[.22,.72,1,.18],yaw,0);
  gl.depthMask(true);gl.disable(gl.BLEND);
- drawCarMesh(frontLampL,carX,carZ,C.trim,yaw,0);drawCarMesh(frontLampR,carX,carZ,C.trim,yaw,0);
- drawCarMesh(frontLampCoreL,carX,carZ,[.92,.98,1,1],yaw,2);drawCarMesh(frontLampCoreR,carX,carZ,[.92,.98,1,1],yaw,2);
- drawCarMesh(frontIntake,carX,carZ,C.trim,yaw,0);
- for(const side of [-1,1]){
-  drawCarPart(carX,carZ,side*.78,.365,2.95,.035,.035,.018,[1,.42,.13,1],yaw);
-  drawCarPart(carX,carZ,side*.94,.35,2.96,.075,.025,.055,C.bodyLight,yaw);
+ drawCarMesh(hoodLampFrameL,carX,carZ,C.trim,yaw,0);
+ drawCarMesh(hoodLampFrameR,carX,carZ,C.trim,yaw,0);
+ drawCarMesh(hoodLampLensL,carX,carZ,[.012,.035,.065,1],yaw,2);
+ drawCarMesh(hoodLampLensR,carX,carZ,[.012,.035,.065,1],yaw,2);
+ drawCarMesh(hoodLampCoreL,carX,carZ,[.88,.97,1,1],yaw,2);
+ drawCarMesh(hoodLampCoreR,carX,carZ,[.88,.97,1,1],yaw,2);
+ drawCarMesh(frontBumperCrease,carX,carZ,C.bodyLight,yaw,0);
+ drawCarMesh(frontGrilleFrame,carX,carZ,C.trim,yaw,0);
+ drawCarMesh(frontIntake,carX,carZ,[.018,.025,.040,1],yaw,0);
+ drawCarMesh(frontGrilleSlats,carX,carZ,[.28,.34,.44,1],yaw,0);
+ drawCarMesh(frontSplitter,carX,carZ,[.012,.016,.026,1],yaw,0);
+ // Amber corner indicators sit level with each other.
+ drawCarMesh(frontTurnSignalL,carX,carZ,[1,.43,.075,1],yaw,2);
+ drawCarMesh(frontTurnSignalR,carX,carZ,[1,.43,.075,1],yaw,2);
+ // Four lower rectangular driving lamps, in matched left/right pairs.
+ for(const frame of [frontFogFrameL1,frontFogFrameL2,frontFogFrameR1,frontFogFrameR2])drawCarMesh(frame,carX,carZ,C.trim,yaw,0);
+ for(const lamp of [frontFogLensL1,frontFogLensL2,frontFogLensR1,frontFogLensR2])drawCarMesh(lamp,carX,carZ,[.76,.90,1,1],yaw,2);
+ if(!garageMode){
+  gl.enable(gl.BLEND);gl.blendFunc(gl.SRC_ALPHA,gl.ONE);gl.depthMask(false);
+  drawCarMesh(headlightBeamL,carX,carZ,[.42,.70,1,.095],yaw,0);
+  drawCarMesh(headlightBeamR,carX,carZ,[.42,.70,1,.095],yaw,0);
+  gl.depthMask(true);gl.disable(gl.BLEND);
  }
- drawCarPart(carX,carZ,0,.18,2.97,1.00,.035,.085,C.trim,yaw);
  // Rear: a genuinely flat full-width fascia. Every light now sits OUTSIDE the body cap.
  drawCarMesh(rearFascia,carX,carZ,C.body,yaw,1);
  gl.enable(gl.BLEND);gl.blendFunc(gl.SRC_ALPHA,gl.ONE);gl.depthMask(false);
