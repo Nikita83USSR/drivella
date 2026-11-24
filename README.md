@@ -2,7 +2,7 @@
 
 A browser-based synthwave drift-racing prototype with a custom low-poly 3D car, a procedural neon environment, and a hand-built WebGL renderer.
 
-> **Status:** Playable prototype under active development. Current renderer reference: **v0.18.41 / BUILD 107**.
+> **Status:** Playable prototype under active development. Current renderer reference: **v0.18.42 / BUILD 108**.
 
 ## Current game
 
@@ -11,6 +11,7 @@ A browser-based synthwave drift-racing prototype with a custom low-poly 3D car, 
 - Windshield, rear and side glazing now show stronger view-dependent synthwave environment reflections: a blue sky gradient, magenta horizon, cyan neon bands, and garage-light specular response. This is a procedural reflection approximation, not ray-traced or screen-space reflection.
 - A reusable four-slot local-light system supports point and cone spot sources with colour, range falloff, diffuse response and specular highlights. Two coloured spotlights are currently active on the garage fixtures; the same source format can be reused for selected track and environment lights.
 - Glass (material mode 3) and painted body (material mode 4) use separate fragment-shader branches; the glass condition is explicitly bounded so it cannot capture the painted clear-coat material.
+- Garage local-light contribution is applied independently of the directional body-shadow multiplier, so a car panel in shadow can still receive the coloured fixture light.
 - Front wheels visibly steer with the same speed-sensitive input angle used by the driving physics; inner and outer wheels use a small Ackermann angle correction, while the rear wheels remain fixed.
 - Canvas 2D overlay for the synthwave sunset.
 - Four camera modes, acceleration, braking, steering, drifting, and handbrake handling. During a race, hold and drag the left mouse button to temporarily look around; releasing it immediately restores the selected automatic camera. Press **C** to cycle camera modes.
