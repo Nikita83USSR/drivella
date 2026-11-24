@@ -94,13 +94,13 @@
 <body>
 <canvas id="scene"></canvas><canvas id="sun"></canvas>
 <div id="hud">
- <div class="top"><div class="logo">DRIVELLA<small>3D SYNTHWAVE DRIFT RACING</small></div><div class="version-label" id="version-label">v0.18.9 · BUILD 075</div><div class="stat">DISTANCE<b id="distance">000.0 KM</b></div><div class="stat">LOCATION<b>VIOLET COAST</b></div></div>
+ <div class="top"><div class="logo">DRIVELLA<small>3D SYNTHWAVE DRIFT RACING</small></div><div class="version-label" id="version-label">v0.18.10 · BUILD 076</div><div class="stat">DISTANCE<b id="distance">000.0 KM</b></div><div class="stat">LOCATION<b>VIOLET COAST</b></div></div>
  <div class="right"><div id="speed">000 <span>KM/H</span></div><div id="direction">▶ FORWARD</div><div id="music">♫ MUSIC SCANNING…</div></div>
- <div class="bottom"><div class="hint"><strong>W / ↑</strong> ACCELERATE　<strong>S / ↓</strong> BRAKE / REVERSE<br><strong>A / ←　D / →</strong> STEER　<strong>SPACE</strong> HANDBRAKE　<strong>M</strong> MUSIC　<strong>1–4</strong> CAMERA　<strong>L</strong> LIGHTS　<strong>K</strong> WIREFRAME</div><div>3D NEON HIGHWAY // BUILD 075</div></div>
+ <div class="bottom"><div class="hint"><strong>W / ↑</strong> ACCELERATE　<strong>S / ↓</strong> BRAKE / REVERSE<br><strong>A / ←　D / →</strong> STEER　<strong>SPACE</strong> HANDBRAKE　<strong>M</strong> MUSIC　<strong>1–4</strong> CAMERA　<strong>L</strong> LIGHTS　<strong>K</strong> WIREFRAME</div><div>3D NEON HIGHWAY // BUILD 076</div></div>
 </div>
 <div id="tools-ui"><button id="cam-prev" aria-label="Previous camera">◀</button><span id="cam-label">CAM 2 · CLOSE</span><button id="cam-next" aria-label="Next camera">▶</button><button id="debug-toggle">DEBUG</button></div>
 <div id="debug-panel"><div class="debug-title">DRIVELLA DIAGNOSTICS</div><div id="debug-data">Initializing…</div></div>
-<div id="boot-screen"><div class="boot-content"><div class="boot-kicker">NIGHT DRIVE SYSTEMS // INITIALIZING</div><div class="boot-logo">DRIVELLA</div><div class="boot-subtitle">3D SYNTHWAVE DRIFT RACING</div><div class="boot-mark"></div><div class="boot-status" id="boot-status">BUILDING THE 3D WORLD</div><div class="boot-track"><div class="boot-progress" id="boot-progress"></div></div><div class="boot-meta"><span>3D ENGINE ONLINE</span><span id="boot-percent">00%</span></div><div class="boot-footer">ENGINE STARTUP // v0.18.9 · BUILD 075</div></div></div>
+<div id="boot-screen"><div class="boot-content"><div class="boot-kicker">NIGHT DRIVE SYSTEMS // INITIALIZING</div><div class="boot-logo">DRIVELLA</div><div class="boot-subtitle">3D SYNTHWAVE DRIFT RACING</div><div class="boot-mark"></div><div class="boot-status" id="boot-status">BUILDING THE 3D WORLD</div><div class="boot-track"><div class="boot-progress" id="boot-progress"></div></div><div class="boot-meta"><span>3D ENGINE ONLINE</span><span id="boot-percent">00%</span></div><div class="boot-footer">ENGINE STARTUP // v0.18.10 · BUILD 076</div></div></div>
 <div id="main-menu"><div class="menu-content"><div class="menu-brand">DRIVELLA GTS</div><div class="menu-sub">RIDE THE RETRO FUTURE</div><div class="menu-actions"><button class="menu-btn" id="menu-start">СТАРТ</button><button class="menu-btn" id="menu-garage">ГАРАЖ</button><button class="menu-btn" id="menu-options">НАСТРОЙКИ</button></div></div><div class="menu-footer">РАЗРАБОТЧИК — <b>НИКИТА МАРКИН</b></div></div>
 <div id="garage-screen"><div class="garage-head">ГАРАЖ // DRIVELLA GTS</div><div class="garage-copy">ТЕКУЩИЙ АВТОМОБИЛЬ<br>DRIVELLA GTS · RETRO GT COUPE<br>ПОКАЖИ ЕЁ СО ВСЕХ СТОРОН</div><div class="garage-controls"><button id="garage-back">← НАЗАД В МЕНЮ</button></div><div class="garage-tip">ЗАЖМИ И ТЯНИ — ВРАЩЕНИЕ<br>КОЛЁСИКО — ПРИБЛИЗИТЬ / ОТДАЛИТЬ</div></div>
 <div id="options-screen"><div class="options-head">ОПЦИИ</div><div class="options-card"><div class="option-row"><span>МУЗЫКА</span><button id="option-music">ВКЛЮЧЕНА</button></div><div class="option-row"><span>ГРОМКОСТЬ</span><input id="option-volume" type="range" min="0" max="100" value="52"></div><div class="option-row"><span>ЗВУК ДВИГАТЕЛЯ</span><button id="option-sfx">ВКЛЮЧЁН</button></div><div class="option-row"><span>КАМЕРА</span><span>КЛАВИШИ 1–4</span></div><button id="options-back" style="width:100%;margin-top:18px">← НАЗАД В МЕНЮ</button></div></div>
@@ -108,7 +108,7 @@
 <script>
 (()=>{
 'use strict';
-const VERSION='v0.18.9',BUILD='075';
+const VERSION='v0.18.10',BUILD='076';
 const canvas=document.getElementById('scene'),gl=canvas.getContext('webgl',{antialias:true,alpha:true}),sun=document.getElementById('sun'),sctx=sun.getContext('2d');
 const $=id=>document.getElementById(id);
 const clamp=(v,a,b)=>Math.max(a,Math.min(b,v));
@@ -119,7 +119,7 @@ function reportStartupError(message){
 window.addEventListener('error',e=>reportStartupError(e.message||'JavaScript error'));
 window.addEventListener('unhandledrejection',e=>reportStartupError(e.reason&&e.reason.message||e.reason||'Promise rejected'));
 
-let W=innerWidth,H=innerHeight,DPR=1,outlinePass=false,outlineTarget=null;
+let W=innerWidth,H=innerHeight,DPR=1,outlinePass=false,outlineTarget=null,outlineCabinEdge=null;
 function resize(){
  DPR=Math.min(devicePixelRatio||1,2);W=innerWidth;H=innerHeight;
  for(const c of [canvas,sun]){c.width=Math.round(W*DPR);c.height=Math.round(H*DPR);c.style.width=W+'px';c.style.height=H+'px';}
@@ -136,13 +136,13 @@ if(!gl.getProgramParameter(prog,gl.LINK_STATUS))throw new Error(gl.getProgramInf
 gl.useProgram(prog);
 const loc={p:gl.getAttribLocation(prog,'p'),normal:gl.getAttribLocation(prog,'normal'),vp:gl.getUniformLocation(prog,'vp'),model:gl.getUniformLocation(prog,'model'),normalMatrix:gl.getUniformLocation(prog,'normalMatrix'),color:gl.getUniformLocation(prog,'color'),toon:gl.getUniformLocation(prog,'toon'),materialMode:gl.getUniformLocation(prog,'materialMode'),outlinePass:gl.getUniformLocation(prog,'outlinePass'),keyLightDir:gl.getUniformLocation(prog,'keyLightDir'),fillLightDir:gl.getUniformLocation(prog,'fillLightDir'),viewPos:gl.getUniformLocation(prog,'viewPos'),showroom:gl.getUniformLocation(prog,'showroom'),time:gl.getUniformLocation(prog,'time')};
 const outlineVs='attribute vec2 aPosition;varying vec2 vUv;void main(){vUv=aPosition*0.5+0.5;gl_Position=vec4(aPosition,0.0,1.0);}';
-const outlineFs='precision mediump float;uniform sampler2D uNormalMask;uniform vec2 uTexel;varying vec2 vUv;float sampleEdge(vec2 uv,vec3 centerN,float centerDepth){vec4 sampleData=texture2D(uNormalMask,uv);if(sampleData.a<0.12)return 1.0;vec3 neighbourN=normalize(sampleData.rgb*2.0-1.0);float angle=1.0-clamp(abs(dot(centerN,neighbourN)),0.0,1.0);float neighbourDepth=clamp((sampleData.a-0.25)/0.75,0.0,1.0);float depthDelta=abs(centerDepth-neighbourDepth);float normalEdge=smoothstep(0.018,0.115,angle);float depthEdge=smoothstep(0.006,0.026,depthDelta);return max(normalEdge,depthEdge);}void main(){vec4 center=texture2D(uNormalMask,vUv);if(center.a<0.12){gl_FragColor=vec4(0.0);return;}vec3 n=normalize(center.rgb*2.0-1.0);float centerDepth=clamp((center.a-0.25)/0.75,0.0,1.0);float edge=0.0;vec2 px=uTexel;edge=max(edge,sampleEdge(vUv+vec2(px.x,0.0),n,centerDepth));edge=max(edge,sampleEdge(vUv-vec2(px.x,0.0),n,centerDepth));edge=max(edge,sampleEdge(vUv+vec2(0.0,px.y),n,centerDepth));edge=max(edge,sampleEdge(vUv-vec2(0.0,px.y),n,centerDepth));edge=max(edge,sampleEdge(vUv+px,n,centerDepth));edge=max(edge,sampleEdge(vUv-px,n,centerDepth));edge=max(edge,sampleEdge(vUv+vec2(px.x,-px.y),n,centerDepth));edge=max(edge,sampleEdge(vUv+vec2(-px.x,px.y),n,centerDepth));vec2 widePx=px*1.75;edge=max(edge,sampleEdge(vUv+vec2(widePx.x,0.0),n,centerDepth));edge=max(edge,sampleEdge(vUv-vec2(widePx.x,0.0),n,centerDepth));edge=max(edge,sampleEdge(vUv+vec2(0.0,widePx.y),n,centerDepth));edge=max(edge,sampleEdge(vUv-vec2(0.0,widePx.y),n,centerDepth));edge=max(edge,sampleEdge(vUv+widePx,n,centerDepth));edge=max(edge,sampleEdge(vUv-widePx,n,centerDepth));edge=max(edge,sampleEdge(vUv+vec2(widePx.x,-widePx.y),n,centerDepth));edge=max(edge,sampleEdge(vUv+vec2(-widePx.x,widePx.y),n,centerDepth));float ink=smoothstep(0.045,0.58,edge);gl_FragColor=vec4(0.008,0.012,0.026,ink*0.90);}';
+const outlineFs='precision mediump float;uniform sampler2D uNormalMask;uniform vec2 uTexel;uniform vec4 uRoofEdgePx;uniform vec2 uRoofEdgeDepth;uniform float uRoofEdgeVisible;varying vec2 vUv;float sampleEdge(vec2 uv,vec3 centerN,float centerDepth){vec4 sampleData=texture2D(uNormalMask,uv);if(sampleData.a<0.12)return 1.0;vec3 neighbourN=normalize(sampleData.rgb*2.0-1.0);float angle=1.0-clamp(abs(dot(centerN,neighbourN)),0.0,1.0);float neighbourDepth=clamp((sampleData.a-0.25)/0.75,0.0,1.0);float depthDelta=abs(centerDepth-neighbourDepth);float normalEdge=smoothstep(0.018,0.115,angle);float depthEdge=smoothstep(0.006,0.026,depthDelta);return max(normalEdge,depthEdge);}void main(){vec4 center=texture2D(uNormalMask,vUv);if(center.a<0.12){gl_FragColor=vec4(0.0);return;}vec3 n=normalize(center.rgb*2.0-1.0);float centerDepth=clamp((center.a-0.25)/0.75,0.0,1.0);float edge=0.0;vec2 px=uTexel;edge=max(edge,sampleEdge(vUv+vec2(px.x,0.0),n,centerDepth));edge=max(edge,sampleEdge(vUv-vec2(px.x,0.0),n,centerDepth));edge=max(edge,sampleEdge(vUv+vec2(0.0,px.y),n,centerDepth));edge=max(edge,sampleEdge(vUv-vec2(0.0,px.y),n,centerDepth));edge=max(edge,sampleEdge(vUv+px,n,centerDepth));edge=max(edge,sampleEdge(vUv-px,n,centerDepth));edge=max(edge,sampleEdge(vUv+vec2(px.x,-px.y),n,centerDepth));edge=max(edge,sampleEdge(vUv+vec2(-px.x,px.y),n,centerDepth));vec2 widePx=px*1.75;edge=max(edge,sampleEdge(vUv+vec2(widePx.x,0.0),n,centerDepth));edge=max(edge,sampleEdge(vUv-vec2(widePx.x,0.0),n,centerDepth));edge=max(edge,sampleEdge(vUv+vec2(0.0,widePx.y),n,centerDepth));edge=max(edge,sampleEdge(vUv-vec2(0.0,widePx.y),n,centerDepth));edge=max(edge,sampleEdge(vUv+widePx,n,centerDepth));edge=max(edge,sampleEdge(vUv-widePx,n,centerDepth));edge=max(edge,sampleEdge(vUv+vec2(widePx.x,-widePx.y),n,centerDepth));edge=max(edge,sampleEdge(vUv+vec2(-widePx.x,widePx.y),n,centerDepth));float ink=smoothstep(0.045,0.58,edge);vec2 lineA=uRoofEdgePx.xy,lineB=uRoofEdgePx.zw,ba=lineB-lineA;float lineT=clamp(dot(gl_FragCoord.xy-lineA,ba)/max(dot(ba,ba),1.0),0.0,1.0);float lineDistance=length(gl_FragCoord.xy-(lineA+ba*lineT));float lineShape=1.0-smoothstep(1.10,2.00,lineDistance);float expectedDepth=mix(uRoofEdgeDepth.x,uRoofEdgeDepth.y,lineT);float depthMatch=1.0-smoothstep(0.002,0.013,abs(centerDepth-expectedDepth));float cabinFrontEdge=lineShape*depthMatch*uRoofEdgeVisible;ink=max(ink,cabinFrontEdge*0.94);gl_FragColor=vec4(0.008,0.012,0.026,ink*0.90);}';
 const outlineProgram=gl.createProgram();
 gl.attachShader(outlineProgram,shader(gl.VERTEX_SHADER,outlineVs));
 gl.attachShader(outlineProgram,shader(gl.FRAGMENT_SHADER,outlineFs));
 gl.linkProgram(outlineProgram);
 if(!gl.getProgramParameter(outlineProgram,gl.LINK_STATUS))throw new Error(gl.getProgramInfoLog(outlineProgram));
-const outlineLoc={position:gl.getAttribLocation(outlineProgram,'aPosition'),normalMask:gl.getUniformLocation(outlineProgram,'uNormalMask'),texel:gl.getUniformLocation(outlineProgram,'uTexel')};
+const outlineLoc={position:gl.getAttribLocation(outlineProgram,'aPosition'),normalMask:gl.getUniformLocation(outlineProgram,'uNormalMask'),texel:gl.getUniformLocation(outlineProgram,'uTexel'),roofEdgePx:gl.getUniformLocation(outlineProgram,'uRoofEdgePx'),roofEdgeDepth:gl.getUniformLocation(outlineProgram,'uRoofEdgeDepth'),roofEdgeVisible:gl.getUniformLocation(outlineProgram,'uRoofEdgeVisible')};
 const outlineQuad=gl.createBuffer();
 gl.bindBuffer(gl.ARRAY_BUFFER,outlineQuad);
 gl.bufferData(gl.ARRAY_BUFFER,new Float32Array([-1,-1,1,-1,-1,1,-1,1,1,-1,1,1]),gl.STATIC_DRAW);
@@ -177,6 +177,26 @@ function ensureOutlineTarget(){
  outlineTarget={texture,depth,framebuffer,width,height};
  return true;
 }
+function projectCabinRoofFrontSeam(vp,carX,carZ,yaw,cam){
+ const model=matMul(translate(carX,0,carZ),matMul(rotateY(yaw),matMul(rotateZ(bodyRoll),matIdentity())));
+ const project=x=>{
+  const y=1.207,z=.275;
+  const wx=model[0]*x+model[4]*y+model[8]*z+model[12];
+  const wy=model[1]*x+model[5]*y+model[9]*z+model[13];
+  const wz=model[2]*x+model[6]*y+model[10]*z+model[14];
+  const cx=vp[0]*wx+vp[4]*wy+vp[8]*wz+vp[12];
+  const cy=vp[1]*wx+vp[5]*wy+vp[9]*wz+vp[13];
+  const cz=vp[2]*wx+vp[6]*wy+vp[10]*wz+vp[14];
+  const cw=vp[3]*wx+vp[7]*wy+vp[11]*wz+vp[15];
+  if(cw<=.01)return null;
+  const nx=cx/cw,ny=cy/cw,nz=cz/cw;
+  const depth=.25+Math.min(1,Math.hypot(cam.x-wx,cam.y-wy,cam.z-wz)/24)*.75;
+  return {x:(nx*.5+.5)*canvas.width,y:(ny*.5+.5)*canvas.height,depth,inFrustum:nz>=-1&&nz<=1};
+ };
+ const left=project(-.80),right=project(.80);
+ if(!left||!right)return {px:[0,0,0,0],depth:[.25,.25],visible:0};
+ return {px:[left.x,left.y,right.x,right.y],depth:[left.depth,right.depth],visible:left.inFrustum&&right.inFrustum?1:0};
+}
 function renderCarOutlines(){
  if(wireframeMode||!ensureOutlineTarget())return;
  const sceneCalls=drawCalls;
@@ -198,6 +218,10 @@ function renderCarOutlines(){
  gl.blendFunc(gl.SRC_ALPHA,gl.ONE_MINUS_SRC_ALPHA);
  gl.depthMask(false);
  gl.useProgram(outlineProgram);
+ const roofEdge=outlineCabinEdge||{px:[0,0,0,0],depth:[.25,.25],visible:0};
+ gl.uniform4fv(outlineLoc.roofEdgePx,roofEdge.px);
+ gl.uniform2fv(outlineLoc.roofEdgeDepth,roofEdge.depth);
+ gl.uniform1f(outlineLoc.roofEdgeVisible,roofEdge.visible);
  gl.activeTexture(gl.TEXTURE0);
  gl.bindTexture(gl.TEXTURE_2D,outlineTarget.texture);
  gl.uniform1i(outlineLoc.normalMask,0);
@@ -960,6 +984,7 @@ function drawWorld(){
  const carZ=garageMode?0:distance,trackCenter=garageMode?0:roadX(carZ),carX=garageMode?0:trackCenter+playerX;
  const cam=cameraFor(carX,carZ);
  const vp=matMul(perspective(cam.fov*Math.PI/180,W/H,.1,650),lookAt(cam.x,cam.y,cam.z,cam.tx,cam.ty,cam.tz));
+ outlineCabinEdge=projectCabinRoofFrontSeam(vp,carX,carZ,garageMode?0:carYaw,cam);
  gl.uniformMatrix4fv(loc.vp,false,new Float32Array(vp));
  gl.uniform3f(loc.keyLightDir,-.48,.82,.30);gl.uniform3f(loc.fillLightDir,.58,.34,-.72);gl.uniform3f(loc.viewPos,cam.x,cam.y,cam.z);gl.uniform1f(loc.showroom,garageMode?1:0);gl.uniform1f(loc.time,performance.now()*.001);
  gl.enable(gl.DEPTH_TEST);gl.disable(gl.BLEND);gl.clearColor(0,0,0,0);gl.clear(gl.COLOR_BUFFER_BIT|gl.DEPTH_BUFFER_BIT);
