@@ -94,13 +94,13 @@
 <body>
 <canvas id="scene"></canvas><canvas id="sun"></canvas>
 <div id="hud">
- <div class="top"><div class="logo">DRIVELLA<small>3D SYNTHWAVE DRIFT RACING</small></div><div class="version-label" id="version-label">v0.18.7 · BUILD 073</div><div class="stat">DISTANCE<b id="distance">000.0 KM</b></div><div class="stat">LOCATION<b>VIOLET COAST</b></div></div>
+ <div class="top"><div class="logo">DRIVELLA<small>3D SYNTHWAVE DRIFT RACING</small></div><div class="version-label" id="version-label">v0.18.8 · BUILD 074</div><div class="stat">DISTANCE<b id="distance">000.0 KM</b></div><div class="stat">LOCATION<b>VIOLET COAST</b></div></div>
  <div class="right"><div id="speed">000 <span>KM/H</span></div><div id="direction">▶ FORWARD</div><div id="music">♫ MUSIC SCANNING…</div></div>
- <div class="bottom"><div class="hint"><strong>W / ↑</strong> ACCELERATE　<strong>S / ↓</strong> BRAKE / REVERSE<br><strong>A / ←　D / →</strong> STEER　<strong>SPACE</strong> HANDBRAKE　<strong>M</strong> MUSIC　<strong>1–4</strong> CAMERA　<strong>L</strong> LIGHTS　<strong>K</strong> WIREFRAME</div><div>3D NEON HIGHWAY // BUILD 073</div></div>
+ <div class="bottom"><div class="hint"><strong>W / ↑</strong> ACCELERATE　<strong>S / ↓</strong> BRAKE / REVERSE<br><strong>A / ←　D / →</strong> STEER　<strong>SPACE</strong> HANDBRAKE　<strong>M</strong> MUSIC　<strong>1–4</strong> CAMERA　<strong>L</strong> LIGHTS　<strong>K</strong> WIREFRAME</div><div>3D NEON HIGHWAY // BUILD 074</div></div>
 </div>
 <div id="tools-ui"><button id="cam-prev" aria-label="Previous camera">◀</button><span id="cam-label">CAM 2 · CLOSE</span><button id="cam-next" aria-label="Next camera">▶</button><button id="debug-toggle">DEBUG</button></div>
 <div id="debug-panel"><div class="debug-title">DRIVELLA DIAGNOSTICS</div><div id="debug-data">Initializing…</div></div>
-<div id="boot-screen"><div class="boot-content"><div class="boot-kicker">NIGHT DRIVE SYSTEMS // INITIALIZING</div><div class="boot-logo">DRIVELLA</div><div class="boot-subtitle">3D SYNTHWAVE DRIFT RACING</div><div class="boot-mark"></div><div class="boot-status" id="boot-status">BUILDING THE 3D WORLD</div><div class="boot-track"><div class="boot-progress" id="boot-progress"></div></div><div class="boot-meta"><span>3D ENGINE ONLINE</span><span id="boot-percent">00%</span></div><div class="boot-footer">ENGINE STARTUP // v0.18.7 · BUILD 073</div></div></div>
+<div id="boot-screen"><div class="boot-content"><div class="boot-kicker">NIGHT DRIVE SYSTEMS // INITIALIZING</div><div class="boot-logo">DRIVELLA</div><div class="boot-subtitle">3D SYNTHWAVE DRIFT RACING</div><div class="boot-mark"></div><div class="boot-status" id="boot-status">BUILDING THE 3D WORLD</div><div class="boot-track"><div class="boot-progress" id="boot-progress"></div></div><div class="boot-meta"><span>3D ENGINE ONLINE</span><span id="boot-percent">00%</span></div><div class="boot-footer">ENGINE STARTUP // v0.18.8 · BUILD 074</div></div></div>
 <div id="main-menu"><div class="menu-content"><div class="menu-brand">DRIVELLA GTS</div><div class="menu-sub">RIDE THE RETRO FUTURE</div><div class="menu-actions"><button class="menu-btn" id="menu-start">СТАРТ</button><button class="menu-btn" id="menu-garage">ГАРАЖ</button><button class="menu-btn" id="menu-options">НАСТРОЙКИ</button></div></div><div class="menu-footer">РАЗРАБОТЧИК — <b>НИКИТА МАРКИН</b></div></div>
 <div id="garage-screen"><div class="garage-head">ГАРАЖ // DRIVELLA GTS</div><div class="garage-copy">ТЕКУЩИЙ АВТОМОБИЛЬ<br>DRIVELLA GTS · RETRO GT COUPE<br>ПОКАЖИ ЕЁ СО ВСЕХ СТОРОН</div><div class="garage-controls"><button id="garage-back">← НАЗАД В МЕНЮ</button></div><div class="garage-tip">ЗАЖМИ И ТЯНИ — ВРАЩЕНИЕ<br>КОЛЁСИКО — ПРИБЛИЗИТЬ / ОТДАЛИТЬ</div></div>
 <div id="options-screen"><div class="options-head">ОПЦИИ</div><div class="options-card"><div class="option-row"><span>МУЗЫКА</span><button id="option-music">ВКЛЮЧЕНА</button></div><div class="option-row"><span>ГРОМКОСТЬ</span><input id="option-volume" type="range" min="0" max="100" value="52"></div><div class="option-row"><span>ЗВУК ДВИГАТЕЛЯ</span><button id="option-sfx">ВКЛЮЧЁН</button></div><div class="option-row"><span>КАМЕРА</span><span>КЛАВИШИ 1–4</span></div><button id="options-back" style="width:100%;margin-top:18px">← НАЗАД В МЕНЮ</button></div></div>
@@ -108,7 +108,7 @@
 <script>
 (()=>{
 'use strict';
-const VERSION='v0.18.7',BUILD='073';
+const VERSION='v0.18.8',BUILD='074';
 const canvas=document.getElementById('scene'),gl=canvas.getContext('webgl',{antialias:true,alpha:true}),sun=document.getElementById('sun'),sctx=sun.getContext('2d');
 const $=id=>document.getElementById(id);
 const clamp=(v,a,b)=>Math.max(a,Math.min(b,v));
@@ -119,7 +119,7 @@ function reportStartupError(message){
 window.addEventListener('error',e=>reportStartupError(e.message||'JavaScript error'));
 window.addEventListener('unhandledrejection',e=>reportStartupError(e.reason&&e.reason.message||e.reason||'Promise rejected'));
 
-let W=innerWidth,H=innerHeight,DPR=1;
+let W=innerWidth,H=innerHeight,DPR=1,outlinePass=false,outlineTarget=null;
 function resize(){
  DPR=Math.min(devicePixelRatio||1,2);W=innerWidth;H=innerHeight;
  for(const c of [canvas,sun]){c.width=Math.round(W*DPR);c.height=Math.round(H*DPR);c.style.width=W+'px';c.style.height=H+'px';}
@@ -129,12 +129,88 @@ function resize(){
 addEventListener('resize',resize);
 if(!gl){$('boot-status').textContent='WEBGL NOT AVAILABLE';throw new Error('WebGL unavailable');}
 const vs='attribute vec3 p;attribute vec3 normal;uniform mat4 vp;uniform mat4 model;uniform mat3 normalMatrix;varying vec3 vNormal;varying vec3 vWorldPos;void main(){vec4 world=model*vec4(p,1.0);vWorldPos=world.xyz;vNormal=normalize(normalMatrix*normal);gl_Position=vp*world;}';
-const fs='precision mediump float;uniform vec4 color;uniform float toon;uniform float materialMode;uniform vec3 keyLightDir;uniform vec3 fillLightDir;uniform vec3 viewPos;uniform float showroom;uniform float time;varying vec3 vNormal;varying vec3 vWorldPos;void main(){if(toon<0.5){gl_FragColor=color;return;}if(materialMode>2.5){vec3 glassN=normalize(vNormal);vec3 glassV=normalize(viewPos-vWorldPos);vec3 reflected=reflect(-glassV,glassN);float fresnel=pow(1.0-clamp(abs(dot(glassN,glassV)),0.0,1.0),2.0);float skyBlend=smoothstep(-0.22,0.70,reflected.y);vec3 reflectedEnv=mix(vec3(0.012,0.025,0.075),vec3(0.12,0.26,0.44),skyBlend);float sunsetBand=exp(-pow((reflected.y+0.065)*12.0,2.0));reflectedEnv=mix(reflectedEnv,vec3(0.55,0.18,0.34),sunsetBand*0.58);float neonBand=exp(-pow((reflected.y+0.18)*25.0,2.0));float neonPulse=0.55+0.45*sin(reflected.x*19.0+reflected.z*7.0);reflectedEnv+=vec3(0.08,0.42,0.66)*neonBand*neonPulse*0.24;float sunReflection=pow(max(dot(reflected,normalize(keyLightDir)),0.0),72.0);reflectedEnv+=vec3(1.0,0.72,0.46)*sunReflection*1.15;vec3 glassBase=mix(color.rgb,vec3(0.075,0.18,0.29),0.26);float reflectionStrength=0.28+fresnel*0.42;vec3 glassTint=mix(glassBase,reflectedEnv,reflectionStrength);vec3 glassH=normalize(normalize(keyLightDir)+glassV);float ndh=clamp(abs(dot(glassN,glassH)),0.0,1.0);float broadGlint=pow(ndh,9.0)*0.11;float sunGlint=pow(ndh,52.0)*0.58;glassTint+=vec3(1.0,0.88,0.72)*(broadGlint+sunGlint);float edgeGlint=pow(fresnel,1.4)*0.10;glassTint+=vec3(0.24,0.64,0.86)*edgeGlint;gl_FragColor=vec4(glassTint,color.a);return;}if(materialMode>3.5){vec3 paintN=normalize(vNormal);vec3 paintV=normalize(viewPos-vWorldPos);vec3 paintK=normalize(keyLightDir);vec3 paintF=normalize(fillLightDir);vec3 paintH=normalize(paintK+paintV);vec3 fillH=normalize(paintF+paintV);float nh=clamp(abs(dot(paintN,paintH)),0.0,1.0);float fillNh=clamp(abs(dot(paintN,fillH)),0.0,1.0);float satinSheen=pow(nh,11.0)*0.19;float sunGlint=pow(nh,58.0)*0.62;float softSun=pow(nh,7.0)*0.045;float coolFill=pow(fillNh,20.0)*0.12;float rim=pow(1.0-clamp(abs(dot(paintN,paintV)),0.0,1.0),2.0);vec3 paintColor=color.rgb;paintColor+=vec3(0.30,0.24,0.24)*satinSheen;paintColor+=vec3(1.0,0.91,0.82)*(sunGlint+softSun);paintColor+=vec3(0.12,0.36,0.54)*coolFill;paintColor+=vec3(1.0,0.22,0.34)*rim*0.025;if(showroom>0.5){float studioSheen=pow(nh,8.0)*0.075;paintColor+=vec3(1.0,0.78,0.70)*studioSheen;}gl_FragColor=vec4(paintColor,color.a);return;}vec3 N=normalize(vNormal);vec3 K=normalize(keyLightDir);vec3 F=normalize(fillLightDir);float key=abs(dot(N,K));float fill=abs(dot(N,F));float illum=clamp(key*0.78+fill*0.30,0.0,1.0);float band=illum<0.27?0.46:(illum<0.59?0.78:1.12);vec3 V=normalize(viewPos-vWorldPos);vec3 HK=normalize(K+V);vec3 HF=normalize(F+V);float power=materialMode>1.5?58.0:26.0;float specK=pow(max(abs(dot(N,HK)),0.0),power);float specF=pow(max(abs(dot(N,HF)),0.0),power*0.78);float strength=materialMode>1.5?1.28:(materialMode>0.5?0.92:0.06);float fresnel=pow(1.0-clamp(abs(dot(N,V)),0.0,1.0),2.0);vec3 lit=color.rgb*band;lit+=vec3(1.0,0.82,0.86)*specK*strength;if(materialMode>0.5&&materialMode<1.5){float topFacing=clamp(N.y*0.72+0.28,0.0,1.0);float sweep=pow(max(0.0,1.0-abs(fract(vWorldPos.z*0.20-time*0.035)-0.5)*2.0),22.0);lit+=vec3(1.0,0.60,0.70)*sweep*topFacing*0.19;lit+=vec3(0.92,0.18,0.36)*fresnel*0.16;}if(showroom>0.5&&materialMode<1.5){float sunSharp=pow(max(abs(dot(N,HK)),0.0),110.0);float sunSoft=pow(max(abs(dot(N,HK)),0.0),28.0);lit+=vec3(1.0,0.97,0.88)*(sunSharp*1.75+sunSoft*0.28);float edgeGlint=pow(fresnel,1.55)*sunSoft;lit+=vec3(1.0,0.48,0.24)*edgeGlint*0.22;}lit+=vec3(0.22,0.78,1.0)*specF*(materialMode>1.5?0.62:0.24);if(materialMode>1.5){lit+=vec3(0.12,0.62,0.92)*fresnel*0.58;lit+=vec3(0.78,0.94,1.0)*pow(specK,0.32)*0.16;}gl_FragColor=vec4(lit,color.a);}';
+const fs='precision mediump float;uniform vec4 color;uniform float toon;uniform float materialMode;uniform float outlinePass;uniform vec3 keyLightDir;uniform vec3 fillLightDir;uniform vec3 viewPos;uniform float showroom;uniform float time;varying vec3 vNormal;varying vec3 vWorldPos;void main(){if(outlinePass>0.5){vec3 edgeN=normalize(vNormal);gl_FragColor=vec4(edgeN*0.5+0.5,1.0);return;}if(toon<0.5){gl_FragColor=color;return;}if(materialMode>2.5){vec3 glassN=normalize(vNormal);vec3 glassV=normalize(viewPos-vWorldPos);vec3 reflected=reflect(-glassV,glassN);float fresnel=pow(1.0-clamp(abs(dot(glassN,glassV)),0.0,1.0),2.0);float skyBlend=smoothstep(-0.22,0.70,reflected.y);vec3 reflectedEnv=mix(vec3(0.012,0.025,0.075),vec3(0.12,0.26,0.44),skyBlend);float sunsetBand=exp(-pow((reflected.y+0.065)*12.0,2.0));reflectedEnv=mix(reflectedEnv,vec3(0.55,0.18,0.34),sunsetBand*0.58);float neonBand=exp(-pow((reflected.y+0.18)*25.0,2.0));float neonPulse=0.55+0.45*sin(reflected.x*19.0+reflected.z*7.0);reflectedEnv+=vec3(0.08,0.42,0.66)*neonBand*neonPulse*0.24;float sunReflection=pow(max(dot(reflected,normalize(keyLightDir)),0.0),72.0);reflectedEnv+=vec3(1.0,0.72,0.46)*sunReflection*1.15;vec3 glassBase=mix(color.rgb,vec3(0.075,0.18,0.29),0.26);float reflectionStrength=0.28+fresnel*0.42;vec3 glassTint=mix(glassBase,reflectedEnv,reflectionStrength);vec3 glassH=normalize(normalize(keyLightDir)+glassV);float ndh=clamp(abs(dot(glassN,glassH)),0.0,1.0);float broadGlint=pow(ndh,9.0)*0.11;float sunGlint=pow(ndh,52.0)*0.58;glassTint+=vec3(1.0,0.88,0.72)*(broadGlint+sunGlint);float edgeGlint=pow(fresnel,1.4)*0.10;glassTint+=vec3(0.24,0.64,0.86)*edgeGlint;gl_FragColor=vec4(glassTint,color.a);return;}if(materialMode>3.5){vec3 paintN=normalize(vNormal);vec3 paintV=normalize(viewPos-vWorldPos);vec3 paintK=normalize(keyLightDir);vec3 paintF=normalize(fillLightDir);vec3 paintH=normalize(paintK+paintV);vec3 fillH=normalize(paintF+paintV);float nh=clamp(abs(dot(paintN,paintH)),0.0,1.0);float fillNh=clamp(abs(dot(paintN,fillH)),0.0,1.0);float satinSheen=pow(nh,11.0)*0.19;float sunGlint=pow(nh,58.0)*0.62;float softSun=pow(nh,7.0)*0.045;float coolFill=pow(fillNh,20.0)*0.12;float rim=pow(1.0-clamp(abs(dot(paintN,paintV)),0.0,1.0),2.0);vec3 paintColor=color.rgb;paintColor+=vec3(0.30,0.24,0.24)*satinSheen;paintColor+=vec3(1.0,0.91,0.82)*(sunGlint+softSun);paintColor+=vec3(0.12,0.36,0.54)*coolFill;paintColor+=vec3(1.0,0.22,0.34)*rim*0.025;if(showroom>0.5){float studioSheen=pow(nh,8.0)*0.075;paintColor+=vec3(1.0,0.78,0.70)*studioSheen;}gl_FragColor=vec4(paintColor,color.a);return;}vec3 N=normalize(vNormal);vec3 K=normalize(keyLightDir);vec3 F=normalize(fillLightDir);float key=abs(dot(N,K));float fill=abs(dot(N,F));float illum=clamp(key*0.78+fill*0.30,0.0,1.0);float band=illum<0.27?0.46:(illum<0.59?0.78:1.12);vec3 V=normalize(viewPos-vWorldPos);vec3 HK=normalize(K+V);vec3 HF=normalize(F+V);float power=materialMode>1.5?58.0:26.0;float specK=pow(max(abs(dot(N,HK)),0.0),power);float specF=pow(max(abs(dot(N,HF)),0.0),power*0.78);float strength=materialMode>1.5?1.28:(materialMode>0.5?0.92:0.06);float fresnel=pow(1.0-clamp(abs(dot(N,V)),0.0,1.0),2.0);vec3 lit=color.rgb*band;lit+=vec3(1.0,0.82,0.86)*specK*strength;if(materialMode>0.5&&materialMode<1.5){float topFacing=clamp(N.y*0.72+0.28,0.0,1.0);float sweep=pow(max(0.0,1.0-abs(fract(vWorldPos.z*0.20-time*0.035)-0.5)*2.0),22.0);lit+=vec3(1.0,0.60,0.70)*sweep*topFacing*0.19;lit+=vec3(0.92,0.18,0.36)*fresnel*0.16;}if(showroom>0.5&&materialMode<1.5){float sunSharp=pow(max(abs(dot(N,HK)),0.0),110.0);float sunSoft=pow(max(abs(dot(N,HK)),0.0),28.0);lit+=vec3(1.0,0.97,0.88)*(sunSharp*1.75+sunSoft*0.28);float edgeGlint=pow(fresnel,1.55)*sunSoft;lit+=vec3(1.0,0.48,0.24)*edgeGlint*0.22;}lit+=vec3(0.22,0.78,1.0)*specF*(materialMode>1.5?0.62:0.24);if(materialMode>1.5){lit+=vec3(0.12,0.62,0.92)*fresnel*0.58;lit+=vec3(0.78,0.94,1.0)*pow(specK,0.32)*0.16;}gl_FragColor=vec4(lit,color.a);}';
 function shader(type,src){const s=gl.createShader(type);gl.shaderSource(s,src);gl.compileShader(s);if(!gl.getShaderParameter(s,gl.COMPILE_STATUS))throw new Error(gl.getShaderInfoLog(s));return s;}
 const prog=gl.createProgram();gl.attachShader(prog,shader(gl.VERTEX_SHADER,vs));gl.attachShader(prog,shader(gl.FRAGMENT_SHADER,fs));gl.linkProgram(prog);
 if(!gl.getProgramParameter(prog,gl.LINK_STATUS))throw new Error(gl.getProgramInfoLog(prog));
 gl.useProgram(prog);
-const loc={p:gl.getAttribLocation(prog,'p'),normal:gl.getAttribLocation(prog,'normal'),vp:gl.getUniformLocation(prog,'vp'),model:gl.getUniformLocation(prog,'model'),normalMatrix:gl.getUniformLocation(prog,'normalMatrix'),color:gl.getUniformLocation(prog,'color'),toon:gl.getUniformLocation(prog,'toon'),materialMode:gl.getUniformLocation(prog,'materialMode'),keyLightDir:gl.getUniformLocation(prog,'keyLightDir'),fillLightDir:gl.getUniformLocation(prog,'fillLightDir'),viewPos:gl.getUniformLocation(prog,'viewPos'),showroom:gl.getUniformLocation(prog,'showroom'),time:gl.getUniformLocation(prog,'time')};
+const loc={p:gl.getAttribLocation(prog,'p'),normal:gl.getAttribLocation(prog,'normal'),vp:gl.getUniformLocation(prog,'vp'),model:gl.getUniformLocation(prog,'model'),normalMatrix:gl.getUniformLocation(prog,'normalMatrix'),color:gl.getUniformLocation(prog,'color'),toon:gl.getUniformLocation(prog,'toon'),materialMode:gl.getUniformLocation(prog,'materialMode'),outlinePass:gl.getUniformLocation(prog,'outlinePass'),keyLightDir:gl.getUniformLocation(prog,'keyLightDir'),fillLightDir:gl.getUniformLocation(prog,'fillLightDir'),viewPos:gl.getUniformLocation(prog,'viewPos'),showroom:gl.getUniformLocation(prog,'showroom'),time:gl.getUniformLocation(prog,'time')};
+const outlineVs='attribute vec2 aPosition;varying vec2 vUv;void main(){vUv=aPosition*0.5+0.5;gl_Position=vec4(aPosition,0.0,1.0);}';
+const outlineFs='precision mediump float;uniform sampler2D uNormalMask;uniform vec2 uTexel;varying vec2 vUv;float sampleEdge(vec2 uv,vec3 centerN){vec4 sampleData=texture2D(uNormalMask,uv);if(sampleData.a<0.5)return 1.0;vec3 neighbourN=normalize(sampleData.rgb*2.0-1.0);float angle=1.0-clamp(dot(centerN,neighbourN),-1.0,1.0);return smoothstep(0.18,0.46,angle);}void main(){vec4 center=texture2D(uNormalMask,vUv);if(center.a<0.5){gl_FragColor=vec4(0.0);return;}vec3 n=normalize(center.rgb*2.0-1.0);float edge=0.0;edge=max(edge,sampleEdge(vUv+vec2(uTexel.x,0.0),n));edge=max(edge,sampleEdge(vUv-vec2(uTexel.x,0.0),n));edge=max(edge,sampleEdge(vUv+vec2(0.0,uTexel.y),n));edge=max(edge,sampleEdge(vUv-vec2(0.0,uTexel.y),n));edge=max(edge,sampleEdge(vUv+uTexel,n));edge=max(edge,sampleEdge(vUv-uTexel,n));edge=max(edge,sampleEdge(vUv+vec2(uTexel.x,-uTexel.y),n));edge=max(edge,sampleEdge(vUv+vec2(-uTexel.x,uTexel.y),n));float ink=smoothstep(0.16,0.82,edge);gl_FragColor=vec4(0.008,0.012,0.026,ink*0.82);}';
+const outlineProgram=gl.createProgram();
+gl.attachShader(outlineProgram,shader(gl.VERTEX_SHADER,outlineVs));
+gl.attachShader(outlineProgram,shader(gl.FRAGMENT_SHADER,outlineFs));
+gl.linkProgram(outlineProgram);
+if(!gl.getProgramParameter(outlineProgram,gl.LINK_STATUS))throw new Error(gl.getProgramInfoLog(outlineProgram));
+const outlineLoc={position:gl.getAttribLocation(outlineProgram,'aPosition'),normalMask:gl.getUniformLocation(outlineProgram,'uNormalMask'),texel:gl.getUniformLocation(outlineProgram,'uTexel')};
+const outlineQuad=gl.createBuffer();
+gl.bindBuffer(gl.ARRAY_BUFFER,outlineQuad);
+gl.bufferData(gl.ARRAY_BUFFER,new Float32Array([-1,-1,1,-1,-1,1,-1,1,1,-1,1,1]),gl.STATIC_DRAW);
+function ensureOutlineTarget(){
+ const width=canvas.width,height=canvas.height;
+ if(!width||!height)return false;
+ if(outlineTarget&&outlineTarget.width===width&&outlineTarget.height===height)return true;
+ if(outlineTarget){gl.deleteTexture(outlineTarget.texture);gl.deleteRenderbuffer(outlineTarget.depth);gl.deleteFramebuffer(outlineTarget.framebuffer);}
+ const texture=gl.createTexture();
+ gl.bindTexture(gl.TEXTURE_2D,texture);
+ gl.texParameteri(gl.TEXTURE_2D,gl.TEXTURE_MIN_FILTER,gl.NEAREST);
+ gl.texParameteri(gl.TEXTURE_2D,gl.TEXTURE_MAG_FILTER,gl.NEAREST);
+ gl.texParameteri(gl.TEXTURE_2D,gl.TEXTURE_WRAP_S,gl.CLAMP_TO_EDGE);
+ gl.texParameteri(gl.TEXTURE_2D,gl.TEXTURE_WRAP_T,gl.CLAMP_TO_EDGE);
+ gl.texImage2D(gl.TEXTURE_2D,0,gl.RGBA,width,height,0,gl.RGBA,gl.UNSIGNED_BYTE,null);
+ const depth=gl.createRenderbuffer();
+ gl.bindRenderbuffer(gl.RENDERBUFFER,depth);
+ gl.renderbufferStorage(gl.RENDERBUFFER,gl.DEPTH_COMPONENT16,width,height);
+ const framebuffer=gl.createFramebuffer();
+ gl.bindFramebuffer(gl.FRAMEBUFFER,framebuffer);
+ gl.framebufferTexture2D(gl.FRAMEBUFFER,gl.COLOR_ATTACHMENT0,gl.TEXTURE_2D,texture,0);
+ gl.framebufferRenderbuffer(gl.FRAMEBUFFER,gl.DEPTH_ATTACHMENT,gl.RENDERBUFFER,depth);
+ const complete=gl.checkFramebufferStatus(gl.FRAMEBUFFER)===gl.FRAMEBUFFER_COMPLETE;
+ gl.bindFramebuffer(gl.FRAMEBUFFER,null);
+ gl.bindTexture(gl.TEXTURE_2D,null);
+ gl.bindRenderbuffer(gl.RENDERBUFFER,null);
+ if(!complete){
+  gl.deleteTexture(texture);gl.deleteRenderbuffer(depth);gl.deleteFramebuffer(framebuffer);
+  outlineTarget=null;
+  return false;
+ }
+ outlineTarget={texture,depth,framebuffer,width,height};
+ return true;
+}
+function renderCarOutlines(){
+ if(wireframeMode||!ensureOutlineTarget())return;
+ const sceneCalls=drawCalls;
+ outlinePass=true;
+ gl.bindFramebuffer(gl.FRAMEBUFFER,outlineTarget.framebuffer);
+ gl.viewport(0,0,outlineTarget.width,outlineTarget.height);
+ gl.clearColor(0,0,0,0);
+ gl.clearDepth(1);
+ gl.clear(gl.COLOR_BUFFER_BIT|gl.DEPTH_BUFFER_BIT);
+ gl.useProgram(prog);
+ gl.uniform1f(loc.outlinePass,1);
+ drawWorld();
+ outlinePass=false;
+ drawCalls=sceneCalls;
+ gl.bindFramebuffer(gl.FRAMEBUFFER,null);
+ gl.viewport(0,0,canvas.width,canvas.height);
+ gl.disable(gl.DEPTH_TEST);
+ gl.disable(gl.BLEND);
+ gl.useProgram(outlineProgram);
+ gl.activeTexture(gl.TEXTURE0);
+ gl.bindTexture(gl.TEXTURE_2D,outlineTarget.texture);
+ gl.uniform1i(outlineLoc.normalMask,0);
+ gl.uniform2f(outlineLoc.texel,1/outlineTarget.width,1/outlineTarget.height);
+ gl.bindBuffer(gl.ARRAY_BUFFER,outlineQuad);
+ gl.enableVertexAttribArray(outlineLoc.position);
+ gl.vertexAttribPointer(outlineLoc.position,2,gl.FLOAT,false,0,0);
+ gl.drawArrays(gl.TRIANGLES,0,6);
+ gl.disableVertexAttribArray(outlineLoc.position);
+ gl.bindTexture(gl.TEXTURE_2D,null);
+ gl.useProgram(prog);
+ gl.uniform1f(loc.outlinePass,0);
+ gl.enable(gl.DEPTH_TEST);
+}
+
 function mesh(data){
  const normals=new Float32Array(data.length),edges=new Map();
  const vertexKey=p=>p.map(v=>Number(v).toFixed(5)).join(',');
@@ -808,8 +884,9 @@ function normalMatrix3(m){
  return new Float32Array([c0[0]*inv,c0[1]*inv,c0[2]*inv,c1[0]*inv,c1[1]*inv,c1[2]*inv,c2[0]*inv,c2[1]*inv,c2[2]*inv]);
 }
 function bindMesh(shape,model,color,toon=0,material=0){
+ if(outlinePass&&toon<0.5)return;
  gl.uniformMatrix4fv(loc.model,false,new Float32Array(model));
- if(wireframeMode&&toon>0.5){
+ if(wireframeMode&&toon>0.5&&!outlinePass){
   gl.uniform4fv(loc.color,[.20,.92,1,1]);gl.uniform1f(loc.toon,0);gl.uniform1f(loc.materialMode,0);
   gl.bindBuffer(gl.ARRAY_BUFFER,shape.eb);gl.enableVertexAttribArray(loc.p);gl.vertexAttribPointer(loc.p,3,gl.FLOAT,false,0,0);
   gl.drawArrays(gl.LINES,0,shape.en);
@@ -882,6 +959,7 @@ function drawWorld(){
  gl.uniformMatrix4fv(loc.vp,false,new Float32Array(vp));
  gl.uniform3f(loc.keyLightDir,-.48,.82,.30);gl.uniform3f(loc.fillLightDir,.58,.34,-.72);gl.uniform3f(loc.viewPos,cam.x,cam.y,cam.z);gl.uniform1f(loc.showroom,garageMode?1:0);gl.uniform1f(loc.time,performance.now()*.001);
  gl.enable(gl.DEPTH_TEST);gl.disable(gl.BLEND);gl.clearColor(0,0,0,0);gl.clear(gl.COLOR_BUFFER_BIT|gl.DEPTH_BUFFER_BIT);
+ if(!outlinePass){
  if(garageMode){
   // Dark showroom floor with a raised circular display stage.
   draw(cube,0,-.55,0,32,.24,32,[.025,.035,.075,1]);
@@ -926,6 +1004,7 @@ function drawWorld(){
  gl.enable(gl.BLEND);gl.blendFunc(gl.SRC_ALPHA,gl.ONE_MINUS_SRC_ALPHA);gl.depthMask(false);
  drawBiome(distance,bw[0],0);drawBiome(distance,bw[1],1);drawBiome(distance,bw[2],2);
  gl.depthMask(true);gl.disable(gl.BLEND);
+ }
  }
  // DRIVELLA GTS — original angular GT, now with a squared rear and real light mounting planes.
  const yaw=garageMode?0:carYaw;
@@ -1157,7 +1236,7 @@ function frame(now){
   bodyRoll*=Math.pow(.88,dt*60);
  }
 
- drawWorld();drawSun();updateDebug(dt);
+ drawWorld();renderCarOutlines();drawSun();updateDebug(dt);
  updateCarAudio();
  $('speed').innerHTML=String(Math.round(Math.abs(speed))).padStart(3,'0')+' <span>KM/H</span>';
  $('direction').textContent=speed< -1?'◀ REVERSE':handbrakeActive?'✦ DRIFT':driftIntensity>.18?'✦ SLIDE':'▶ FORWARD';$('direction').style.color=speed< -1?'#ffb56f':driftIntensity>.18?'#ff70dc':'#ff8de9';
