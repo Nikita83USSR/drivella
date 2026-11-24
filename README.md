@@ -2,7 +2,7 @@
 
 A browser-based synthwave drift-racing prototype with a custom low-poly 3D car, a procedural neon environment, and a hand-built WebGL renderer.
 
-> **Status:** Playable prototype under active development. Current renderer reference: **v0.18.53 / BUILD 119**.
+> **Status:** Playable prototype under active development. Current renderer reference: **v0.18.54 / BUILD 120**.
 > **Release identification:** every published game change increments the visible BUILD number in the HUD and startup screen; README and rendering architecture are updated in the same release.
 
 ## Current game
@@ -104,3 +104,5 @@ Vanilla HTML, CSS, and JavaScript. The main 3D scene uses a custom WebGL 1 rende
 ## License
 
 No license has been added yet. All rights reserved by the repository owner unless a license is added explicitly.
+
+- **BUILD 120:** simplify vehicle self-shadowing from the layered 16-tap circular PCF footprint to a compact four-tap cross filter with one restrained, uniform shadow tone. This is a visual simplification; the full-scene solar shadows and garage spot shadows are unchanged.
