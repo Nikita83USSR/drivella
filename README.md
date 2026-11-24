@@ -75,10 +75,14 @@ Core implementation completed: adaptive directional shadows, PCSS-style filterin
 - [x] Build a reusable four-slot local-light shader and use it for the two coloured garage spotlights.
 - [x] Bind outdoor shadows to the actual sun source and garage spot shadows to each fixture's own position, direction and cone; isolate vehicle self-shadow receivers from the main car shell.
 - [x] Make environment reflections clearly visible on the windshield, rear glass and side glazing.
+- [ ] **Priority: GPU synthwave sun and optical-effects pipeline.** Replace the Canvas 2D sunset with a procedural WebGL sun while preserving its striped orange/red/magenta disc; add a layered solar corona, animated radial rays and fine spikes.
+- [ ] **Depth-aware mini-RTX god rays.** Generate sun shafts from a low-resolution scene-occlusion mask so buildings, mountains and palms interrupt the rays; use bounded radial scattering at quarter resolution.
+- [ ] **GPU bloom and lens optics.** Add controlled thresholded bloom, anamorphic streaks, diffraction spikes, optical rings and chromatic ghosts; migrate current Canvas 2D vehicle flare profiles without restoring oversized headlight glare.
+- [ ] **Atmospheric scattering and final grading.** Add depth-aware horizon haze and atmospheric light integration while preserving road/car readability and the synthwave palette.
 - [ ] Add selected local lights to track and environment props, using the shared four-slot source format.
-- [ ] Improve emissive materials and introduce a controlled bloom pipeline.
 - [ ] Improve painted-body and road reflections beyond the procedural glass environment.
-- [ ] Add atmospheric depth and final image grading.
+- [ ] Add instanced rendering for repeated road markings, lamps, vegetation and environment props to reduce CPU draw-call overhead across normal, shadow and AO passes.
+- [ ] Move high-count particle simulation to GPU only when effects and profiling justify it; keep vehicle physics and gameplay state on CPU.
 
 ### Later stages
 
