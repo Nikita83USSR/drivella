@@ -159,7 +159,7 @@
 <script>
 (()=>{
 'use strict';
-const VERSION='v0.18.63',BUILD='129';
+const VERSION='v0.18.64',BUILD='130';
 const canvas=document.getElementById('scene'),gl=canvas.getContext('webgl',{antialias:true,alpha:true}),sun=document.getElementById('sun'),sctx=sun.getContext('2d'),flare=document.getElementById('flare'),fctx=flare.getContext('2d');
 const $=id=>document.getElementById(id);
 const clamp=(v,a,b)=>Math.max(a,Math.min(b,v));
@@ -656,7 +656,7 @@ function makeCarHull(keys,wheelArches=false,flatRoof=false,windowOpenings=false,
   const zMid=(rings[i][0][2]+rings[i+1][0][2])*.5;
   // Remove the complete shoulder-to-roof strip on both sides for actual window apertures.
   if(windowOpenings&&zMid>=-1.6375&&zMid<=.945&&(j===4||j===5||j===8||j===9))continue;
-  // Remove the original body roof under the raised cabin roof to avoid a duplicate inner roof.
+  // Remove the original body roof under the complete cabin and windscreen footprint; the glass closes these front/rear spans.
   if(roofOpening&&zMid>=roofOpening[0]&&zMid<=roofOpening[1]&&(j===6||j===7))continue;
   const a=rings[i][j],b=rings[i][(j+1)%N],c=rings[i+1][j],d=rings[i+1][(j+1)%N];
   // Mirror the left shoulder-to-upper face with the same diagonal as the right side.
@@ -824,7 +824,7 @@ function cabinWindowXAtY(y){
  const t=clamp((CABIN_GLASS_TOP_Y-y)/(CABIN_GLASS_TOP_Y-CABIN_GLASS_BOTTOM_Y),0,1);
  return CABIN_GLASS_TOP_X+(CABIN_GLASS_BOTTOM_X-CABIN_GLASS_TOP_X)*t;
 }
-const bodyMesh=makeCarHull(bodyProfile,true,false,true,[-1.42,.275],true);
+const bodyMesh=makeCarHull(bodyProfile,true,false,true,[CABIN_GLASS_REAR_BOTTOM_Z,CABIN_GLASS_FRONT_BOTTOM_Z],true);
 const roofMesh=makeRoof(),wheelFace=makeWheelFace(),exhaustTip=makeExhaustTip(),exhaustCore=makeExhaustCore();
 const archFrontL=makeWheelArch(1.6375,-1),archFrontR=makeWheelArch(1.6375,1),archRearL=makeWheelArch(-1.6375,-1),archRearR=makeWheelArch(-1.6375,1);
 
