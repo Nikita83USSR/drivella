@@ -104,8 +104,8 @@ This is a stylized screen-space glare effect rather than a physically simulated 
 - BUILD 111 removed the mesh-local red lower-side paint mask, whose coordinate range restarted on each independent mesh and produced mismatched patches on the front bumper and rear quarter.
 - BUILD 112 restored 50% vehicle shadow reception but reintroduced the car's own overlapping geometry into the receiver map; the stronger receiver bias only reduced the resulting mosaic instead of separating real shadows from self-shadowing.
 - BUILD 113 initially split the full world solar map from a vehicle-receiver map, but the latter still included selected raised car details and the self-shadow mosaic remained.
-- The follow-up caster-policy fix first excluded every vehicle mesh from the solar receiver map, which also removed useful detail shadows such as the rear spoiler's.
-- The current policy adds a separate `vehicleSolarShadowCaster` flag, with only the solid rear spoiler blade enabled. This restores its sun shadow on the rear body while leaving the full hull and other car meshes excluded. The independent `vehicleShadowCaster` flag continues to control local spotlight shadows.
+- The next revision briefly restored only the spoiler as a solar self-caster; this proved too restrictive because other raised parts lost their sun shadows.
+- The current VSM revision replaces that one-part exception with a soft moment-filtered receiver map. Opaque car helpers cast by default, while only base hull surfaces and exact duplicate overlays opt out. The independent `vehicleShadowCaster` flag continues to control local spotlight shadows.
 
 ## Reusable local lighting — BUILD 106 / source-bound garage shadows — BUILD 113
 
@@ -201,7 +201,7 @@ For a new environment object to participate automatically:
 3. Use the shared `draw()` helper (or the existing car helpers where appropriate). Do not draw it directly outside the scene pipeline.
 4. Use an opaque standard material and alpha ≥ 0.78 when it should cast a solid shadow. The central classification automatically excludes glass and emissive material modes.
 5. Keep glow, beams, particles, transparent water, and other translucent effects on their emissive/translucent material path; they should not become opaque shadow casters.
-6. The outdoor vehicle-receiver solar map excludes vehicle meshes unless a part is explicitly tagged with `vehicleSolarShadowCaster=true`; use this only for a clean raised part whose shadow should land on another car surface. Keep the list minimal to avoid self-shadow artifacts. The separate `vehicleShadowCaster=true` flag controls vehicle details in local spotlight maps. The full world solar map already includes the complete car for road/world shadows.
+6. Opaque vehicle details cast into the outdoor VSM receiver map by default through the shared car helpers. Explicitly opt out base hull surfaces, rear fascia surfaces that overlap the hull, and exact duplicate overlays by passing `vehicleSolarShadowCaster=false`. The separate `vehicleShadowCaster=true` flag controls vehicle details in local spotlight maps. The full world solar map already includes the complete car for road/world shadows.
 7. Add shadow-casting lights through the real source registry: `SUN_LIGHT` for the outdoor directional source, or a registered spotlight with a dedicated source-specific matrix and map. Never create a new shadow direction independently of the light that illuminates the material.
 
 The same scene call is replayed during the full solar maps, spotlight maps and full-scene AO capture. Caster policy is selected per target: `all` for the full solar map, `vehicle-solar-details` for the car's VSM receiver map, and `vehicle-details` for local spotlight maps. No hand-painted shadow decals or one-off object shadows are required.
