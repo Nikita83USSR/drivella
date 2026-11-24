@@ -94,9 +94,9 @@
 <body>
 <canvas id="scene"></canvas><canvas id="sun"></canvas>
 <div id="hud">
- <div class="top"><div class="logo">DRIVELLA<small>3D SYNTHWAVE DRIFT RACING</small></div><div class="version-label" id="version-label">v0.16.5 · BUILD 051</div><div class="stat">DISTANCE<b id="distance">000.0 KM</b></div><div class="stat">LOCATION<b>VIOLET COAST</b></div></div>
+ <div class="top"><div class="logo">DRIVELLA<small>3D SYNTHWAVE DRIFT RACING</small></div><div class="version-label" id="version-label">v0.16.6 · BUILD 052</div><div class="stat">DISTANCE<b id="distance">000.0 KM</b></div><div class="stat">LOCATION<b>VIOLET COAST</b></div></div>
  <div class="right"><div id="speed">000 <span>KM/H</span></div><div id="direction">▶ FORWARD</div><div id="music">♫ MUSIC SCANNING…</div></div>
- <div class="bottom"><div class="hint"><strong>W / ↑</strong> ACCELERATE　<strong>S / ↓</strong> BRAKE / REVERSE<br><strong>A / ←　D / →</strong> STEER　<strong>SPACE</strong> HANDBRAKE　<strong>M</strong> MUSIC　<strong>1–4</strong> CAMERA　<strong>L</strong> LIGHTS　<strong>K</strong> WIREFRAME</div><div>3D NEON HIGHWAY // BUILD 051</div></div>
+ <div class="bottom"><div class="hint"><strong>W / ↑</strong> ACCELERATE　<strong>S / ↓</strong> BRAKE / REVERSE<br><strong>A / ←　D / →</strong> STEER　<strong>SPACE</strong> HANDBRAKE　<strong>M</strong> MUSIC　<strong>1–4</strong> CAMERA　<strong>L</strong> LIGHTS　<strong>K</strong> WIREFRAME</div><div>3D NEON HIGHWAY // BUILD 052</div></div>
 </div>
 <div id="tools-ui"><button id="cam-prev" aria-label="Previous camera">◀</button><span id="cam-label">CAM 2 · CLOSE</span><button id="cam-next" aria-label="Next camera">▶</button><button id="debug-toggle">DEBUG</button></div>
 <div id="debug-panel"><div class="debug-title">DRIVELLA DIAGNOSTICS</div><div id="debug-data">Initializing…</div></div>
@@ -129,7 +129,7 @@ function resize(){
 addEventListener('resize',resize);
 if(!gl){$('boot-status').textContent='WEBGL NOT AVAILABLE';throw new Error('WebGL unavailable');}
 const vs='attribute vec3 p;attribute vec3 normal;uniform mat4 vp;uniform mat4 model;uniform mat3 normalMatrix;varying vec3 vNormal;varying vec3 vWorldPos;void main(){vec4 world=model*vec4(p,1.0);vWorldPos=world.xyz;vNormal=normalize(normalMatrix*normal);gl_Position=vp*world;}';
-const fs='precision mediump float;uniform vec4 color;uniform float toon;uniform float materialMode;uniform vec3 keyLightDir;uniform vec3 fillLightDir;uniform vec3 viewPos;uniform float showroom;uniform float time;varying vec3 vNormal;varying vec3 vWorldPos;void main(){if(toon<0.5){gl_FragColor=color;return;}vec3 N=normalize(vNormal);vec3 K=normalize(keyLightDir);vec3 F=normalize(fillLightDir);float key=abs(dot(N,K));float fill=abs(dot(N,F));float illum=clamp(key*0.78+fill*0.30,0.0,1.0);float band=illum<0.27?0.46:(illum<0.59?0.78:1.12);vec3 V=normalize(viewPos-vWorldPos);vec3 HK=normalize(K+V);vec3 HF=normalize(F+V);float power=materialMode>1.5?58.0:26.0;float specK=pow(max(abs(dot(N,HK)),0.0),power);float specF=pow(max(abs(dot(N,HF)),0.0),power*0.78);float strength=materialMode>1.5?1.28:(materialMode>0.5?0.92:0.06);float fresnel=pow(1.0-clamp(abs(dot(N,V)),0.0,1.0),2.0);vec3 lit=color.rgb*band;lit+=vec3(1.0,0.82,0.86)*specK*strength;if(materialMode>0.5&&materialMode<1.5){float topFacing=clamp(N.y*0.72+0.28,0.0,1.0);float sweep=pow(max(0.0,1.0-abs(fract(vWorldPos.z*0.20-time*0.035)-0.5)*2.0),22.0);lit+=vec3(1.0,0.60,0.70)*sweep*topFacing*0.19;lit+=vec3(0.92,0.18,0.36)*fresnel*0.16;}if(showroom>0.5&&materialMode<1.5){float sunSharp=pow(max(abs(dot(N,HK)),0.0),110.0);float sunSoft=pow(max(abs(dot(N,HK)),0.0),28.0);lit+=vec3(1.0,0.97,0.88)*(sunSharp*1.75+sunSoft*0.28);float edgeGlint=pow(fresnel,1.55)*sunSoft;lit+=vec3(1.0,0.48,0.24)*edgeGlint*0.22;}lit+=vec3(0.22,0.78,1.0)*specF*(materialMode>1.5?0.62:0.24);if(materialMode>1.5){lit+=vec3(0.12,0.62,0.92)*fresnel*0.58;lit+=vec3(0.78,0.94,1.0)*pow(specK,0.32)*0.16;}gl_FragColor=vec4(lit,color.a);}';
+const fs='precision mediump float;uniform vec4 color;uniform float toon;uniform float materialMode;uniform vec3 keyLightDir;uniform vec3 fillLightDir;uniform vec3 viewPos;uniform float showroom;uniform float time;varying vec3 vNormal;varying vec3 vWorldPos;void main(){if(toon<0.5){gl_FragColor=color;return;}if(materialMode>2.5){vec3 glassN=normalize(vNormal);vec3 glassV=normalize(viewPos-vWorldPos);float edge=pow(1.0-clamp(abs(dot(glassN,glassV)),0.0,1.0),2.0);vec3 glassTint=mix(color.rgb,vec3(0.12,0.34,0.48),edge*0.24);float softGlint=pow(max(dot(glassN,normalize(keyLightDir+glassV)),0.0),20.0);glassTint+=vec3(0.16,0.34,0.46)*softGlint*0.12;gl_FragColor=vec4(glassTint,color.a);return;}vec3 N=normalize(vNormal);vec3 K=normalize(keyLightDir);vec3 F=normalize(fillLightDir);float key=abs(dot(N,K));float fill=abs(dot(N,F));float illum=clamp(key*0.78+fill*0.30,0.0,1.0);float band=illum<0.27?0.46:(illum<0.59?0.78:1.12);vec3 V=normalize(viewPos-vWorldPos);vec3 HK=normalize(K+V);vec3 HF=normalize(F+V);float power=materialMode>1.5?58.0:26.0;float specK=pow(max(abs(dot(N,HK)),0.0),power);float specF=pow(max(abs(dot(N,HF)),0.0),power*0.78);float strength=materialMode>1.5?1.28:(materialMode>0.5?0.92:0.06);float fresnel=pow(1.0-clamp(abs(dot(N,V)),0.0,1.0),2.0);vec3 lit=color.rgb*band;lit+=vec3(1.0,0.82,0.86)*specK*strength;if(materialMode>0.5&&materialMode<1.5){float topFacing=clamp(N.y*0.72+0.28,0.0,1.0);float sweep=pow(max(0.0,1.0-abs(fract(vWorldPos.z*0.20-time*0.035)-0.5)*2.0),22.0);lit+=vec3(1.0,0.60,0.70)*sweep*topFacing*0.19;lit+=vec3(0.92,0.18,0.36)*fresnel*0.16;}if(showroom>0.5&&materialMode<1.5){float sunSharp=pow(max(abs(dot(N,HK)),0.0),110.0);float sunSoft=pow(max(abs(dot(N,HK)),0.0),28.0);lit+=vec3(1.0,0.97,0.88)*(sunSharp*1.75+sunSoft*0.28);float edgeGlint=pow(fresnel,1.55)*sunSoft;lit+=vec3(1.0,0.48,0.24)*edgeGlint*0.22;}lit+=vec3(0.22,0.78,1.0)*specF*(materialMode>1.5?0.62:0.24);if(materialMode>1.5){lit+=vec3(0.12,0.62,0.92)*fresnel*0.58;lit+=vec3(0.78,0.94,1.0)*pow(specK,0.32)*0.16;}gl_FragColor=vec4(lit,color.a);}';
 function shader(type,src){const s=gl.createShader(type);gl.shaderSource(s,src);gl.compileShader(s);if(!gl.getShaderParameter(s,gl.COMPILE_STATUS))throw new Error(gl.getShaderInfoLog(s));return s;}
 const prog=gl.createProgram();gl.attachShader(prog,shader(gl.VERTEX_SHADER,vs));gl.attachShader(prog,shader(gl.FRAGMENT_SHADER,fs));gl.linkProgram(prog);
 if(!gl.getProgramParameter(prog,gl.LINK_STATUS))throw new Error(gl.getProgramInfoLog(prog));
@@ -365,6 +365,28 @@ function makeWheelFace(){
   for(let i=0;i<12;i++){const a=i*Math.PI*2/12,b=(i+1)*Math.PI*2/12,ri=.135;tri([0,face*.112,0],[Math.cos(a)*ri,face*.112,Math.sin(a)*ri],[Math.cos(b)*ri,face*.112,Math.sin(b)*ri]);}
  }return mesh(out);
 }
+function makeMirrorShell(){
+ const out=[],lat=8,seg=14;
+ const point=(i,j)=>{
+  const theta=Math.PI*i/lat,phi=2*Math.PI*j/seg,r=Math.sin(theta);
+  const taper=0.90+0.10*Math.cos(phi);
+  return [Math.cos(phi)*r*taper,Math.cos(theta),Math.sin(phi)*r];
+ };
+ for(let i=0;i<lat;i++)for(let j=0;j<seg;j++){
+  const a=point(i,j),b=point(i,j+1),c=point(i+1,j+1),d=point(i+1,j);
+  out.push(...a,...d,...c,...a,...c,...b);
+ }
+ return mesh(out);
+}
+function makeMirrorFace(side){
+ const out=[],n=16;
+ for(let i=0;i<n;i++){
+  const a=i*Math.PI*2/n,b=(i+1)*Math.PI*2/n;
+  out.push(side,0,0,side,Math.cos(a),Math.sin(a),side,Math.cos(b),Math.sin(b));
+ }
+ return mesh(out);
+}
+const mirrorShell=makeMirrorShell(),mirrorFaceL=makeMirrorFace(-1),mirrorFaceR=makeMirrorFace(1);
 function makeWheelArch(center,side){
  const out=[],steps=12;
  for(let i=0;i<steps;i++){
@@ -464,11 +486,12 @@ const hoodLampGlowL=quad([-.98,.888,2.19],[-.57,.888,2.19],[-.54,.749,2.50],[-.9
 const hoodLampGlowR=quad([.57,.888,2.19],[.98,.888,2.19],[.92,.749,2.50],[.54,.749,2.50]);
 const hoodLampCoreL=quad([-.86,.881,2.25],[-.70,.881,2.25],[-.69,.762,2.47],[-.84,.762,2.47]);
 const hoodLampCoreR=quad([.70,.881,2.25],[.86,.881,2.25],[.84,.762,2.47],[.69,.762,2.47]);
-// Raised pop-up lamps: solid tapered housings with a framed front aperture.
+// One-piece hinged lamp pods. At zero deployment their front planes lie flush
+// with the bonnet; at full deployment the same faces stand upright.
 function makePopLampHousing(side){
  const x=v=>side*v,out=[];
- const front=[[x(.82),.76,2.555],[x(.44),.76,2.555],[x(.44),1.075,2.555],[x(.82),1.075,2.555]];
- const back=[[x(.80),.83,2.37],[x(.46),.83,2.37],[x(.46),1.15,2.37],[x(.80),1.15,2.37]];
+ const front=[[x(.84),.752,2.49],[x(.46),.752,2.49],[x(.46),1.075,2.49],[x(.84),1.075,2.49]];
+ const back=[[x(.82),.765,2.425],[x(.48),.765,2.425],[x(.48),1.088,2.425],[x(.82),1.088,2.425]];
  const pushQuad=(a,b,c,d)=>out.push(...a,...b,...c,...a,...c,...d);
  pushQuad(front[0],front[1],front[2],front[3]);
  pushQuad(back[3],back[2],back[1],back[0]);
@@ -479,12 +502,12 @@ function makePopLampHousing(side){
  return mesh(out);
 }
 const popLampHousingL=makePopLampHousing(-1),popLampHousingR=makePopLampHousing(1);
-const popLampFrameL=quad([-.82,.76,2.555],[-.44,.76,2.555],[-.44,1.075,2.555],[-.82,1.075,2.555]);
-const popLampFrameR=quad([.44,.76,2.555],[.82,.76,2.555],[.82,1.075,2.555],[.44,1.075,2.555]);
-const popLampLensL=quad([-.77,.79,2.563],[-.49,.79,2.563],[-.49,1.045,2.563],[-.77,1.045,2.563]);
-const popLampLensR=quad([.49,.79,2.563],[.77,.79,2.563],[.77,1.045,2.563],[.49,1.045,2.563]);
-const popLampCoreL=quad([-.70,.83,2.57],[-.56,.83,2.57],[-.56,1.00,2.57],[-.70,1.00,2.57]);
-const popLampCoreR=quad([.56,.83,2.57],[.70,.83,2.57],[.70,1.00,2.57],[.56,1.00,2.57]);
+const popLampFrameL=quad([-.84,.752,2.498],[-.46,.752,2.498],[-.46,1.075,2.498],[-.84,1.075,2.498]);
+const popLampFrameR=quad([.46,.752,2.498],[.84,.752,2.498],[.84,1.075,2.498],[.46,1.075,2.498]);
+const popLampLensL=quad([-.80,1.048,2.505],[-.50,1.048,2.505],[-.45,.785,2.505],[-.69,.785,2.505]);
+const popLampLensR=quad([.50,1.048,2.505],[.80,1.048,2.505],[.69,.785,2.505],[.45,.785,2.505]);
+const popLampCoreL=quad([-.70,1.00,2.510],[-.58,1.00,2.510],[-.56,.85,2.510],[-.68,.85,2.510]);
+const popLampCoreR=quad([.58,1.00,2.510],[.70,1.00,2.510],[.68,.85,2.510],[.56,.85,2.510]);
 // Wide central radiator with a bevelled surround and six horizontal cooling vanes.
 const frontGrilleFrame=quad([-.53,.47,2.963],[.53,.47,2.963],[.45,.205,2.963],[-.45,.205,2.963]);
 const frontIntake=quad([-.475,.425,2.972],[.475,.425,2.972],[.405,.245,2.972],[-.405,.245,2.972]);
@@ -533,7 +556,16 @@ const rearLedR2=quad([1.06,.665,-2.95],[1.06,.625,-2.95],[.80,.625,-2.95],[.80,.
 const rearLedR3=quad([1.06,.575,-2.95],[1.06,.535,-2.95],[.80,.535,-2.95],[.80,.575,-2.95]);
 const rearSignalL=quad([-1.105,.785,-2.955],[-1.065,.785,-2.955],[-1.065,.555,-2.955],[-1.105,.555,-2.955]);
 const rearSignalR=quad([1.105,.785,-2.955],[1.105,.555,-2.955],[1.065,.555,-2.955],[1.065,.785,-2.955]);
-const spoilerBlade=quad([-1.34,1.31,-2.38],[1.34,1.31,-2.38],[1.25,1.31,-2.72],[-1.25,1.31,-2.72]);
+function makeSpoilerBlade(){
+ const out=[];
+ const top=[[-1.34,1.316,-2.38],[1.34,1.316,-2.38],[1.25,1.316,-2.72],[-1.25,1.316,-2.72]];
+ const bottom=top.map(p=>[p[0],1.26,p[2]]);
+ const push=(a,b,c,d)=>out.push(...a,...b,...c,...a,...c,...d);
+ push(...top);push(bottom[3],bottom[2],bottom[1],bottom[0]);
+ for(let i=0;i<4;i++)push(top[i],bottom[i],bottom[(i+1)%4],top[(i+1)%4]);
+ return mesh(out);
+}
+const spoilerBlade=makeSpoilerBlade();
 const spoilerTopGlint=quad([-1.12,1.322,-2.42],[1.12,1.322,-2.42],[1.08,1.322,-2.63],[-1.08,1.322,-2.63]);
 // Dark backing frames leave a crisp ink border around each glass opening.
 const windshieldFrame=quad([-.795,1.215,.16],[-.90,.90,.86],[.90,.90,.86],[.795,1.215,.16]);
@@ -580,7 +612,7 @@ const C={
  glass:[.012,.035,.075,1],glassLight:[.055,.17,.28,1],trim:[.012,.016,.026,1],
  tire:[.012,.014,.019,1],hub:[.55,.52,.68,1],brake:[.20,.20,.28,1],city:[.085,.045,.12,1],mount:[.08,.045,.14,1]
 };
-let keys={},headlightsUp=false,wireframeMode=false,started=false,paused=true,speed=0,playerX=0,steer=0,bodyRoll=0,distance=0,boost=0,carYaw=0,yawRate=0,lateralVelocity=0,driftIntensity=0,handbrakeActive=false,driftInstability=0,previousSteerInput=0,last=performance.now(),musicOn=true,track=0,trackOrder=[],trackPos=0,audio=null,musicPending=true,foundTracks=[],audioCtx=null,engineOsc=null,engineOsc2=null,engineGain=null,engineFilter=null,skidGain=null,skidFilter=null,roadGain=null,roadFilter=null,audioNoise=null;
+let keys={},headlightsUp=false,headlightDeploy=0,wireframeMode=false,started=false,paused=true,speed=0,playerX=0,steer=0,bodyRoll=0,distance=0,boost=0,carYaw=0,yawRate=0,lateralVelocity=0,driftIntensity=0,handbrakeActive=false,driftInstability=0,previousSteerInput=0,last=performance.now(),musicOn=true,track=0,trackOrder=[],trackPos=0,audio=null,musicPending=true,foundTracks=[],audioCtx=null,engineOsc=null,engineOsc2=null,engineGain=null,engineFilter=null,skidGain=null,skidFilter=null,roadGain=null,roadFilter=null,audioNoise=null;
 // One axis convention shared by controls, car movement, body lean and indicators.
 const STEER_AXIS=Object.freeze({left:-1,right:1,screenRight:1,bodyLean:-1});
 function readSteeringInput(){return (keys.d||keys.arrowright?STEER_AXIS.right:0)+(keys.a||keys.arrowleft?STEER_AXIS.left:0);}
@@ -730,11 +762,18 @@ function drawCarMesh(shape,cx,cz,color,yaw=0,material=1){
  const model=matMul(translate(cx,0,cz),matMul(rotateY(yaw),matMul(rotateZ(bodyRoll),matIdentity())));
  bindMesh(shape,model,color,1,material);
 }
+function drawCarHingedMesh(shape,cx,cz,color,yaw=0,material=1){
+ const angle=-1.13*(1-headlightDeploy);
+ const hinge=matMul(translate(0,.752,2.49),matMul(rotateX(angle),translate(0,-.752,-2.49)));
+ const model=matMul(translate(cx,0,cz),matMul(rotateY(yaw),matMul(rotateZ(bodyRoll),hinge)));
+ bindMesh(shape,model,color,1,material);
+}
 function matIdentity(){return [1,0,0,0,0,1,0,0,0,0,1,0,0,0,0,1];}
 function matMul(a,b){let o=new Array(16);for(let c=0;c<4;c++)for(let r=0;r<4;r++)o[c*4+r]=a[r]*b[c*4]+a[4+r]*b[c*4+1]+a[8+r]*b[c*4+2]+a[12+r]*b[c*4+3];return o;}
 function translate(x,y,z){let m=matIdentity();m[12]=x;m[13]=y;m[14]=z;return m;}
 function scale(x,y,z){let m=matIdentity();m[0]=x;m[5]=y;m[10]=z;return m;}
 function rotateY(a){let c=Math.cos(a),s=Math.sin(a);return [c,0,-s,0,0,1,0,0,s,0,c,0,0,0,0,1];}
+function rotateX(a){let c=Math.cos(a),s=Math.sin(a);return [1,0,0,0,0,c,s,0,0,-s,c,0,0,0,0,1];}
 function rotateZ(a){let c=Math.cos(a),s=Math.sin(a);return [c,s,0,0,-s,c,0,0,0,0,1,0,0,0,0,1];}
 // Left-handed +Z-forward camera. Screen-right is explicitly world +X.
 function perspective(f,asp,n,far){
@@ -835,14 +874,14 @@ function drawWorld(){
  drawCarMesh(windshieldFrame,carX,carZ,C.trim,yaw);drawCarMesh(rearGlassFrame,carX,carZ,C.trim,yaw);
  // Roof is part of the single cabin shell; do not overlay a second roof mesh.
  for(const frame of [sideGlassFrameLF,sideGlassFrameLR,sideGlassFrameRF,sideGlassFrameRR])drawCarMesh(frame,carX,carZ,C.trim,yaw,0);
- drawCarMesh(windshield,carX,carZ,C.glassLight,yaw,2);
- drawCarMesh(rearGlass,carX,carZ,[.025,.095,.16,1],yaw,2);
+ drawCarMesh(windshield,carX,carZ,C.glassLight,yaw,3);
+ drawCarMesh(rearGlass,carX,carZ,[.025,.095,.16,1],yaw,3);
  // Four individually mounted side panes: front-left, rear-left, front-right, rear-right.
- for(const win of [sideGlassLF,sideGlassLR,sideGlassRF,sideGlassRR])drawCarMesh(win,carX,carZ,[.025,.10,.17,1],yaw,2);
+ for(const win of [sideGlassLF,sideGlassLR,sideGlassRF,sideGlassRR])drawCarMesh(win,carX,carZ,[.025,.10,.17,1],yaw,3);
   for(const side of [-1,1]){
-  drawCarPart(carX,carZ,side*.835,.945,.585,.025,.105,.025,C.trim,yaw);
-  drawCarPart(carX,carZ,side*.77,1.03,.58,.10,.045,.095,C.trim,yaw);
-  drawCarPart(carX,carZ,side*.85,1.08,.61,.13,.08,.10,C.bodyLight,yaw);
+  drawCarPart(carX,carZ,side*.80,.985,.585,.025,.105,.024,C.trim,yaw);
+  drawCarPart(carX,carZ,side*.875,1.075,.61,.12,.065,.085,C.bodyLight,yaw,mirrorShell,1);
+  drawCarPart(carX,carZ,side*.875,1.075,.61,.12,.043,.061,[.055,.19,.27,1],yaw,side<0?mirrorFaceL:mirrorFaceR,3);
   drawCarMesh(side<0?intakeUpperL:intakeUpperR,carX,carZ,C.trim,yaw);
   drawCarMesh(side<0?intakeLowerL:intakeLowerR,carX,carZ,C.trim,yaw);
  }
@@ -856,17 +895,14 @@ function drawWorld(){
   drawCarPart(carX,carZ,side*(wx+.148),wy,wz,.318,.018,.318,C.hub,yaw,wheelFace);
   drawCarPart(carX,carZ,side*(wx+.163),wy,wz,.092,.020,.092,C.bodyLight,yaw,wheelFace);
  }
- // L toggles proper pop-up headlights. When closed, only flush bonnet lids remain.
- if(headlightsUp){
-  for(const housing of [popLampHousingL,popLampHousingR])drawCarMesh(housing,carX,carZ,C.trim,yaw,0);
-  for(const frame of [popLampFrameL,popLampFrameR])drawCarMesh(frame,carX,carZ,C.trim,yaw,0);
-  for(const lens of [popLampLensL,popLampLensR])drawCarMesh(lens,carX,carZ,[.012,.035,.065,1],yaw,2);
-  for(const core of [popLampCoreL,popLampCoreR])drawCarMesh(core,carX,carZ,[.90,.97,1,1],yaw,2);
- }else{
-  drawCarMesh(hoodLampFrameL,carX,carZ,C.trim,yaw,0);
-  drawCarMesh(hoodLampLensL,carX,carZ,[.012,.035,.065,1],yaw,2);
-  drawCarMesh(hoodLampFrameR,carX,carZ,C.trim,yaw,0);
-  drawCarMesh(hoodLampLensR,carX,carZ,[.012,.035,.065,1],yaw,2);
+ // L smoothly raises the hinged lamp pods; when lowered, their faces sit flush with the bonnet.
+ for(const housing of [popLampHousingL,popLampHousingR])drawCarHingedMesh(housing,carX,carZ,C.trim,yaw,0);
+ for(const frame of [popLampFrameL,popLampFrameR])drawCarHingedMesh(frame,carX,carZ,C.trim,yaw,0);
+ for(const lens of [popLampLensL,popLampLensR])drawCarHingedMesh(lens,carX,carZ,[.012,.035,.065,1],yaw,2);
+ const lampPower=Math.max(0,Math.min(1,(headlightDeploy-.12)/.88));
+ if(lampPower>.001){
+  const lampColor=[.012+.86*lampPower,.035+.91*lampPower,.065+.91*lampPower,1];
+  for(const core of [popLampCoreL,popLampCoreR])drawCarHingedMesh(core,carX,carZ,lampColor,yaw,2);
  }
  drawCarMesh(frontBumperCrease,carX,carZ,C.bodyLight,yaw,0);
  drawCarMesh(frontGrilleFrame,carX,carZ,C.trim,yaw,0);
@@ -879,10 +915,11 @@ function drawWorld(){
  // Four lower rectangular driving lamps, in matched left/right pairs.
  for(const frame of [frontFogFrameL1,frontFogFrameL2,frontFogFrameR1,frontFogFrameR2])drawCarMesh(frame,carX,carZ,C.trim,yaw,0);
  for(const lamp of [frontFogLensL1,frontFogLensL2,frontFogLensR1,frontFogLensR2])drawCarMesh(lamp,carX,carZ,[.76,.90,1,1],yaw,2);
- if(!garageMode&&headlightsUp){
-  gl.enable(gl.BLEND);gl.blendFunc(gl.SRC_ALPHA,gl.ONE);
-  drawCarMesh(headlightBeamL,carX,carZ,[.42,.70,1,.095],yaw,0);
-  drawCarMesh(headlightBeamR,carX,carZ,[.42,.70,1,.095],yaw,0);
+ if(headlightDeploy>.08){
+  gl.enable(gl.BLEND);gl.blendFunc(gl.SRC_ALPHA,gl.ONE);gl.depthMask(false);
+  const beamAlpha=.14*headlightDeploy;
+  drawCarMesh(headlightBeamL,carX,carZ,[.42,.70,1,beamAlpha],yaw,0);
+  drawCarMesh(headlightBeamR,carX,carZ,[.42,.70,1,beamAlpha],yaw,0);
   gl.depthMask(true);gl.disable(gl.BLEND);
  }
  // Rear: a genuinely flat full-width fascia. Every light now sits OUTSIDE the body cap.
@@ -904,7 +941,7 @@ function drawWorld(){
  for(const side of [-1,1]){
   drawCarPart(carX,carZ,side*.61,.255,-2.94,1,1,1,[.58,.62,.72,1],yaw,exhaustTip,0);
   drawCarPart(carX,carZ,side*.61,.255,-2.94,1,1,1,[.004,.005,.009,1],yaw,exhaustCore,0);
-  drawCarPart(carX,carZ,side*.84,1.19,-2.48,.065,.19,.085,C.body,yaw);
+  drawCarPart(carX,carZ,side*.84,1.115,-2.53,.060,.145,.065,C.body,yaw);
  }
  // Straight, level, body-colour rear wing.
  drawCarMesh(spoilerBlade,carX,carZ,C.body,yaw,1);
@@ -980,6 +1017,8 @@ function updateDebug(dt){
 }
 function frame(now){
  const dt=Math.min(.033,(now-last)/1000);last=now;
+ const lampTarget=headlightsUp?1:0;
+ headlightDeploy+=(lampTarget-headlightDeploy)*Math.min(1,dt*7.0);
  const up=keys.w||keys.arrowup,down=keys.s||keys.arrowdown,handbrake=!!keys[' '];
  if(started&&!paused){
   // Smooth throttle/brake response with a little drivetrain inertia.
