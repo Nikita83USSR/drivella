@@ -1,6 +1,6 @@
 # DRIVELLA — Rendering Architecture
 
-Current reference: **v0.18.40 / BUILD 106**  
+Current reference: **v0.18.41 / BUILD 107**  
 Main renderer: `index.html` — custom WebGL 1 renderer, no external rendering engine.
 
 This document records the rendering decisions that future vehicle, environment, lighting, and effects work must preserve. The goal is a reusable scene pipeline: new world geometry should take part in shadows and ambient occlusion automatically when it uses the shared draw path.
@@ -93,6 +93,8 @@ These local sources **do not cast shadows** and do not perform occlusion against
 ## Procedural glass reflections — BUILD 106
 
 Material mode **3** now produces a more visible synthwave environment reflection on the windshield, rear glass, and four side panes.
+
+BUILD 107 explicitly bounds the glass fragment branch to `2.5 < materialMode < 3.5`. Painted clear-coat material mode **4** therefore reaches its own dedicated paint shader instead of being captured by the glass condition. Keep the glass and painted-body material ranges separate when adding future shader modes.
 
 - The reflection direction is derived from the camera-to-surface view vector and the glass normal, so the reflected response changes with camera movement rather than staying painted onto the window.
 - The procedural environment combines a deep blue sky gradient with a magenta horizon band, cyan and purple neon bands, a restrained directional sun highlight, and a small direction-dependent neon variation.
