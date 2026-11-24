@@ -2,12 +2,13 @@
 
 A browser-based synthwave drift-racing prototype with a custom low-poly 3D car, a procedural neon environment, and a hand-built WebGL renderer.
 
-> **Status:** Playable prototype under active development. Current renderer reference: **v0.18.49 / BUILD 115**.
+> **Status:** Playable prototype under active development. Current renderer reference: **v0.18.50 / BUILD 116**.
 > **Release identification:** every published game change increments the visible BUILD number in the HUD and startup screen; README and rendering architecture are updated in the same release.
 
 ## Current game
 
 - **BUILD 115:** replace depth-interpolated shadow filtering with true 16-tap PCF: the vehicle receiver map uses `NEAREST`, compares each packed depth sample before averaging visibility, uses `highp` fragment arithmetic when available, and snaps the directional shadow projection to whole map texels to reduce shimmer while turning. The 2048² receiver target has a device-limit / allocation fallback. All painted body surfaces share the same filter and fixed bias; the full-scene road-shadow and garage spotlight filters are unchanged.
+- **BUILD 116:** reduce fine self-shadow streaking on the side panels with a bounded slope-scaled receiver bias (larger for grazing side faces, smaller on sun-facing surfaces). The rear-quarter side-vent frame no longer casts into the body self-shadow map because it sits nearly flush with the flank. It remains visible; garage spotlight caster behavior and full-scene road shadows are unchanged.
 - Custom WebGL 1 renderer for the 3D vehicle, road, garage, and procedural environments.
 - All four wheels animate as a single rolling assembly: tyre, brake disc, alloy spokes, and hub share one spin phase, with the rotation direction matched to forward travel.
 - Windshield, rear and side glazing now show stronger view-dependent synthwave environment reflections: a blue sky gradient, magenta horizon, cyan neon bands, and garage-light specular response. This is a procedural reflection approximation, not ray-traced or screen-space reflection.
