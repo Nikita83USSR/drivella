@@ -2,7 +2,7 @@
 
 A browser-based synthwave drift-racing prototype with a custom low-poly 3D car, a procedural neon environment, and a hand-built WebGL renderer.
 
-> **Status:** Playable prototype under active development. Current renderer reference: **v0.18.33 / BUILD 099**.
+> **Status:** Playable prototype under active development. Current renderer reference: **v0.18.34 / BUILD 100**.
 
 ## Current game
 
@@ -11,7 +11,7 @@ A browser-based synthwave drift-racing prototype with a custom low-poly 3D car, 
 - Four camera modes, acceleration, braking, steering, drifting, and handbrake handling.
 - Procedural city, coastline, palms, mountains, road markings, and neon roadside elements.
 - Dynamic directional shadows with automatic environment participation, PCSS-style soft filtering, and camera-adaptive coverage.
-- Two animated, shader-based headlight spotlights that illuminate ordinary world materials and track the pop-up lamp mechanism; BUILD 099 adds conservative CPU-side mesh/cone culling so objects outside both beams skip per-pixel lighting, while in-beam surfaces retain full-resolution lighting. A live FPS meter is shown in the garage and during races.
+- Two animated, shader-based headlight spotlights that illuminate ordinary world materials and track the pop-up lamp mechanism; BUILD 099 adds conservative CPU-side mesh/cone culling so objects outside both beams skip per-pixel lighting, while in-beam surfaces retain full-resolution lighting. A live FPS meter is shown in the garage and during races. BUILD 100 adds isolated diagnostics: press **H** to toggle only diffuse spotlight illumination and **J** to toggle only the upper-headlight lens flare; **F3** reports whether the active scene is GARAGE or ROAD and is available in the garage.
 - Emissive front, rear, and indicator lamps with controlled camera-facing screen-space lens flares, a restrained anamorphic streak, softened translucent optical rings, star diffraction and chromatic ghost reflections. Rear red lamps and LED bars brighten smoothly while the brake pedal or handbrake is held.
 - Half-resolution full-scene SSAO, separate car contour pass, and layered neon underglow.
 - Speed / distance HUD, boot screen, garage, options, and optional local soundtrack.
@@ -43,6 +43,8 @@ Open `index.html` in a modern browser with WebGL 1 support. No build tools or in
 | L | Toggle headlights |
 | K | Toggle wireframe |
 | F3 | Toggle debug panel |
+| H | Diagnostic: toggle headlight diffuse lighting | 
+| J | Diagnostic: toggle upper-headlight optical flare |
 
 ## Music
 
