@@ -115,9 +115,9 @@
 <body>
 <canvas id="scene"></canvas><canvas id="sun"></canvas><canvas id="flare"></canvas>
 <div id="hud">
- <div class="top"><div class="logo">DRIVELLA<small>3D SYNTHWAVE DRIFT RACING</small></div><div class="version-label" id="version-label">v0.18.58 · BUILD 124</div><div class="stat">DISTANCE<b id="distance">000.0 KM</b></div><div class="stat">LOCATION<b>VIOLET COAST</b></div></div>
+ <div class="top"><div class="logo">DRIVELLA<small>3D SYNTHWAVE DRIFT RACING</small></div><div class="version-label" id="version-label">v0.18.59 · BUILD 125</div><div class="stat">DISTANCE<b id="distance">000.0 KM</b></div><div class="stat">LOCATION<b>VIOLET COAST</b></div></div>
  <div class="right"><div id="speed">000 <span>KM/H</span></div><div id="direction">▶ FORWARD</div><div id="music">♫ MUSIC SCANNING…</div></div>
- <div class="bottom"><div class="hint"><strong>W / ↑</strong> ACCELERATE　<strong>S / ↓</strong> BRAKE / REVERSE<br><strong>A / ←　D / →</strong> STEER　<strong>SPACE</strong> HANDBRAKE　<strong>C</strong> CAMERA　<strong>HOLD + DRAG LMB</strong> LOOK　<strong>L</strong> LIGHTS　<strong>K</strong> WIREFRAME</div><div>3D NEON HIGHWAY // BUILD 124</div></div>
+ <div class="bottom"><div class="hint"><strong>W / ↑</strong> ACCELERATE　<strong>S / ↓</strong> BRAKE / REVERSE<br><strong>A / ←　D / →</strong> STEER　<strong>SPACE</strong> HANDBRAKE　<strong>C</strong> CAMERA　<strong>HOLD + DRAG LMB</strong> LOOK　<strong>L</strong> LIGHTS　<strong>K</strong> WIREFRAME</div><div>3D NEON HIGHWAY // BUILD 125</div></div>
 </div>
 <div id="fps-counter" aria-live="off">FPS --</div>
 <div id="effects-menu" aria-hidden="true">
@@ -151,7 +151,7 @@
 </div>
 <div id="tools-ui"><button id="cam-prev" aria-label="Previous camera">◀</button><span id="cam-label">CAM 2 · CLOSE</span><button id="cam-next" aria-label="Next camera">▶</button><button id="debug-toggle">DEBUG</button></div>
 <div id="debug-panel"><div class="debug-title">DRIVELLA DIAGNOSTICS</div><div id="debug-data">Initializing…</div></div>
-<div id="boot-screen"><div class="boot-content"><div class="boot-kicker">NIGHT DRIVE SYSTEMS // INITIALIZING</div><div class="boot-logo">DRIVELLA</div><div class="boot-subtitle">3D SYNTHWAVE DRIFT RACING</div><div class="boot-mark"></div><div class="boot-status" id="boot-status">BUILDING THE 3D WORLD</div><div class="boot-track"><div class="boot-progress" id="boot-progress"></div></div><div class="boot-meta"><span>3D ENGINE ONLINE</span><span id="boot-percent">00%</span></div><div class="boot-footer">ENGINE STARTUP // v0.18.58 · BUILD 124</div></div></div>
+<div id="boot-screen"><div class="boot-content"><div class="boot-kicker">NIGHT DRIVE SYSTEMS // INITIALIZING</div><div class="boot-logo">DRIVELLA</div><div class="boot-subtitle">3D SYNTHWAVE DRIFT RACING</div><div class="boot-mark"></div><div class="boot-status" id="boot-status">BUILDING THE 3D WORLD</div><div class="boot-track"><div class="boot-progress" id="boot-progress"></div></div><div class="boot-meta"><span>3D ENGINE ONLINE</span><span id="boot-percent">00%</span></div><div class="boot-footer">ENGINE STARTUP // v0.18.59 · BUILD 125</div></div></div>
 <div id="main-menu"><div class="menu-content"><div class="menu-brand">DRIVELLA GTS</div><div class="menu-sub">RIDE THE RETRO FUTURE</div><div class="menu-actions"><button class="menu-btn" id="menu-start">СТАРТ</button><button class="menu-btn" id="menu-garage">ГАРАЖ</button><button class="menu-btn" id="menu-options">НАСТРОЙКИ</button></div></div><div class="menu-footer">РАЗРАБОТЧИК — <b>НИКИТА МАРКИН</b></div></div>
 <div id="garage-screen"><div class="garage-head">ГАРАЖ // DRIVELLA GTS</div><div class="garage-copy">ТЕКУЩИЙ АВТОМОБИЛЬ<br>DRIVELLA GTS · RETRO GT COUPE<br>ПОКАЖИ ЕЁ СО ВСЕХ СТОРОН</div><div class="garage-controls"><button id="garage-back">← НАЗАД В МЕНЮ</button></div><div class="garage-tip">ЗАЖМИ И ТЯНИ — ВРАЩЕНИЕ<br>КОЛЁСИКО — ПРИБЛИЗИТЬ / ОТДАЛИТЬ</div></div>
 <div id="options-screen"><div class="options-head">ОПЦИИ</div><div class="options-card"><div class="option-row"><span>МУЗЫКА</span><button id="option-music">ВКЛЮЧЕНА</button></div><div class="option-row"><span>ГРОМКОСТЬ</span><input id="option-volume" type="range" min="0" max="100" value="52"></div><div class="option-row"><span>ЗВУК ДВИГАТЕЛЯ</span><button id="option-sfx">ВКЛЮЧЁН</button></div><div class="option-row"><span>КАМЕРА</span><span>КЛАВИШИ 1–4</span></div><button id="options-back" style="width:100%;margin-top:18px">← НАЗАД В МЕНЮ</button></div></div>
@@ -159,7 +159,7 @@
 <script>
 (()=>{
 'use strict';
-const VERSION='v0.18.58',BUILD='124';
+const VERSION='v0.18.59',BUILD='125';
 const canvas=document.getElementById('scene'),gl=canvas.getContext('webgl',{antialias:true,alpha:true}),sun=document.getElementById('sun'),sctx=sun.getContext('2d'),flare=document.getElementById('flare'),fctx=flare.getContext('2d');
 const $=id=>document.getElementById(id);
 const clamp=(v,a,b)=>Math.max(a,Math.min(b,v));
@@ -626,6 +626,8 @@ function makeCarHull(keys,wheelArches=false,flatRoof=false,windowOpenings=false,
  const out=[],N=14,rings=[],zSet=new Set(keys.map(p=>p.z));
  const archY=(z,center)=>{const d=Math.abs(z-center),r=WHEEL_RADIUS,cy=WHEEL_CENTER_Y,clear=.008;if(d<=r)return cy+Math.sqrt(Math.max(0,r*r-d*d))+clear;if(d>=r+.16)return .33;const t=(d-r)/.16,u=t*t*(3-2*t);return (cy+clear)*(1-u)+.33*u;};
  if(wheelArches)for(const center of [-1.6375,1.6375])for(const offset of [-.615,-.55,-.455,-.34,-.2275,-.114,0,.114,.2275,.34,.455,.55,.615])zSet.add(center+offset);
+ if(windowOpenings){zSet.add(-1.6375);zSet.add(.945);}
+ if(roofOpening){zSet.add(roofOpening[0]);zSet.add(roofOpening[1]);}
  const zSamples=[...zSet].sort((a,b)=>a-b);
  for(const z of zSamples){
   const p=profileValue(z,keys);
@@ -642,7 +644,7 @@ function makeCarHull(keys,wheelArches=false,flatRoof=false,windowOpenings=false,
  for(let i=0;i<rings.length-1;i++)for(let j=0;j<N;j++){
   const zMid=(rings[i][0][2]+rings[i+1][0][2])*.5;
   // Remove the complete shoulder-to-roof strip on both sides for actual window apertures.
-  if(windowOpenings&&zMid>=-1.60&&zMid<=.945&&(j===4||j===5||j===8||j===9))continue;
+  if(windowOpenings&&zMid>=-1.6375&&zMid<=.945&&(j===4||j===5||j===8||j===9))continue;
   // Remove the original body roof under the raised cabin roof to avoid a duplicate inner roof.
   if(roofOpening&&zMid>=roofOpening[0]&&zMid<=roofOpening[1]&&(j===6||j===7))continue;
   const a=rings[i][j],b=rings[i][(j+1)%N],c=rings[i+1][j],d=rings[i+1][(j+1)%N];
@@ -796,16 +798,19 @@ const archFrontL=makeWheelArch(1.6375,-1),archFrontR=makeWheelArch(1.6375,1),arc
 
 // Side glass fills the full cabin aperture from the body shoulder to the raised roof rail.
 function cabinSidePairAt(t,side){
- const roofZ=.275+(-1.42-.275)*t,bodyZ=.945+(-1.60-.945)*t;
+ const roofZ=.275+(-1.42-.275)*t,bodyZ=.945+(-1.6375-.945)*t;
  const roof=cabinRoofAt(roofZ),body=profileValue(bodyZ,bodyProfile);
  const upper=[side*(roof.w+.008),roof.edge+.004,roofZ];
  const lower=[side*((body.shoulderW??body.w*.96)+.008),body.shoulder+.008,bodyZ];
  return {upper,lower};
 }
 function makeCabinSideGlass(side){
- const out=[],steps=12;
- for(let i=0;i<steps;i++){
-  const a=cabinSidePairAt(i/steps,side),b=cabinSidePairAt((i+1)/steps,side);
+ const tSet=new Set(Array.from({length:13},(_,i)=>i/12));
+ for(const roof of CABIN_ROOF_STATIONS)tSet.add((.275-roof.z)/(.275+1.42));
+ for(const station of bodyProfile)if(station.z>=-1.6375&&station.z<=.945)tSet.add((.945-station.z)/(.945+1.6375));
+ const ts=[...tSet].sort((a,b)=>a-b),out=[];
+ for(let i=0;i<ts.length-1;i++){
+  const a=cabinSidePairAt(ts[i],side),b=cabinSidePairAt(ts[i+1],side);
   if(side>0)out.push(...a.lower,...b.lower,...b.upper,...a.lower,...b.upper,...a.upper);
   else out.push(...a.lower,...b.lower,...b.upper,...a.lower,...a.upper,...b.upper);
  }
@@ -863,7 +868,7 @@ function hoodSurfaceY(x,z){
 const POP_HINGE_Z=2.30;
 const POP_LAMP_OUTER_X=.895,POP_LAMP_INNER_X=.445,POP_LAMP_Z_REAR=2.30,POP_LAMP_Z_FRONT=2.60;
 const POP_LAMP_FACE_H=.22,POP_LAMP_DIAG=Math.SQRT1_2;
-const POP_HINGE_Y=hoodSurfaceY(.65,POP_HINGE_Z)+.003,POP_LAMP_DROP=-.14;
+const POP_HINGE_Y=hoodSurfaceY(.65,POP_HINGE_Z)+.003,POP_LAMP_DROP=-.16;
 function lampXBounds(side){return side<0?[-POP_LAMP_OUTER_X,-POP_LAMP_INNER_X]:[POP_LAMP_INNER_X,POP_LAMP_OUTER_X];}
 function lampFrontPoint(x,t,offset=0){
  const yTop=hoodSurfaceY(x,POP_LAMP_Z_FRONT)-.037,yBase=yTop-POP_LAMP_FACE_H*POP_LAMP_DIAG,zBase=POP_LAMP_Z_FRONT-POP_LAMP_FACE_H*POP_LAMP_DIAG;
