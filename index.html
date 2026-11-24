@@ -159,7 +159,7 @@
 <script>
 (()=>{
 'use strict';
-const VERSION='v0.18.62',BUILD='128';
+const VERSION='v0.18.63',BUILD='129';
 const canvas=document.getElementById('scene'),gl=canvas.getContext('webgl',{antialias:true,alpha:true}),sun=document.getElementById('sun'),sctx=sun.getContext('2d'),flare=document.getElementById('flare'),fctx=flare.getContext('2d');
 const $=id=>document.getElementById(id);
 const clamp=(v,a,b)=>Math.max(a,Math.min(b,v));
@@ -621,7 +621,7 @@ function profileValue(z,keys){
 }
 // Shared wheel datum: lower all four wheels by 8 mm while retaining minimal ground clearance.
 const WHEEL_CENTER_Y=.457,WHEEL_RADIUS=.455;
-function makeCarHull(keys,wheelArches=false,flatRoof=false,windowOpenings=false,roofOpening=null){
+function makeCarHull(keys,wheelArches=false,flatRoof=false,windowOpenings=false,roofOpening=null,fitWindowPlane=false){
  // Keep only designed profile stations. The two wheel arches add a few deliberate silhouette points.
  const out=[],N=14,rings=[],zSet=new Set(keys.map(p=>p.z));
  const archY=(z,center)=>{const d=Math.abs(z-center),r=WHEEL_RADIUS,cy=WHEEL_CENTER_Y,clear=.008;if(d<=r)return cy+Math.sqrt(Math.max(0,r*r-d*d))+clear;if(d>=r+.16)return .33;const t=(d-r)/.16,u=t*t*(3-2*t);return (cy+clear)*(1-u)+.33*u;};
@@ -643,6 +643,14 @@ function makeCarHull(keys,wheelArches=false,flatRoof=false,windowOpenings=false,
    [-topW,p.top,z],[-upperW,p.upper,z],[-shoulderW,p.shoulder,z],[-midW,p.mid,z],
    [-sideW,side,z],[-sideW*.72,floor,z]
   ]);
+  // Fit the actual shoulder and roof-edge vertices to the exact cross-section of the planar side-glass quad.
+  if(windowOpenings&&fitWindowPlane&&z>=CABIN_GLASS_REAR_BOTTOM_Z-1e-7&&z<=CABIN_GLASS_FRONT_BOTTOM_Z+1e-7){
+   const upperY=cabinWindowUpperYAt(z),lowerY=CABIN_GLASS_BOTTOM_Y;
+   const xAtY=y=>cabinWindowXAtY(y),lowerX=xAtY(lowerY),upperX=xAtY(upperY),midY=(lowerY+upperY)*.5,midX=xAtY(midY);
+   const ring=rings[rings.length-1];
+   ring[4]=[lowerX,lowerY,z];ring[5]=[midX,midY,z];ring[6]=[upperX,upperY,z];
+   ring[10]=[-lowerX,lowerY,z];ring[9]=[-midX,midY,z];ring[8]=[-upperX,upperY,z];
+  }
  }
  for(let i=0;i<rings.length-1;i++)for(let j=0;j<N;j++){
   const zMid=(rings[i][0][2]+rings[i+1][0][2])*.5;
@@ -796,16 +804,30 @@ const bodyProfile=[
  {z:2.875,w:1.00,sideW:1.00,midW:.97,shoulderW:.94,upperW:.91,topW:.87,floor:.18,side:.27,mid:.42,shoulder:.62,upper:.66,top:.66}
  ];
 // Remove the upper side skin behind the glazing as well; otherwise the original body shell shows through as a second cabin.
-const bodyMesh=makeCarHull(bodyProfile,true,false,true,[-1.42,.275]);
+// One vertical side-glass plane per side. Top corners overlap the roof edge by 4–5 mm to close raster seams.
+const CABIN_GLASS_TOP_X=.84,CABIN_GLASS_TOP_Y=1.209;
+const CABIN_GLASS_BOTTOM_X=1.08,CABIN_GLASS_BOTTOM_Y=.90;
+const CABIN_GLASS_FRONT_TOP_Z=.270,CABIN_GLASS_REAR_TOP_Z=-1.415;
+const CABIN_GLASS_FRONT_BOTTOM_Z=.945,CABIN_GLASS_REAR_BOTTOM_Z=-1.6375;
+function cabinWindowUpperYAt(z){
+ if(z>CABIN_GLASS_FRONT_TOP_Z){
+  const t=clamp((z-CABIN_GLASS_FRONT_TOP_Z)/(CABIN_GLASS_FRONT_BOTTOM_Z-CABIN_GLASS_FRONT_TOP_Z),0,1);
+  return CABIN_GLASS_TOP_Y+(CABIN_GLASS_BOTTOM_Y-CABIN_GLASS_TOP_Y)*t;
+ }
+ if(z<CABIN_GLASS_REAR_TOP_Z){
+  const t=clamp((CABIN_GLASS_REAR_TOP_Z-z)/(CABIN_GLASS_REAR_BOTTOM_Z-CABIN_GLASS_REAR_TOP_Z),0,1);
+  return CABIN_GLASS_TOP_Y+(CABIN_GLASS_BOTTOM_Y-CABIN_GLASS_TOP_Y)*t;
+ }
+ return CABIN_GLASS_TOP_Y;
+}
+function cabinWindowXAtY(y){
+ const t=clamp((CABIN_GLASS_TOP_Y-y)/(CABIN_GLASS_TOP_Y-CABIN_GLASS_BOTTOM_Y),0,1);
+ return CABIN_GLASS_TOP_X+(CABIN_GLASS_BOTTOM_X-CABIN_GLASS_TOP_X)*t;
+}
+const bodyMesh=makeCarHull(bodyProfile,true,false,true,[-1.42,.275],true);
 const roofMesh=makeRoof(),wheelFace=makeWheelFace(),exhaustTip=makeExhaustTip(),exhaustCore=makeExhaustCore();
 const archFrontL=makeWheelArch(1.6375,-1),archFrontR=makeWheelArch(1.6375,1),archRearL=makeWheelArch(-1.6375,-1),archRearR=makeWheelArch(-1.6375,1);
 
-// One flat quadrilateral per side: two coplanar triangles, no profile tessellation or faceted strips.
-// The upper rail is 0.84 wide (windscreen: 0.80); the lower rail is also slightly wider.
-const CABIN_GLASS_TOP_X=.84,CABIN_GLASS_TOP_Y=1.205;
-const CABIN_GLASS_BOTTOM_X=1.08,CABIN_GLASS_BOTTOM_Y=.90;
-const CABIN_GLASS_FRONT_TOP_Z=.275,CABIN_GLASS_REAR_TOP_Z=-1.42;
-const CABIN_GLASS_FRONT_BOTTOM_Z=.945,CABIN_GLASS_REAR_BOTTOM_Z=-1.6375;
 function cabinSidePairAt(t,side){
  const topZ=CABIN_GLASS_FRONT_TOP_Z+(CABIN_GLASS_REAR_TOP_Z-CABIN_GLASS_FRONT_TOP_Z)*t;
  const bottomZ=CABIN_GLASS_FRONT_BOTTOM_Z+(CABIN_GLASS_REAR_BOTTOM_Z-CABIN_GLASS_FRONT_BOTTOM_Z)*t;
@@ -839,10 +861,10 @@ const sideRoofRailL=makeCabinRoofRail(-1),sideRoofRailR=makeCabinRoofRail(1);
 // Front and rear windscreens connect the roof to the body end sections.
 const rearDeck=profileValue(-1.6375,bodyProfile);
 const windshield=quad(
- [-.80,1.205,.275],
+ [-CABIN_GLASS_TOP_X,CABIN_GLASS_TOP_Y,CABIN_GLASS_FRONT_TOP_Z],
  [-CABIN_GLASS_BOTTOM_X,CABIN_GLASS_BOTTOM_Y,CABIN_GLASS_FRONT_BOTTOM_Z],
  [CABIN_GLASS_BOTTOM_X,CABIN_GLASS_BOTTOM_Y,CABIN_GLASS_FRONT_BOTTOM_Z],
- [.80,1.205,.275]
+ [CABIN_GLASS_TOP_X,CABIN_GLASS_TOP_Y,CABIN_GLASS_FRONT_TOP_Z]
 );
 // Rear screen closes the cabin against the actual rear deck top profile.
 const rearRoof=cabinRoofAt(-1.42);
