@@ -2,7 +2,7 @@
 
 A browser-based synthwave drift-racing prototype with a custom low-poly 3D car, a procedural neon environment, and a hand-built WebGL renderer.
 
-> **Status:** Playable prototype under active development. Current renderer reference: **v0.18.32 / BUILD 098**.
+> **Status:** Playable prototype under active development. Current renderer reference: **v0.18.33 / BUILD 099**.
 
 ## Current game
 
@@ -11,7 +11,7 @@ A browser-based synthwave drift-racing prototype with a custom low-poly 3D car, 
 - Four camera modes, acceleration, braking, steering, drifting, and handbrake handling.
 - Procedural city, coastline, palms, mountains, road markings, and neon roadside elements.
 - Dynamic directional shadows with automatic environment participation, PCSS-style soft filtering, and camera-adaptive coverage.
-- Two animated, shader-based headlight spotlights that illuminate ordinary world materials and track the pop-up lamp mechanism; BUILD 098 avoids unused per-pixel light work and skips pixels outside the existing 42-unit light radius without reducing the spotlight profile.
+- Two animated, shader-based headlight spotlights that illuminate ordinary world materials and track the pop-up lamp mechanism; BUILD 099 adds conservative CPU-side mesh/cone culling so objects outside both beams skip per-pixel lighting, while in-beam surfaces retain full-resolution lighting. A live FPS meter is shown in the garage and during races.
 - Emissive front, rear, and indicator lamps with controlled camera-facing screen-space lens flares, a restrained anamorphic streak, softened translucent optical rings, star diffraction and chromatic ghost reflections. Rear red lamps and LED bars brighten smoothly while the brake pedal or handbrake is held.
 - Half-resolution full-scene SSAO, separate car contour pass, and layered neon underglow.
 - Speed / distance HUD, boot screen, garage, options, and optional local soundtrack.
