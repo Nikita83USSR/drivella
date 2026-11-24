@@ -1,6 +1,6 @@
 # DRIVELLA — Rendering Architecture
 
-Current reference: **v0.18.47 / BUILD 113**  
+Current reference: **v0.18.48 / BUILD 114**  
 Main renderer: `index.html` — custom WebGL 1 renderer, no external rendering engine.
 
 This document records the rendering decisions that future vehicle, environment, lighting, and effects work must preserve. The goal is a reusable scene pipeline: new world geometry should take part in shadows and ambient occlusion automatically when it uses the shared draw path.
@@ -60,13 +60,14 @@ The central material policy remains `shadowCasterAllowed(color, material)`:
 
 Receiving is independent of casting. Regular world materials and painted vehicle materials sample their appropriate solar map; glass receives a reduced solar response. Emissive and tyre-contact modes bypass solar shadow reception.
 
-### Vehicle self-shadow isolation — BUILD 113 and soft-filter revision
+### Vehicle self-shadow isolation — BUILD 113–114
 
 - The full solar map keeps every eligible car mesh as a caster. This preserves the complete car silhouette on the road and nearby world geometry.
 - The vehicle-receiver map stores packed 16-bit depth and uses a nine-point circular PCF kernel over hardware-bilinear samples: one centre sample with 20% weight and eight evenly spaced ring samples with 10% each. This avoids VSM's surface-dependent light bleeding and the diagonal-only pattern of the previous five-tap filter. The larger 2048² target improves edge definition; it is bounded by `MAX_TEXTURE_SIZE` and falls back to 1024² if the larger framebuffer cannot be allocated. The shared filter and constant receiver bias make shadow density consistent across differently oriented body panels.
 - Vehicle helper calls cast into this map by default when the material is opaque. The continuous main hull, rear fascia, spoiler's duplicate glint overlay, side-vent decorative slats and thin door-seam overlays are excluded from the vehicle receiver map. The slats and seams still cast into the full world solar map, while remaining excluded from garage spot maps exactly as before so the existing garage result is unchanged. Cabin, pillars, spoiler blade, pop-up housings/caps, front bumper crease, splitter, wheels and other raised opaque parts can cast sunlight shadows onto the body.
 - `vehicleShadowCaster=true` remains a separate flag for the `vehicle-details` policy used by garage spotlight shadow passes. `vehicleSolarShadowCaster` controls outdoor solar self-shadow casters. Set the latter to `false` only for base hull surfaces, exact overlays, or parts whose cast would be geometrically invalid.
 - The vehicle receiver uses one fixed depth bias of `0.00034` for all car surfaces rather than a surface-normal-dependent bias. This avoids changing shadow strength between the bonnet, side panels, bumper and spoiler merely because their normals face the sun differently. The nine PCF weights are shared by every painted vehicle receiver; full occlusion reduces visibility by 66%, independent of panel orientation.
+- **BUILD 114:** replaced the VSM receiver with packed-depth PCF after testing exposed light bleeding and directional banding on the car. The receiver map now targets 2048² (limited by `MAX_TEXTURE_SIZE`, with a 1024² allocation fallback), uses a circular nine-point kernel, constant `0.00034` bias and 66% maximum shadow attenuation. The full-scene solar PCSS map and both garage spotlight PCF maps are unchanged.
 
 This is a practical single-vehicle policy. If traffic or multiple interacting cars are added, use per-object caster/receiver layers so other cars can cast onto this car without allowing arbitrary parts of the same car to self-shadow.
 
