@@ -154,7 +154,7 @@ The directional sun receiver uses a bounded Percentage-Closer Soft Shadows appro
 
 This PCSS approximation is used for the two directional solar maps. It is not a physically exact area-light simulation; keep both loops bounded for WebGL 1 compatibility.
 
-The garage spot maps use a cheaper **2 × 2 PCF** filter at each registered light's own perspective projection. Their bias and visibility are applied to that specific spot contribution in `evalLocalLight()`; a garage lamp must not reuse the sun's matrix or its shadow result.
+The garage spot maps use a cheaper **2 × 2 PCF** filter at each registered light's own perspective projection. Their receiver bias uses `abs(dot(N, L))`, matching the two-sided material convention used by the solar receiver. Their bias and visibility are applied to that specific spot contribution in `evalLocalLight()`; a garage lamp must not reuse the sun's matrix or its shadow result.
 
 ## Full-scene SSAO and car contours
 
