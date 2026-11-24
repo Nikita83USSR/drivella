@@ -94,9 +94,9 @@
 <body>
 <canvas id="scene"></canvas><canvas id="sun"></canvas>
 <div id="hud">
- <div class="top"><div class="logo">DRIVELLA<small>3D SYNTHWAVE DRIFT RACING</small></div><div class="version-label" id="version-label">v0.16.4 · BUILD 050</div><div class="stat">DISTANCE<b id="distance">000.0 KM</b></div><div class="stat">LOCATION<b>VIOLET COAST</b></div></div>
+ <div class="top"><div class="logo">DRIVELLA<small>3D SYNTHWAVE DRIFT RACING</small></div><div class="version-label" id="version-label">v0.16.5 · BUILD 051</div><div class="stat">DISTANCE<b id="distance">000.0 KM</b></div><div class="stat">LOCATION<b>VIOLET COAST</b></div></div>
  <div class="right"><div id="speed">000 <span>KM/H</span></div><div id="direction">▶ FORWARD</div><div id="music">♫ MUSIC SCANNING…</div></div>
- <div class="bottom"><div class="hint"><strong>W / ↑</strong> ACCELERATE　<strong>S / ↓</strong> BRAKE / REVERSE<br><strong>A / ←　D / →</strong> STEER　<strong>SPACE</strong> HANDBRAKE　<strong>M</strong> MUSIC　<strong>1–4</strong> CAMERA　<strong>L</strong> LIGHTS　<strong>K</strong> WIREFRAME</div><div>3D NEON HIGHWAY // BUILD 050</div></div>
+ <div class="bottom"><div class="hint"><strong>W / ↑</strong> ACCELERATE　<strong>S / ↓</strong> BRAKE / REVERSE<br><strong>A / ←　D / →</strong> STEER　<strong>SPACE</strong> HANDBRAKE　<strong>M</strong> MUSIC　<strong>1–4</strong> CAMERA　<strong>L</strong> LIGHTS　<strong>K</strong> WIREFRAME</div><div>3D NEON HIGHWAY // BUILD 051</div></div>
 </div>
 <div id="tools-ui"><button id="cam-prev" aria-label="Previous camera">◀</button><span id="cam-label">CAM 2 · CLOSE</span><button id="cam-next" aria-label="Next camera">▶</button><button id="debug-toggle">DEBUG</button></div>
 <div id="debug-panel"><div class="debug-title">DRIVELLA DIAGNOSTICS</div><div id="debug-data">Initializing…</div></div>
@@ -433,7 +433,7 @@ const archFrontL=makeWheelArch(1.6375,-1),archFrontR=makeWheelArch(1.6375,1),arc
 // Windshield winding faces outward (+Z); its lower corners sit at the bonnet end.
 // Windshield margins sit 0.025 units inboard of the matching side-glass front edges.
 const windshield=quad([-.775,1.205,.18],[-.885,.91,.84],[.885,.91,.84],[.775,1.205,.18]);
-const rearGlass=quad([-.69,1.205,-1.43],[.69,1.205,-1.43],[.82,.75,-1.72],[-.82,.75,-1.72]);
+const rearGlass=quad([-.675,1.17,-1.35],[.675,1.17,-1.35],[.845,.83,-1.57],[-.845,.83,-1.57]);
 const [sideGlassLF,sideGlassRF]=mirroredQuadPair(
  [-.91,.91,.84],[-.80,1.205,.18],[-.83,1.205,-.68],[-.98,.91,-.78]
 );
@@ -456,21 +456,35 @@ const doorSeamL=sideRibbon(-1,[[.78,.85,.95],[.72,-.68,1.03],[.40,-.78,1.12],[.3
 const doorSeamR=sideRibbon(1,[[.78,.85,.95],[.39,.82,1.12],[.40,-.78,1.12],[.72,-.68,1.03]],.018);
 // DRIVELLA GTS front fascia — original interpretation of the early-90s wedge supercar layout.
 // Flush pop-up headlamp covers follow the sloping bonnet instead of floating above it.
-const hoodLampFrameL=quad([-1.02,.895,2.17],[-.53,.895,2.17],[-.49,.745,2.53],[-.94,.745,2.53]);
-const hoodLampFrameR=quad([.53,.895,2.17],[1.02,.895,2.17],[.94,.745,2.53],[.49,.745,2.53]);
-const hoodLampLensL=quad([-.96,.889,2.20],[-.59,.889,2.20],[-.56,.752,2.49],[-.90,.752,2.49]);
-const hoodLampLensR=quad([.59,.889,2.20],[.96,.889,2.20],[.90,.752,2.49],[.56,.752,2.49]);
+const hoodLampFrameL=quad([-.84,.895,2.17],[-.46,.895,2.17],[-.40,.745,2.53],[-.70,.745,2.53]);
+const hoodLampFrameR=quad([.46,.895,2.17],[.84,.895,2.17],[.70,.745,2.53],[.40,.745,2.53]);
+const hoodLampLensL=quad([-.80,.889,2.20],[-.50,.889,2.20],[-.44,.752,2.49],[-.67,.752,2.49]);
+const hoodLampLensR=quad([.50,.889,2.20],[.80,.889,2.20],[.67,.752,2.49],[.44,.752,2.49]);
 const hoodLampGlowL=quad([-.98,.888,2.19],[-.57,.888,2.19],[-.54,.749,2.50],[-.92,.749,2.50]);
 const hoodLampGlowR=quad([.57,.888,2.19],[.98,.888,2.19],[.92,.749,2.50],[.54,.749,2.50]);
 const hoodLampCoreL=quad([-.86,.881,2.25],[-.70,.881,2.25],[-.69,.762,2.47],[-.84,.762,2.47]);
 const hoodLampCoreR=quad([.70,.881,2.25],[.86,.881,2.25],[.84,.762,2.47],[.69,.762,2.47]);
-// Raised pop-up lamp faces: compact vertical units that emerge from the bonnet on L.
-const popLampFrameL=quad([-.99,.83,2.555],[-.53,.83,2.555],[-.53,1.075,2.555],[-.99,1.075,2.555]);
-const popLampFrameR=quad([.53,.83,2.555],[.99,.83,2.555],[.99,1.075,2.555],[.53,1.075,2.555]);
-const popLampLensL=quad([-.94,.85,2.563],[-.58,.85,2.563],[-.58,1.055,2.563],[-.94,1.055,2.563]);
-const popLampLensR=quad([.58,.85,2.563],[.94,.85,2.563],[.94,1.055,2.563],[.58,1.055,2.563]);
-const popLampCoreL=quad([-.87,.875,2.57],[-.65,.875,2.57],[-.65,1.03,2.57],[-.87,1.03,2.57]);
-const popLampCoreR=quad([.65,.875,2.57],[.87,.875,2.57],[.87,1.03,2.57],[.65,1.03,2.57]);
+// Raised pop-up lamps: solid tapered housings with a framed front aperture.
+function makePopLampHousing(side){
+ const x=v=>side*v,out=[];
+ const front=[[x(.82),.76,2.555],[x(.44),.76,2.555],[x(.44),1.075,2.555],[x(.82),1.075,2.555]];
+ const back=[[x(.80),.83,2.37],[x(.46),.83,2.37],[x(.46),1.15,2.37],[x(.80),1.15,2.37]];
+ const pushQuad=(a,b,c,d)=>out.push(...a,...b,...c,...a,...c,...d);
+ pushQuad(front[0],front[1],front[2],front[3]);
+ pushQuad(back[3],back[2],back[1],back[0]);
+ pushQuad(front[0],back[0],back[1],front[1]);
+ pushQuad(front[1],back[1],back[2],front[2]);
+ pushQuad(front[2],back[2],back[3],front[3]);
+ pushQuad(front[3],back[3],back[0],front[0]);
+ return mesh(out);
+}
+const popLampHousingL=makePopLampHousing(-1),popLampHousingR=makePopLampHousing(1);
+const popLampFrameL=quad([-.82,.76,2.555],[-.44,.76,2.555],[-.44,1.075,2.555],[-.82,1.075,2.555]);
+const popLampFrameR=quad([.44,.76,2.555],[.82,.76,2.555],[.82,1.075,2.555],[.44,1.075,2.555]);
+const popLampLensL=quad([-.77,.79,2.563],[-.49,.79,2.563],[-.49,1.045,2.563],[-.77,1.045,2.563]);
+const popLampLensR=quad([.49,.79,2.563],[.77,.79,2.563],[.77,1.045,2.563],[.49,1.045,2.563]);
+const popLampCoreL=quad([-.70,.83,2.57],[-.56,.83,2.57],[-.56,1.00,2.57],[-.70,1.00,2.57]);
+const popLampCoreR=quad([.56,.83,2.57],[.70,.83,2.57],[.70,1.00,2.57],[.56,1.00,2.57]);
 // Wide central radiator with a bevelled surround and six horizontal cooling vanes.
 const frontGrilleFrame=quad([-.53,.47,2.963],[.53,.47,2.963],[.45,.205,2.963],[-.45,.205,2.963]);
 const frontIntake=quad([-.475,.425,2.972],[.475,.425,2.972],[.405,.245,2.972],[-.405,.245,2.972]);
@@ -499,8 +513,8 @@ const frontFogLensL2=quad([-.655,.360,2.981],[-.555,.360,2.981],[-.555,.270,2.98
 const frontFogLensR1=quad([.755,.360,2.981],[.855,.360,2.981],[.855,.270,2.981],[.755,.270,2.981]);
 const frontFogLensR2=quad([.555,.360,2.981],[.655,.360,2.981],[.655,.270,2.981],[.555,.270,2.981]);
 // Soft road beams begin at the nose and widen into the lane.
-const headlightBeamL=quad([-.84,.018,2.96],[-.52,.018,2.96],[-2.35,.018,13.5],[.08,.018,13.5]);
-const headlightBeamR=quad([.52,.018,2.96],[.84,.018,2.96],[-.08,.018,13.5],[2.35,.018,13.5]);
+const headlightBeamL=quad([-.77,.018,2.96],[-.49,.018,2.96],[-2.35,.018,13.5],[.08,.018,13.5]);
+const headlightBeamR=quad([.49,.018,2.96],[.77,.018,2.96],[-.08,.018,13.5],[2.35,.018,13.5]);
 // This flat, full-width rear panel is intentionally proud of the hull: the silhouette reads as a squared tail.
 const rearFascia=quad([-1.16,.93,-2.905],[1.16,.93,-2.905],[1.16,.30,-2.905],[-1.16,.30,-2.905]);
 const rearLampFrameL=quad([-1.14,.87,-2.92],[-.72,.87,-2.92],[-.72,.47,-2.92],[-1.14,.47,-2.92]);
@@ -523,7 +537,7 @@ const spoilerBlade=quad([-1.34,1.31,-2.38],[1.34,1.31,-2.38],[1.25,1.31,-2.72],[
 const spoilerTopGlint=quad([-1.12,1.322,-2.42],[1.12,1.322,-2.42],[1.08,1.322,-2.63],[-1.08,1.322,-2.63]);
 // Dark backing frames leave a crisp ink border around each glass opening.
 const windshieldFrame=quad([-.795,1.215,.16],[-.90,.90,.86],[.90,.90,.86],[.795,1.215,.16]);
-const rearGlassFrame=quad([-.72,1.225,-1.46],[.72,1.225,-1.46],[.85,.725,-1.76],[-.85,.725,-1.76]);
+const rearGlassFrame=quad([-.70,1.195,-1.325],[.70,1.195,-1.325],[.87,.805,-1.595],[-.87,.805,-1.595]);
 // Removed floating glass glints and roof overlay: clean uninterrupted cabin surfaces.
 // Black ink contours follow sampled body sections; every line shares the car profile.
 const shoulderInkL=makeProfileLine(bodyProfile,-1,-2.70,2.67,'shoulder',.985,.026,.012);
@@ -826,7 +840,7 @@ function drawWorld(){
  // Four individually mounted side panes: front-left, rear-left, front-right, rear-right.
  for(const win of [sideGlassLF,sideGlassLR,sideGlassRF,sideGlassRR])drawCarMesh(win,carX,carZ,[.025,.10,.17,1],yaw,2);
   for(const side of [-1,1]){
-  drawCarPart(carX,carZ,side*.73,1.04,-.72,.018,.26,.022,C.trim,yaw);
+  drawCarPart(carX,carZ,side*.835,.945,.585,.025,.105,.025,C.trim,yaw);
   drawCarPart(carX,carZ,side*.77,1.03,.58,.10,.045,.095,C.trim,yaw);
   drawCarPart(carX,carZ,side*.85,1.08,.61,.13,.08,.10,C.bodyLight,yaw);
   drawCarMesh(side<0?intakeUpperL:intakeUpperR,carX,carZ,C.trim,yaw);
@@ -844,6 +858,7 @@ function drawWorld(){
  }
  // L toggles proper pop-up headlights. When closed, only flush bonnet lids remain.
  if(headlightsUp){
+  for(const housing of [popLampHousingL,popLampHousingR])drawCarMesh(housing,carX,carZ,C.trim,yaw,0);
   for(const frame of [popLampFrameL,popLampFrameR])drawCarMesh(frame,carX,carZ,C.trim,yaw,0);
   for(const lens of [popLampLensL,popLampLensR])drawCarMesh(lens,carX,carZ,[.012,.035,.065,1],yaw,2);
   for(const core of [popLampCoreL,popLampCoreR])drawCarMesh(core,carX,carZ,[.90,.97,1,1],yaw,2);
