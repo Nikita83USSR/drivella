@@ -44,8 +44,8 @@ const SUN_LIGHT = {
 - The light-space orthographic bounds adapt to viewport aspect ratio, active camera mode, driving look-ahead, and garage zoom. The camera follows the vehicle and shifts its focus forward in driving cameras.
 - Each mesh receives a local `boundsRadius` when `mesh(data)` is created. Each shadow pass transforms that bound and culls meshes outside its current light frustum before issuing draw calls.
 - The full solar map is **2048 × 2048** and includes the complete opaque car and world. World/road receivers sample this map, so the vehicle continues to cast a real shadow onto the road and the environment.
-- A separate **1024 × 1024 vehicle-receiver map** uses the exact same solar source and light-space matrix. Vehicle materials sample this map instead of the full map. It contains all opaque world/garage casters, but excludes the car's main body shell and other unselected car meshes. This prevents the hull's own overlapping triangles and panels from self-shadowing into the mosaic while preserving shadows from real surrounding objects onto the car.
-- Both solar maps are rebuilt from the current scene each frame. The vehicle map uses a deliberate selective caster filter; it is not a second light or a different shadow direction.
+- A separate **1024 × 1024 vehicle-receiver map** uses the exact same solar source and light-space matrix. Vehicle materials sample this map instead of the full map. It contains opaque world/garage casters only and excludes every vehicle mesh (`toon > 0.5`). This prevents both the hull and raised vehicle details from self-shadowing into the mosaic while preserving shadows from real surrounding objects onto the car.
+- Both solar maps use the same source and projection and are rebuilt from the current scene each frame. The vehicle map uses the `environment-only` caster mode; it is not a second light or a different shadow direction.
 
 ### Automatic caster classification
 
@@ -63,12 +63,12 @@ Receiving is independent of casting. Regular world materials and painted vehicle
 ### Vehicle self-shadow isolation — BUILD 113
 
 - The full solar map keeps every eligible car mesh as a caster. This preserves the complete car silhouette on the road and nearby world geometry.
-- The vehicle-receiver map uses the same solar direction and world geometry, but only selected raised vehicle details are allowed to cast onto other vehicle surfaces. The main body hull is intentionally excluded from this receiver map.
-- Current selected car casters are the cabin shell, A/B pillars, front bumper crease and splitter, pop-up lamp housings/caps, and the rear spoiler surfaces. They use the optional `vehicleShadowCaster=true` argument in the shared car draw helpers.
-- All other car details still cast into the full world map, but do not self-occlude the vehicle receiver map. When adding a raised detail that should visibly cast onto the body, tag it deliberately; do not re-enable the entire hull as a self-caster.
+- The vehicle-receiver map now uses the same solar direction and world geometry but excludes **all vehicle meshes**, not just the main hull. Vehicle surfaces therefore receive shadows from external world/garage casters only; no part of the car can create a mottled self-shadow on another car surface.
+- The full world solar map still includes every eligible vehicle mesh, so the complete car silhouette continues to cast onto the road and surrounding geometry.
+- The optional `vehicleShadowCaster=true` flag is retained only for the `vehicle-details` policy used by local spotlight shadow passes. It does not opt a part back into the outdoor vehicle-receiver map.
 - The receiver bias is now shared and modest. Its normal term uses `abs(dot(N, SUN_LIGHT.direction))`, matching the renderer's two-sided lighting convention and avoiding a different bias merely because a mirrored/box face has reversed winding. Bias is not used as a substitute for separating self-casters from vehicle receivers.
 
-This is a practical selective caster/receiver split for the current single vehicle. It is not a general solution for multiple interacting cars; if traffic is added, use per-object receiver layers or a more general caster/receiver mask rather than excluding every vehicle from every other vehicle.
+This is a deliberate self-shadow suppression policy for the current single vehicle. If traffic or multiple interacting cars are added, replace the blanket vehicle exclusion in the receiver map with per-object caster/receiver layers so other cars can cast onto this car without allowing a car to shadow itself.
 
 ## Stage 2 — Dynamic headlight illumination
 
@@ -103,8 +103,8 @@ This is a stylized screen-space glare effect rather than a physically simulated 
 
 - BUILD 111 removed the mesh-local red lower-side paint mask, whose coordinate range restarted on each independent mesh and produced mismatched patches on the front bumper and rear quarter.
 - BUILD 112 restored 50% vehicle shadow reception but reintroduced the car's own overlapping geometry into the receiver map; the stronger receiver bias only reduced the resulting mosaic instead of separating real shadows from self-shadowing.
-- BUILD 113 supersedes that bias-only approach. The full solar map keeps the entire car as a caster for world/road shadows; the separate vehicle-receiver map uses the same real sun direction and includes world casters plus only explicitly tagged raised car details. Vehicle surfaces no longer sample the full car-as-caster map.
-- The selected raised parts continue to cast onto the car. Add further car details through the `vehicleShadowCaster` flag only when they should create a visible, geometrically valid shadow on another vehicle surface.
+- BUILD 113 initially split the full world solar map from a vehicle-receiver map, but the latter still included selected raised car details and the self-shadow mosaic remained.
+- The follow-up caster-policy fix makes the vehicle-receiver map environment-only: every vehicle mesh is excluded from it. The full world solar map still contains the complete car, preserving its shadow on the road. The optional `vehicleShadowCaster` flag is reserved for the local spotlight `vehicle-details` mode.
 
 ## Reusable local lighting — BUILD 106 / source-bound garage shadows — BUILD 113
 
@@ -200,10 +200,10 @@ For a new environment object to participate automatically:
 3. Use the shared `draw()` helper (or the existing car helpers where appropriate). Do not draw it directly outside the scene pipeline.
 4. Use an opaque standard material and alpha ≥ 0.78 when it should cast a solid shadow. The central classification automatically excludes glass and emissive material modes.
 5. Keep glow, beams, particles, transparent water, and other translucent effects on their emissive/translucent material path; they should not become opaque shadow casters.
-6. For a raised car detail that should cast a real shadow onto other car surfaces, use the shared car helper's optional `vehicleShadowCaster=true` flag. Do not set it on the main body hull; that hull remains in the full world solar map for shadows on the road.
+6. The outdoor vehicle-receiver solar map excludes all vehicle meshes by design; do not re-enable vehicle casters there to add detail shadows. The optional `vehicleShadowCaster=true` flag applies only to spotlight maps using the `vehicle-details` caster policy. The full world solar map already includes the complete car for road/world shadows.
 7. Add shadow-casting lights through the real source registry: `SUN_LIGHT` for the outdoor directional source, or a registered spotlight with a dedicated source-specific matrix and map. Never create a new shadow direction independently of the light that illuminates the material.
 
-The same scene call is replayed during the full solar maps, spotlight maps and full-scene AO capture. The vehicle-receiver map applies its explicit selective caster filter. No hand-painted shadow decals or one-off object shadows are required.
+The same scene call is replayed during the full solar maps, spotlight maps and full-scene AO capture. Caster policy is selected per target: `all` for the full solar map, `environment-only` for the car's solar receiver map, and `vehicle-details` for local spotlight maps. No hand-painted shadow decals or one-off object shadows are required.
 
 ## Material mode reference
 
