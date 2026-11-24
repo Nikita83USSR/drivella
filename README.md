@@ -2,7 +2,7 @@
 
 A browser-based synthwave drift-racing prototype with a custom low-poly 3D car, a procedural neon environment, and a hand-built WebGL renderer.
 
-> **Status:** Playable prototype under active development. Current renderer reference: **v0.18.57 / BUILD 123**.
+> **Status:** Playable prototype under active development. Current renderer reference: **v0.18.60 / BUILD 126**.
 > **Release identification:** every published game change increments the visible BUILD number in the HUD and startup screen; README and rendering architecture are updated in the same release.
 
 ## Current game
@@ -112,3 +112,5 @@ No license has been added yet. All rights reserved by the repository owner unles
 - **BUILD 122:** save a complete pre-cleanup game backup at `backups/index_BUILD121_pre_vehicle_cleanup.html`. Rebuild the cabin mesh as an exterior-only shell: remove its lower inner sidewalls, underside faces and end caps that were hidden inside/overlapping the main body hull. The visible roof, window surround, outer pillars and glass remain. The cabin's exterior shell continues to cast vehicle self-shadows.
 
 - **BUILD 123:** save `backups/index_BUILD122_pre_cabin_rebuild.html` before the cabin rebuild. Remove the independent cabin shell and replace it with one roof panel, shared-coordinate roof rails and A/C pillars. Generate continuous left/right side glass directly from the exact shoulder/upper strips removed from `bodyMesh`, using the same profile and wheel-arch stations. The windshield meets the front roof/body corners; the rear screen meets the roof and rear deck; the B-pillar overlays the sealed side glass. Left/right body-window strips use mirrored triangle diagonals to keep the glass topology symmetric. Obsolete cabin-profile, duplicate inner-shell and unused legacy window-frame geometry is removed.
+
+- **BUILD 126:** save `backups/index_BUILD123_before_cabin_and_headlight_fix.html` before correcting the earlier cabin rebuild. The main body hull now removes both shoulder-to-roof side strips (left/right ring faces) and the old roof faces beneath the raised roof footprint; the roof opening endpoints are included in the body mesh station set to avoid partial leftover faces. Replace the former narrow side strips with complete glazing panels spanning body shoulder to roof rail, and align A/B/C pillars and roof rails just outside the glass. The previous duplicate body roof therefore no longer shows through the side windows. Lower the complete pop-up lamp assembly by `0.16` world units and apply the same offset to the actual headlight light positions and lens flares; the deployed optical normal remains forward along the vehicle's +Z axis.
