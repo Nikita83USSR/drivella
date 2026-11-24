@@ -1,6 +1,6 @@
 # DRIVELLA — Rendering Architecture
 
-Current reference: **v0.18.60 / BUILD 126**  
+Current reference: **v0.18.61 / BUILD 127**  
 Main renderer: `index.html` — custom WebGL 1 renderer, no external rendering engine.
 
 **Release marker policy:** every published renderer/game change increments `BUILD` in `index.html` and updates the visible HUD, boot screen, README, and this document in the same release. Increment the patch version with the build when appropriate. Never publish a renderer change while leaving the visible build number unchanged.
@@ -347,3 +347,12 @@ The BUILD 123 cabin pass still left the body-profile roof and upper side faces b
 The left/right side glass is now built as a full trapezoidal cabin surface: the lower edge follows the body shoulder profile from `z=0.945` to `z=-1.6375`; the upper edge follows the exact raised roof-rail stations from `z=0.275` to `z=-1.42`. Intermediate samples include both sets of profile breakpoints, so the panes follow the same piecewise-linear curves as the body and roof. A/B/C pillars are generated from these same matched top/bottom points and offset slightly outboard of the glass; roof rails are likewise placed outside the glazing and drawn after it. The front windscreen meets the front body shoulder and front roof corner; the rear screen meets the rear roof edge and rear deck.
 
 The full pop-up lamp assembly is lowered by `POP_LAMP_DROP=-0.16`. This translation is shared by the drawn lamp meshes, the world-space headlight positions/direction setup, and the lens-flare projection, preventing the lights, illumination and optical effects from drifting apart. At full deployment, the transformed face normal remains aligned with vehicle-forward `+Z` (with the existing slight downward beam bias).
+
+
+## BUILD 127 — deferred vehicle self-shadow, planar side glass, full pop-up travel
+
+Vehicle self-shadowing is disabled in `FX_DEFAULTS` so normal driving no longer uses the unfinished car-only shadow pass. The F4 Visual Effects panel retains its `vehicleShadows` checkbox, unchecked on startup and explicitly labelled `ОТЛОЖЕНО` until the shadow contour/artifact work is revisited. The full-scene/world shadow setting is independent and unchanged.
+
+Each side window is now a single flat quadrilateral, triangulated into exactly two coplanar triangles. It is no longer subdivided along the body profile. The upper edge is straight and level at `y=1.205`, half-width `0.84` (the windscreen's upper half-width is `0.80`); the lower edge is straight and level at `y=0.90`, half-width `1.08`. The two side panes are exact left/right mirrors, with parallel longitudinal edges. Cabin roof station widths and side-rail positions are made constant so the upper glass edge meets the same straight roof rail. The rear glass lower corners are aligned to the side glass rear corners.
+
+The previous `POP_LAMP_DROP=-0.16` translation was removed from the rendered lamp assembly, world-space headlight coordinates, and flare projection. The lamp optic is now a flat XZ-plane panel just beneath the hood while stowed. Its face normal is downward (`[0,-1,0]`), and the hinge rotates by `-90°` at full deployment so the deployed normal points along vehicle-forward `+Z`. The same 90° angle is used for the lamp meshes, light-source direction, and lens-flare projection. The old 45° diagonal optical panel is removed.
