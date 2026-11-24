@@ -122,7 +122,7 @@ function reportStartupError(message){
 window.addEventListener('error',e=>reportStartupError(e.message||'JavaScript error'));
 window.addEventListener('unhandledrejection',e=>reportStartupError(e.reason&&e.reason.message||e.reason||'Promise rejected'));
 
-let W=innerWidth,H=innerHeight,DPR=1,outlinePass=false,shadowPass=false,vehicleShadowPass=false,aoScenePass=false,outlineTarget=null,aoTarget=null,shadowTarget=null,vehicleShadowTarget=null,localShadowTargets=[null,null],localShadowVPs=[null,null],localShadowSignatures=['',''],shadowVP=null,sunShadowVP=null,shadowSceneRevision=1,outlineCabinEdge=null,headlightCullL=[0,0,0],headlightCullR=[0,0,0],headlightCullDir=[0,0,1],headlightBaseIntensity=0,headlightMeshTests=0,headlightMeshCulled=0;
+let W=innerWidth,H=innerHeight,DPR=1,outlinePass=false,shadowPass=false,shadowCasterMode='all',aoScenePass=false,outlineTarget=null,aoTarget=null,shadowTarget=null,vehicleShadowTarget=null,localShadowTargets=[null,null],localShadowVPs=[null,null],localShadowSignatures=['',''],shadowVP=null,sunShadowVP=null,shadowSceneRevision=1,outlineCabinEdge=null,headlightCullL=[0,0,0],headlightCullR=[0,0,0],headlightCullDir=[0,0,1],headlightBaseIntensity=0,headlightMeshTests=0,headlightMeshCulled=0;
 function resize(){
  DPR=Math.min(devicePixelRatio||1,2);W=innerWidth;H=innerHeight;
  for(const c of [canvas,sun,flare]){c.width=Math.round(W*DPR);c.height=Math.round(H*DPR);c.style.width=W+'px';c.style.height=H+'px';}
@@ -263,19 +263,19 @@ function ensureShadowTarget(){if(!shadowTarget)shadowTarget=createShadowTarget(S
 function ensureVehicleShadowTarget(){if(!vehicleShadowTarget)vehicleShadowTarget=createShadowTarget(VEHICLE_SHADOW_MAP_SIZE);return !!vehicleShadowTarget;}
 function ensureLocalShadowTarget(index){if(!localShadowTargets[index])localShadowTargets[index]=createShadowTarget(LOCAL_SHADOW_MAP_SIZE);return !!localShadowTargets[index];}
 function invalidateShadowCaches(){shadowSceneRevision++;localShadowSignatures=['',''];}
-function renderShadowPassTo(target,matrix,selectiveVehicleCasters){
+function renderShadowPassTo(target,matrix,casterMode='all'){
  if(!target)return false;
  // A texture must not remain bound for sampling while it is attached to the active framebuffer.
  for(let unit=1;unit<=4;unit++){gl.activeTexture(gl.TEXTURE0+unit);gl.bindTexture(gl.TEXTURE_2D,null);}
  gl.activeTexture(gl.TEXTURE0);
- shadowVP=matrix;vehicleShadowPass=selectiveVehicleCasters;shadowPass=true;
+ shadowVP=matrix;shadowCasterMode=casterMode;shadowPass=true;
  gl.bindFramebuffer(gl.FRAMEBUFFER,target.framebuffer);gl.viewport(0,0,target.size,target.size);
  gl.enable(gl.DEPTH_TEST);gl.disable(gl.BLEND);gl.depthMask(true);
  gl.clearColor(1,0,0,1);gl.clearDepth(1);gl.clear(gl.COLOR_BUFFER_BIT|gl.DEPTH_BUFFER_BIT);
  gl.useProgram(prog);gl.uniform1f(loc.outlinePass,0);gl.uniform1f(loc.shadowPass,1);gl.uniform1f(loc.shadowEnabled,0);
  gl.uniformMatrix4fv(loc.shadowVP,false,new Float32Array(matrix));
  drawWorld();
- shadowPass=false;vehicleShadowPass=false;
+ shadowPass=false;shadowCasterMode='all';
  return true;
 }
 function spotShadowMatrix(light){
@@ -305,7 +305,7 @@ function renderShadowMap(){
  );
  const sceneCalls=drawCalls;
  renderShadowPassTo(shadowTarget,sunShadowVP,false);
- renderShadowPassTo(vehicleShadowTarget,sunShadowVP,true);
+ renderShadowPassTo(vehicleShadowTarget,sunShadowVP,'environment-only');
  const localSources=garageMode?GARAGE_LOCAL_LIGHTS:[];
  for(let slot=0;slot<LOCAL_SHADOW_CAPACITY;slot++){
   const light=localSources.find(q=>q.castsShadow&&q.type==='spot'&&q.shadowSlot===slot);
@@ -314,12 +314,12 @@ function renderShadowMap(){
   localShadowVPs[slot]=matrix;
   if(localShadowSignatures[slot]!==signature){
    if(ensureLocalShadowTarget(slot)){
-    renderShadowPassTo(localShadowTargets[slot],matrix,true);
+    renderShadowPassTo(localShadowTargets[slot],matrix,'vehicle-details');
     localShadowSignatures[slot]=signature;
    }else localShadowEnabledData[slot]=0;
   }
  }
- shadowVP=sunShadowVP;vehicleShadowPass=false;shadowPass=false;
+ shadowVP=sunShadowVP;shadowCasterMode='all';shadowPass=false;
  drawCalls=sceneCalls;
  gl.bindFramebuffer(gl.FRAMEBUFFER,null);gl.viewport(0,0,canvas.width,canvas.height);
  gl.useProgram(prog);gl.uniform1f(loc.shadowPass,0);
@@ -1145,7 +1145,7 @@ function bindMesh(shape,model,color,toon=0,material=0,vehicleShadowCaster=false)
   gl.disable(gl.BLEND);gl.depthMask(true);
  }
  if(shadowPass){
-  if((vehicleShadowPass&&toon>0.5&&!vehicleShadowCaster)||!shadowCasterAllowed(color,material)||!shadowBoundsVisible(shape,model))return;
+  if((shadowCasterMode==='environment-only'&&toon>0.5)||(shadowCasterMode==='vehicle-details'&&toon>0.5&&!vehicleShadowCaster)||!shadowCasterAllowed(color,material)||!shadowBoundsVisible(shape,model))return;
   gl.disable(gl.BLEND);gl.depthMask(true);
  }
  if(!outlinePass&&!shadowPass&&!wireframeMode&&headlightBaseIntensity>0.001&&material<=2.5){
