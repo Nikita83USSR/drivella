@@ -94,9 +94,9 @@
 <body>
 <canvas id="scene"></canvas><canvas id="sun"></canvas>
 <div id="hud">
- <div class="top"><div class="logo">DRIVELLA<small>3D SYNTHWAVE DRIFT RACING</small></div><div class="version-label" id="version-label">v0.16.3 · BUILD 049</div><div class="stat">DISTANCE<b id="distance">000.0 KM</b></div><div class="stat">LOCATION<b>VIOLET COAST</b></div></div>
+ <div class="top"><div class="logo">DRIVELLA<small>3D SYNTHWAVE DRIFT RACING</small></div><div class="version-label" id="version-label">v0.16.4 · BUILD 050</div><div class="stat">DISTANCE<b id="distance">000.0 KM</b></div><div class="stat">LOCATION<b>VIOLET COAST</b></div></div>
  <div class="right"><div id="speed">000 <span>KM/H</span></div><div id="direction">▶ FORWARD</div><div id="music">♫ MUSIC SCANNING…</div></div>
- <div class="bottom"><div class="hint"><strong>W / ↑</strong> ACCELERATE　<strong>S / ↓</strong> BRAKE / REVERSE<br><strong>A / ←　D / →</strong> STEER　<strong>SPACE</strong> HANDBRAKE　<strong>M</strong> MUSIC　<strong>1–4</strong> CAMERA　<strong>L</strong> LIGHTS　<strong>K</strong> WIREFRAME</div><div>3D NEON HIGHWAY // BUILD 049</div></div>
+ <div class="bottom"><div class="hint"><strong>W / ↑</strong> ACCELERATE　<strong>S / ↓</strong> BRAKE / REVERSE<br><strong>A / ←　D / →</strong> STEER　<strong>SPACE</strong> HANDBRAKE　<strong>M</strong> MUSIC　<strong>1–4</strong> CAMERA　<strong>L</strong> LIGHTS　<strong>K</strong> WIREFRAME</div><div>3D NEON HIGHWAY // BUILD 050</div></div>
 </div>
 <div id="tools-ui"><button id="cam-prev" aria-label="Previous camera">◀</button><span id="cam-label">CAM 2 · CLOSE</span><button id="cam-next" aria-label="Next camera">▶</button><button id="debug-toggle">DEBUG</button></div>
 <div id="debug-panel"><div class="debug-title">DRIVELLA DIAGNOSTICS</div><div id="debug-data">Initializing…</div></div>
@@ -291,12 +291,12 @@ function makeCarHull(keys,wheelArches=false,flatRoof=false){
  for(const z of zSamples){
   const p=profileValue(z,keys);
   let side=p.side,floor=p.floor;
-  if(wheelArches){const arch=Math.max(archY(z,-1.6375),archY(z,1.6375));side=Math.max(side,arch);floor=Math.max(floor,arch);}
+  if(wheelArches){const arch=Math.max(archY(z,-1.6375),archY(z,1.6375));side=Math.max(side,arch);}
   const sideW=p.sideW??p.w,midW=p.midW??p.w,shoulderW=p.shoulderW??p.w*.96,upperW=p.upperW??p.w*.66,topW=p.topW??p.w*.48;
   rings.push([
    [0,floor,z],[sideW*.72,floor,z],[sideW,side,z],[midW,p.mid,z],
    [shoulderW,p.shoulder,z],[upperW,p.upper,z],[topW,p.top,z],[0,p.top+(flatRoof?0:.026),z],
-   [-topW,p.top,z],[-upperW,p.upper,z],[-shoulderW,shoulder,z],[-midW,p.mid,z],
+   [-topW,p.top,z],[-upperW,p.upper,z],[-shoulderW,p.shoulder,z],[-midW,p.mid,z],
    [-sideW,side,z],[-sideW*.72,floor,z]
   ]);
  }
@@ -423,8 +423,8 @@ const cabinProfile=[
  {z:.18,w:1.0,sideW:.96,midW:.925,shoulderW:.88,upperW:.785,topW:.585,floor:.66,side:.71,mid:.92,shoulder:1.08,upper:1.235,top:1.235},
  {z:.30,w:1.0,sideW:.95,midW:.93,shoulderW:.89,upperW:.79,topW:.59,floor:.65,side:.70,mid:.90,shoulder:.99,upper:1.156,top:1.156},
  {z:.50,w:1.0,sideW:.94,midW:.92,shoulderW:.89,upperW:.81,topW:.60,floor:.62,side:.66,mid:.80,shoulder:.87,upper:1.024,top:1.024},
- {z:.70,w:1.0,sideW:.92,midW:.91,shoulderW:.90,upperW:.87,topW:.64,floor:.60,side:.64,mid:.75,shoulder:.81,upper:.892,top:.892},
- {z:.85,w:1.0,sideW:.91,midW:.895,shoulderW:.90,upperW:.91,topW:.66,floor:.58,side:.62,mid:.69,shoulder:.73,upper:.793,top:.793},
+ {z:.70,w:1.0,sideW:.92,midW:.91,shoulderW:.90,upperW:.89,topW:.64,floor:.60,side:.64,mid:.75,shoulder:.81,upper:.973,top:.973},
+ {z:.85,w:1.0,sideW:.91,midW:.895,shoulderW:.92,upperW:.90,topW:.66,floor:.58,side:.62,mid:.69,shoulder:.73,upper:.91,top:.91},
  {z:.99,w:1.0,sideW:.88,midW:.87,shoulderW:.84,upperW:.84,topW:.62,floor:.56,side:.60,mid:.63,shoulder:.65,upper:.700,top:.700}
 ];
 const cabinMesh=makeCarHull(cabinProfile,false,true),roofMesh=makeRoof(),wheelFace=makeWheelFace(),exhaustTip=makeExhaustTip(),exhaustCore=makeExhaustCore();
