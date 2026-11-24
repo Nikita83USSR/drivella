@@ -2,7 +2,7 @@
 
 A browser-based synthwave drift-racing prototype with a custom low-poly 3D car, a procedural neon environment, and a hand-built WebGL renderer.
 
-> **Status:** Playable prototype under active development. Current renderer reference: **v0.18.51 / BUILD 117**.
+> **Status:** Playable prototype under active development. Current renderer reference: **v0.18.52 / BUILD 118**.
 > **Release identification:** every published game change increments the visible BUILD number in the HUD and startup screen; README and rendering architecture are updated in the same release.
 
 ## Current game
@@ -10,6 +10,7 @@ A browser-based synthwave drift-racing prototype with a custom low-poly 3D car, 
 - **BUILD 115:** replace depth-interpolated shadow filtering with true 16-tap PCF: the vehicle receiver map uses `NEAREST`, compares each packed depth sample before averaging visibility, uses `highp` fragment arithmetic when available, and snaps the directional shadow projection to whole map texels to reduce shimmer while turning. The 2048² receiver target has a device-limit / allocation fallback. All painted body surfaces share the same filter and fixed bias; the full-scene road-shadow and garage spotlight filters are unchanged.
 - **BUILD 116:** reduce fine self-shadow streaking on the side panels with a bounded slope-scaled receiver bias (larger for grazing side faces, smaller on sun-facing surfaces). The rear-quarter side-vent frame no longer casts into the body self-shadow map because it sits nearly flush with the flank. It remains visible; garage spotlight caster behavior and full-scene road shadows are unchanged.
 - **BUILD 117:** add an interactive **F4 Visual Effects** panel with independent toggles for car ink outlines, SSAO, wireframe, solar/world shadows, vehicle self-shadows, glass reflections, paint highlights, lamp emission, pop-up headlights, headlight illumination, garage spotlights and their shadows, the sunset disc, vehicle lens flares, underglow and tyre-contact shadows. Settings apply immediately; existing `K`, `L` and `H` shortcuts stay synchronized with the panel.
+- **BUILD 118:** reduce the vehicle self-shadow receiver map from 2048² to 1024² and render it from vehicle detail casters only; the road grid, biome and environment meshes are skipped during this secondary pass. The F4 self-shadow checkbox now truly skips receiver-map allocation/rendering when off. This removes the redundant full-scene 2048² pass that had become a major frame-time cost. The main 2048² world-shadow map remains unchanged.
 - Custom WebGL 1 renderer for the 3D vehicle, road, garage, and procedural environments.
 - All four wheels animate as a single rolling assembly: tyre, brake disc, alloy spokes, and hub share one spin phase, with the rotation direction matched to forward travel.
 - Windshield, rear and side glazing now show stronger view-dependent synthwave environment reflections: a blue sky gradient, magenta horizon, cyan neon bands, and garage-light specular response. This is a procedural reflection approximation, not ray-traced or screen-space reflection.
