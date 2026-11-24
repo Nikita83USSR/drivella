@@ -96,14 +96,14 @@
 <body>
 <canvas id="scene"></canvas><canvas id="sun"></canvas><canvas id="flare"></canvas>
 <div id="hud">
- <div class="top"><div class="logo">DRIVELLA<small>3D SYNTHWAVE DRIFT RACING</small></div><div class="version-label" id="version-label">v0.18.46 · BUILD 112</div><div class="stat">DISTANCE<b id="distance">000.0 KM</b></div><div class="stat">LOCATION<b>VIOLET COAST</b></div></div>
+ <div class="top"><div class="logo">DRIVELLA<small>3D SYNTHWAVE DRIFT RACING</small></div><div class="version-label" id="version-label">v0.18.47 · BUILD 113</div><div class="stat">DISTANCE<b id="distance">000.0 KM</b></div><div class="stat">LOCATION<b>VIOLET COAST</b></div></div>
  <div class="right"><div id="speed">000 <span>KM/H</span></div><div id="direction">▶ FORWARD</div><div id="music">♫ MUSIC SCANNING…</div></div>
- <div class="bottom"><div class="hint"><strong>W / ↑</strong> ACCELERATE　<strong>S / ↓</strong> BRAKE / REVERSE<br><strong>A / ←　D / →</strong> STEER　<strong>SPACE</strong> HANDBRAKE　<strong>C</strong> CAMERA　<strong>HOLD + DRAG LMB</strong> LOOK　<strong>L</strong> LIGHTS　<strong>K</strong> WIREFRAME</div><div>3D NEON HIGHWAY // BUILD 112</div></div>
+ <div class="bottom"><div class="hint"><strong>W / ↑</strong> ACCELERATE　<strong>S / ↓</strong> BRAKE / REVERSE<br><strong>A / ←　D / →</strong> STEER　<strong>SPACE</strong> HANDBRAKE　<strong>C</strong> CAMERA　<strong>HOLD + DRAG LMB</strong> LOOK　<strong>L</strong> LIGHTS　<strong>K</strong> WIREFRAME</div><div>3D NEON HIGHWAY // BUILD 113</div></div>
 </div>
 <div id="fps-counter" aria-live="off">FPS --</div>
 <div id="tools-ui"><button id="cam-prev" aria-label="Previous camera">◀</button><span id="cam-label">CAM 2 · CLOSE</span><button id="cam-next" aria-label="Next camera">▶</button><button id="debug-toggle">DEBUG</button></div>
 <div id="debug-panel"><div class="debug-title">DRIVELLA DIAGNOSTICS</div><div id="debug-data">Initializing…</div></div>
-<div id="boot-screen"><div class="boot-content"><div class="boot-kicker">NIGHT DRIVE SYSTEMS // INITIALIZING</div><div class="boot-logo">DRIVELLA</div><div class="boot-subtitle">3D SYNTHWAVE DRIFT RACING</div><div class="boot-mark"></div><div class="boot-status" id="boot-status">BUILDING THE 3D WORLD</div><div class="boot-track"><div class="boot-progress" id="boot-progress"></div></div><div class="boot-meta"><span>3D ENGINE ONLINE</span><span id="boot-percent">00%</span></div><div class="boot-footer">ENGINE STARTUP // v0.18.46 · BUILD 112</div></div></div>
+<div id="boot-screen"><div class="boot-content"><div class="boot-kicker">NIGHT DRIVE SYSTEMS // INITIALIZING</div><div class="boot-logo">DRIVELLA</div><div class="boot-subtitle">3D SYNTHWAVE DRIFT RACING</div><div class="boot-mark"></div><div class="boot-status" id="boot-status">BUILDING THE 3D WORLD</div><div class="boot-track"><div class="boot-progress" id="boot-progress"></div></div><div class="boot-meta"><span>3D ENGINE ONLINE</span><span id="boot-percent">00%</span></div><div class="boot-footer">ENGINE STARTUP // v0.18.47 · BUILD 113</div></div></div>
 <div id="main-menu"><div class="menu-content"><div class="menu-brand">DRIVELLA GTS</div><div class="menu-sub">RIDE THE RETRO FUTURE</div><div class="menu-actions"><button class="menu-btn" id="menu-start">СТАРТ</button><button class="menu-btn" id="menu-garage">ГАРАЖ</button><button class="menu-btn" id="menu-options">НАСТРОЙКИ</button></div></div><div class="menu-footer">РАЗРАБОТЧИК — <b>НИКИТА МАРКИН</b></div></div>
 <div id="garage-screen"><div class="garage-head">ГАРАЖ // DRIVELLA GTS</div><div class="garage-copy">ТЕКУЩИЙ АВТОМОБИЛЬ<br>DRIVELLA GTS · RETRO GT COUPE<br>ПОКАЖИ ЕЁ СО ВСЕХ СТОРОН</div><div class="garage-controls"><button id="garage-back">← НАЗАД В МЕНЮ</button></div><div class="garage-tip">ЗАЖМИ И ТЯНИ — ВРАЩЕНИЕ<br>КОЛЁСИКО — ПРИБЛИЗИТЬ / ОТДАЛИТЬ</div></div>
 <div id="options-screen"><div class="options-head">ОПЦИИ</div><div class="options-card"><div class="option-row"><span>МУЗЫКА</span><button id="option-music">ВКЛЮЧЕНА</button></div><div class="option-row"><span>ГРОМКОСТЬ</span><input id="option-volume" type="range" min="0" max="100" value="52"></div><div class="option-row"><span>ЗВУК ДВИГАТЕЛЯ</span><button id="option-sfx">ВКЛЮЧЁН</button></div><div class="option-row"><span>КАМЕРА</span><span>КЛАВИШИ 1–4</span></div><button id="options-back" style="width:100%;margin-top:18px">← НАЗАД В МЕНЮ</button></div></div>
@@ -111,7 +111,7 @@
 <script>
 (()=>{
 'use strict';
-const VERSION='v0.18.46',BUILD='112';
+const VERSION='v0.18.47',BUILD='113';
 const canvas=document.getElementById('scene'),gl=canvas.getContext('webgl',{antialias:true,alpha:true}),sun=document.getElementById('sun'),sctx=sun.getContext('2d'),flare=document.getElementById('flare'),fctx=flare.getContext('2d');
 const $=id=>document.getElementById(id);
 const clamp=(v,a,b)=>Math.max(a,Math.min(b,v));
@@ -122,7 +122,7 @@ function reportStartupError(message){
 window.addEventListener('error',e=>reportStartupError(e.message||'JavaScript error'));
 window.addEventListener('unhandledrejection',e=>reportStartupError(e.reason&&e.reason.message||e.reason||'Promise rejected'));
 
-let W=innerWidth,H=innerHeight,DPR=1,outlinePass=false,shadowPass=false,aoScenePass=false,outlineTarget=null,aoTarget=null,shadowTarget=null,shadowVP=null,outlineCabinEdge=null,headlightCullL=[0,0,0],headlightCullR=[0,0,0],headlightCullDir=[0,0,1],headlightBaseIntensity=0,headlightMeshTests=0,headlightMeshCulled=0;
+let W=innerWidth,H=innerHeight,DPR=1,outlinePass=false,shadowPass=false,vehicleShadowPass=false,aoScenePass=false,outlineTarget=null,aoTarget=null,shadowTarget=null,vehicleShadowTarget=null,localShadowTargets=[null,null],localShadowVPs=[null,null],localShadowSignatures=['',''],shadowVP=null,sunShadowVP=null,shadowSceneRevision=1,outlineCabinEdge=null,headlightCullL=[0,0,0],headlightCullR=[0,0,0],headlightCullDir=[0,0,1],headlightBaseIntensity=0,headlightMeshTests=0,headlightMeshCulled=0;
 function resize(){
  DPR=Math.min(devicePixelRatio||1,2);W=innerWidth;H=innerHeight;
  for(const c of [canvas,sun,flare]){c.width=Math.round(W*DPR);c.height=Math.round(H*DPR);c.style.width=W+'px';c.style.height=H+'px';}
@@ -131,34 +131,38 @@ function resize(){
 }
 addEventListener('resize',resize);
 if(!gl){$('boot-status').textContent='WEBGL NOT AVAILABLE';throw new Error('WebGL unavailable');}
-const vs='attribute vec3 p;attribute vec3 normal;uniform mat4 vp;uniform mat4 model;uniform mat3 normalMatrix;uniform mat4 shadowVP;varying vec3 vNormal;varying vec3 vWorldPos;varying vec3 vLocalPos;varying vec4 vShadowCoord;void main(){vec4 world=model*vec4(p,1.0);vWorldPos=world.xyz;vLocalPos=p;vShadowCoord=shadowVP*world;vNormal=normalize(normalMatrix*normal);gl_Position=vp*world;}';
-const fs='precision mediump float;uniform vec4 color;uniform float toon;uniform float materialMode;uniform float outlinePass;uniform float shadowPass;uniform float aoScenePass;uniform float shadowEnabled;uniform sampler2D shadowMap;uniform vec2 shadowTexel;uniform vec3 keyLightDir;uniform vec3 fillLightDir;uniform vec3 viewPos;uniform float showroom;uniform float time;uniform vec3 headlightPosL;uniform vec3 headlightPosR;uniform vec3 headlightDir;uniform float headlightIntensity;uniform float localLightCount;uniform vec4 localLightPosRange[4];uniform vec4 localLightColorPower[4];uniform vec4 localLightDirectionCone[4];varying vec3 vNormal;varying vec3 vWorldPos;varying vec3 vLocalPos;varying vec4 vShadowCoord;\nfloat calcHeadlightEnergy(){\n if(headlightIntensity<=0.001)return 0.0;\n vec3 deltaL=headlightPosL-vWorldPos,deltaR=headlightPosR-vWorldPos;\n float distSqL=dot(deltaL,deltaL),distSqR=dot(deltaR,deltaR);\n if(distSqL>=1764.0&&distSqR>=1764.0)return 0.0;\n vec3 surfaceNormal=normalize(vNormal);\n float energy=0.0;\n if(distSqL<1764.0){\n  float distL=sqrt(max(distSqL,0.000001));\n  vec3 toL=deltaL/max(distL,0.001);\n  float coneL=smoothstep(0.91,0.985,dot(headlightDir,-toL));\n  float rangeL=1.0-smoothstep(28.0,42.0,distL);\n  float attenuationL=1.0/(1.0+distSqL*0.006);\n  float diffuseL=abs(dot(surfaceNormal,toL));\n  energy+=coneL*rangeL*attenuationL*diffuseL;\n }\n if(distSqR<1764.0){\n  float distR=sqrt(max(distSqR,0.000001));\n  vec3 toR=deltaR/max(distR,0.001);\n  float coneR=smoothstep(0.91,0.985,dot(headlightDir,-toR));\n  float rangeR=1.0-smoothstep(28.0,42.0,distR);\n  float attenuationR=1.0/(1.0+distSqR*0.006);\n  float diffuseR=abs(dot(surfaceNormal,toR));\n  energy+=coneR*rangeR*attenuationR*diffuseR;\n }\n return energy*headlightIntensity;\n}\nvec3 evalLocalLight(vec3 N,vec3 V,vec3 albedo,float gloss,vec4 posRange,vec4 colorPower,vec4 directionCone){\n if(colorPower.w<=0.001||posRange.w<=0.01)return vec3(0.0);\n vec3 delta=posRange.xyz-vWorldPos;float distSq=dot(delta,delta),range=posRange.w;\n if(distSq>=range*range)return vec3(0.0);\n float dist=sqrt(max(distSq,0.0001));vec3 L=delta/max(dist,0.001);\n float radial=1.0-smoothstep(range*0.52,range,dist);float attenuation=radial*radial/(1.0+distSq*0.026);\n float cone=1.0;if(directionCone.w> -0.5){float spotDot=dot(normalize(directionCone.xyz),-L);cone=smoothstep(directionCone.w,min(directionCone.w+0.10,0.999),spotDot);}\n float diffuse=abs(dot(N,L));vec3 H=normalize(L+V);float specular=pow(max(abs(dot(N,H)),0.0),gloss);\n vec3 diffuseTerm=albedo*colorPower.rgb*(diffuse*0.28);vec3 specularTerm=colorPower.rgb*(specular*0.18);return (diffuseTerm+specularTerm)*colorPower.w*attenuation*cone;\n}\nvec3 calcLocalLighting(vec3 N,vec3 V,vec3 albedo,float gloss){\n if(localLightCount<0.5)return vec3(0.0);\n vec3 sum=evalLocalLight(N,V,albedo,gloss,localLightPosRange[0],localLightColorPower[0],localLightDirectionCone[0]);\n if(localLightCount>1.5)sum+=evalLocalLight(N,V,albedo,gloss,localLightPosRange[1],localLightColorPower[1],localLightDirectionCone[1]);\n if(localLightCount>2.5)sum+=evalLocalLight(N,V,albedo,gloss,localLightPosRange[2],localLightColorPower[2],localLightDirectionCone[2]);\n if(localLightCount>3.5)sum+=evalLocalLight(N,V,albedo,gloss,localLightPosRange[3],localLightColorPower[3],localLightDirectionCone[3]);\n return sum;\n}\nvoid main(){if(outlinePass>0.5){vec3 edgeN=normalize(vNormal);float viewDepth=clamp(length(viewPos-vWorldPos)/(aoScenePass>0.5?110.0:24.0),0.0,1.0);gl_FragColor=vec4(edgeN*0.5+0.5,0.25+viewDepth*0.75);return;}if(shadowPass>0.5){float depthValue=gl_FragCoord.z;gl_FragColor=vec4(floor(depthValue*255.0)/255.0,fract(depthValue*255.0),0.0,1.0);return;}if(materialMode>6.5&&materialMode<7.5){float radius=length(vec2(vLocalPos.x*0.92,vLocalPos.z*0.78));float core=exp(-radius*radius*5.8);float soft=exp(-radius*radius*1.72);float edgeFade=1.0-smoothstep(0.78,1.0,radius);float contact=clamp((core*0.62+soft*0.38)*edgeFade,0.0,1.0);gl_FragColor=vec4(vec3(0.006,0.004,0.012),color.a*contact);return;}if(materialMode>7.5){gl_FragColor=vec4(color.rgb*1.55,color.a);return;}float shadowVisibility=1.0;if(shadowEnabled>0.5&&materialMode<4.5){float invW=1.0/max(vShadowCoord.w,0.0001);vec3 shadowNdc=vShadowCoord.xyz*invW;vec2 shadowUv=shadowNdc.xy*0.5+0.5;float receiverDepth=shadowNdc.z*0.5+0.5;if(shadowUv.x>0.001&&shadowUv.x<0.999&&shadowUv.y>0.001&&shadowUv.y<0.999&&receiverDepth>0.0&&receiverDepth<1.0){vec3 lightDirection=normalize(vec3(-0.48,0.82,0.30));float normalDotLight=abs(dot(normalize(vNormal),lightDirection));float isVehicleReceiver=step(0.5,toon);float biasBase=mix(0.00024,0.00034,isVehicleReceiver);float biasSlope=mix(0.00066,0.0022,isVehicleReceiver);float bias=max(biasBase,biasSlope*(1.0-normalDotLight));float blockerDepthSum=0.0,blockerCount=0.0;for(int by=-1;by<=1;by++){for(int bx=-1;bx<=1;bx++){vec2 blockerUv=shadowUv+vec2(float(bx),float(by))*shadowTexel*2.2;vec2 blockerPack=texture2D(shadowMap,blockerUv).rg;float blockerDepth=blockerPack.x+blockerPack.y/255.0;if(blockerDepth<receiverDepth-bias){blockerDepthSum+=blockerDepth;blockerCount+=1.0;}}}if(blockerCount>0.0){float averageBlocker=blockerDepthSum/blockerCount;float penumbra=clamp((receiverDepth-averageBlocker)/max(averageBlocker,0.045)*24.0,1.0,5.5);float shadowAmount=0.0,shadowWeight=0.0;for(int sy=-1;sy<=1;sy++){for(int sx=-1;sx<=1;sx++){float tapWeight=(sx==0?2.0:1.0)*(sy==0?2.0:1.0);vec2 sampleUv=shadowUv+vec2(float(sx),float(sy))*shadowTexel*penumbra;vec2 packedDepth=texture2D(shadowMap,sampleUv).rg;float storedDepth=packedDepth.x+packedDepth.y/255.0;shadowAmount+=receiverDepth-bias>storedDepth?tapWeight:0.0;shadowWeight+=tapWeight;}}float receiverShadowStrength=0.50;shadowVisibility=1.0-(shadowAmount/max(shadowWeight,1.0))*receiverShadowStrength;}}}if(materialMode>5.5){float across=abs(vLocalPos.x);float railCore=exp(-pow(across/0.14,2.0));float railHalo=exp(-pow(across/0.48,2.0));float railHaze=exp(-pow(across/0.88,2.0));float endFade=1.0-smoothstep(0.86,1.0,abs(vLocalPos.z));float railEnergy=(railCore*0.13+railHalo*0.46+railHaze*0.27)*endFade;float railAlpha=color.a*clamp(railEnergy,0.0,0.78);vec3 railColor=mix(color.rgb,vec3(1.0,0.20,0.42),railCore*0.36);gl_FragColor=vec4(railColor,railAlpha);return;}if(materialMode>4.5){float radius=length(vLocalPos.xz);float broadHalo=exp(-radius*radius*0.58);float softHalo=exp(-radius*radius*1.48);float bodyGlow=exp(-radius*radius*3.65);float emitter=exp(-radius*radius*8.2);float edgeFade=1.0-smoothstep(0.91,1.0,radius);float glow=(broadHalo*0.58+softHalo*0.30+bodyGlow*0.105+emitter*0.018)*edgeFade;float softAlpha=color.a*clamp(glow,0.0,0.72);vec3 neonColor=mix(color.rgb,vec3(1.0,0.18,0.40),bodyGlow*0.40);gl_FragColor=vec4(neonColor,softAlpha);return;}if(toon<0.5){float headlightEnergy=calcHeadlightEnergy();vec3 worldLit=color.rgb*shadowVisibility+vec3(0.58,0.78,1.0)*headlightEnergy*1.15;worldLit+=calcLocalLighting(normalize(vNormal),normalize(viewPos-vWorldPos),color.rgb,38.0);gl_FragColor=vec4(worldLit,color.a);return;}if(materialMode>2.5&&materialMode<3.5){vec3 glassN=normalize(vNormal);vec3 glassV=normalize(viewPos-vWorldPos);vec3 reflected=reflect(-glassV,glassN);float facing=clamp(abs(dot(glassN,glassV)),0.0,1.0);float fresnel=pow(1.0-facing,2.0);float skyBlend=smoothstep(-0.36,0.58,reflected.y);vec3 reflectedEnv=mix(vec3(0.012,0.010,0.052),vec3(0.075,0.30,0.56),skyBlend);float horizonBand=exp(-pow((reflected.y-0.10)*7.5,2.0));float cyanBand=exp(-pow((reflected.y+0.10)*20.0,2.0));float magentaBand=exp(-pow((reflected.y-0.34)*17.0,2.0));float skylinePulse=0.68+0.32*sin(reflected.x*24.0+reflected.z*9.0+time*0.035);reflectedEnv+=vec3(1.0,0.13,0.39)*horizonBand*0.62;reflectedEnv+=vec3(0.06,0.66,1.0)*cyanBand*skylinePulse*0.62;reflectedEnv+=vec3(0.78,0.13,0.72)*magentaBand*0.42;float cityNeon=pow(max(0.0,sin(reflected.x*38.0+reflected.z*13.0+time*0.025)),12.0);reflectedEnv+=vec3(0.12,0.82,1.0)*cityNeon*cyanBand*0.34;float sunReflection=pow(max(dot(reflected,normalize(keyLightDir)),0.0),28.0);reflectedEnv+=vec3(1.0,0.72,0.48)*sunReflection*1.05;vec3 glassBase=mix(color.rgb,vec3(0.025,0.045,0.095),0.30);float reflectionStrength=clamp(0.54+fresnel*0.34,0.54,0.88);vec3 glassTint=mix(glassBase,reflectedEnv,reflectionStrength);vec3 glassH=normalize(normalize(keyLightDir)+glassV);float ndh=clamp(abs(dot(glassN,glassH)),0.0,1.0);float broadGlint=pow(ndh,8.0)*0.18;float sunGlint=pow(ndh,42.0)*0.72;glassTint+=vec3(1.0,0.88,0.72)*(broadGlint+sunGlint);float edgeGlint=pow(fresnel,1.25)*0.16;glassTint+=vec3(0.24,0.72,1.0)*edgeGlint;glassTint+=calcLocalLighting(glassN,glassV,glassTint,58.0)*0.82;glassTint*=mix(1.0,shadowVisibility,0.24);gl_FragColor=vec4(glassTint,color.a);return;}if(materialMode>3.5){vec3 paintN=normalize(vNormal);vec3 paintV=normalize(viewPos-vWorldPos);vec3 paintK=normalize(keyLightDir);vec3 paintF=normalize(fillLightDir);vec3 paintH=normalize(paintK+paintV);vec3 fillH=normalize(paintF+paintV);float nh=clamp(abs(dot(paintN,paintH)),0.0,1.0);float fillNh=clamp(abs(dot(paintN,fillH)),0.0,1.0);float satinSheen=pow(nh,11.0)*0.19;float sunGlint=pow(nh,58.0)*0.62;float softSun=pow(nh,7.0)*0.045;float coolFill=pow(fillNh,20.0)*0.12;float rim=pow(1.0-clamp(abs(dot(paintN,paintV)),0.0,1.0),2.0);vec3 paintColor=color.rgb;paintColor+=vec3(0.30,0.24,0.24)*satinSheen;paintColor+=vec3(1.0,0.91,0.82)*(sunGlint+softSun);paintColor+=vec3(0.12,0.36,0.54)*coolFill;paintColor+=vec3(1.0,0.22,0.34)*rim*0.025;if(showroom>0.5){float studioSheen=pow(nh,8.0)*0.075;paintColor+=vec3(1.0,0.78,0.70)*studioSheen;}paintColor*=shadowVisibility;paintColor+=calcLocalLighting(paintN,paintV,paintColor,62.0)*0.78;gl_FragColor=vec4(paintColor,color.a);return;}vec3 N=normalize(vNormal);vec3 K=normalize(keyLightDir);vec3 F=normalize(fillLightDir);float key=abs(dot(N,K));float fill=abs(dot(N,F));float illum=clamp(key*0.78+fill*0.30,0.0,1.0);float band=illum<0.27?0.46:(illum<0.59?0.78:1.12);vec3 V=normalize(viewPos-vWorldPos);vec3 HK=normalize(K+V);vec3 HF=normalize(F+V);float power=materialMode>1.5?58.0:26.0;float specK=pow(max(abs(dot(N,HK)),0.0),power);float specF=pow(max(abs(dot(N,HF)),0.0),power*0.78);float strength=materialMode>1.5?1.28:(materialMode>0.5?0.92:0.06);float fresnel=pow(1.0-clamp(abs(dot(N,V)),0.0,1.0),2.0);vec3 lit=color.rgb*band;lit+=vec3(1.0,0.82,0.86)*specK*strength;if(materialMode>0.5&&materialMode<1.5){float topFacing=clamp(N.y*0.72+0.28,0.0,1.0);lit+=vec3(0.92,0.18,0.36)*fresnel*0.16;}if(showroom>0.5&&materialMode<1.5){float sunSharp=pow(max(abs(dot(N,HK)),0.0),110.0);float sunSoft=pow(max(abs(dot(N,HK)),0.0),28.0);lit+=vec3(1.0,0.97,0.88)*(sunSharp*1.75+sunSoft*0.28);float edgeGlint=pow(fresnel,1.55)*sunSoft;lit+=vec3(1.0,0.48,0.24)*edgeGlint*0.22;}lit+=vec3(0.22,0.78,1.0)*specF*(materialMode>1.5?0.62:0.24);if(materialMode>1.5){lit+=vec3(0.12,0.62,0.92)*fresnel*0.58;lit+=vec3(0.78,0.94,1.0)*pow(specK,0.32)*0.16;}lit*=shadowVisibility;lit+=vec3(0.58,0.78,1.0)*calcHeadlightEnergy()*1.15;lit+=calcLocalLighting(N,V,lit,44.0);gl_FragColor=vec4(lit,color.a);}';
+const vs='attribute vec3 p;attribute vec3 normal;uniform mat4 vp;uniform mat4 model;uniform mat3 normalMatrix;uniform mat4 shadowVP;uniform mat4 localShadowVP0;uniform mat4 localShadowVP1;varying vec3 vNormal;varying vec3 vWorldPos;varying vec3 vLocalPos;varying vec4 vShadowCoord;varying vec4 vLocalShadowCoord0;varying vec4 vLocalShadowCoord1;void main(){vec4 world=model*vec4(p,1.0);vWorldPos=world.xyz;vLocalPos=p;vShadowCoord=shadowVP*world;vLocalShadowCoord0=localShadowVP0*world;vLocalShadowCoord1=localShadowVP1*world;vNormal=normalize(normalMatrix*normal);gl_Position=vp*world;}';
+const fs='precision mediump float;uniform vec4 color;uniform float toon;uniform float materialMode;uniform float outlinePass;uniform float shadowPass;uniform float aoScenePass;uniform float shadowEnabled;uniform sampler2D shadowMap;uniform sampler2D vehicleShadowMap;uniform vec2 shadowTexel;uniform vec2 vehicleShadowTexel;uniform sampler2D localShadowMap0;uniform sampler2D localShadowMap1;uniform vec2 localShadowTexel0;uniform vec2 localShadowTexel1;uniform vec2 localShadowEnabled;uniform vec3 keyLightDir;uniform vec3 fillLightDir;uniform vec3 viewPos;uniform float showroom;uniform float time;uniform vec3 headlightPosL;uniform vec3 headlightPosR;uniform vec3 headlightDir;uniform float headlightIntensity;uniform float localLightCount;uniform vec4 localLightPosRange[4];uniform vec4 localLightColorPower[4];uniform vec4 localLightDirectionCone[4];varying vec3 vNormal;varying vec3 vWorldPos;varying vec3 vLocalPos;varying vec4 vShadowCoord;varying vec4 vLocalShadowCoord0;varying vec4 vLocalShadowCoord1;\nfloat calcHeadlightEnergy(){\n if(headlightIntensity<=0.001)return 0.0;\n vec3 deltaL=headlightPosL-vWorldPos,deltaR=headlightPosR-vWorldPos;\n float distSqL=dot(deltaL,deltaL),distSqR=dot(deltaR,deltaR);\n if(distSqL>=1764.0&&distSqR>=1764.0)return 0.0;\n vec3 surfaceNormal=normalize(vNormal);\n float energy=0.0;\n if(distSqL<1764.0){\n  float distL=sqrt(max(distSqL,0.000001));\n  vec3 toL=deltaL/max(distL,0.001);\n  float coneL=smoothstep(0.91,0.985,dot(headlightDir,-toL));\n  float rangeL=1.0-smoothstep(28.0,42.0,distL);\n  float attenuationL=1.0/(1.0+distSqL*0.006);\n  float diffuseL=abs(dot(surfaceNormal,toL));\n  energy+=coneL*rangeL*attenuationL*diffuseL;\n }\n if(distSqR<1764.0){\n  float distR=sqrt(max(distSqR,0.000001));\n  vec3 toR=deltaR/max(distR,0.001);\n  float coneR=smoothstep(0.91,0.985,dot(headlightDir,-toR));\n  float rangeR=1.0-smoothstep(28.0,42.0,distR);\n  float attenuationR=1.0/(1.0+distSqR*0.006);\n  float diffuseR=abs(dot(surfaceNormal,toR));\n  energy+=coneR*rangeR*attenuationR*diffuseR;\n }\n return energy*headlightIntensity;\n}\nvec3 evalLocalLight(vec3 N,vec3 V,vec3 albedo,float gloss,vec4 posRange,vec4 colorPower,vec4 directionCone,float shadowVisibility){\n if(colorPower.w<=0.001||posRange.w<=0.01)return vec3(0.0);\n vec3 delta=posRange.xyz-vWorldPos;float distSq=dot(delta,delta),range=posRange.w;\n if(distSq>=range*range)return vec3(0.0);\n float dist=sqrt(max(distSq,0.0001));vec3 L=delta/max(dist,0.001);\n float radial=1.0-smoothstep(range*0.52,range,dist);float attenuation=radial*radial/(1.0+distSq*0.026);\n float cone=1.0;if(directionCone.w> -0.5){float spotDot=dot(normalize(directionCone.xyz),-L);cone=smoothstep(directionCone.w,min(directionCone.w+0.10,0.999),spotDot);}\n float diffuse=abs(dot(N,L));vec3 H=normalize(L+V);float specular=pow(max(abs(dot(N,H)),0.0),gloss);\n vec3 diffuseTerm=albedo*colorPower.rgb*(diffuse*0.28);vec3 specularTerm=colorPower.rgb*(specular*0.18);return (diffuseTerm+specularTerm)*colorPower.w*attenuation*cone*shadowVisibility;\n}\nvec3 calcLocalLighting(vec3 N,vec3 V,vec3 albedo,float gloss){\n if(localLightCount<0.5)return vec3(0.0);\n float localVisibility0=calcLocalSpotShadow0(vLocalShadowCoord0,N,normalize(localLightPosRange[0].xyz-vWorldPos));\n vec3 sum=evalLocalLight(N,V,albedo,gloss,localLightPosRange[0],localLightColorPower[0],localLightDirectionCone[0],localVisibility0);\n if(localLightCount>1.5){float localVisibility1=calcLocalSpotShadow1(vLocalShadowCoord1,N,normalize(localLightPosRange[1].xyz-vWorldPos));sum+=evalLocalLight(N,V,albedo,gloss,localLightPosRange[1],localLightColorPower[1],localLightDirectionCone[1],localVisibility1);}\n if(localLightCount>2.5)sum+=evalLocalLight(N,V,albedo,gloss,localLightPosRange[2],localLightColorPower[2],localLightDirectionCone[2],1.0);\n if(localLightCount>3.5)sum+=evalLocalLight(N,V,albedo,gloss,localLightPosRange[3],localLightColorPower[3],localLightDirectionCone[3],1.0);\n return sum;\n}\nvoid main(){if(outlinePass>0.5){vec3 edgeN=normalize(vNormal);float viewDepth=clamp(length(viewPos-vWorldPos)/(aoScenePass>0.5?110.0:24.0),0.0,1.0);gl_FragColor=vec4(edgeN*0.5+0.5,0.25+viewDepth*0.75);return;}if(shadowPass>0.5){float depthValue=gl_FragCoord.z;gl_FragColor=vec4(floor(depthValue*255.0)/255.0,fract(depthValue*255.0),0.0,1.0);return;}if(materialMode>6.5&&materialMode<7.5){float radius=length(vec2(vLocalPos.x*0.92,vLocalPos.z*0.78));float core=exp(-radius*radius*5.8);float soft=exp(-radius*radius*1.72);float edgeFade=1.0-smoothstep(0.78,1.0,radius);float contact=clamp((core*0.62+soft*0.38)*edgeFade,0.0,1.0);gl_FragColor=vec4(vec3(0.006,0.004,0.012),color.a*contact);return;}if(materialMode>7.5){gl_FragColor=vec4(color.rgb*1.55,color.a);return;}float sampleSunShadowDepth(vec2 uv,float vehicleReceiver){\n vec2 packedDepth;\n if(vehicleReceiver>0.5)packedDepth=texture2D(vehicleShadowMap,uv).rg;\n else packedDepth=texture2D(shadowMap,uv).rg;\n return packedDepth.x+packedDepth.y/255.0;\n}\nfloat calcSunShadow(float vehicleReceiver){\n vec4 coord=vShadowCoord;float invW=1.0/max(coord.w,0.0001);\n vec3 ndc=coord.xyz*invW;vec2 uv=ndc.xy*0.5+0.5;float receiverDepth=ndc.z*0.5+0.5;\n if(uv.x<=0.001||uv.x>=0.999||uv.y<=0.001||uv.y>=0.999||receiverDepth<=0.0||receiverDepth>=1.0)return 1.0;\n vec2 texel=mix(shadowTexel,vehicleShadowTexel,vehicleReceiver);\n float ndotl=max(dot(normalize(vNormal),normalize(keyLightDir)),0.0);\n float bias=max(0.00024,0.00072*(1.0-ndotl));\n float blockerDepthSum=0.0,blockerCount=0.0;\n for(int by=-1;by<=1;by++){for(int bx=-1;bx<=1;bx++){\n  vec2 tap=uv+vec2(float(bx),float(by))*texel*2.2;\n  float stored=sampleSunShadowDepth(tap,vehicleReceiver);\n  if(stored<receiverDepth-bias){blockerDepthSum+=stored;blockerCount+=1.0;}\n }}\n if(blockerCount<=0.0)return 1.0;\n float averageBlocker=blockerDepthSum/blockerCount;\n float penumbra=clamp((receiverDepth-averageBlocker)/max(averageBlocker,0.045)*24.0,1.0,5.5);\n float shadowAmount=0.0,shadowWeight=0.0;\n for(int sy=-1;sy<=1;sy++){for(int sx=-1;sx<=1;sx++){\n  float tapWeight=(sx==0?2.0:1.0)*(sy==0?2.0:1.0);\n  vec2 tap=uv+vec2(float(sx),float(sy))*texel*penumbra;\n  float stored=sampleSunShadowDepth(tap,vehicleReceiver);\n  shadowAmount+=(receiverDepth-bias>stored)?tapWeight:0.0;shadowWeight+=tapWeight;\n }}\n return 1.0-(shadowAmount/max(shadowWeight,1.0))*0.50;\n}\nfloat calcLocalSpotShadow0(vec4 coord,vec3 N,vec3 L){\n if(localShadowEnabled.x<0.5)return 1.0;\n float invW=1.0/max(coord.w,0.0001);vec3 ndc=coord.xyz*invW;\n vec2 uv=ndc.xy*0.5+0.5;float receiverDepth=ndc.z*0.5+0.5;\n if(uv.x<=0.001||uv.x>=0.999||uv.y<=0.001||uv.y>=0.999||receiverDepth<=0.0||receiverDepth>=1.0)return 1.0;\n float bias=max(0.00045,0.00125*(1.0-max(dot(normalize(N),normalize(L)),0.0)));\n float shadow=0.0,weight=0.0;\n for(int y=-1;y<=1;y++){for(int x=-1;x<=1;x++){\n  vec2 packed=texture2D(localShadowMap0,uv+vec2(float(x),float(y))*localShadowTexel0).rg;\n  float stored=packed.x+packed.y/255.0;\n  shadow+=(receiverDepth-bias>stored)?1.0:0.0;weight+=1.0;\n }}\n return 1.0-(shadow/max(weight,1.0))*0.72;\n}\nfloat calcLocalSpotShadow1(vec4 coord,vec3 N,vec3 L){\n if(localShadowEnabled.y<0.5)return 1.0;\n float invW=1.0/max(coord.w,0.0001);vec3 ndc=coord.xyz*invW;\n vec2 uv=ndc.xy*0.5+0.5;float receiverDepth=ndc.z*0.5+0.5;\n if(uv.x<=0.001||uv.x>=0.999||uv.y<=0.001||uv.y>=0.999||receiverDepth<=0.0||receiverDepth>=1.0)return 1.0;\n float bias=max(0.00045,0.00125*(1.0-max(dot(normalize(N),normalize(L)),0.0)));\n float shadow=0.0,weight=0.0;\n for(int y=-1;y<=1;y++){for(int x=-1;x<=1;x++){\n  vec2 packed=texture2D(localShadowMap1,uv+vec2(float(x),float(y))*localShadowTexel1).rg;\n  float stored=packed.x+packed.y/255.0;\n  shadow+=(receiverDepth-bias>stored)?1.0:0.0;weight+=1.0;\n }}\n return 1.0-(shadow/max(weight,1.0))*0.72;\n}\nfloat shadowVisibility=1.0;\nif(shadowEnabled>0.5&&materialMode<4.5)shadowVisibility=calcSunShadow(step(0.5,toon));if(materialMode>5.5){float across=abs(vLocalPos.x);float railCore=exp(-pow(across/0.14,2.0));float railHalo=exp(-pow(across/0.48,2.0));float railHaze=exp(-pow(across/0.88,2.0));float endFade=1.0-smoothstep(0.86,1.0,abs(vLocalPos.z));float railEnergy=(railCore*0.13+railHalo*0.46+railHaze*0.27)*endFade;float railAlpha=color.a*clamp(railEnergy,0.0,0.78);vec3 railColor=mix(color.rgb,vec3(1.0,0.20,0.42),railCore*0.36);gl_FragColor=vec4(railColor,railAlpha);return;}if(materialMode>4.5){float radius=length(vLocalPos.xz);float broadHalo=exp(-radius*radius*0.58);float softHalo=exp(-radius*radius*1.48);float bodyGlow=exp(-radius*radius*3.65);float emitter=exp(-radius*radius*8.2);float edgeFade=1.0-smoothstep(0.91,1.0,radius);float glow=(broadHalo*0.58+softHalo*0.30+bodyGlow*0.105+emitter*0.018)*edgeFade;float softAlpha=color.a*clamp(glow,0.0,0.72);vec3 neonColor=mix(color.rgb,vec3(1.0,0.18,0.40),bodyGlow*0.40);gl_FragColor=vec4(neonColor,softAlpha);return;}if(toon<0.5){float headlightEnergy=calcHeadlightEnergy();vec3 worldLit=color.rgb*shadowVisibility+vec3(0.58,0.78,1.0)*headlightEnergy*1.15;worldLit+=calcLocalLighting(normalize(vNormal),normalize(viewPos-vWorldPos),color.rgb,38.0);gl_FragColor=vec4(worldLit,color.a);return;}if(materialMode>2.5&&materialMode<3.5){vec3 glassN=normalize(vNormal);vec3 glassV=normalize(viewPos-vWorldPos);vec3 reflected=reflect(-glassV,glassN);float facing=clamp(abs(dot(glassN,glassV)),0.0,1.0);float fresnel=pow(1.0-facing,2.0);float skyBlend=smoothstep(-0.36,0.58,reflected.y);vec3 reflectedEnv=mix(vec3(0.012,0.010,0.052),vec3(0.075,0.30,0.56),skyBlend);float horizonBand=exp(-pow((reflected.y-0.10)*7.5,2.0));float cyanBand=exp(-pow((reflected.y+0.10)*20.0,2.0));float magentaBand=exp(-pow((reflected.y-0.34)*17.0,2.0));float skylinePulse=0.68+0.32*sin(reflected.x*24.0+reflected.z*9.0+time*0.035);reflectedEnv+=vec3(1.0,0.13,0.39)*horizonBand*0.62;reflectedEnv+=vec3(0.06,0.66,1.0)*cyanBand*skylinePulse*0.62;reflectedEnv+=vec3(0.78,0.13,0.72)*magentaBand*0.42;float cityNeon=pow(max(0.0,sin(reflected.x*38.0+reflected.z*13.0+time*0.025)),12.0);reflectedEnv+=vec3(0.12,0.82,1.0)*cityNeon*cyanBand*0.34;float sunReflection=pow(max(dot(reflected,normalize(keyLightDir)),0.0),28.0);reflectedEnv+=vec3(1.0,0.72,0.48)*sunReflection*1.05;vec3 glassBase=mix(color.rgb,vec3(0.025,0.045,0.095),0.30);float reflectionStrength=clamp(0.54+fresnel*0.34,0.54,0.88);vec3 glassTint=mix(glassBase,reflectedEnv,reflectionStrength);vec3 glassH=normalize(normalize(keyLightDir)+glassV);float ndh=clamp(abs(dot(glassN,glassH)),0.0,1.0);float broadGlint=pow(ndh,8.0)*0.18;float sunGlint=pow(ndh,42.0)*0.72;glassTint+=vec3(1.0,0.88,0.72)*(broadGlint+sunGlint);float edgeGlint=pow(fresnel,1.25)*0.16;glassTint+=vec3(0.24,0.72,1.0)*edgeGlint;glassTint+=calcLocalLighting(glassN,glassV,glassTint,58.0)*0.82;glassTint*=mix(1.0,shadowVisibility,0.24);gl_FragColor=vec4(glassTint,color.a);return;}if(materialMode>3.5){vec3 paintN=normalize(vNormal);vec3 paintV=normalize(viewPos-vWorldPos);vec3 paintK=normalize(keyLightDir);vec3 paintF=normalize(fillLightDir);vec3 paintH=normalize(paintK+paintV);vec3 fillH=normalize(paintF+paintV);float nh=clamp(abs(dot(paintN,paintH)),0.0,1.0);float fillNh=clamp(abs(dot(paintN,fillH)),0.0,1.0);float satinSheen=pow(nh,11.0)*0.19;float sunGlint=pow(nh,58.0)*0.62;float softSun=pow(nh,7.0)*0.045;float coolFill=pow(fillNh,20.0)*0.12;float rim=pow(1.0-clamp(abs(dot(paintN,paintV)),0.0,1.0),2.0);vec3 paintColor=color.rgb;paintColor+=vec3(0.30,0.24,0.24)*satinSheen;paintColor+=vec3(1.0,0.91,0.82)*(sunGlint+softSun);paintColor+=vec3(0.12,0.36,0.54)*coolFill;paintColor+=vec3(1.0,0.22,0.34)*rim*0.025;if(showroom>0.5){float studioSheen=pow(nh,8.0)*0.075;paintColor+=vec3(1.0,0.78,0.70)*studioSheen;}paintColor*=shadowVisibility;paintColor+=calcLocalLighting(paintN,paintV,paintColor,62.0)*0.78;gl_FragColor=vec4(paintColor,color.a);return;}vec3 N=normalize(vNormal);vec3 K=normalize(keyLightDir);vec3 F=normalize(fillLightDir);float key=abs(dot(N,K));float fill=abs(dot(N,F));float illum=clamp(key*0.78+fill*0.30,0.0,1.0);float band=illum<0.27?0.46:(illum<0.59?0.78:1.12);vec3 V=normalize(viewPos-vWorldPos);vec3 HK=normalize(K+V);vec3 HF=normalize(F+V);float power=materialMode>1.5?58.0:26.0;float specK=pow(max(abs(dot(N,HK)),0.0),power);float specF=pow(max(abs(dot(N,HF)),0.0),power*0.78);float strength=materialMode>1.5?1.28:(materialMode>0.5?0.92:0.06);float fresnel=pow(1.0-clamp(abs(dot(N,V)),0.0,1.0),2.0);vec3 lit=color.rgb*band;lit+=vec3(1.0,0.82,0.86)*specK*strength;if(materialMode>0.5&&materialMode<1.5){float topFacing=clamp(N.y*0.72+0.28,0.0,1.0);lit+=vec3(0.92,0.18,0.36)*fresnel*0.16;}if(showroom>0.5&&materialMode<1.5){float sunSharp=pow(max(abs(dot(N,HK)),0.0),110.0);float sunSoft=pow(max(abs(dot(N,HK)),0.0),28.0);lit+=vec3(1.0,0.97,0.88)*(sunSharp*1.75+sunSoft*0.28);float edgeGlint=pow(fresnel,1.55)*sunSoft;lit+=vec3(1.0,0.48,0.24)*edgeGlint*0.22;}lit+=vec3(0.22,0.78,1.0)*specF*(materialMode>1.5?0.62:0.24);if(materialMode>1.5){lit+=vec3(0.12,0.62,0.92)*fresnel*0.58;lit+=vec3(0.78,0.94,1.0)*pow(specK,0.32)*0.16;}lit*=shadowVisibility;lit+=vec3(0.58,0.78,1.0)*calcHeadlightEnergy()*1.15;lit+=calcLocalLighting(N,V,lit,44.0);gl_FragColor=vec4(lit,color.a);}';
 function shader(type,src){const s=gl.createShader(type);gl.shaderSource(s,src);gl.compileShader(s);if(!gl.getShaderParameter(s,gl.COMPILE_STATUS))throw new Error(gl.getShaderInfoLog(s));return s;}
 const prog=gl.createProgram();gl.attachShader(prog,shader(gl.VERTEX_SHADER,vs));gl.attachShader(prog,shader(gl.FRAGMENT_SHADER,fs));gl.linkProgram(prog);
 if(!gl.getProgramParameter(prog,gl.LINK_STATUS))throw new Error(gl.getProgramInfoLog(prog));
 gl.useProgram(prog);
-const loc={p:gl.getAttribLocation(prog,'p'),normal:gl.getAttribLocation(prog,'normal'),vp:gl.getUniformLocation(prog,'vp'),model:gl.getUniformLocation(prog,'model'),normalMatrix:gl.getUniformLocation(prog,'normalMatrix'),color:gl.getUniformLocation(prog,'color'),toon:gl.getUniformLocation(prog,'toon'),materialMode:gl.getUniformLocation(prog,'materialMode'),outlinePass:gl.getUniformLocation(prog,'outlinePass'),shadowPass:gl.getUniformLocation(prog,'shadowPass'),aoScenePass:gl.getUniformLocation(prog,'aoScenePass'),shadowEnabled:gl.getUniformLocation(prog,'shadowEnabled'),shadowMap:gl.getUniformLocation(prog,'shadowMap'),shadowVP:gl.getUniformLocation(prog,'shadowVP'),shadowTexel:gl.getUniformLocation(prog,'shadowTexel'),keyLightDir:gl.getUniformLocation(prog,'keyLightDir'),fillLightDir:gl.getUniformLocation(prog,'fillLightDir'),viewPos:gl.getUniformLocation(prog,'viewPos'),showroom:gl.getUniformLocation(prog,'showroom'),time:gl.getUniformLocation(prog,'time'),headlightPosL:gl.getUniformLocation(prog,'headlightPosL'),headlightPosR:gl.getUniformLocation(prog,'headlightPosR'),headlightDir:gl.getUniformLocation(prog,'headlightDir'),headlightIntensity:gl.getUniformLocation(prog,'headlightIntensity'),localLightCount:gl.getUniformLocation(prog,'localLightCount'),localLightPosRange:gl.getUniformLocation(prog,'localLightPosRange[0]'),localLightColorPower:gl.getUniformLocation(prog,'localLightColorPower[0]'),localLightDirectionCone:gl.getUniformLocation(prog,'localLightDirectionCone[0]')};
-const LOCAL_LIGHT_CAPACITY=4;
+const loc={p:gl.getAttribLocation(prog,'p'),normal:gl.getAttribLocation(prog,'normal'),vp:gl.getUniformLocation(prog,'vp'),model:gl.getUniformLocation(prog,'model'),normalMatrix:gl.getUniformLocation(prog,'normalMatrix'),color:gl.getUniformLocation(prog,'color'),toon:gl.getUniformLocation(prog,'toon'),materialMode:gl.getUniformLocation(prog,'materialMode'),outlinePass:gl.getUniformLocation(prog,'outlinePass'),shadowPass:gl.getUniformLocation(prog,'shadowPass'),aoScenePass:gl.getUniformLocation(prog,'aoScenePass'),shadowEnabled:gl.getUniformLocation(prog,'shadowEnabled'),shadowMap:gl.getUniformLocation(prog,'shadowMap'),vehicleShadowMap:gl.getUniformLocation(prog,'vehicleShadowMap'),localShadowMap0:gl.getUniformLocation(prog,'localShadowMap0'),localShadowMap1:gl.getUniformLocation(prog,'localShadowMap1'),localShadowVP0:gl.getUniformLocation(prog,'localShadowVP0'),localShadowVP1:gl.getUniformLocation(prog,'localShadowVP1'),localShadowEnabled:gl.getUniformLocation(prog,'localShadowEnabled'),vehicleShadowTexel:gl.getUniformLocation(prog,'vehicleShadowTexel'),localShadowTexel0:gl.getUniformLocation(prog,'localShadowTexel0'),localShadowTexel1:gl.getUniformLocation(prog,'localShadowTexel1'),shadowVP:gl.getUniformLocation(prog,'shadowVP'),shadowTexel:gl.getUniformLocation(prog,'shadowTexel'),keyLightDir:gl.getUniformLocation(prog,'keyLightDir'),fillLightDir:gl.getUniformLocation(prog,'fillLightDir'),viewPos:gl.getUniformLocation(prog,'viewPos'),showroom:gl.getUniformLocation(prog,'showroom'),time:gl.getUniformLocation(prog,'time'),headlightPosL:gl.getUniformLocation(prog,'headlightPosL'),headlightPosR:gl.getUniformLocation(prog,'headlightPosR'),headlightDir:gl.getUniformLocation(prog,'headlightDir'),headlightIntensity:gl.getUniformLocation(prog,'headlightIntensity'),localLightCount:gl.getUniformLocation(prog,'localLightCount'),localLightPosRange:gl.getUniformLocation(prog,'localLightPosRange[0]'),localLightColorPower:gl.getUniformLocation(prog,'localLightColorPower[0]'),localLightDirectionCone:gl.getUniformLocation(prog,'localLightDirectionCone[0]')};
+const SUN_LIGHT={id:'sun',type:'directional',direction:[0,.75,.6614378],castsShadow:true};
+const LOCAL_LIGHT_CAPACITY=4,LOCAL_SHADOW_CAPACITY=2,LOCAL_SHADOW_MAP_SIZE=1024,VEHICLE_SHADOW_MAP_SIZE=1024;
 const GARAGE_LOCAL_LIGHTS=[
- {position:[-3.8,4.48,.75],range:9.5,color:[.80,.91,1.0],power:2.2,direction:[.62,-.77,-.12],cutoff:.82},
- {position:[3.8,4.48,.75],range:9.5,color:[1.0,.84,.92],power:2.2,direction:[-.62,-.77,-.12],cutoff:.82}
+ {id:'garage-spot-left',type:'spot',position:[-3.8,4.48,.75],range:9.5,color:[.80,.91,1.0],power:2.2,direction:[.62,-.77,-.12],cutoff:.82,castsShadow:true,shadowSlot:0},
+ {id:'garage-spot-right',type:'spot',position:[3.8,4.48,.75],range:9.5,color:[1.0,.84,.92],power:2.2,direction:[-.62,-.77,-.12],cutoff:.82,castsShadow:true,shadowSlot:1}
 ];
 const localLightPosRangeData=new Float32Array(LOCAL_LIGHT_CAPACITY*4);
 const localLightColorPowerData=new Float32Array(LOCAL_LIGHT_CAPACITY*4);
 const localLightDirectionConeData=new Float32Array(LOCAL_LIGHT_CAPACITY*4);
+const localShadowEnabledData=new Float32Array(2);
 function uploadLocalLights(sources){
- localLightPosRangeData.fill(0);localLightColorPowerData.fill(0);localLightDirectionConeData.fill(0);
+ localLightPosRangeData.fill(0);localLightColorPowerData.fill(0);localLightDirectionConeData.fill(0);localShadowEnabledData.fill(0);
  const count=Math.min(LOCAL_LIGHT_CAPACITY,sources.length);
  for(let i=0;i<count;i++){
   const light=sources[i],o=i*4;
   localLightPosRangeData.set([...light.position,light.range],o);
   localLightColorPowerData.set([...light.color,light.power],o);
   localLightDirectionConeData.set([...(light.direction||[0,-1,0]),light.direction?light.cutoff:-1],o);
+  if(i<LOCAL_SHADOW_CAPACITY&&light.castsShadow&&light.shadowSlot===i&&localShadowTargets[i])localShadowEnabledData[i]=1;
  }
  gl.uniform1f(loc.localLightCount,count);
  gl.uniform4fv(loc.localLightPosRange,localLightPosRangeData);
  gl.uniform4fv(loc.localLightColorPower,localLightColorPowerData);
  gl.uniform4fv(loc.localLightDirectionCone,localLightDirectionConeData);
+ gl.uniform2fv(loc.localShadowEnabled,localShadowEnabledData);
 }
 const outlineVs='attribute vec2 aPosition;varying vec2 vUv;void main(){vUv=aPosition*0.5+0.5;gl_Position=vec4(aPosition,0.0,1.0);}';
 const outlineFs='precision mediump float;uniform sampler2D uNormalMask;uniform sampler2D uSceneMask;uniform vec2 uTexel;uniform vec2 uSceneTexel;uniform vec4 uRoofEdgePx;uniform vec2 uRoofEdgeDepth;uniform float uRoofEdgeVisible;varying vec2 vUv;float sampleEdge(vec2 uv,vec3 centerN,float centerDepth){vec4 q=texture2D(uNormalMask,uv);if(q.a<0.12)return 1.0;vec3 neighbourN=normalize(q.rgb*2.0-1.0);float normalDelta=1.0-clamp(abs(dot(centerN,neighbourN)),0.0,1.0);float neighbourDepth=clamp((q.a-0.25)/0.75,0.0,1.0);float depthDelta=abs(centerDepth-neighbourDepth);float normalEdge=smoothstep(0.022,0.18,normalDelta);float depthEdge=smoothstep(0.006,0.030,depthDelta);return max(normalEdge,depthEdge);}float aoSample(vec2 uv,vec3 centerN,float centerDepth){vec4 q=texture2D(uSceneMask,uv);if(q.a<0.12)return 0.0;vec3 neighbourN=normalize(q.rgb*2.0-1.0);float neighbourDepth=clamp((q.a-0.25)/0.75,0.0,1.0);float depthDelta=centerDepth-neighbourDepth;if(depthDelta<0.0045||depthDelta>0.082)return 0.0;float depthWeight=smoothstep(0.0045,0.022,depthDelta)*(1.0-smoothstep(0.052,0.082,depthDelta));float crease=1.0-clamp(abs(dot(centerN,neighbourN)),0.0,1.0);float creaseWeight=smoothstep(0.08,0.48,crease);return depthWeight*creaseWeight;}void main(){vec4 center=texture2D(uNormalMask,vUv);vec4 sceneCenter=texture2D(uSceneMask,vUv);float hasCar=step(0.12,center.a),hasScene=step(0.12,sceneCenter.a);vec3 carN=normalize(center.rgb*2.0-1.0);float carDepth=clamp((center.a-0.25)/0.75,0.0,1.0);vec3 sceneN=normalize(sceneCenter.rgb*2.0-1.0);float sceneDepth=clamp((sceneCenter.a-0.25)/0.75,0.0,1.0);vec2 px=uTexel;float edge=0.0;if(hasCar>0.5){edge=max(edge,sampleEdge(vUv+vec2(px.x,0.0),carN,carDepth));edge=max(edge,sampleEdge(vUv-vec2(px.x,0.0),carN,carDepth));edge=max(edge,sampleEdge(vUv+vec2(0.0,px.y),carN,carDepth));edge=max(edge,sampleEdge(vUv-vec2(0.0,px.y),carN,carDepth));edge=max(edge,sampleEdge(vUv+px,carN,carDepth));edge=max(edge,sampleEdge(vUv-px,carN,carDepth));edge=max(edge,sampleEdge(vUv+vec2(px.x,-px.y),carN,carDepth));edge=max(edge,sampleEdge(vUv+vec2(-px.x,px.y),carN,carDepth));vec2 detailPx=px*1.38;edge=max(edge,sampleEdge(vUv+vec2(detailPx.x,0.0),carN,carDepth)*0.72);edge=max(edge,sampleEdge(vUv-vec2(detailPx.x,0.0),carN,carDepth)*0.72);edge=max(edge,sampleEdge(vUv+vec2(0.0,detailPx.y),carN,carDepth)*0.72);edge=max(edge,sampleEdge(vUv-vec2(0.0,detailPx.y),carN,carDepth)*0.72);}float ao=0.0;if(hasScene>0.5){vec2 aoNear=uSceneTexel*2.1,aoFar=uSceneTexel*3.9;ao+=aoSample(vUv+vec2(aoNear.x,0.0),sceneN,sceneDepth);ao+=aoSample(vUv-vec2(aoNear.x,0.0),sceneN,sceneDepth);ao+=aoSample(vUv+vec2(0.0,aoNear.y),sceneN,sceneDepth);ao+=aoSample(vUv-vec2(0.0,aoNear.y),sceneN,sceneDepth);ao+=aoSample(vUv+vec2(aoNear.x,-aoNear.y),sceneN,sceneDepth);ao+=aoSample(vUv+vec2(-aoNear.x,aoNear.y),sceneN,sceneDepth);ao+=aoSample(vUv+vec2(aoFar.x,0.0),sceneN,sceneDepth)*0.65;ao+=aoSample(vUv-vec2(aoFar.x,0.0),sceneN,sceneDepth)*0.65;ao+=aoSample(vUv+vec2(0.0,aoFar.y),sceneN,sceneDepth)*0.65;ao+=aoSample(vUv-vec2(0.0,aoFar.y),sceneN,sceneDepth)*0.65;ao=clamp(ao*0.082,0.0,0.12);}vec2 lineA=uRoofEdgePx.xy,lineB=uRoofEdgePx.zw,ba=lineB-lineA;float lineT=clamp(dot(gl_FragCoord.xy-lineA,ba)/max(dot(ba,ba),1.0),0.0,1.0);float lineDistance=length(gl_FragCoord.xy-(lineA+ba*lineT));float lineShape=1.0-smoothstep(0.62,1.30,lineDistance);float expectedDepth=mix(uRoofEdgeDepth.x,uRoofEdgeDepth.y,lineT);float depthMatch=1.0-smoothstep(0.0035,0.014,abs(carDepth-expectedDepth));float roofCrease=lineShape*depthMatch*uRoofEdgeVisible*hasCar;float ink=max(smoothstep(0.12,0.62,edge),roofCrease);float alpha=max(clamp(ink*0.86,0.0,0.86),ao);gl_FragColor=vec4(0.006,0.008,0.016,alpha);}';
@@ -234,81 +238,95 @@ function ensureAOTarget(){
  return true;
 }
 const SHADOW_MAP_SIZE=2048;
-function ensureShadowTarget(){
- if(shadowTarget)return true;
- const size=SHADOW_MAP_SIZE,texture=gl.createTexture();
+function createShadowTarget(size){
+ const texture=gl.createTexture();
  gl.bindTexture(gl.TEXTURE_2D,texture);
  gl.texParameteri(gl.TEXTURE_2D,gl.TEXTURE_MIN_FILTER,gl.NEAREST);
  gl.texParameteri(gl.TEXTURE_2D,gl.TEXTURE_MAG_FILTER,gl.NEAREST);
  gl.texParameteri(gl.TEXTURE_2D,gl.TEXTURE_WRAP_S,gl.CLAMP_TO_EDGE);
  gl.texParameteri(gl.TEXTURE_2D,gl.TEXTURE_WRAP_T,gl.CLAMP_TO_EDGE);
  gl.texImage2D(gl.TEXTURE_2D,0,gl.RGBA,size,size,0,gl.RGBA,gl.UNSIGNED_BYTE,null);
- const depth=gl.createRenderbuffer();
- gl.bindRenderbuffer(gl.RENDERBUFFER,depth);
+ const depth=gl.createRenderbuffer();gl.bindRenderbuffer(gl.RENDERBUFFER,depth);
  gl.renderbufferStorage(gl.RENDERBUFFER,gl.DEPTH_COMPONENT16,size,size);
- const framebuffer=gl.createFramebuffer();
- gl.bindFramebuffer(gl.FRAMEBUFFER,framebuffer);
+ const framebuffer=gl.createFramebuffer();gl.bindFramebuffer(gl.FRAMEBUFFER,framebuffer);
  gl.framebufferTexture2D(gl.FRAMEBUFFER,gl.COLOR_ATTACHMENT0,gl.TEXTURE_2D,texture,0);
  gl.framebufferRenderbuffer(gl.FRAMEBUFFER,gl.DEPTH_ATTACHMENT,gl.RENDERBUFFER,depth);
  const complete=gl.checkFramebufferStatus(gl.FRAMEBUFFER)===gl.FRAMEBUFFER_COMPLETE;
- gl.bindFramebuffer(gl.FRAMEBUFFER,null);
- gl.bindTexture(gl.TEXTURE_2D,null);
- gl.bindRenderbuffer(gl.RENDERBUFFER,null);
- if(!complete){
-  gl.deleteTexture(texture);gl.deleteRenderbuffer(depth);gl.deleteFramebuffer(framebuffer);
-  shadowTarget=null;
-  return false;
- }
- shadowTarget={texture,depth,framebuffer,size};
+ gl.bindFramebuffer(gl.FRAMEBUFFER,null);gl.bindTexture(gl.TEXTURE_2D,null);gl.bindRenderbuffer(gl.RENDERBUFFER,null);
+ if(!complete){gl.deleteTexture(texture);gl.deleteRenderbuffer(depth);gl.deleteFramebuffer(framebuffer);return null;}
+ return {texture,depth,framebuffer,size};
+}
+function ensureShadowTarget(){if(!shadowTarget)shadowTarget=createShadowTarget(SHADOW_MAP_SIZE);return !!shadowTarget;}
+function ensureVehicleShadowTarget(){if(!vehicleShadowTarget)vehicleShadowTarget=createShadowTarget(VEHICLE_SHADOW_MAP_SIZE);return !!vehicleShadowTarget;}
+function ensureLocalShadowTarget(index){if(!localShadowTargets[index])localShadowTargets[index]=createShadowTarget(LOCAL_SHADOW_MAP_SIZE);return !!localShadowTargets[index];}
+function invalidateShadowCaches(){shadowSceneRevision++;localShadowSignatures=['',''];}
+function renderShadowPassTo(target,matrix,selectiveVehicleCasters){
+ if(!target)return false;
+ shadowVP=matrix;vehicleShadowPass=selectiveVehicleCasters;shadowPass=true;
+ gl.bindFramebuffer(gl.FRAMEBUFFER,target.framebuffer);gl.viewport(0,0,target.size,target.size);
+ gl.enable(gl.DEPTH_TEST);gl.disable(gl.BLEND);gl.depthMask(true);
+ gl.clearColor(1,0,0,1);gl.clearDepth(1);gl.clear(gl.COLOR_BUFFER_BIT|gl.DEPTH_BUFFER_BIT);
+ gl.useProgram(prog);gl.uniform1f(loc.outlinePass,0);gl.uniform1f(loc.shadowPass,1);gl.uniform1f(loc.shadowEnabled,0);
+ gl.uniformMatrix4fv(loc.shadowVP,false,new Float32Array(matrix));
+ drawWorld();
+ shadowPass=false;vehicleShadowPass=false;
  return true;
 }
+function spotShadowMatrix(light){
+ const p=light.position,d=light.direction,dl=Math.hypot(d[0],d[1],d[2])||1,dir=[d[0]/dl,d[1]/dl,d[2]/dl];
+ const cutoff=clamp(light.cutoff||.7,.15,.985),fov=clamp(2*Math.acos(cutoff-.025),.35,2.65);
+ const target=[p[0]+dir[0]*light.range,p[1]+dir[1]*light.range,p[2]+dir[2]*light.range];
+ return matMul(perspective(fov,1,.12,light.range),lookAt(p[0],p[1],p[2],target[0],target[1],target[2]));
+}
+function localShadowSignature(light){
+ return [shadowSceneRevision,light.position.join(','),light.direction.join(','),light.range,light.cutoff].join('|');
+}
 function renderShadowMap(){
- if(!ensureShadowTarget()){gl.uniform1f(loc.shadowEnabled,0);return false;}
+ if(!SUN_LIGHT.castsShadow||!ensureShadowTarget()||!ensureVehicleShadowTarget()){gl.uniform1f(loc.shadowEnabled,0);return false;}
  const carZ=garageMode?0:distance,trackCenter=garageMode?0:roadX(carZ),carX=garageMode?0:trackCenter+playerX;
- const lx=-.48,ly=.82,lz=.30,focusY=.46;
- const aspect=clamp(W/Math.max(1,H),1.0,2.5);
+ const direction=SUN_LIGHT.direction,focusY=.46,aspect=clamp(W/Math.max(1,H),1.0,2.5);
  const modeScale=garageMode?1.0:([.84,1.0,1.28,1.12][cameraMode]||1.0);
  const span=garageMode?clamp(garageZoom*1.55,15,30):38*modeScale;
  const halfWidth=span*Math.sqrt(aspect/1.78),halfDepth=garageMode?span*.92:span*.82;
  const ahead=garageMode?0:([9,15,24,19][cameraMode]||15);
  const focusX=carX+Math.sin(carYaw)*ahead*.42,focusZ=carZ+Math.cos(carYaw)*ahead;
  const lightDistance=garageMode?34:46;
- // Fit the light-space frustum to the active camera mode and the visible driving corridor.
- shadowVP=matMul(
+ sunShadowVP=matMul(
   orthographic(-halfWidth,halfWidth,-halfDepth,halfDepth,.1,garageMode?105:142),
-  lookAt(focusX+lx*lightDistance,focusY+ly*lightDistance,focusZ+lz*lightDistance,focusX,focusY,focusZ)
+  lookAt(focusX+direction[0]*lightDistance,focusY+direction[1]*lightDistance,focusZ+direction[2]*lightDistance,focusX,focusY,focusZ)
  );
  const sceneCalls=drawCalls;
- gl.activeTexture(gl.TEXTURE1);
- gl.bindTexture(gl.TEXTURE_2D,null);
- gl.bindFramebuffer(gl.FRAMEBUFFER,shadowTarget.framebuffer);
- gl.viewport(0,0,shadowTarget.size,shadowTarget.size);
- gl.enable(gl.DEPTH_TEST);
- gl.disable(gl.BLEND);
- gl.depthMask(true);
- gl.clearColor(1,0,0,1);
- gl.clearDepth(1);
- gl.clear(gl.COLOR_BUFFER_BIT|gl.DEPTH_BUFFER_BIT);
- gl.useProgram(prog);
- gl.uniform1f(loc.outlinePass,0);
- gl.uniform1f(loc.shadowPass,1);
- gl.uniform1f(loc.shadowEnabled,0);
- gl.uniformMatrix4fv(loc.shadowVP,false,new Float32Array(shadowVP));
- shadowPass=true;
- drawWorld();
- shadowPass=false;
+ renderShadowPassTo(shadowTarget,sunShadowVP,false);
+ renderShadowPassTo(vehicleShadowTarget,sunShadowVP,true);
+ const localSources=garageMode?GARAGE_LOCAL_LIGHTS:[];
+ for(let slot=0;slot<LOCAL_SHADOW_CAPACITY;slot++){
+  const light=localSources.find(q=>q.castsShadow&&q.type==='spot'&&q.shadowSlot===slot);
+  if(!light){localShadowVPs[slot]=matIdentity();localShadowSignatures[slot]='';continue;}
+  const signature=localShadowSignature(light),matrix=spotShadowMatrix(light);
+  localShadowVPs[slot]=matrix;
+  if(localShadowSignatures[slot]!==signature){
+   if(ensureLocalShadowTarget(slot)){
+    renderShadowPassTo(localShadowTargets[slot],matrix,true);
+    localShadowSignatures[slot]=signature;
+   }else localShadowEnabledData[slot]=0;
+  }
+ }
+ shadowVP=sunShadowVP;vehicleShadowPass=false;shadowPass=false;
  drawCalls=sceneCalls;
- gl.bindFramebuffer(gl.FRAMEBUFFER,null);
- gl.viewport(0,0,canvas.width,canvas.height);
- gl.useProgram(prog);
- gl.uniform1f(loc.shadowPass,0);
- gl.uniformMatrix4fv(loc.shadowVP,false,new Float32Array(shadowVP));
- gl.activeTexture(gl.TEXTURE1);
- gl.bindTexture(gl.TEXTURE_2D,shadowTarget.texture);
- gl.uniform1i(loc.shadowMap,1);
+ gl.bindFramebuffer(gl.FRAMEBUFFER,null);gl.viewport(0,0,canvas.width,canvas.height);
+ gl.useProgram(prog);gl.uniform1f(loc.shadowPass,0);
+ gl.uniformMatrix4fv(loc.shadowVP,false,new Float32Array(sunShadowVP));
+ gl.uniformMatrix4fv(loc.localShadowVP0,false,new Float32Array(localShadowVPs[0]||matIdentity()));
+ gl.uniformMatrix4fv(loc.localShadowVP1,false,new Float32Array(localShadowVPs[1]||matIdentity()));
+ gl.activeTexture(gl.TEXTURE1);gl.bindTexture(gl.TEXTURE_2D,shadowTarget.texture);gl.uniform1i(loc.shadowMap,1);
  gl.uniform2f(loc.shadowTexel,1/shadowTarget.size,1/shadowTarget.size);
- gl.uniform1f(loc.shadowEnabled,1);
- gl.activeTexture(gl.TEXTURE0);
+ gl.activeTexture(gl.TEXTURE2);gl.bindTexture(gl.TEXTURE_2D,vehicleShadowTarget.texture);gl.uniform1i(loc.vehicleShadowMap,2);
+ gl.uniform2f(loc.vehicleShadowTexel,1/vehicleShadowTarget.size,1/vehicleShadowTarget.size);
+ gl.activeTexture(gl.TEXTURE3);gl.bindTexture(gl.TEXTURE_2D,localShadowTargets[0]?.texture||null);gl.uniform1i(loc.localShadowMap0,3);
+ gl.uniform2f(loc.localShadowTexel0,1/(localShadowTargets[0]?.size||LOCAL_SHADOW_MAP_SIZE),1/(localShadowTargets[0]?.size||LOCAL_SHADOW_MAP_SIZE));
+ gl.activeTexture(gl.TEXTURE4);gl.bindTexture(gl.TEXTURE_2D,localShadowTargets[1]?.texture||null);gl.uniform1i(loc.localShadowMap1,4);
+ gl.uniform2f(loc.localShadowTexel1,1/(localShadowTargets[1]?.size||LOCAL_SHADOW_MAP_SIZE),1/(localShadowTargets[1]?.size||LOCAL_SHADOW_MAP_SIZE));
+ gl.activeTexture(gl.TEXTURE0);gl.uniform1f(loc.shadowEnabled,1);
  return true;
 }
 function projectCabinRoofFrontSeam(vp,carX,carZ,yaw,cam){
@@ -1112,14 +1130,14 @@ function headlightAffectsMesh(shape,model){
  };
  return intersects(headlightCullL)||intersects(headlightCullR);
 }
-function bindMesh(shape,model,color,toon=0,material=0){
+function bindMesh(shape,model,color,toon=0,material=0,vehicleShadowCaster=false){
  if(outlinePass){
   if(!aoScenePass&&toon<0.5)return;
   if(aoScenePass&&!shadowCasterAllowed(color,material))return;
   gl.disable(gl.BLEND);gl.depthMask(true);
  }
  if(shadowPass){
-  if(!shadowCasterAllowed(color,material)||!shadowBoundsVisible(shape,model))return;
+  if((vehicleShadowPass&&toon>0.5&&!vehicleShadowCaster)||!shadowCasterAllowed(color,material)||!shadowBoundsVisible(shape,model))return;
   gl.disable(gl.BLEND);gl.depthMask(true);
  }
  if(!outlinePass&&!shadowPass&&!wireframeMode&&headlightBaseIntensity>0.001&&material<=2.5){
@@ -1146,23 +1164,23 @@ function draw(shape,x,y,z,sx,sy,sz,color,yaw=0,roll=0,material=0){
   const model=matMul(translate(x,y,z),matMul(rotateY(yaw),matMul(rotateZ(roll),scale(sx,sy,sz))));
   bindMesh(shape,model,color,0,material);
  }
- function drawCarPart(cx,cz,x,y,z,sx,sy,sz,color,yaw=0,shape=cube,material=1,spin=0,steering=0,steeringPivotX=null){
+ function drawCarPart(cx,cz,x,y,z,sx,sy,sz,color,yaw=0,shape=cube,material=1,spin=0,steering=0,steeringPivotX=null,vehicleShadowCaster=false){
  const isWheel=shape===wheel||shape===wheelFace;
  const localPosition=steeringPivotX===null?translate(x,y,z):matMul(translate(steeringPivotX,y,z),matMul(rotateY(steering),translate(x-steeringPivotX,0,0)));
  const localRotation=isWheel?matMul(rotateZ(Math.PI/2),rotateY(spin)):matIdentity();
  const model=matMul(translate(cx,0,cz),matMul(rotateY(yaw),matMul(rotateZ(bodyRoll),matMul(localPosition,matMul(localRotation,scale(sx,sy,sz))))));
- bindMesh(shape,model,color,1,material);
+ bindMesh(shape,model,color,1,material,vehicleShadowCaster);
 }
-function drawCarMesh(shape,cx,cz,color,yaw=0,material=1){
+function drawCarMesh(shape,cx,cz,color,yaw=0,material=1,vehicleShadowCaster=false){
  const model=matMul(translate(cx,0,cz),matMul(rotateY(yaw),matMul(rotateZ(bodyRoll),matIdentity())));
- bindMesh(shape,model,color,1,material);
+ bindMesh(shape,model,color,1,material,vehicleShadowCaster);
 }
-function drawCarHingedMesh(shape,cx,cz,color,yaw=0,material=1){
+function drawCarHingedMesh(shape,cx,cz,color,yaw=0,material=1,vehicleShadowCaster=false){
  const deploy=clamp(headlightDeploy,0,1),ease=deploy*deploy*(3-2*deploy),angle=-Math.PI*.25*ease;
  // Every part shares one rigid transform; no scaling, vertex updates or independent deformation.
  const hinge=matMul(translate(0,POP_HINGE_Y,POP_HINGE_Z),matMul(rotateX(angle),translate(0,-POP_HINGE_Y,-POP_HINGE_Z)));
  const model=matMul(translate(cx,0,cz),matMul(rotateY(yaw),matMul(rotateZ(bodyRoll),hinge)));
- bindMesh(shape,model,color,1,material);
+ bindMesh(shape,model,color,1,material,vehicleShadowCaster);
 }
 function matIdentity(){return [1,0,0,0,0,1,0,0,0,0,1,0,0,0,0,1];}
 function matMul(a,b){let o=new Array(16);for(let c=0;c<4;c++)for(let r=0;r<4;r++)o[c*4+r]=a[r]*b[c*4]+a[4+r]*b[c*4+1]+a[8+r]*b[c*4+2]+a[12+r]*b[c*4+3];return o;}
@@ -1210,7 +1228,7 @@ function drawWorld(){
  if(!shadowPass)outlineCabinEdge=projectCabinRoofFrontSeam(vp,carX,carZ,garageMode?0:carYaw,cam);
  gl.uniformMatrix4fv(loc.vp,false,new Float32Array(vp));
  if(shadowVP)gl.uniformMatrix4fv(loc.shadowVP,false,new Float32Array(shadowVP));
- gl.uniform3f(loc.keyLightDir,-.48,.82,.30);gl.uniform3f(loc.fillLightDir,.58,.34,-.72);gl.uniform3f(loc.viewPos,cam.x,cam.y,cam.z);gl.uniform1f(loc.showroom,garageMode?1:0);gl.uniform1f(loc.time,performance.now()*.001);
+ gl.uniform3fv(loc.keyLightDir,new Float32Array(SUN_LIGHT.direction));gl.uniform3f(loc.fillLightDir,.58,.34,-.72);gl.uniform3f(loc.viewPos,cam.x,cam.y,cam.z);gl.uniform1f(loc.showroom,garageMode?1:0);gl.uniform1f(loc.time,performance.now()*.001);
  uploadLocalLights(garageMode?GARAGE_LOCAL_LIGHTS:[]);
  // Stage 2: two real local headlight spots follow the same rigid pop-up hinge transform as the optical modules.
  const lampDeploy=clamp(headlightDeploy,0,1),lampEase=lampDeploy*lampDeploy*(3-2*lampDeploy),lampAngle=-Math.PI*.25*lampEase,heading=garageMode?0:carYaw,roll=garageMode?0:bodyRoll;
@@ -1301,9 +1319,9 @@ function drawWorld(){
  // Clean flanks without floating diagonal graphics.
  // Bonnet remains a single continuous angular surface; no floating triangular overlays.
  // Cabin shell, glass and restrained cool reflections.
- drawCarMesh(cabinMesh,carX,carZ,C.body,yaw,PAINT_MATERIAL);
+ drawCarMesh(cabinMesh,carX,carZ,C.body,yaw,PAINT_MATERIAL,true);
  // Close the narrow A/B-pillar joins with body-coloured metal before laying the glass.
- for(const pillar of [sideAPillarL,sideAPillarR,sideBPillarL,sideBPillarR])drawCarMesh(pillar,carX,carZ,C.body,yaw,PAINT_MATERIAL);
+ for(const pillar of [sideAPillarL,sideAPillarR,sideBPillarL,sideBPillarR])drawCarMesh(pillar,carX,carZ,C.body,yaw,PAINT_MATERIAL,true);
  // The cabin shell provides the pillars; the old filled glass backing plates are intentionally not drawn.
  drawCarMesh(windshield,carX,carZ,C.glassLight,yaw,3);
  drawCarMesh(rearGlass,carX,carZ,[.025,.095,.16,1],yaw,3);
@@ -1331,7 +1349,7 @@ function drawWorld(){
   drawCarPart(carX,carZ,side*(wx+.163),wy,wz,.092,.020,.092,C.bodyLight,yaw,wheelFace,PAINT_MATERIAL,wheelSpin,frontSteer,steerPivotX);
  }
  // Rigid triangular side-wall housings with rectangular forward-facing optics.
- for(const housing of [popLampHousingL,popLampHousingR])drawCarHingedMesh(housing,carX,carZ,[.035,.043,.055,1],yaw,1);
+ for(const housing of [popLampHousingL,popLampHousingR])drawCarHingedMesh(housing,carX,carZ,[.035,.043,.055,1],yaw,1,true);
  for(const front of [popLampFrontL,popLampFrontR])drawCarHingedMesh(front,carX,carZ,[.012,.022,.038,1],yaw,1);
  for(const bezel of [popLampBezelL,popLampBezelR])drawCarHingedMesh(bezel,carX,carZ,[.52,.56,.66,1],yaw,2);
  for(const lens of [popLampLensL,popLampLensR])drawCarHingedMesh(lens,carX,carZ,[.045,.115,.17,1],yaw,3);
@@ -1340,13 +1358,13 @@ function drawWorld(){
  const lampColor=[.48+1.0*lampPower,.58+1.0*lampPower,.72+1.0*lampPower,1];
  for(const core of [popLampCoreL,popLampCoreR])drawCarHingedMesh(core,carX,carZ,lampColor,yaw,8);
  // Red upper lids stay attached to the same rigid hinge.
- drawCarHingedMesh(popLampCapL,carX,carZ,C.bodyLight,yaw,PAINT_MATERIAL);
- drawCarHingedMesh(popLampCapR,carX,carZ,C.bodyLight,yaw,PAINT_MATERIAL);
- drawCarMesh(frontBumperCrease,carX,carZ,C.body,yaw,PAINT_MATERIAL);
+ drawCarHingedMesh(popLampCapL,carX,carZ,C.bodyLight,yaw,PAINT_MATERIAL,true);
+ drawCarHingedMesh(popLampCapR,carX,carZ,C.bodyLight,yaw,PAINT_MATERIAL,true);
+ drawCarMesh(frontBumperCrease,carX,carZ,C.body,yaw,PAINT_MATERIAL,true);
  drawCarMesh(frontGrilleFrame,carX,carZ,C.trim,yaw,0);
  drawCarMesh(frontIntake,carX,carZ,[.018,.025,.040,1],yaw,0);
  drawCarMesh(frontGrilleSlats,carX,carZ,[.28,.34,.44,1],yaw,0);
- drawCarMesh(frontSplitter,carX,carZ,[.012,.016,.026,1],yaw,0);
+ drawCarMesh(frontSplitter,carX,carZ,[.012,.016,.026,1],yaw,0,true);
  // Front and rear indicators share one blink phase and the same steering-side selection.
  const signalOn=Math.sin(performance.now()*.012)>-.15,steerNow=readSteeringInput();
  drawCarMesh(frontTurnSignalL,carX,carZ,steerNow<0&&signalOn?[1.55,.48,.055,1]:[.16,.052,.008,1],yaw,steerNow<0&&signalOn?8:0);
@@ -1377,8 +1395,8 @@ function drawWorld(){
   drawCarPart(carX,carZ,side*.84,1.115,-2.53,.060,.145,.065,C.body,yaw,cube,PAINT_MATERIAL);
  }
  // Straight, level, body-colour rear wing.
- drawCarMesh(spoilerBlade,carX,carZ,C.body,yaw,PAINT_MATERIAL);
- drawCarMesh(spoilerTopGlint,carX,carZ,C.bodyLight,yaw,PAINT_MATERIAL);
+ drawCarMesh(spoilerBlade,carX,carZ,C.body,yaw,PAINT_MATERIAL,true);
+ drawCarMesh(spoilerTopGlint,carX,carZ,C.bodyLight,yaw,PAINT_MATERIAL,true);
  if(boost>.05){drawCarPart(carX,carZ,-.42,.18,-2.99,.06,.055,.62,[.04,.58,1,boost],yaw);drawCarPart(carX,carZ,.42,.18,-2.99,.06,.055,.62,[.04,.58,1,boost],yaw);}
 }
 function drawSun(){
