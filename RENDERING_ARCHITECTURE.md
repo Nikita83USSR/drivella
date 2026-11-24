@@ -1,6 +1,6 @@
 # DRIVELLA — Rendering Architecture
 
-Current reference: **v0.18.34 / BUILD 100**  
+Current reference: **v0.18.35 / BUILD 101**  
 Main renderer: `index.html` — custom WebGL 1 renderer, no external rendering engine.
 
 This document records the rendering decisions that future vehicle, environment, lighting, and effects work must preserve. The goal is a reusable scene pipeline: new world geometry should take part in shadows and ambient occlusion automatically when it uses the shared draw path.
@@ -15,6 +15,13 @@ The render loop currently runs these passes in order:
 4. `drawSun()` — draw the 2D synthwave sun overlay.
 
 The scene is intentionally drawn through the same `drawWorld()` path in the normal and shadow passes. Do not build one-off shadow meshes or hard-code a shadow for every new prop.
+
+## Camera controls — BUILD 101
+
+- The four existing automatic camera presets remain the base camera modes. `C` cycles to the next preset; the existing `1`–`4` direct selection shortcuts remain supported.
+- In driving mode, holding the left mouse button on the WebGL scene canvas captures pointer movement. Horizontal drag temporarily rotates the active camera around the car; vertical drag changes its pitch. Both camera position and target are rotated around the car origin, preserving each preset's intended viewing distance and composition.
+- Releasing the mouse button, cancelling the pointer, or losing window focus clears the temporary offsets immediately. The active preset then resumes following vehicle heading, so no free-camera state is retained after release. This interaction does not change vehicle steering or physics.
+- Garage pointer dragging remains assigned to the existing garage orbit controls; the driving free-look handler ignores garage mode.
 
 ## Dynamic directional shadows
 
