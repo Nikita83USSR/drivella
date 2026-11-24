@@ -2,7 +2,7 @@
 
 A browser-based synthwave drift-racing prototype with a custom low-poly 3D car, a procedural neon environment, and a hand-built WebGL renderer.
 
-> **Status:** Playable prototype under active development. Current renderer reference: **v0.18.55 / BUILD 121**.
+> **Status:** Playable prototype under active development. Current renderer reference: **v0.18.56 / BUILD 122**.
 > **Release identification:** every published game change increments the visible BUILD number in the HUD and startup screen; README and rendering architecture are updated in the same release.
 
 ## Current game
@@ -108,3 +108,5 @@ No license has been added yet. All rights reserved by the repository owner unles
 - **BUILD 120:** simplify vehicle self-shadowing from the layered 16-tap circular PCF footprint to a compact four-tap cross filter with one restrained, uniform shadow tone. This is a visual simplification; the full-scene solar shadows and garage spot shadows are unchanged.
 
 - **BUILD 121:** replace vehicle self-shadow filtering with a binary monochrome mask: one depth comparison per receiver pixel, one fixed shadow strength, and a hard contour. No PCF taps, penumbra, or internal tonal variation. This affects vehicle self-shadowing only.
+
+- **BUILD 122:** save a complete pre-cleanup game backup at `backups/index_BUILD121_pre_vehicle_cleanup.html`. Rebuild the cabin mesh as an exterior-only shell: remove its lower inner sidewalls, underside faces and end caps that were hidden inside/overlapping the main body hull. The visible roof, window surround, outer pillars and glass remain. The cabin's exterior shell continues to cast vehicle self-shadows.
