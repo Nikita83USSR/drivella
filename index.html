@@ -94,13 +94,13 @@
 <body>
 <canvas id="scene"></canvas><canvas id="sun"></canvas>
 <div id="hud">
- <div class="top"><div class="logo">DRIVELLA<small>3D SYNTHWAVE DRIFT RACING</small></div><div class="version-label" id="version-label">v0.17.6 · BUILD 062</div><div class="stat">DISTANCE<b id="distance">000.0 KM</b></div><div class="stat">LOCATION<b>VIOLET COAST</b></div></div>
+ <div class="top"><div class="logo">DRIVELLA<small>3D SYNTHWAVE DRIFT RACING</small></div><div class="version-label" id="version-label">v0.17.7 · BUILD 063</div><div class="stat">DISTANCE<b id="distance">000.0 KM</b></div><div class="stat">LOCATION<b>VIOLET COAST</b></div></div>
  <div class="right"><div id="speed">000 <span>KM/H</span></div><div id="direction">▶ FORWARD</div><div id="music">♫ MUSIC SCANNING…</div></div>
- <div class="bottom"><div class="hint"><strong>W / ↑</strong> ACCELERATE　<strong>S / ↓</strong> BRAKE / REVERSE<br><strong>A / ←　D / →</strong> STEER　<strong>SPACE</strong> HANDBRAKE　<strong>M</strong> MUSIC　<strong>1–4</strong> CAMERA　<strong>L</strong> LIGHTS　<strong>K</strong> WIREFRAME</div><div>3D NEON HIGHWAY // BUILD 062</div></div>
+ <div class="bottom"><div class="hint"><strong>W / ↑</strong> ACCELERATE　<strong>S / ↓</strong> BRAKE / REVERSE<br><strong>A / ←　D / →</strong> STEER　<strong>SPACE</strong> HANDBRAKE　<strong>M</strong> MUSIC　<strong>1–4</strong> CAMERA　<strong>L</strong> LIGHTS　<strong>K</strong> WIREFRAME</div><div>3D NEON HIGHWAY // BUILD 063</div></div>
 </div>
 <div id="tools-ui"><button id="cam-prev" aria-label="Previous camera">◀</button><span id="cam-label">CAM 2 · CLOSE</span><button id="cam-next" aria-label="Next camera">▶</button><button id="debug-toggle">DEBUG</button></div>
 <div id="debug-panel"><div class="debug-title">DRIVELLA DIAGNOSTICS</div><div id="debug-data">Initializing…</div></div>
-<div id="boot-screen"><div class="boot-content"><div class="boot-kicker">NIGHT DRIVE SYSTEMS // INITIALIZING</div><div class="boot-logo">DRIVELLA</div><div class="boot-subtitle">3D SYNTHWAVE DRIFT RACING</div><div class="boot-mark"></div><div class="boot-status" id="boot-status">BUILDING THE 3D WORLD</div><div class="boot-track"><div class="boot-progress" id="boot-progress"></div></div><div class="boot-meta"><span>3D ENGINE ONLINE</span><span id="boot-percent">00%</span></div><div class="boot-footer">ENGINE STARTUP // v0.17.6 · BUILD 062</div></div></div>
+<div id="boot-screen"><div class="boot-content"><div class="boot-kicker">NIGHT DRIVE SYSTEMS // INITIALIZING</div><div class="boot-logo">DRIVELLA</div><div class="boot-subtitle">3D SYNTHWAVE DRIFT RACING</div><div class="boot-mark"></div><div class="boot-status" id="boot-status">BUILDING THE 3D WORLD</div><div class="boot-track"><div class="boot-progress" id="boot-progress"></div></div><div class="boot-meta"><span>3D ENGINE ONLINE</span><span id="boot-percent">00%</span></div><div class="boot-footer">ENGINE STARTUP // v0.17.7 · BUILD 063</div></div></div>
 <div id="main-menu"><div class="menu-content"><div class="menu-brand">DRIVELLA GTS</div><div class="menu-sub">RIDE THE RETRO FUTURE</div><div class="menu-actions"><button class="menu-btn" id="menu-start">СТАРТ</button><button class="menu-btn" id="menu-garage">ГАРАЖ</button><button class="menu-btn" id="menu-options">НАСТРОЙКИ</button></div></div><div class="menu-footer">РАЗРАБОТЧИК — <b>НИКИТА МАРКИН</b></div></div>
 <div id="garage-screen"><div class="garage-head">ГАРАЖ // DRIVELLA GTS</div><div class="garage-copy">ТЕКУЩИЙ АВТОМОБИЛЬ<br>DRIVELLA GTS · RETRO GT COUPE<br>ПОКАЖИ ЕЁ СО ВСЕХ СТОРОН</div><div class="garage-controls"><button id="garage-back">← НАЗАД В МЕНЮ</button></div><div class="garage-tip">ЗАЖМИ И ТЯНИ — ВРАЩЕНИЕ<br>КОЛЁСИКО — ПРИБЛИЗИТЬ / ОТДАЛИТЬ</div></div>
 <div id="options-screen"><div class="options-head">ОПЦИИ</div><div class="options-card"><div class="option-row"><span>МУЗЫКА</span><button id="option-music">ВКЛЮЧЕНА</button></div><div class="option-row"><span>ГРОМКОСТЬ</span><input id="option-volume" type="range" min="0" max="100" value="52"></div><div class="option-row"><span>ЗВУК ДВИГАТЕЛЯ</span><button id="option-sfx">ВКЛЮЧЁН</button></div><div class="option-row"><span>КАМЕРА</span><span>КЛАВИШИ 1–4</span></div><button id="options-back" style="width:100%;margin-top:18px">← НАЗАД В МЕНЮ</button></div></div>
@@ -108,7 +108,7 @@
 <script>
 (()=>{
 'use strict';
-const VERSION='v0.17.6',BUILD='062';
+const VERSION='v0.17.7',BUILD='063';
 const canvas=document.getElementById('scene'),gl=canvas.getContext('webgl',{antialias:true,alpha:true}),sun=document.getElementById('sun'),sctx=sun.getContext('2d');
 const $=id=>document.getElementById(id);
 const clamp=(v,a,b)=>Math.max(a,Math.min(b,v));
@@ -505,9 +505,10 @@ function hoodSurfaceY(x,z){
 }
 const POP_HINGE_Z=2.22;
 function hoodLampY(z,x){return hoodSurfaceY(x,z)+.006;}
-const POP_HINGE_Y=hoodLampY(POP_HINGE_Z,.65)+.006;
+const POP_HINGE_Y=hoodSurfaceY(.65,POP_HINGE_Z)+.025;
 // Pop-up lamp pods: folded covers plus triangular side-profile housings with forward-facing optics.
 // Pop-up lamp pods: triangular lifting shells with optics mounted on the underside.
+// Pop-up headlamp bucket: flush hood lid, hinged housing, forward-facing underside optics.
 function lampOutline(side,xInner,xOuter,zRear,zFront,cut){
  return [
   [side*(xInner+cut),zRear],[side*(xOuter-cut),zRear],
@@ -530,84 +531,96 @@ function makeLampSlab(side,xInner,xOuter,zRear,zFront,cut,topOffset,thickness){
  }
  return mesh(out);
 }
-const POP_LAMP_X_IN=.395,POP_LAMP_X_OUT=.905,POP_LAMP_Z_REAR=2.22,POP_LAMP_Z_FRONT=2.52,POP_LAMP_HEIGHT=.30;
-function lampBaseY(x,z){return hoodLampY(z,x)+.012;}
-function lampUnderY(x,z){return lampBaseY(x,z)-.006;}
-function lampUnderOutline(side,inset,zRear,zFront,cut){
- const x0=Math.min(side*POP_LAMP_X_IN,side*POP_LAMP_X_OUT),x1=Math.max(side*POP_LAMP_X_IN,side*POP_LAMP_X_OUT);
- return [
-  [x0+inset,zRear+cut],[x1-inset,zRear+cut],
-  [x1,zRear+cut*2],[x1,zFront-cut*2],
-  [x1-inset,zFront-cut],[x0+inset,zFront-cut],
-  [x0,zFront-cut*2],[x0,zRear+cut*2]
- ];
-}
-function lampUnderMesh(points,offset=0){
- const out=[],vertices=points.map(([x,z])=>[x,lampUnderY(x,z)+offset,z]);
- const center=vertices.reduce((p,v)=>[p[0]+v[0]/vertices.length,p[1]+v[1]/vertices.length,p[2]+v[2]/vertices.length],[0,0,0]);
- for(let i=0;i<vertices.length;i++)out.push(...center,...vertices[i],...vertices[(i+1)%vertices.length]);
+function makeLampBezel(side){
+ const out=[],outer=lampOutline(side,.405,.895,2.22,2.52,.028),inner=lampOutline(side,.447,.853,2.26,2.48,.022);
+ const push=(a,b,c,d)=>out.push(...a,...b,...c,...a,...c,...d);
+ for(let i=0;i<outer.length;i++){
+  const n=(i+1)%outer.length,[ox,oz]=outer[i],[nx,nz]=outer[n],[ix,iz]=inner[i],[jx,jz]=inner[n];
+  const outerA=[ox,hoodSurfaceY(ox,oz)-.132,oz],outerB=[nx,hoodSurfaceY(nx,nz)-.132,nz];
+  const innerA=[ix,hoodSurfaceY(ix,iz)-.132,iz],innerB=[jx,hoodSurfaceY(jx,jz)-.132,jz];
+  const deepA=[ix,hoodSurfaceY(ix,iz)-.158,iz],deepB=[jx,hoodSurfaceY(jx,jz)-.158,jz];
+  push(outerA,outerB,innerB,innerA);push(innerA,innerB,deepB,deepA);
+ }
  return mesh(out);
 }
-function makeLampPodShell(side){
- const out=[],x0=Math.min(side*POP_LAMP_X_IN,side*POP_LAMP_X_OUT),x1=Math.max(side*POP_LAMP_X_IN,side*POP_LAMP_X_OUT);
- const rear0=[x0,lampBaseY(x0,POP_LAMP_Z_REAR),POP_LAMP_Z_REAR],rear1=[x1,lampBaseY(x1,POP_LAMP_Z_REAR),POP_LAMP_Z_REAR];
- const front0=[x0,lampBaseY(x0,POP_LAMP_Z_FRONT),POP_LAMP_Z_FRONT],front1=[x1,lampBaseY(x1,POP_LAMP_Z_FRONT),POP_LAMP_Z_FRONT];
- const top0=[x0,front0[1]+POP_LAMP_HEIGHT,POP_LAMP_Z_FRONT],top1=[x1,front1[1]+POP_LAMP_HEIGHT,POP_LAMP_Z_FRONT];
- // Triangular side gussets make the raised unit a real wedge, not a rectangular box.
- out.push(...rear0,...front0,...top0);
- out.push(...rear1,...top1,...front1);
- // Sloped upper skin and a continuous dark underside carrying the optics.
- out.push(...rear0,...top0,...top1,...rear0,...top1,...rear1);
- out.push(...rear0,...rear1,...front1,...rear0,...front1,...front0);
+function makeLampLens(side){
+ const out=[],outline=lampOutline(side,.447,.853,2.26,2.48,.022);
+ const points=outline.map(([x,z])=>[x,hoodSurfaceY(x,z)-.160,z]);
+ const center=points.reduce((p,v)=>[p[0]+v[0]/points.length,p[1]+v[1]/points.length,p[2]+v[2]/points.length],[0,0,0]);
+ for(let i=0;i<points.length;i++)out.push(...center,...points[i],...points[(i+1)%points.length]);
  return mesh(out);
 }
-function makeLampPodCap(side){
- const inset=.024,x0=Math.min(side*POP_LAMP_X_IN,side*POP_LAMP_X_OUT)+inset,x1=Math.max(side*POP_LAMP_X_IN,side*POP_LAMP_X_OUT)-inset;
- const rearZ=POP_LAMP_Z_REAR+.025,frontZ=POP_LAMP_Z_FRONT-.018;
- const a=[x0,lampBaseY(x0,rearZ)+.018,rearZ],b=[x1,lampBaseY(x1,rearZ)+.018,rearZ];
- const c=[x1,lampBaseY(x1,frontZ)+POP_LAMP_HEIGHT-.018,frontZ],d=[x0,lampBaseY(x0,frontZ)+POP_LAMP_HEIGHT-.018,frontZ];
- return mesh([...a,...b,...c,...a,...c,...d]);
-}
-function makeLampUnderBezel(side){
- const outer=lampUnderOutline(side,.008,2.245,2.495,.018),inner=lampUnderOutline(side,.045,2.265,2.475,.018),out=[];
- const A=outer.map(([x,z])=>[x,lampUnderY(x,z)-.010,z]),B=inner.map(([x,z])=>[x,lampUnderY(x,z)-.010,z]);
- for(let i=0;i<A.length;i++){const n=(i+1)%A.length;out.push(...A[i],...A[n],...B[n],...A[i],...B[n],...B[i]);}
- return mesh(out);
-}
-function makeLampUnderLens(side){
- return lampUnderMesh(lampUnderOutline(side,.052,2.278,2.462,.014),-.015);
-}
-function makeLampUnderProjectorRings(side){
+function makeLampProjectorRings(side){
  const out=[],segments=24;
  for(const cx of [side*.55,side*.75]){
-  const cz=2.37,ro=.050,ri=.039;
+  const cz=2.37,ro=.052,ri=.040;
   for(let i=0;i<segments;i++){
    const a=i*Math.PI*2/segments,b=(i+1)*Math.PI*2/segments;
-   const point=(r,t)=>{const x=cx+Math.cos(t)*r,z=cz+Math.sin(t)*r;return [x,lampUnderY(x,z)-.020,z];};
+   const point=(r,t)=>{const x=cx+Math.cos(t)*r,z=cz+Math.sin(t)*r;return [x,hoodSurfaceY(x,z)-.166,z];};
    const A=point(ro,a),B=point(ro,b),C=point(ri,b),D=point(ri,a);
    out.push(...A,...B,...C,...A,...C,...D);
   }
  }
  return mesh(out);
 }
-function makeLampUnderProjectorCores(side){
+function makeLampProjectorCores(side){
  const out=[],segments=24;
  for(const cx of [side*.55,side*.75]){
-  const cz=2.37,r=.038,center=[cx,lampUnderY(cx,cz)-.023,cz];
+  const cz=2.37,r=.039,center=[cx,hoodSurfaceY(cx,cz)-.169,cz];
   for(let i=0;i<segments;i++){
    const a=i*Math.PI*2/segments,b=(i+1)*Math.PI*2/segments;
-   const point=t=>{const x=cx+Math.cos(t)*r,z=cz+Math.sin(t)*r;return [x,lampUnderY(x,z)-.023,z];};
+   const point=t=>{const x=cx+Math.cos(t)*r,z=cz+Math.sin(t)*r;return [x,hoodSurfaceY(x,z)-.169,z];};
    out.push(...center,...point(a),...point(b));
   }
  }
  return mesh(out);
 }
-const popLampHousingL=makeLampPodShell(-1),popLampHousingR=makeLampPodShell(1);
-const popLampCapL=makeLampPodCap(-1),popLampCapR=makeLampPodCap(1);
-const popLampBezelL=makeLampUnderBezel(-1),popLampBezelR=makeLampUnderBezel(1);
-const popLampLensL=makeLampUnderLens(-1),popLampLensR=makeLampUnderLens(1);
-const popLampRingsL=makeLampUnderProjectorRings(-1),popLampRingsR=makeLampUnderProjectorRings(1);
-const popLampCoreL=makeLampUnderProjectorCores(-1),popLampCoreR=makeLampUnderProjectorCores(1);
+// The top panel is the original hood-conforming shape: it lies flush when closed.
+const popLampHousingL=makeLampSlab(-1,.395,.905,2.22,2.52,.028,-.008,.135);
+const popLampHousingR=makeLampSlab(1,.395,.905,2.22,2.52,.028,-.008,.135);
+const popLampCapL=makeLampSlab(-1,.395,.905,2.22,2.52,.028,.025,.052);
+const popLampCapR=makeLampSlab(1,.395,.905,2.22,2.52,.028,.025,.052);
+const popLampBezelL=makeLampBezel(-1),popLampBezelR=makeLampBezel(1);
+const popLampLensL=makeLampLens(-1),popLampLensR=makeLampLens(1);
+const popLampRingsL=makeLampProjectorRings(-1),popLampRingsR=makeLampProjectorRings(1);
+const popLampCoreL=makeLampProjectorCores(-1),popLampCoreR=makeLampProjectorCores(1);
+// Four dynamically shaped cheek panels bridge the fixed hood opening to the raised bucket.
+const lampSidePanels=mesh(new Array(36).fill(0));
+function updateLampDynamicMesh(shape,data){
+ const normals=new Float32Array(data.length),edges=new Map();
+ const key=p=>p.map(v=>Number(v).toFixed(5)).join(',');
+ for(let i=0;i<data.length;i+=9){
+  const a=[data[i],data[i+1],data[i+2]],b=[data[i+3],data[i+4],data[i+5]],c=[data[i+6],data[i+7],data[i+8]];
+  const ux=b[0]-a[0],uy=b[1]-a[1],uz=b[2]-a[2],vx=c[0]-a[0],vy=c[1]-a[1],vz=c[2]-a[2];
+  let nx=uy*vz-uz*vy,ny=uz*vx-ux*vz,nz=ux*vy-uy*vx,len=Math.hypot(nx,ny,nz)||1;
+  nx/=len;ny/=len;nz/=len;
+  for(let j=0;j<3;j++){normals[i+j*3]=nx;normals[i+j*3+1]=ny;normals[i+j*3+2]=nz;}
+  const v=[a,b,c];
+  for(const pair of [[0,1],[1,2],[2,0]]){
+   const p=v[pair[0]],q=v[pair[1]],kp=key(p),kq=key(q),k=kp<kq?kp+'|'+kq:kq+'|'+kp,old=edges.get(k);
+   if(old){old.count++;if(Math.abs(old.nx*nx+old.ny*ny+nz*old.nz)<.9995)old.crease=true;}
+   else edges.set(k,{a:p,b:q,count:1,crease:false,nx,ny,nz});
+  }
+ }
+ const lines=[];for(const e of edges.values())if(e.count===1||e.crease)lines.push(...e.a,...e.b);
+ gl.bindBuffer(gl.ARRAY_BUFFER,shape.b);gl.bufferData(gl.ARRAY_BUFFER,new Float32Array(data),gl.DYNAMIC_DRAW);
+ gl.bindBuffer(gl.ARRAY_BUFFER,shape.nb);gl.bufferData(gl.ARRAY_BUFFER,normals,gl.DYNAMIC_DRAW);
+ gl.bindBuffer(gl.ARRAY_BUFFER,shape.eb);gl.bufferData(gl.ARRAY_BUFFER,new Float32Array(lines),gl.DYNAMIC_DRAW);
+ shape.n=data.length/3;shape.en=lines.length/3;
+}
+function updateLampSidePanels(){
+ const t=clamp(headlightDeploy,0,1),ease=t*t*(3-2*t),angle=-Math.PI*.5*ease,c=Math.cos(angle),sn=Math.sin(angle),out=[];
+ for(const side of [-1,1])for(const xAbs of [.395,.905]){
+  const x=side*xAbs;
+  const a=[x,POP_HINGE_Y,POP_HINGE_Z];
+  const b=[x,hoodSurfaceY(x,2.52)+.025,2.52];
+  const dy=b[1]-POP_HINGE_Y,dz=b[2]-POP_HINGE_Z;
+  const tip=[x,POP_HINGE_Y+c*dy-sn*dz,POP_HINGE_Z+sn*dy+c*dz];
+  const outward=(xAbs===.905)?side:-side;
+  if(outward>0)out.push(...a,...tip,...b);else out.push(...a,...b,...tip);
+ }
+ updateLampDynamicMesh(lampSidePanels,out);
+}
 // Wide central radiator with a bevelled surround and six horizontal cooling vanes.// Wide central radiator with a bevelled surround and six horizontal cooling vanes.
 const frontGrilleFrame=quad([-.53,.47,2.963],[.53,.47,2.963],[.45,.205,2.963],[-.45,.205,2.963]);
 const frontIntake=quad([-.475,.425,2.972],[.475,.425,2.972],[.405,.245,2.972],[-.405,.245,2.972]);
@@ -863,9 +876,9 @@ function drawCarMesh(shape,cx,cz,color,yaw=0,material=1){
  bindMesh(shape,model,color,1,material);
 }
 function drawCarHingedMesh(shape,cx,cz,color,yaw=0,material=1){
- const deploy=clamp(headlightDeploy,0,1),angle=-1.43*deploy;
- // The underside optics rotate from downward-facing to almost perfectly forward-facing.
- const hinge=matMul(translate(0,POP_HINGE_Y,POP_HINGE_Z),matMul(rotateX(angle),matMul(scale(1,deploy,1),translate(0,-POP_HINGE_Y,-POP_HINGE_Z))));
+ const deploy=clamp(headlightDeploy,0,1),ease=deploy*deploy*(3-2*deploy),angle=-Math.PI*.5*ease;
+ // A true quarter-turn: the bucket rises, and its underside-mounted optics point straight forward.
+ const hinge=matMul(translate(0,POP_HINGE_Y,POP_HINGE_Z),matMul(rotateX(angle),translate(0,-POP_HINGE_Y,-POP_HINGE_Z)));
  const model=matMul(translate(cx,0,cz),matMul(rotateY(yaw),matMul(rotateZ(bodyRoll),hinge)));
  bindMesh(shape,model,color,1,material);
 }
@@ -996,18 +1009,18 @@ function drawWorld(){
   drawCarPart(carX,carZ,side*(wx+.148),wy,wz,.318,.018,.318,C.hub,yaw,wheelFace);
   drawCarPart(carX,carZ,side*(wx+.163),wy,wz,.092,.020,.092,C.bodyLight,yaw,wheelFace);
  }
- // Triangular pop-up pods carry the red upper lid and forward-facing optics as one hinged assembly.
+ // One rigid bucket: the red hood-matched lid stays attached; triangular cheeks open behind it.
+ updateLampSidePanels();
+ drawCarMesh(lampSidePanels,carX,carZ,C.bodyLight,yaw,1);
+ for(const housing of [popLampHousingL,popLampHousingR])drawCarHingedMesh(housing,carX,carZ,[.12,.008,.026,1],yaw,1);
+ for(const bezel of [popLampBezelL,popLampBezelR])drawCarHingedMesh(bezel,carX,carZ,[.44,.48,.58,1],yaw,2);
+ for(const lens of [popLampLensL,popLampLensR])drawCarHingedMesh(lens,carX,carZ,[.045,.115,.17,1],yaw,3);
+ for(const rings of [popLampRingsL,popLampRingsR])drawCarHingedMesh(rings,carX,carZ,[.62,.70,.82,1],yaw,2);
+ const lampPower=clamp((headlightDeploy-.12)/.88,0,1);
+ const lampColor=[.16+.84*lampPower,.24+.76*lampPower,.34+.66*lampPower,1];
+ for(const core of [popLampCoreL,popLampCoreR])drawCarHingedMesh(core,carX,carZ,lampColor,yaw,2);
  drawCarHingedMesh(popLampCapL,carX,carZ,C.bodyLight,yaw,1);
  drawCarHingedMesh(popLampCapR,carX,carZ,C.bodyLight,yaw,1);
- if(headlightDeploy>.01){
-  for(const housing of [popLampHousingL,popLampHousingR])drawCarHingedMesh(housing,carX,carZ,[.12,.008,.026,1],yaw,1);
-  for(const bezel of [popLampBezelL,popLampBezelR])drawCarHingedMesh(bezel,carX,carZ,[.44,.48,.58,1],yaw,2);
-  for(const lens of [popLampLensL,popLampLensR])drawCarHingedMesh(lens,carX,carZ,[.045,.115,.17,1],yaw,3);
-  for(const rings of [popLampRingsL,popLampRingsR])drawCarHingedMesh(rings,carX,carZ,[.62,.70,.82,1],yaw,2);
-  const lampPower=clamp((headlightDeploy-.12)/.88,0,1);
-  const lampColor=[.16+.84*lampPower,.24+.76*lampPower,.34+.66*lampPower,1];
-  for(const core of [popLampCoreL,popLampCoreR])drawCarHingedMesh(core,carX,carZ,lampColor,yaw,2);
- }
  drawCarMesh(frontBumperCrease,carX,carZ,C.body,yaw,1);
  drawCarMesh(frontGrilleFrame,carX,carZ,C.trim,yaw,0);
  drawCarMesh(frontIntake,carX,carZ,[.018,.025,.040,1],yaw,0);
