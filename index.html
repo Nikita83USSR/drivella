@@ -626,7 +626,10 @@ function makeCarHull(keys,wheelArches=false,flatRoof=false,windowOpenings=false,
  const out=[],N=14,rings=[],zSet=new Set(keys.map(p=>p.z));
  const archY=(z,center)=>{const d=Math.abs(z-center),r=WHEEL_RADIUS,cy=WHEEL_CENTER_Y,clear=.008;if(d<=r)return cy+Math.sqrt(Math.max(0,r*r-d*d))+clear;if(d>=r+.16)return .33;const t=(d-r)/.16,u=t*t*(3-2*t);return (cy+clear)*(1-u)+.33*u;};
  if(wheelArches)for(const center of [-1.6375,1.6375])for(const offset of [-.615,-.55,-.455,-.34,-.2275,-.114,0,.114,.2275,.34,.455,.55,.615])zSet.add(center+offset);
- if(windowOpenings){zSet.add(-1.6375);zSet.add(.945);}
+ if(windowOpenings){
+  zSet.add(CABIN_GLASS_REAR_BOTTOM_Z);zSet.add(CABIN_GLASS_FRONT_BOTTOM_Z);
+  if(fitWindowPlane){zSet.add(CABIN_GLASS_REAR_TOP_Z);zSet.add(CABIN_GLASS_FRONT_TOP_Z);}
+ }
  if(roofOpening){zSet.add(roofOpening[0]);zSet.add(roofOpening[1]);}
  const zSamples=[...zSet].sort((a,b)=>a-b);
  for(const z of zSamples){
