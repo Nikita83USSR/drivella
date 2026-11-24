@@ -1,6 +1,6 @@
 # DRIVELLA — Rendering Architecture
 
-Current reference: **v0.18.38 / BUILD 104**  
+Current reference: **v0.18.39 / BUILD 105**  
 Main renderer: `index.html` — custom WebGL 1 renderer, no external rendering engine.
 
 This document records the rendering decisions that future vehicle, environment, lighting, and effects work must preserve. The goal is a reusable scene pipeline: new world geometry should take part in shadows and ambient occlusion automatically when it uses the shared draw path.
@@ -108,6 +108,18 @@ The four wheels use one rolling phase derived from the accumulated forward trave
 - The tyre, brake-disc face, alloy spoke face, and centre/hub details must all receive the exact same `wheelSpin` argument. Omitting it from any `wheelFace` call leaves that visible part stationary.
 - The wheel's local Y axis is mapped to the vehicle's transverse axis by the `rotateZ(Math.PI / 2)` transform. The negative sign is intentional: with forward travel along world +Z, it produces the physically correct rolling direction at the tyre contact patch.
 - Wheels remain stationary in the garage. Do not introduce per-wheel offsets or independent spin phases unless a future feature explicitly requires wheel slip or differential behaviour.
+
+## Front-wheel steering — BUILD 105
+
+Only the front axle (`z > 0`) steers. The rear axle remains aligned with the chassis. The visual front-wheel angle is driven by the same filtered, speed-sensitive steering angle used by the vehicle dynamics:
+
+`baseAngle = steer * 0.32 / (1 + abs(speed / 3.6) / 115)`
+
+- `getSteeringAngle()` is the shared source for the physics yaw target and visible front-wheel orientation. Keep these in sync; do not add a separate visual-only input curve.
+- `getFrontWheelSteerAngle(side)` applies a small Ackermann correction. The wheel on the inside of a turn receives a slightly larger angle than the outside wheel, using a 3.275 m wheelbase and 2.21 m track.
+- The four visible components of each front wheel (tyre, brake face, alloy spokes and hub) must share one steering angle and pivot. `steeringPivotX` rotates the component offsets as part of the complete wheel assembly instead of rotating each component around its own centre.
+- Steering is applied around the local vertical axis before the axle/spin transform. Keep the wheel spin and steer transforms separate: spin is around the axle; steering changes the axle orientation.
+- Garage wheels stay straight. Do not apply front steering to the rear axle.
 
 ## Shared draw path — rules for future objects
 
