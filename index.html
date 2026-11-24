@@ -115,9 +115,9 @@
 <body>
 <canvas id="scene"></canvas><canvas id="sun"></canvas><canvas id="flare"></canvas>
 <div id="hud">
- <div class="top"><div class="logo">DRIVELLA<small>3D SYNTHWAVE DRIFT RACING</small></div><div class="version-label" id="version-label">v0.18.57 · BUILD 123</div><div class="stat">DISTANCE<b id="distance">000.0 KM</b></div><div class="stat">LOCATION<b>VIOLET COAST</b></div></div>
+ <div class="top"><div class="logo">DRIVELLA<small>3D SYNTHWAVE DRIFT RACING</small></div><div class="version-label" id="version-label">v0.18.58 · BUILD 124</div><div class="stat">DISTANCE<b id="distance">000.0 KM</b></div><div class="stat">LOCATION<b>VIOLET COAST</b></div></div>
  <div class="right"><div id="speed">000 <span>KM/H</span></div><div id="direction">▶ FORWARD</div><div id="music">♫ MUSIC SCANNING…</div></div>
- <div class="bottom"><div class="hint"><strong>W / ↑</strong> ACCELERATE　<strong>S / ↓</strong> BRAKE / REVERSE<br><strong>A / ←　D / →</strong> STEER　<strong>SPACE</strong> HANDBRAKE　<strong>C</strong> CAMERA　<strong>HOLD + DRAG LMB</strong> LOOK　<strong>L</strong> LIGHTS　<strong>K</strong> WIREFRAME</div><div>3D NEON HIGHWAY // BUILD 123</div></div>
+ <div class="bottom"><div class="hint"><strong>W / ↑</strong> ACCELERATE　<strong>S / ↓</strong> BRAKE / REVERSE<br><strong>A / ←　D / →</strong> STEER　<strong>SPACE</strong> HANDBRAKE　<strong>C</strong> CAMERA　<strong>HOLD + DRAG LMB</strong> LOOK　<strong>L</strong> LIGHTS　<strong>K</strong> WIREFRAME</div><div>3D NEON HIGHWAY // BUILD 124</div></div>
 </div>
 <div id="fps-counter" aria-live="off">FPS --</div>
 <div id="effects-menu" aria-hidden="true">
@@ -151,7 +151,7 @@
 </div>
 <div id="tools-ui"><button id="cam-prev" aria-label="Previous camera">◀</button><span id="cam-label">CAM 2 · CLOSE</span><button id="cam-next" aria-label="Next camera">▶</button><button id="debug-toggle">DEBUG</button></div>
 <div id="debug-panel"><div class="debug-title">DRIVELLA DIAGNOSTICS</div><div id="debug-data">Initializing…</div></div>
-<div id="boot-screen"><div class="boot-content"><div class="boot-kicker">NIGHT DRIVE SYSTEMS // INITIALIZING</div><div class="boot-logo">DRIVELLA</div><div class="boot-subtitle">3D SYNTHWAVE DRIFT RACING</div><div class="boot-mark"></div><div class="boot-status" id="boot-status">BUILDING THE 3D WORLD</div><div class="boot-track"><div class="boot-progress" id="boot-progress"></div></div><div class="boot-meta"><span>3D ENGINE ONLINE</span><span id="boot-percent">00%</span></div><div class="boot-footer">ENGINE STARTUP // v0.18.57 · BUILD 123</div></div></div>
+<div id="boot-screen"><div class="boot-content"><div class="boot-kicker">NIGHT DRIVE SYSTEMS // INITIALIZING</div><div class="boot-logo">DRIVELLA</div><div class="boot-subtitle">3D SYNTHWAVE DRIFT RACING</div><div class="boot-mark"></div><div class="boot-status" id="boot-status">BUILDING THE 3D WORLD</div><div class="boot-track"><div class="boot-progress" id="boot-progress"></div></div><div class="boot-meta"><span>3D ENGINE ONLINE</span><span id="boot-percent">00%</span></div><div class="boot-footer">ENGINE STARTUP // v0.18.58 · BUILD 124</div></div></div>
 <div id="main-menu"><div class="menu-content"><div class="menu-brand">DRIVELLA GTS</div><div class="menu-sub">RIDE THE RETRO FUTURE</div><div class="menu-actions"><button class="menu-btn" id="menu-start">СТАРТ</button><button class="menu-btn" id="menu-garage">ГАРАЖ</button><button class="menu-btn" id="menu-options">НАСТРОЙКИ</button></div></div><div class="menu-footer">РАЗРАБОТЧИК — <b>НИКИТА МАРКИН</b></div></div>
 <div id="garage-screen"><div class="garage-head">ГАРАЖ // DRIVELLA GTS</div><div class="garage-copy">ТЕКУЩИЙ АВТОМОБИЛЬ<br>DRIVELLA GTS · RETRO GT COUPE<br>ПОКАЖИ ЕЁ СО ВСЕХ СТОРОН</div><div class="garage-controls"><button id="garage-back">← НАЗАД В МЕНЮ</button></div><div class="garage-tip">ЗАЖМИ И ТЯНИ — ВРАЩЕНИЕ<br>КОЛЁСИКО — ПРИБЛИЗИТЬ / ОТДАЛИТЬ</div></div>
 <div id="options-screen"><div class="options-head">ОПЦИИ</div><div class="options-card"><div class="option-row"><span>МУЗЫКА</span><button id="option-music">ВКЛЮЧЕНА</button></div><div class="option-row"><span>ГРОМКОСТЬ</span><input id="option-volume" type="range" min="0" max="100" value="52"></div><div class="option-row"><span>ЗВУК ДВИГАТЕЛЯ</span><button id="option-sfx">ВКЛЮЧЁН</button></div><div class="option-row"><span>КАМЕРА</span><span>КЛАВИШИ 1–4</span></div><button id="options-back" style="width:100%;margin-top:18px">← НАЗАД В МЕНЮ</button></div></div>
@@ -159,7 +159,7 @@
 <script>
 (()=>{
 'use strict';
-const VERSION='v0.18.57',BUILD='123';
+const VERSION='v0.18.58',BUILD='124';
 const canvas=document.getElementById('scene'),gl=canvas.getContext('webgl',{antialias:true,alpha:true}),sun=document.getElementById('sun'),sctx=sun.getContext('2d'),flare=document.getElementById('flare'),fctx=flare.getContext('2d');
 const $=id=>document.getElementById(id);
 const clamp=(v,a,b)=>Math.max(a,Math.min(b,v));
@@ -621,7 +621,7 @@ function profileValue(z,keys){
 }
 // Shared wheel datum: lower all four wheels by 8 mm while retaining minimal ground clearance.
 const WHEEL_CENTER_Y=.457,WHEEL_RADIUS=.455;
-function makeCarHull(keys,wheelArches=false,flatRoof=false,windowOpenings=false,outerSkinOnly=false){
+function makeCarHull(keys,wheelArches=false,flatRoof=false,windowOpenings=false,roofOpening=null){
  // Keep only designed profile stations. The two wheel arches add a few deliberate silhouette points.
  const out=[],N=14,rings=[],zSet=new Set(keys.map(p=>p.z));
  const archY=(z,center)=>{const d=Math.abs(z-center),r=WHEEL_RADIUS,cy=WHEEL_CENTER_Y,clear=.008;if(d<=r)return cy+Math.sqrt(Math.max(0,r*r-d*d))+clear;if(d>=r+.16)return .33;const t=(d-r)/.16,u=t*t*(3-2*t);return (cy+clear)*(1-u)+.33*u;};
@@ -641,10 +641,10 @@ function makeCarHull(keys,wheelArches=false,flatRoof=false,windowOpenings=false,
  }
  for(let i=0;i<rings.length-1;i++)for(let j=0;j<N;j++){
   const zMid=(rings[i][0][2]+rings[i+1][0][2])*.5;
-  // The cabin is an exterior shell only: discard its underside and lower inner walls,
-  // which are already covered by the main body hull and only create overlapping surfaces.
-  if(outerSkinOnly&&(j<3||j>10))continue;
-  if(windowOpenings&&(j===4||j===9)&&zMid>=-1.60&&zMid<=.945)continue;
+  // Remove the complete shoulder-to-roof strip on both sides for actual window apertures.
+  if(windowOpenings&&zMid>=-1.60&&zMid<=.945&&(j===4||j===5||j===8||j===9))continue;
+  // Remove the original body roof under the raised cabin roof to avoid a duplicate inner roof.
+  if(roofOpening&&zMid>=roofOpening[0]&&zMid<=roofOpening[1]&&(j===6||j===7))continue;
   const a=rings[i][j],b=rings[i][(j+1)%N],c=rings[i+1][j],d=rings[i+1][(j+1)%N];
   // Mirror the left shoulder-to-upper face with the same diagonal as the right side.
   if(j===9)out.push(...b,...d,...c,...b,...a,...c);
@@ -653,14 +653,21 @@ function makeCarHull(keys,wheelArches=false,flatRoof=false,windowOpenings=false,
  const cap=(ring,reverse)=>{const center=[0,ring.reduce((v,p)=>v+p[1],0)/N,ring[0][2]];for(let j=0;j<N;j++){const a=ring[j],b=ring[(j+1)%N];if(reverse)out.push(...center,...b,...a);else out.push(...center,...a,...b);}};
  if(!outerSkinOnly){cap(rings[0],true);cap(rings[rings.length-1],false);}return mesh(out);
 }
+const CABIN_ROOF_STATIONS=[
+ {z:-1.42,w:.70,edge:1.205,crown:1.235},
+ {z:-.92,w:.78,edge:1.215,crown:1.245},
+ {z:-.30,w:.80,edge:1.215,crown:1.245},
+ {z:.275,w:.80,edge:1.205,crown:1.235}
+];
+function cabinRoofAt(z){
+ const stations=CABIN_ROOF_STATIONS;
+ let i=0;while(i<stations.length-2&&z>stations[i+1].z)i++;
+ const a=stations[i],b=stations[i+1],t=clamp((z-a.z)/(b.z-a.z),0,1);
+ return {z,w:a.w+(b.w-a.w)*t,edge:a.edge+(b.edge-a.edge)*t,crown:a.crown+(b.crown-a.crown)*t};
+}
 function makeRoof(){
- // One clean roof plane with fixed front/rear stations; every glass edge meets these exact rails.
- const stations=[
-  {z:-1.42,w:.70,edge:1.205,crown:1.235},
-  {z:-.92,w:.78,edge:1.215,crown:1.245},
-  {z:-.30,w:.80,edge:1.215,crown:1.245},
-  {z:.275,w:.80,edge:1.205,crown:1.235}
- ];
+ // Single raised outer roof. The original body roof directly beneath it is removed.
+ const stations=CABIN_ROOF_STATIONS;
  const out=[],steps=stations.length-1;
  const sample=t=>{
   const span=t*(stations.length-1),i=Math.min(stations.length-2,Math.floor(span)),u=span-i,a=stations[i],b=stations[i+1];
@@ -783,50 +790,58 @@ const bodyProfile=[
  {z:2.875,w:1.00,sideW:1.00,midW:.97,shoulderW:.94,upperW:.91,topW:.87,floor:.18,side:.27,mid:.42,shoulder:.62,upper:.66,top:.66}
  ];
 // Remove the upper side skin behind the glazing as well; otherwise the original body shell shows through as a second cabin.
-const bodyMesh=makeCarHull(bodyProfile,true,false,true);
+const bodyMesh=makeCarHull(bodyProfile,true,false,true,[-1.42,.275]);
 const roofMesh=makeRoof(),wheelFace=makeWheelFace(),exhaustTip=makeExhaustTip(),exhaustCore=makeExhaustCore();
 const archFrontL=makeWheelArch(1.6375,-1),archFrontR=makeWheelArch(1.6375,1),archRearL=makeWheelArch(-1.6375,-1),archRearR=makeWheelArch(-1.6375,1);
 
-// All side glazing is cut directly from the body hull's own shoulder-to-upper strip.
-// This shares the body's exact profile stations and mirrored coordinates, so no window floats
-// inside a second cabin shell and no side-window edges can drift away from the body openings.
-function makeBodySideBand(profile,side,zMin,zMax,offsetX=.014){
- const zSet=new Set(profile.map(p=>p.z));
- for(const center of [-1.6375,1.6375])
-  for(const offset of [-.615,-.55,-.455,-.34,-.2275,-.114,0,.114,.2275,.34,.455,.55,.615])
-   zSet.add(center+offset);
- zSet.add(zMin);zSet.add(zMax);
- const zs=[...zSet].filter(z=>z>=zMin-1e-6&&z<=zMax+1e-6).sort((a,b)=>a-b),out=[];
- const point=(z,upper)=>{
-  const p=profileValue(z,profile),w=upper?(p.upperW??p.w*.66):(p.shoulderW??p.w*.96),y=upper?p.upper:p.shoulder;
-  return [side*(w+offsetX),y,z];
- };
- for(let i=0;i<zs.length-1;i++){
-  const z0=zs[i],z1=zs[i+1],sh0=point(z0,false),up0=point(z0,true),sh1=point(z1,false),up1=point(z1,true);
-  if(side>0)out.push(...sh0,...sh1,...up1,...sh0,...up1,...up0);
-  else out.push(...sh0,...sh1,...up1,...sh0,...up0,...up1);
+// Side glass fills the full cabin aperture from the body shoulder to the raised roof rail.
+function cabinSidePairAt(t,side){
+ const roofZ=.275+(-1.42-.275)*t,bodyZ=.945+(-1.60-.945)*t;
+ const roof=cabinRoofAt(roofZ),body=profileValue(bodyZ,bodyProfile);
+ const upper=[side*(roof.w+.008),roof.edge+.004,roofZ];
+ const lower=[side*((body.shoulderW??body.w*.96)+.008),body.shoulder+.008,bodyZ];
+ return {upper,lower};
+}
+function makeCabinSideGlass(side){
+ const out=[],steps=12;
+ for(let i=0;i<steps;i++){
+  const a=cabinSidePairAt(i/steps,side),b=cabinSidePairAt((i+1)/steps,side);
+  if(side>0)out.push(...a.lower,...b.lower,...b.upper,...a.lower,...b.upper,...a.upper);
+  else out.push(...a.lower,...b.lower,...b.upper,...a.lower,...a.upper,...b.upper);
  }
  return mesh(out);
 }
-const sideGlassL=makeBodySideBand(bodyProfile,-1,-1.6375,.945,.014);
-const sideGlassR=makeBodySideBand(bodyProfile,1,-1.6375,.945,.014);
-// The B-pillar is a narrow outer overlay; the continuous glass beneath it keeps the body opening sealed.
-const sideBPillarL=makeBodySideBand(bodyProfile,-1,-.84,-.72,.040);
-const sideBPillarR=makeBodySideBand(bodyProfile,1,-.84,-.72,.040);
+function makeCabinPillar(side,t,width){
+ const p=cabinSidePairAt(t,side);
+ return sideRibbon(side,[[p.upper[1],p.upper[2],Math.abs(p.upper[0])],[p.lower[1],p.lower[2],Math.abs(p.lower[0])]],width);
+}
+const sideGlassL=makeCabinSideGlass(-1);
+const sideGlassR=makeCabinSideGlass(1);
+const sideAPillarL=makeCabinPillar(-1,0,.070),sideAPillarR=makeCabinPillar(1,0,.070);
+const sideBPillarL=makeCabinPillar(-1,.52,.075),sideBPillarR=makeCabinPillar(1,.52,.075);
+const sideCPillarL=makeCabinPillar(-1,1,.075),sideCPillarR=makeCabinPillar(1,1,.075);
+function makeCabinRoofRail(side){
+ const points=CABIN_ROOF_STATIONS.map(p=>[p.edge,p.z,p.w]);
+ return sideRibbon(side,points,.050);
+}
+const sideRoofRailL=makeCabinRoofRail(-1),sideRoofRailR=makeCabinRoofRail(1);
 
-// Windshield corners coincide with the front roof edge and the body's upper side stations.
-const windshield=quad([-.80,1.205,.275],[-.98,.914,.945],[.98,.914,.945],[.80,1.205,.275]);
+// Front and rear windscreens connect the roof to the body end sections.
+const frontBody=profileValue(.945,bodyProfile),rearDeck=profileValue(-1.6375,bodyProfile);
+const windshield=quad(
+ [-.80,1.205,.275],
+ [-((frontBody.shoulderW??frontBody.w*.96)+.008),frontBody.shoulder+.008,.945],
+ [((frontBody.shoulderW??frontBody.w*.96)+.008),frontBody.shoulder+.008,.945],
+ [.80,1.205,.275]
+);
 // Rear screen closes the cabin against the actual rear deck top profile.
-const rearDeck=profileValue(-1.6375,bodyProfile);
-const rearGlass=quad([-.70,1.205,-1.42],[.70,1.205,-1.42],[rearDeck.topW,rearDeck.top,-1.6375],[-rearDeck.topW,rearDeck.top,-1.6375]);
-
-// Exterior roof rails and A/C pillars share the exact roof/glass corner coordinates.
-const sideRoofRailL=sideRibbon(-1,[[1.205,.275,.825],[1.205,-1.42,.725]],.050);
-const sideRoofRailR=sideRibbon(1,[[1.205,.275,.825],[1.205,-1.42,.725]],.050);
-const sideAPillarL=sideRibbon(-1,[[.914,.945,1.025],[1.205,.275,.845]],.070);
-const sideAPillarR=sideRibbon(1,[[.914,.945,1.025],[1.205,.275,.845]],.070);
-const sideCPillarL=sideRibbon(-1,[[1.205,-1.42,.735],[rearDeck.upper,-1.6375,rearDeck.upperW+.04]],.075);
-const sideCPillarR=sideRibbon(1,[[1.205,-1.42,.735],[rearDeck.upper,-1.6375,rearDeck.upperW+.04]],.075);
+const rearRoof=cabinRoofAt(-1.42);
+const rearGlass=quad(
+ [-rearRoof.w,rearRoof.edge,-1.42],
+ [-rearDeck.topW,rearDeck.top,-1.6375],
+ [rearDeck.topW,rearDeck.top,-1.6375],
+ [rearRoof.w,rearRoof.edge,-1.42]
+);
 // Clean rear-quarter intake, fine door shut-lines and lower sills.
 const [sideVentL,sideVentR]=mirroredQuadPair([-1.075,.755,-.82],[-1.075,.755,-1.20],[-1.135,.575,-1.17],[-1.135,.575,-.86]);
 const [sideVentSlat1L,sideVentSlat1R]=mirroredQuadPair([-1.083,.710,-.88],[-1.083,.710,-1.145],[-1.096,.695,-1.14],[-1.096,.695,-.885]);
@@ -848,7 +863,7 @@ function hoodSurfaceY(x,z){
 const POP_HINGE_Z=2.30;
 const POP_LAMP_OUTER_X=.895,POP_LAMP_INNER_X=.445,POP_LAMP_Z_REAR=2.30,POP_LAMP_Z_FRONT=2.60;
 const POP_LAMP_FACE_H=.22,POP_LAMP_DIAG=Math.SQRT1_2;
-const POP_HINGE_Y=hoodSurfaceY(.65,POP_HINGE_Z)+.003;
+const POP_HINGE_Y=hoodSurfaceY(.65,POP_HINGE_Z)+.003,POP_LAMP_DROP=-.14;
 function lampXBounds(side){return side<0?[-POP_LAMP_OUTER_X,-POP_LAMP_INNER_X]:[POP_LAMP_INNER_X,POP_LAMP_OUTER_X];}
 function lampFrontPoint(x,t,offset=0){
  const yTop=hoodSurfaceY(x,POP_LAMP_Z_FRONT)-.037,yBase=yTop-POP_LAMP_FACE_H*POP_LAMP_DIAG,zBase=POP_LAMP_Z_FRONT-POP_LAMP_FACE_H*POP_LAMP_DIAG;
@@ -1231,7 +1246,7 @@ function drawCarHingedMesh(shape,cx,cz,color,yaw=0,material=1,vehicleShadowCaste
  const deploy=clamp(headlightDeploy,0,1),ease=deploy*deploy*(3-2*deploy),angle=-Math.PI*.25*ease;
  // Every part shares one rigid transform; no scaling, vertex updates or independent deformation.
  const hinge=matMul(translate(0,POP_HINGE_Y,POP_HINGE_Z),matMul(rotateX(angle),translate(0,-POP_HINGE_Y,-POP_HINGE_Z)));
- const model=matMul(translate(cx,0,cz),matMul(rotateY(yaw),matMul(rotateZ(bodyRoll),hinge)));
+ const model=matMul(translate(cx,0,cz),matMul(rotateY(yaw),matMul(rotateZ(bodyRoll),matMul(translate(0,POP_LAMP_DROP,0),hinge))));
  bindMesh(shape,model,color,1,material,vehicleShadowCaster,vehicleSolarShadowCaster);
 }
 function matIdentity(){return [1,0,0,0,0,1,0,0,0,0,1,0,0,0,0,1];}
@@ -1285,7 +1300,7 @@ function drawWorld(){
  // Stage 2: two real local headlight spots follow the same rigid pop-up hinge transform as the optical modules.
  const lampDeploy=clamp(headlightDeploy,0,1),lampEase=lampDeploy*lampDeploy*(3-2*lampDeploy),lampAngle=-Math.PI*.25*lampEase,heading=garageMode?0:carYaw,roll=garageMode?0:bodyRoll;
  const lampHinge=matMul(translate(0,POP_HINGE_Y,POP_HINGE_Z),matMul(rotateX(lampAngle),translate(0,-POP_HINGE_Y,-POP_HINGE_Z)));
- const lampWorld=matMul(translate(carX,0,carZ),matMul(rotateY(heading),matMul(rotateZ(roll),lampHinge)));
+ const lampWorld=matMul(translate(carX,0,carZ),matMul(rotateY(heading),matMul(rotateZ(roll),matMul(translate(0,POP_LAMP_DROP,0),lampHinge))));
  const lampPoint=p=>[lampWorld[0]*p[0]+lampWorld[4]*p[1]+lampWorld[8]*p[2]+lampWorld[12],lampWorld[1]*p[0]+lampWorld[5]*p[1]+lampWorld[9]*p[2]+lampWorld[13],lampWorld[2]*p[0]+lampWorld[6]*p[1]+lampWorld[10]*p[2]+lampWorld[14]];
  const lampL=lampPoint(lampFrontPoint(-.67,POP_LAMP_FACE_H*.5,0)),lampR=lampPoint(lampFrontPoint(.67,POP_LAMP_FACE_H*.5,0));
  const lampRotation=matMul(rotateY(heading),matMul(rotateZ(roll),rotateX(lampAngle))),lampDiag=POP_LAMP_DIAG;
@@ -1516,7 +1531,7 @@ function drawVehicleLensFlares(){
  // Upper pop-up headlamps use the same lightweight optical profile as the indicators.
  const lampEase=clamp(headlightDeploy,0,1),lampAngle=-Math.PI*.25*(lampEase*lampEase*(3-2*lampEase));
  const hinge=matMul(translate(0,POP_HINGE_Y,POP_HINGE_Z),matMul(rotateX(lampAngle),translate(0,-POP_HINGE_Y,-POP_HINGE_Z)));
- const lampWorld=matMul(bodyWorld,hinge),lampRotation=matMul(rotateY(yaw),matMul(rotateZ(roll),rotateX(lampAngle)));
+ const lampWorld=matMul(bodyWorld,matMul(translate(0,POP_LAMP_DROP,0),hinge)),lampRotation=matMul(rotateY(yaw),matMul(rotateZ(roll),rotateX(lampAngle)));
  const lampNormal=direction(lampRotation,[0,-POP_LAMP_DIAG,POP_LAMP_DIAG]);
  const lampPower=clamp((headlightDeploy-.12)/.88,0,1);
  if(lampPower>.02){
