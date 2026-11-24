@@ -806,10 +806,9 @@ function makeBodySideBand(profile,side,zMin,zMax,offsetX=.014){
  }
  return mesh(out);
 }
-const sideGlassLF=makeBodySideBand(bodyProfile,-1,-.72,.945,.014);
-const sideGlassRF=makeBodySideBand(bodyProfile,1,-.72,.945,.014);
-const sideGlassLR=makeBodySideBand(bodyProfile,-1,-1.6375,-.84,.014);
-const sideGlassRR=makeBodySideBand(bodyProfile,1,-1.6375,-.84,.014);
+const sideGlassL=makeBodySideBand(bodyProfile,-1,-1.6375,.945,.014);
+const sideGlassR=makeBodySideBand(bodyProfile,1,-1.6375,.945,.014);
+// The B-pillar is a narrow outer overlay; the continuous glass beneath it keeps the body opening sealed.
 const sideBPillarL=makeBodySideBand(bodyProfile,-1,-.84,-.72,.040);
 const sideBPillarR=makeBodySideBand(bodyProfile,1,-.84,-.72,.040);
 
@@ -1377,7 +1376,7 @@ function drawWorld(){
  // Glass panels are generated from the exact shoulder/upper strips removed from the main body hull.
  drawCarMesh(windshield,carX,carZ,C.glassLight,yaw,3);
  drawCarMesh(rearGlass,carX,carZ,[.025,.095,.16,1],yaw,3);
- for(const pane of [sideGlassLF,sideGlassLR,sideGlassRF,sideGlassRR])drawCarMesh(pane,carX,carZ,[.025,.10,.17,1],yaw,3);
+ for(const pane of [sideGlassL,sideGlassR])drawCarMesh(pane,carX,carZ,[.025,.10,.17,1],yaw,3);
   for(const side of [-1,1]){
   drawCarPart(carX,carZ,side*.82,1.015,.60,.105,.065,.030,C.trim,yaw,side<0?mirrorArmL:mirrorArmR,0);
   drawCarPart(carX,carZ,side*.925,1.10,.60,.095,.065,.12,C.bodyLight,yaw,side<0?mirrorShellL:mirrorShellR,PAINT_MATERIAL);
