@@ -1,6 +1,6 @@
 # DRIVELLA — Rendering Architecture
 
-Current reference: **v0.18.52 / BUILD 118**  
+Current reference: **v0.18.53 / BUILD 119**  
 Main renderer: `index.html` — custom WebGL 1 renderer, no external rendering engine.
 
 **Release marker policy:** every published renderer/game change increments `BUILD` in `index.html` and updates the visible HUD, boot screen, README, and this document in the same release. Increment the patch version with the build when appropriate. Never publish a renderer change while leaving the visible build number unchanged.
@@ -20,7 +20,7 @@ The scene is intentionally drawn through the same `drawWorld()` path in the norm
 
 ## Visual effects console — BUILD 117
 
-`F4` opens/closes the in-game visual effects panel. All entries are mouse-operable checkboxes and changes apply immediately without pausing the simulation. The `FX` object is the live effect-state registry; `FX_DEFAULTS` defines the reset state. The panel does not replace the existing keyboard shortcuts: `K` (wireframe), `L` (pop-up headlights) and `H` (headlight diffuse lighting) update the same registry and keep their checkboxes synchronized. `F3` remains the renderer diagnostics panel.
+`F4` opens/closes the in-game visual effects panel. All entries are mouse-operable checkboxes and changes apply immediately without pausing the simulation. The `FX` object is the live effect-state registry; `FX_DEFAULTS` defines the reset state. The panel does not replace the existing keyboard shortcuts: `K` (wireframe), `L` (pop-up headlights) and `H` (headlight diffuse lighting) update the same registry and keep their checkboxes synchronized. `F3` remains the renderer diagnostics panel. In BUILD 119, F3 also shows CPU milliseconds for the full JS frame, shadow pass, main world pass and post-processing pass. If WebGL exposes `EXT_disjoint_timer_query`, it shows asynchronous GPU milliseconds for shadow, world and post passes; query results are polled later and never synchronously waited on. If the extension is unavailable, the GPU row reports `TIMER UNSUPPORTED`.
 
 ### Independent effect controls
 
@@ -37,6 +37,18 @@ The scene is intentionally drawn through the same `drawWorld()` path in the norm
 - **Underglow / tyre contact:** `FX.underglow` gates the red floor pool and side neon rails (material modes 5 and 6). `FX.tireContact` separately gates the four procedural tyre-contact ovals (material mode 7).
 
 The F4 panel exposes all 16 controls and includes a reset-to-defaults action. These settings are runtime-only: a page reload restores `FX_DEFAULTS`. Music, volume and sound-effect settings remain in the existing Options menu and are not part of the graphics panel.
+
+## Frame profiler — BUILD 119
+
+The F3 diagnostics panel now separates CPU command-generation time from actual GPU execution time so renderer regressions can be isolated instead of inferred from effect toggles.
+
+- **CPU frame:** JavaScript time from the beginning of `frame()` through scene/UI updates, excluding browser idle time and deferred GPU completion.
+- **CPU shadow / world / post:** CPU time spent submitting `renderShadowMap()`, `drawWorld()`, and `renderCarOutlines()` respectively.
+- **GPU shadow / world / post:** `EXT_disjoint_timer_query` measurements around those same passes when available. Results are polled asynchronously via `QUERY_RESULT_AVAILABLE_EXT`; the renderer never calls `gl.finish()` or waits synchronously for the GPU. Disjoint/invalid samples are discarded.
+- GPU values are an exponentially smoothed recent sample (65% previous, 35% new). They may display `--` while the first queries complete. If the extension is missing, F3 reports `TIMER UNSUPPORTED`.
+- Enable F3 only while diagnosing: the timer queries are created only while the panel is open, keeping normal play free of query-object overhead.
+
+How to interpret: high CPU shadow time with low GPU time indicates JavaScript/draw-call submission overhead; high GPU shadow time points to shadow-map raster work. High GPU world time points to scene shading/fill-rate or the main material shader. High GPU post time points to the normal/depth mask, SSAO, ink-outline and fullscreen composite passes. Compare these figures at the same scene, camera, resolution and FX settings.
 
 ## Camera controls — BUILD 101
 
