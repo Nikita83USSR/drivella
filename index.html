@@ -94,7 +94,7 @@
 <body>
 <canvas id="scene"></canvas><canvas id="sun"></canvas>
 <div id="hud">
- <div class="top"><div class="logo">DRIVELLA<small>3D SYNTHWAVE DRIFT RACING</small></div><div class="version-label" id="version-label">v0.15.8 · BUILD 044</div><div class="stat">DISTANCE<b id="distance">000.0 KM</b></div><div class="stat">LOCATION<b>VIOLET COAST</b></div></div>
+ <div class="top"><div class="logo">DRIVELLA<small>3D SYNTHWAVE DRIFT RACING</small></div><div class="version-label" id="version-label">v0.15.9 · BUILD 045</div><div class="stat">DISTANCE<b id="distance">000.0 KM</b></div><div class="stat">LOCATION<b>VIOLET COAST</b></div></div>
  <div class="right"><div id="speed">000 <span>KM/H</span></div><div id="direction">▶ FORWARD</div><div id="music">♫ MUSIC SCANNING…</div></div>
  <div class="bottom"><div class="hint"><strong>W / ↑</strong> ACCELERATE　<strong>S / ↓</strong> BRAKE / REVERSE<br><strong>A / ←　D / →</strong> STEER　<strong>SPACE</strong> HANDBRAKE　<strong>M</strong> MUSIC　<strong>1–4</strong> CAMERA</div><div>3D NEON HIGHWAY // BUILD 041</div></div>
 </div>
@@ -442,6 +442,13 @@ const hoodLampGlowL=quad([-.98,.888,2.19],[-.57,.888,2.19],[-.54,.749,2.50],[-.9
 const hoodLampGlowR=quad([.57,.888,2.19],[.98,.888,2.19],[.92,.749,2.50],[.54,.749,2.50]);
 const hoodLampCoreL=quad([-.86,.881,2.25],[-.70,.881,2.25],[-.69,.762,2.47],[-.84,.762,2.47]);
 const hoodLampCoreR=quad([.70,.881,2.25],[.86,.881,2.25],[.84,.762,2.47],[.69,.762,2.47]);
+// Raised pop-up lamp faces: compact vertical units that emerge from the bonnet on L.
+const popLampFrameL=quad([-.99,.83,2.555],[-.53,.83,2.555],[-.53,1.075,2.555],[-.99,1.075,2.555]);
+const popLampFrameR=quad([.53,.83,2.555],[.99,.83,2.555],[.99,1.075,2.555],[.53,1.075,2.555]);
+const popLampLensL=quad([-.94,.85,2.563],[-.58,.85,2.563],[-.58,1.055,2.563],[-.94,1.055,2.563]);
+const popLampLensR=quad([.58,.85,2.563],[.94,.85,2.563],[.94,1.055,2.563],[.58,1.055,2.563]);
+const popLampCoreL=quad([-.87,.875,2.57],[-.65,.875,2.57],[-.65,1.03,2.57],[-.87,1.03,2.57]);
+const popLampCoreR=quad([.65,.875,2.57],[.87,.875,2.57],[.87,1.03,2.57],[.65,1.03,2.57]);
 // Wide central radiator with a bevelled surround and six horizontal cooling vanes.
 const frontGrilleFrame=quad([-.53,.47,2.963],[.53,.47,2.963],[.45,.205,2.963],[-.45,.205,2.963]);
 const frontIntake=quad([-.475,.425,2.972],[.475,.425,2.972],[.405,.245,2.972],[-.405,.245,2.972]);
@@ -495,11 +502,7 @@ const spoilerTopGlint=quad([-1.12,1.322,-2.42],[1.12,1.322,-2.42],[1.08,1.322,-2
 // Dark backing frames leave a crisp ink border around each glass opening.
 const windshieldFrame=quad([-.72,1.255,.15],[.72,1.255,.15],[.58,.685,1.02],[-.58,.685,1.02]);
 const rearGlassFrame=quad([-.72,1.225,-1.46],[.72,1.225,-1.46],[.85,.725,-1.76],[-.85,.725,-1.76]);
-const frontGlassGlint=quad([-.255,1.375,.405],[-.205,1.375,.405],[-.255,.985,.83],[-.305,.985,.83]);
-const rearGlassGlint=quad([-.19,1.225,-1.435],[-.135,1.225,-1.435],[-.39,.965,-1.675],[-.445,.965,-1.675]);
-const sideGlassGlintL=quad([-.455,1.335,.25],[-.425,1.335,.18],[-.515,1.18,-.38],[-.545,1.18,-.43]);
-const sideGlassGlintR=quad([.455,1.335,.25],[.545,1.18,-.43],[.515,1.18,-.38],[.425,1.335,.18]);
-const roofGlint=quad([-.10,1.247,-.77],[.10,1.247,-.77],[.12,1.235,.10],[-.12,1.235,.10]);
+// Removed floating glass glints and roof overlay: clean uninterrupted cabin surfaces.
 // Black ink contours follow sampled body sections; every line shares the car profile.
 const shoulderInkL=makeProfileLine(bodyProfile,-1,-2.70,2.67,'shoulder',.985,.026,.012);
 const shoulderInkR=makeProfileLine(bodyProfile,1,-2.70,2.67,'shoulder',.985,.026,.012);
@@ -541,7 +544,7 @@ const C={
  glass:[.012,.035,.075,1],glassLight:[.055,.17,.28,1],trim:[.012,.016,.026,1],
  tire:[.012,.014,.019,1],hub:[.55,.52,.68,1],brake:[.20,.20,.28,1],city:[.085,.045,.12,1],mount:[.08,.045,.14,1]
 };
-let keys={},started=false,paused=true,speed=0,playerX=0,steer=0,bodyRoll=0,distance=0,boost=0,carYaw=0,yawRate=0,lateralVelocity=0,driftIntensity=0,handbrakeActive=false,driftInstability=0,previousSteerInput=0,last=performance.now(),musicOn=true,track=0,trackOrder=[],trackPos=0,audio=null,musicPending=true,foundTracks=[],audioCtx=null,engineOsc=null,engineOsc2=null,engineGain=null,engineFilter=null,skidGain=null,skidFilter=null,roadGain=null,roadFilter=null,audioNoise=null;
+let keys={},headlightsUp=false,started=false,paused=true,speed=0,playerX=0,steer=0,bodyRoll=0,distance=0,boost=0,carYaw=0,yawRate=0,lateralVelocity=0,driftIntensity=0,handbrakeActive=false,driftInstability=0,previousSteerInput=0,last=performance.now(),musicOn=true,track=0,trackOrder=[],trackPos=0,audio=null,musicPending=true,foundTracks=[],audioCtx=null,engineOsc=null,engineOsc2=null,engineGain=null,engineFilter=null,skidGain=null,skidFilter=null,roadGain=null,roadFilter=null,audioNoise=null;
 // One axis convention shared by controls, car movement, body lean and indicators.
 const STEER_AXIS=Object.freeze({left:-1,right:1,screenRight:1,bodyLean:-1});
 function readSteeringInput(){return (keys.d||keys.arrowright?STEER_AXIS.right:0)+(keys.a||keys.arrowleft?STEER_AXIS.left:0);}
@@ -561,6 +564,7 @@ addEventListener('keydown',e=>{
  keys[k]=true;
  if(['arrowup','arrowdown','arrowleft','arrowright',' '].includes(e.key))e.preventDefault();
  if(k==='m'&&bootDone)toggleMusic();
+ if(k==='l'&&!e.repeat){headlightsUp=!headlightsUp;}
  if(bootDone){initAudio();if(musicPending&&musicOn)tryStartMusic();}
  if(k==='f3'){e.preventDefault();toggleDebug();}
  if(['1','2','3','4'].includes(k))setCamera(Number(k)-1);
@@ -791,8 +795,7 @@ function drawWorld(){
  drawCarMesh(rearGlass,carX,carZ,[.025,.095,.16,1],yaw,2);
  // Four individually mounted side panes: front-left, rear-left, front-right, rear-right.
  for(const win of [sideGlassLF,sideGlassLR,sideGlassRF,sideGlassRR])drawCarMesh(win,carX,carZ,[.025,.10,.17,1],yaw,2);
- for(const glint of [frontGlassGlint,rearGlassGlint,sideGlassGlintL,sideGlassGlintR])drawCarMesh(glint,carX,carZ,[.24,.70,.91,1],yaw,2);
- for(const side of [-1,1]){
+  for(const side of [-1,1]){
   drawCarPart(carX,carZ,side*.73,1.04,-.72,.018,.26,.022,C.trim,yaw);
   drawCarPart(carX,carZ,side*.77,1.03,.58,.10,.045,.095,C.trim,yaw);
   drawCarPart(carX,carZ,side*.85,1.08,.61,.13,.08,.10,C.bodyLight,yaw);
@@ -809,17 +812,17 @@ function drawWorld(){
   drawCarPart(carX,carZ,side*(wx+.148),wy,wz,.318,.018,.318,C.hub,yaw,wheelFace);
   drawCarPart(carX,carZ,side*(wx+.163),wy,wz,.092,.020,.092,C.bodyLight,yaw,wheelFace);
  }
- // Front: twin flush headlamp covers, separate bumper indicators, fog lamps and a slatted radiator.
- gl.enable(gl.BLEND);gl.blendFunc(gl.SRC_ALPHA,gl.ONE);gl.depthMask(false);
- drawCarMesh(hoodLampGlowL,carX,carZ,[.22,.72,1,.18],yaw,0);
- drawCarMesh(hoodLampGlowR,carX,carZ,[.22,.72,1,.18],yaw,0);
- gl.depthMask(true);gl.disable(gl.BLEND);
- drawCarMesh(hoodLampFrameL,carX,carZ,C.trim,yaw,0);
- drawCarMesh(hoodLampFrameR,carX,carZ,C.trim,yaw,0);
- drawCarMesh(hoodLampLensL,carX,carZ,[.012,.035,.065,1],yaw,2);
- drawCarMesh(hoodLampLensR,carX,carZ,[.012,.035,.065,1],yaw,2);
- drawCarMesh(hoodLampCoreL,carX,carZ,[.88,.97,1,1],yaw,2);
- drawCarMesh(hoodLampCoreR,carX,carZ,[.88,.97,1,1],yaw,2);
+ // L toggles proper pop-up headlights. When closed, only flush bonnet lids remain.
+ if(headlightsUp){
+  for(const frame of [popLampFrameL,popLampFrameR])drawCarMesh(frame,carX,carZ,C.trim,yaw,0);
+  for(const lens of [popLampLensL,popLampLensR])drawCarMesh(lens,carX,carZ,[.012,.035,.065,1],yaw,2);
+  for(const core of [popLampCoreL,popLampCoreR])drawCarMesh(core,carX,carZ,[.90,.97,1,1],yaw,2);
+ }else{
+  drawCarMesh(hoodLampFrameL,carX,carZ,C.trim,yaw,0);
+  drawCarMesh(hoodLampLensL,carX,carZ,[.012,.035,.065,1],yaw,2);
+  drawCarMesh(hoodLampFrameR,carX,carZ,C.trim,yaw,0);
+  drawCarMesh(hoodLampLensR,carX,carZ,[.012,.035,.065,1],yaw,2);
+ }
  drawCarMesh(frontBumperCrease,carX,carZ,C.bodyLight,yaw,0);
  drawCarMesh(frontGrilleFrame,carX,carZ,C.trim,yaw,0);
  drawCarMesh(frontIntake,carX,carZ,[.018,.025,.040,1],yaw,0);
@@ -831,8 +834,8 @@ function drawWorld(){
  // Four lower rectangular driving lamps, in matched left/right pairs.
  for(const frame of [frontFogFrameL1,frontFogFrameL2,frontFogFrameR1,frontFogFrameR2])drawCarMesh(frame,carX,carZ,C.trim,yaw,0);
  for(const lamp of [frontFogLensL1,frontFogLensL2,frontFogLensR1,frontFogLensR2])drawCarMesh(lamp,carX,carZ,[.76,.90,1,1],yaw,2);
- if(!garageMode){
-  gl.enable(gl.BLEND);gl.blendFunc(gl.SRC_ALPHA,gl.ONE);gl.depthMask(false);
+ if(!garageMode&&headlightsUp){
+  gl.enable(gl.BLEND);gl.blendFunc(gl.SRC_ALPHA,gl.ONE);
   drawCarMesh(headlightBeamL,carX,carZ,[.42,.70,1,.095],yaw,0);
   drawCarMesh(headlightBeamR,carX,carZ,[.42,.70,1,.095],yaw,0);
   gl.depthMask(true);gl.disable(gl.BLEND);
