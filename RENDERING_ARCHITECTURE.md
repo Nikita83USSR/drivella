@@ -1,6 +1,6 @@
 # DRIVELLA — Rendering Architecture
 
-Current reference: **v0.18.53 / BUILD 119**  
+Current reference: **v0.18.54 / BUILD 120**  
 Main renderer: `index.html` — custom WebGL 1 renderer, no external rendering engine.
 
 **Release marker policy:** every published renderer/game change increments `BUILD` in `index.html` and updates the visible HUD, boot screen, README, and this document in the same release. Increment the patch version with the build when appropriate. Never publish a renderer change while leaving the visible build number unchanged.
@@ -314,3 +314,8 @@ When adding a new material mode, define its casting, receiving, AO, and transpar
 - Stage 2 still needs a controlled bloom pipeline, selected track/environment light sources, improved painted-body and road reflections, and atmospheric depth / final grading.
 
 **Maintenance rule:** preserve the shared scene pipeline and central material policy. Future environment additions should become shadow casters and AO participants by using the normal scene draw functions, not by receiving bespoke shadow code.
+
+
+## BUILD 120 — uniform vehicle self-shadow
+
+The vehicle-only solar receiver still uses its separate 1024² packed-depth map and the same directional sun projection. Its receiver filter is now deliberately simpler: four depth comparisons in a compact cross around the projected receiver, averaged into a single uniform shadow amount (maximum darkening 42%). This replaces the previous two-ring 16-tap PCF footprint and removes the layered, highly detailed penumbra pattern. The filter change affects only vehicle self-shadowing; full-scene road/environment solar shadows and garage spotlight shadows retain their existing filters. The goal is a cleaner, more even contact shade on the body, not a physically varying penumbra.
