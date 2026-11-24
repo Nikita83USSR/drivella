@@ -95,13 +95,13 @@
 <body>
 <canvas id="scene"></canvas><canvas id="sun"></canvas><canvas id="flare"></canvas>
 <div id="hud">
- <div class="top"><div class="logo">DRIVELLA<small>3D SYNTHWAVE DRIFT RACING</small></div><div class="version-label" id="version-label">v0.18.29 · BUILD 095</div><div class="stat">DISTANCE<b id="distance">000.0 KM</b></div><div class="stat">LOCATION<b>VIOLET COAST</b></div></div>
+ <div class="top"><div class="logo">DRIVELLA<small>3D SYNTHWAVE DRIFT RACING</small></div><div class="version-label" id="version-label">v0.18.30 · BUILD 096</div><div class="stat">DISTANCE<b id="distance">000.0 KM</b></div><div class="stat">LOCATION<b>VIOLET COAST</b></div></div>
  <div class="right"><div id="speed">000 <span>KM/H</span></div><div id="direction">▶ FORWARD</div><div id="music">♫ MUSIC SCANNING…</div></div>
- <div class="bottom"><div class="hint"><strong>W / ↑</strong> ACCELERATE　<strong>S / ↓</strong> BRAKE / REVERSE<br><strong>A / ←　D / →</strong> STEER　<strong>SPACE</strong> HANDBRAKE　<strong>M</strong> MUSIC　<strong>1–4</strong> CAMERA　<strong>L</strong> LIGHTS　<strong>K</strong> WIREFRAME</div><div>3D NEON HIGHWAY // BUILD 095</div></div>
+ <div class="bottom"><div class="hint"><strong>W / ↑</strong> ACCELERATE　<strong>S / ↓</strong> BRAKE / REVERSE<br><strong>A / ←　D / →</strong> STEER　<strong>SPACE</strong> HANDBRAKE　<strong>M</strong> MUSIC　<strong>1–4</strong> CAMERA　<strong>L</strong> LIGHTS　<strong>K</strong> WIREFRAME</div><div>3D NEON HIGHWAY // BUILD 096</div></div>
 </div>
 <div id="tools-ui"><button id="cam-prev" aria-label="Previous camera">◀</button><span id="cam-label">CAM 2 · CLOSE</span><button id="cam-next" aria-label="Next camera">▶</button><button id="debug-toggle">DEBUG</button></div>
 <div id="debug-panel"><div class="debug-title">DRIVELLA DIAGNOSTICS</div><div id="debug-data">Initializing…</div></div>
-<div id="boot-screen"><div class="boot-content"><div class="boot-kicker">NIGHT DRIVE SYSTEMS // INITIALIZING</div><div class="boot-logo">DRIVELLA</div><div class="boot-subtitle">3D SYNTHWAVE DRIFT RACING</div><div class="boot-mark"></div><div class="boot-status" id="boot-status">BUILDING THE 3D WORLD</div><div class="boot-track"><div class="boot-progress" id="boot-progress"></div></div><div class="boot-meta"><span>3D ENGINE ONLINE</span><span id="boot-percent">00%</span></div><div class="boot-footer">ENGINE STARTUP // v0.18.29 · BUILD 095</div></div></div>
+<div id="boot-screen"><div class="boot-content"><div class="boot-kicker">NIGHT DRIVE SYSTEMS // INITIALIZING</div><div class="boot-logo">DRIVELLA</div><div class="boot-subtitle">3D SYNTHWAVE DRIFT RACING</div><div class="boot-mark"></div><div class="boot-status" id="boot-status">BUILDING THE 3D WORLD</div><div class="boot-track"><div class="boot-progress" id="boot-progress"></div></div><div class="boot-meta"><span>3D ENGINE ONLINE</span><span id="boot-percent">00%</span></div><div class="boot-footer">ENGINE STARTUP // v0.18.30 · BUILD 096</div></div></div>
 <div id="main-menu"><div class="menu-content"><div class="menu-brand">DRIVELLA GTS</div><div class="menu-sub">RIDE THE RETRO FUTURE</div><div class="menu-actions"><button class="menu-btn" id="menu-start">СТАРТ</button><button class="menu-btn" id="menu-garage">ГАРАЖ</button><button class="menu-btn" id="menu-options">НАСТРОЙКИ</button></div></div><div class="menu-footer">РАЗРАБОТЧИК — <b>НИКИТА МАРКИН</b></div></div>
 <div id="garage-screen"><div class="garage-head">ГАРАЖ // DRIVELLA GTS</div><div class="garage-copy">ТЕКУЩИЙ АВТОМОБИЛЬ<br>DRIVELLA GTS · RETRO GT COUPE<br>ПОКАЖИ ЕЁ СО ВСЕХ СТОРОН</div><div class="garage-controls"><button id="garage-back">← НАЗАД В МЕНЮ</button></div><div class="garage-tip">ЗАЖМИ И ТЯНИ — ВРАЩЕНИЕ<br>КОЛЁСИКО — ПРИБЛИЗИТЬ / ОТДАЛИТЬ</div></div>
 <div id="options-screen"><div class="options-head">ОПЦИИ</div><div class="options-card"><div class="option-row"><span>МУЗЫКА</span><button id="option-music">ВКЛЮЧЕНА</button></div><div class="option-row"><span>ГРОМКОСТЬ</span><input id="option-volume" type="range" min="0" max="100" value="52"></div><div class="option-row"><span>ЗВУК ДВИГАТЕЛЯ</span><button id="option-sfx">ВКЛЮЧЁН</button></div><div class="option-row"><span>КАМЕРА</span><span>КЛАВИШИ 1–4</span></div><button id="options-back" style="width:100%;margin-top:18px">← НАЗАД В МЕНЮ</button></div></div>
@@ -109,7 +109,7 @@
 <script>
 (()=>{
 'use strict';
-const VERSION='v0.18.29',BUILD='094';
+const VERSION='v0.18.30',BUILD='096';
 const canvas=document.getElementById('scene'),gl=canvas.getContext('webgl',{antialias:true,alpha:true}),sun=document.getElementById('sun'),sctx=sun.getContext('2d'),flare=document.getElementById('flare'),fctx=flare.getContext('2d');
 const $=id=>document.getElementById(id);
 const clamp=(v,a,b)=>Math.max(a,Math.min(b,v));
@@ -1404,22 +1404,22 @@ function drawVehicleLensFlares(){
   if(facing<.045)continue;
   const facingGain=Math.pow(facing,src.kind==='headlight'?.62:.88);
   const distanceGain=clamp(19/distance,.58,1.75);
-  const intensity=clamp(src.power*facingGain*distanceGain,0,src.kind==='headlight'?2.05:2.35);
+  const intensity=clamp(src.power*facingGain*distanceGain*(src.kind==='headlight'?1:.76),0,src.kind==='headlight'?2.05:2.35);
   if(intensity<.035)continue;
-  const main=src.kind==='headlight',radius=clamp(Math.min(W,H)*(main?.034:src.kind==='tail'?.030:.026)*clamp(17/distance,.58,1.6),main?12:9,main?56:43)*(0.82+intensity*.34);
+  const main=src.kind==='headlight',radius=clamp(Math.min(W,H)*(main?.034:src.kind==='tail'?.027:.023)*clamp(17/distance,.58,1.6),main?12:7,main?56:36)*(0.82+intensity*.34);
   const [cr,cg,cb]=src.c,rgba=alpha=>'rgba('+Math.round(cr*255)+','+Math.round(cg*255)+','+Math.round(cb*255)+','+clamp(alpha,0,1)+')';
   // Broad luminous veil: a visible bloom-like glare around the real projected lamp.
-  const haze=fctx.createRadialGradient(screen.x,screen.y,0,screen.x,screen.y,radius*(main?4.2:3.9));
+  const haze=fctx.createRadialGradient(screen.x,screen.y,0,screen.x,screen.y,radius*(main?4.2:3.4));
   haze.addColorStop(0,rgba((main?.46:.42)*intensity));
   haze.addColorStop(.12,rgba((main?.30:.25)*intensity));
-  haze.addColorStop(.34,rgba((main?.13:.12)*intensity));
+  haze.addColorStop(.34,rgba((main?.13:.10)*intensity));
   haze.addColorStop(.68,rgba((main?.045:.045)*intensity));
   haze.addColorStop(1,rgba(0));
   fctx.fillStyle=haze;fctx.fillRect(screen.x-radius*5,screen.y-radius*5,radius*10,radius*10);
   // Long anamorphic streak with a hot white centre and a coloured outer line.
-  const streakLength=radius*(main?14:10),streakHeight=radius*(main?.44:.34);
+  const streakLength=radius*(main?14:8),streakHeight=radius*(main?.44:.28);
   const streak=fctx.createLinearGradient(screen.x-streakLength,screen.y,screen.x+streakLength,screen.y);
-  streak.addColorStop(0,rgba(0));streak.addColorStop(.34,rgba(.04*intensity));streak.addColorStop(.46,rgba(.23*intensity));streak.addColorStop(.5,rgba((main?.68:.48)*intensity));streak.addColorStop(.54,rgba(.23*intensity));streak.addColorStop(.66,rgba(.04*intensity));streak.addColorStop(1,rgba(0));
+  streak.addColorStop(0,rgba(0));streak.addColorStop(.34,rgba((main?.04:.032)*intensity));streak.addColorStop(.46,rgba((main?.23:.19)*intensity));streak.addColorStop(.5,rgba((main?.68:.38)*intensity));streak.addColorStop(.54,rgba((main?.23:.19)*intensity));streak.addColorStop(.66,rgba((main?.04:.032)*intensity));streak.addColorStop(1,rgba(0));
   fctx.fillStyle=streak;fctx.fillRect(screen.x-streakLength,screen.y-streakHeight*.5,streakLength*2,streakHeight);
   if(main){
    const hot=fctx.createLinearGradient(screen.x-radius*3.5,screen.y,screen.x+radius*3.5,screen.y);
@@ -1427,20 +1427,20 @@ function drawVehicleLensFlares(){
    fctx.fillStyle=hot;fctx.fillRect(screen.x-radius*3.5,screen.y-radius*.07,radius*7,radius*.14);
   }
   // Cross-star diffraction, brighter at the centre and tapered at the ends.
-  const rays=main?[[1,0,3.3,.105],[0,1,1.7,.068],[.707,.707,1.05,.04],[-.707,.707,1.05,.04]]:[[1,0,2.6,.07],[0,1,1.25,.045]];
+  const rays=main?[[1,0,3.3,.105],[0,1,1.7,.068],[.707,.707,1.05,.04],[-.707,.707,1.05,.04]]:[[1,0,2.1,.06],[0,1,1.0,.038]];
   for(const [vx,vy,lengthFactor,widthFactor] of rays){
    const len=radius*lengthFactor,half=radius*widthFactor,grad=fctx.createLinearGradient(screen.x-vx*len,screen.y-vy*len,screen.x+vx*len,screen.y+vy*len);
-   grad.addColorStop(0,rgba(0));grad.addColorStop(.5,rgba((main?.40:.30)*intensity));grad.addColorStop(1,rgba(0));
+   grad.addColorStop(0,rgba(0));grad.addColorStop(.5,rgba((main?.40:.24)*intensity));grad.addColorStop(1,rgba(0));
    fctx.strokeStyle=grad;fctx.lineWidth=Math.max(1,half*2);fctx.beginPath();fctx.moveTo(screen.x-vx*len,screen.y-vy*len);fctx.lineTo(screen.x+vx*len,screen.y+vy*len);fctx.stroke();
   }
   // Bright optical core and fine inner halo.
-  const core=fctx.createRadialGradient(screen.x,screen.y,0,screen.x,screen.y,radius*(main?1.2:.95));
-  core.addColorStop(0,'rgba(255,255,255,'+clamp((main?.88:.72)*intensity,0,1)+')');
-  core.addColorStop(.11,rgba((main?.88:.82)*intensity));
-  core.addColorStop(.31,rgba((main?.55:.42)*intensity));
-  core.addColorStop(.66,rgba((main?.13:.12)*intensity));
+  const core=fctx.createRadialGradient(screen.x,screen.y,0,screen.x,screen.y,radius*(main?1.2:.88));
+  core.addColorStop(0,'rgba(255,255,255,'+clamp((main?.88:.62)*intensity,0,1)+')');
+  core.addColorStop(.11,rgba((main?.88:.70)*intensity));
+  core.addColorStop(.31,rgba((main?.55:.34)*intensity));
+  core.addColorStop(.66,rgba((main?.13:.10)*intensity));
   core.addColorStop(1,rgba(0));
-  fctx.fillStyle=core;fctx.beginPath();fctx.arc(screen.x,screen.y,radius*(main?1.2:.95),0,Math.PI*2);fctx.fill();
+  fctx.fillStyle=core;fctx.beginPath();fctx.arc(screen.x,screen.y,radius*(main?1.2:.88),0,Math.PI*2);fctx.fill();
   // Subtle concentric diffraction rings add a camera-glass / photographic character.
   if(main){
    fctx.save();fctx.filter='blur('+Math.max(1,radius*.075)+'px)';
@@ -1453,7 +1453,7 @@ function drawVehicleLensFlares(){
   const centerX=W*.5,centerY=H*.5;
   const ghosts=main?[
    [.24,.34,[.55,.78,1],.48],[.52,.23,[1,.48,.72],.34],[.82,.16,[.50,.83,1],.28],[1.12,.105,[1,.68,.38],.20]
-  ]:[[.34,.26,[.72,.83,1],.22],[.72,.15,[1,.62,.42],.13]];
+  ]:[[.34,.22,[.72,.83,1],.15],[.72,.13,[1,.62,.42],.09]];
   for(const [factor,size,tint,alpha] of ghosts){
    const gx=screen.x+(centerX-screen.x)*factor,gy=screen.y+(centerY-screen.y)*factor,gr=radius*size;
    const ghost=fctx.createRadialGradient(gx,gy,0,gx,gy,gr*3.2);
