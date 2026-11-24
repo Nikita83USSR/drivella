@@ -159,7 +159,7 @@
 <script>
 (()=>{
 'use strict';
-const VERSION='v0.18.61',BUILD='127';
+const VERSION='v0.18.62',BUILD='128';
 const canvas=document.getElementById('scene'),gl=canvas.getContext('webgl',{antialias:true,alpha:true}),sun=document.getElementById('sun'),sctx=sun.getContext('2d'),flare=document.getElementById('flare'),fctx=flare.getContext('2d');
 const $=id=>document.getElementById(id);
 const clamp=(v,a,b)=>Math.max(a,Math.min(b,v));
@@ -869,15 +869,15 @@ function hoodSurfaceY(x,z){
 }
 const POP_HINGE_Z=2.30;
 const POP_LAMP_OUTER_X=.895,POP_LAMP_INNER_X=.445,POP_LAMP_Z_REAR=2.30,POP_LAMP_Z_FRONT=2.60;
-const POP_LAMP_FACE_H=.22;
+const POP_LAMP_FACE_H=.22,POP_LAMP_DIAG=Math.SQRT1_2;
 const POP_HINGE_Y=hoodSurfaceY(.65,POP_HINGE_Z)+.003;
 function lampXBounds(side){return side<0?[-POP_LAMP_OUTER_X,-POP_LAMP_INNER_X]:[POP_LAMP_INNER_X,POP_LAMP_OUTER_X];}
 function lampFrontPoint(x,t,offset=0){
- // The optic lies flat under the hood while stowed. A 90-degree lift turns its downward normal forward.
- const z=POP_LAMP_Z_REAR+(POP_LAMP_Z_FRONT-POP_LAMP_Z_REAR)*(t/POP_LAMP_FACE_H);
- return [x,hoodSurfaceY(x,z)+.003-offset,z];
+ const yTop=hoodSurfaceY(x,POP_LAMP_Z_FRONT)-.037,yBase=yTop-POP_LAMP_FACE_H*POP_LAMP_DIAG,zBase=POP_LAMP_Z_FRONT-POP_LAMP_FACE_H*POP_LAMP_DIAG;
+ // Stowed optical normal is tilted 45 degrees; the rigid -45 degree lift aligns it with +Z.
+ return [x,yBase+t*POP_LAMP_DIAG-offset*POP_LAMP_DIAG,zBase+t*POP_LAMP_DIAG+offset*POP_LAMP_DIAG];
 }
-function lampRearPoint(x){return [x,hoodSurfaceY(x,POP_LAMP_Z_REAR)+.003,POP_LAMP_Z_REAR];}
+function lampRearPoint(x){return [x,hoodSurfaceY(x,POP_LAMP_Z_REAR)-.037,POP_LAMP_Z_REAR];}
 function pushLampQuad(out,a,b,c,d){out.push(...a,...b,...c,...a,...c,...d);}
 function makeLampTrianglePod(side){
  const [x0,x1]=lampXBounds(side),out=[],A0=lampRearPoint(x0),A1=lampRearPoint(x1),B0=lampFrontPoint(x0,0),B1=lampFrontPoint(x1,0),C0=lampFrontPoint(x0,POP_LAMP_FACE_H),C1=lampFrontPoint(x1,POP_LAMP_FACE_H);
@@ -1250,7 +1250,7 @@ function drawCarMesh(shape,cx,cz,color,yaw=0,material=1,vehicleShadowCaster=fals
  bindMesh(shape,model,color,1,material,vehicleShadowCaster,vehicleSolarShadowCaster);
 }
 function drawCarHingedMesh(shape,cx,cz,color,yaw=0,material=1,vehicleShadowCaster=false,vehicleSolarShadowCaster=true){
- const deploy=clamp(headlightDeploy,0,1),ease=deploy*deploy*(3-2*deploy),angle=-Math.PI*.5*ease;
+ const deploy=clamp(headlightDeploy,0,1),ease=deploy*deploy*(3-2*deploy),angle=-Math.PI*.25*ease;
  // Every part shares one rigid transform; no scaling, vertex updates or independent deformation.
  const hinge=matMul(translate(0,POP_HINGE_Y,POP_HINGE_Z),matMul(rotateX(angle),translate(0,-POP_HINGE_Y,-POP_HINGE_Z)));
  const model=matMul(translate(cx,0,cz),matMul(rotateY(yaw),matMul(rotateZ(bodyRoll),hinge)));
@@ -1305,13 +1305,13 @@ function drawWorld(){
  gl.uniform3fv(loc.keyLightDir,new Float32Array(SUN_LIGHT.direction));gl.uniform3fv(loc.nonShadowFillDir,new Float32Array(NON_SHADOW_FILL_DIRECTION));gl.uniform3f(loc.viewPos,cam.x,cam.y,cam.z);gl.uniform1f(loc.showroom,garageMode?1:0);gl.uniform1f(loc.time,performance.now()*.001);gl.uniform1f(loc.shadowEnabled,FX.worldShadows?1:0);gl.uniform1f(loc.vehicleShadowEnabled,FX.vehicleShadows?1:0);gl.uniform1f(loc.glassReflectionEnabled,FX.glassReflections?1:0);gl.uniform1f(loc.paintHighlightsEnabled,FX.paintHighlights?1:0);gl.uniform1f(loc.lampEmissionEnabled,FX.lampEmission?1:0);
  uploadLocalLights(garageMode&&FX.garageSpotlights?GARAGE_LOCAL_LIGHTS:[]);
  // Stage 2: two real local headlight spots follow the same rigid pop-up hinge transform as the optical modules.
- const lampDeploy=clamp(headlightDeploy,0,1),lampEase=lampDeploy*lampDeploy*(3-2*lampDeploy),lampAngle=-Math.PI*.5*lampEase,heading=garageMode?0:carYaw,roll=garageMode?0:bodyRoll;
+ const lampDeploy=clamp(headlightDeploy,0,1),lampEase=lampDeploy*lampDeploy*(3-2*lampDeploy),lampAngle=-Math.PI*.25*lampEase,heading=garageMode?0:carYaw,roll=garageMode?0:bodyRoll;
  const lampHinge=matMul(translate(0,POP_HINGE_Y,POP_HINGE_Z),matMul(rotateX(lampAngle),translate(0,-POP_HINGE_Y,-POP_HINGE_Z)));
  const lampWorld=matMul(translate(carX,0,carZ),matMul(rotateY(heading),matMul(rotateZ(roll),lampHinge)));
  const lampPoint=p=>[lampWorld[0]*p[0]+lampWorld[4]*p[1]+lampWorld[8]*p[2]+lampWorld[12],lampWorld[1]*p[0]+lampWorld[5]*p[1]+lampWorld[9]*p[2]+lampWorld[13],lampWorld[2]*p[0]+lampWorld[6]*p[1]+lampWorld[10]*p[2]+lampWorld[14]];
  const lampL=lampPoint(lampFrontPoint(-.67,POP_LAMP_FACE_H*.5,0)),lampR=lampPoint(lampFrontPoint(.67,POP_LAMP_FACE_H*.5,0));
- const lampRotation=matMul(rotateY(heading),matMul(rotateZ(roll),rotateX(lampAngle)));
- let lampDir=[-lampRotation[4],-lampRotation[5],-lampRotation[6]];
+ const lampRotation=matMul(rotateY(heading),matMul(rotateZ(roll),rotateX(lampAngle))),lampDiag=POP_LAMP_DIAG;
+ let lampDir=[lampRotation[4]*-lampDiag+lampRotation[8]*lampDiag,lampRotation[5]*-lampDiag+lampRotation[9]*lampDiag,lampRotation[6]*-lampDiag+lampRotation[10]*lampDiag];
  lampDir[1]-=.045;const lampDirLength=Math.hypot(lampDir[0],lampDir[1],lampDir[2])||1;lampDir=lampDir.map(v=>v/lampDirLength);
  headlightCullL=lampL;headlightCullR=lampR;headlightCullDir=lampDir;headlightBaseIntensity=headlightLightingEnabled?clamp((lampDeploy-.12)/.88,0,1)*3.0:0;
  gl.uniform3fv(loc.headlightPosL,new Float32Array(lampL));gl.uniform3fv(loc.headlightPosR,new Float32Array(lampR));gl.uniform3fv(loc.headlightDir,new Float32Array(lampDir));gl.uniform1f(loc.headlightIntensity,headlightBaseIntensity);
@@ -1535,10 +1535,10 @@ function drawVehicleLensFlares(){
  const project=p=>{const x=vp[0]*p[0]+vp[4]*p[1]+vp[8]*p[2]+vp[12],y=vp[1]*p[0]+vp[5]*p[1]+vp[9]*p[2]+vp[13],z=vp[2]*p[0]+vp[6]*p[1]+vp[10]*p[2]+vp[14],w=vp[3]*p[0]+vp[7]*p[1]+vp[11]*p[2]+vp[15];if(w<=.05||z/w< -1||z/w>1)return null;const nx=x/w,ny=y/w;if(nx< -1.2||nx>1.2||ny< -1.2||ny>1.2)return null;return{x:(nx*.5+.5)*W,y:(.5-ny*.5)*H};};
  const sources=[];
  // Upper pop-up headlamps use the same lightweight optical profile as the indicators.
- const lampEase=clamp(headlightDeploy,0,1),lampAngle=-Math.PI*.5*(lampEase*lampEase*(3-2*lampEase));
+ const lampEase=clamp(headlightDeploy,0,1),lampAngle=-Math.PI*.25*(lampEase*lampEase*(3-2*lampEase));
  const hinge=matMul(translate(0,POP_HINGE_Y,POP_HINGE_Z),matMul(rotateX(lampAngle),translate(0,-POP_HINGE_Y,-POP_HINGE_Z)));
  const lampWorld=matMul(bodyWorld,hinge),lampRotation=matMul(rotateY(yaw),matMul(rotateZ(roll),rotateX(lampAngle)));
- const lampNormal=direction(lampRotation,[0,-1,0]);
+ const lampNormal=direction(lampRotation,[0,-POP_LAMP_DIAG,POP_LAMP_DIAG]);
  const lampPower=clamp((headlightDeploy-.12)/.88,0,1);
  if(lampPower>.02){
   sources.push({kind:'signal',p:point(lampWorld,lampFrontPoint(-.67,POP_LAMP_FACE_H*.5,.018)),n:lampNormal,c:[.91,.97,1],power:1.50*lampPower});
