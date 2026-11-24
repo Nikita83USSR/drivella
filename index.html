@@ -95,13 +95,13 @@
 <body>
 <canvas id="scene"></canvas><canvas id="sun"></canvas><canvas id="flare"></canvas>
 <div id="hud">
- <div class="top"><div class="logo">DRIVELLA<small>3D SYNTHWAVE DRIFT RACING</small></div><div class="version-label" id="version-label">v0.18.30 · BUILD 096</div><div class="stat">DISTANCE<b id="distance">000.0 KM</b></div><div class="stat">LOCATION<b>VIOLET COAST</b></div></div>
+ <div class="top"><div class="logo">DRIVELLA<small>3D SYNTHWAVE DRIFT RACING</small></div><div class="version-label" id="version-label">v0.18.31 · BUILD 097</div><div class="stat">DISTANCE<b id="distance">000.0 KM</b></div><div class="stat">LOCATION<b>VIOLET COAST</b></div></div>
  <div class="right"><div id="speed">000 <span>KM/H</span></div><div id="direction">▶ FORWARD</div><div id="music">♫ MUSIC SCANNING…</div></div>
- <div class="bottom"><div class="hint"><strong>W / ↑</strong> ACCELERATE　<strong>S / ↓</strong> BRAKE / REVERSE<br><strong>A / ←　D / →</strong> STEER　<strong>SPACE</strong> HANDBRAKE　<strong>M</strong> MUSIC　<strong>1–4</strong> CAMERA　<strong>L</strong> LIGHTS　<strong>K</strong> WIREFRAME</div><div>3D NEON HIGHWAY // BUILD 096</div></div>
+ <div class="bottom"><div class="hint"><strong>W / ↑</strong> ACCELERATE　<strong>S / ↓</strong> BRAKE / REVERSE<br><strong>A / ←　D / →</strong> STEER　<strong>SPACE</strong> HANDBRAKE　<strong>M</strong> MUSIC　<strong>1–4</strong> CAMERA　<strong>L</strong> LIGHTS　<strong>K</strong> WIREFRAME</div><div>3D NEON HIGHWAY // BUILD 097</div></div>
 </div>
 <div id="tools-ui"><button id="cam-prev" aria-label="Previous camera">◀</button><span id="cam-label">CAM 2 · CLOSE</span><button id="cam-next" aria-label="Next camera">▶</button><button id="debug-toggle">DEBUG</button></div>
 <div id="debug-panel"><div class="debug-title">DRIVELLA DIAGNOSTICS</div><div id="debug-data">Initializing…</div></div>
-<div id="boot-screen"><div class="boot-content"><div class="boot-kicker">NIGHT DRIVE SYSTEMS // INITIALIZING</div><div class="boot-logo">DRIVELLA</div><div class="boot-subtitle">3D SYNTHWAVE DRIFT RACING</div><div class="boot-mark"></div><div class="boot-status" id="boot-status">BUILDING THE 3D WORLD</div><div class="boot-track"><div class="boot-progress" id="boot-progress"></div></div><div class="boot-meta"><span>3D ENGINE ONLINE</span><span id="boot-percent">00%</span></div><div class="boot-footer">ENGINE STARTUP // v0.18.30 · BUILD 096</div></div></div>
+<div id="boot-screen"><div class="boot-content"><div class="boot-kicker">NIGHT DRIVE SYSTEMS // INITIALIZING</div><div class="boot-logo">DRIVELLA</div><div class="boot-subtitle">3D SYNTHWAVE DRIFT RACING</div><div class="boot-mark"></div><div class="boot-status" id="boot-status">BUILDING THE 3D WORLD</div><div class="boot-track"><div class="boot-progress" id="boot-progress"></div></div><div class="boot-meta"><span>3D ENGINE ONLINE</span><span id="boot-percent">00%</span></div><div class="boot-footer">ENGINE STARTUP // v0.18.31 · BUILD 097</div></div></div>
 <div id="main-menu"><div class="menu-content"><div class="menu-brand">DRIVELLA GTS</div><div class="menu-sub">RIDE THE RETRO FUTURE</div><div class="menu-actions"><button class="menu-btn" id="menu-start">СТАРТ</button><button class="menu-btn" id="menu-garage">ГАРАЖ</button><button class="menu-btn" id="menu-options">НАСТРОЙКИ</button></div></div><div class="menu-footer">РАЗРАБОТЧИК — <b>НИКИТА МАРКИН</b></div></div>
 <div id="garage-screen"><div class="garage-head">ГАРАЖ // DRIVELLA GTS</div><div class="garage-copy">ТЕКУЩИЙ АВТОМОБИЛЬ<br>DRIVELLA GTS · RETRO GT COUPE<br>ПОКАЖИ ЕЁ СО ВСЕХ СТОРОН</div><div class="garage-controls"><button id="garage-back">← НАЗАД В МЕНЮ</button></div><div class="garage-tip">ЗАЖМИ И ТЯНИ — ВРАЩЕНИЕ<br>КОЛЁСИКО — ПРИБЛИЗИТЬ / ОТДАЛИТЬ</div></div>
 <div id="options-screen"><div class="options-head">ОПЦИИ</div><div class="options-card"><div class="option-row"><span>МУЗЫКА</span><button id="option-music">ВКЛЮЧЕНА</button></div><div class="option-row"><span>ГРОМКОСТЬ</span><input id="option-volume" type="range" min="0" max="100" value="52"></div><div class="option-row"><span>ЗВУК ДВИГАТЕЛЯ</span><button id="option-sfx">ВКЛЮЧЁН</button></div><div class="option-row"><span>КАМЕРА</span><span>КЛАВИШИ 1–4</span></div><button id="options-back" style="width:100%;margin-top:18px">← НАЗАД В МЕНЮ</button></div></div>
@@ -109,7 +109,7 @@
 <script>
 (()=>{
 'use strict';
-const VERSION='v0.18.30',BUILD='096';
+const VERSION='v0.18.31',BUILD='097';
 const canvas=document.getElementById('scene'),gl=canvas.getContext('webgl',{antialias:true,alpha:true}),sun=document.getElementById('sun'),sctx=sun.getContext('2d'),flare=document.getElementById('flare'),fctx=flare.getContext('2d');
 const $=id=>document.getElementById(id);
 const clamp=(v,a,b)=>Math.max(a,Math.min(b,v));
@@ -929,7 +929,7 @@ const C={
  glass:[.012,.035,.075,1],glassLight:[.055,.17,.28,1],trim:[.012,.016,.026,1],
  tire:[.012,.014,.019,1],hub:[.55,.52,.68,1],brake:[.20,.20,.28,1],city:[.085,.045,.12,1],mount:[.08,.045,.14,1]
 };
-let keys={},headlightsUp=false,headlightDeploy=0,wireframeMode=false,started=false,paused=true,speed=0,playerX=0,steer=0,bodyRoll=0,distance=0,boost=0,carYaw=0,yawRate=0,lateralVelocity=0,driftIntensity=0,handbrakeActive=false,driftInstability=0,previousSteerInput=0,last=performance.now(),musicOn=true,track=0,trackOrder=[],trackPos=0,audio=null,musicPending=true,foundTracks=[],audioCtx=null,engineOsc=null,engineOsc2=null,engineGain=null,engineFilter=null,skidGain=null,skidFilter=null,roadGain=null,roadFilter=null,audioNoise=null;
+let keys={},headlightsUp=false,headlightDeploy=0,wireframeMode=false,started=false,paused=true,speed=0,playerX=0,steer=0,bodyRoll=0,distance=0,boost=0,carYaw=0,yawRate=0,lateralVelocity=0,driftIntensity=0,handbrakeActive=false,brakeLight=0,driftInstability=0,previousSteerInput=0,last=performance.now(),musicOn=true,track=0,trackOrder=[],trackPos=0,audio=null,musicPending=true,foundTracks=[],audioCtx=null,engineOsc=null,engineOsc2=null,engineGain=null,engineFilter=null,skidGain=null,skidFilter=null,roadGain=null,roadFilter=null,audioNoise=null;
 // One axis convention shared by controls, car movement, body lean and indicators.
 const STEER_AXIS=Object.freeze({left:-1,right:1,screenRight:1,bodyLean:-1});
 function readSteeringInput(){return (keys.d||keys.arrowright?STEER_AXIS.right:0)+(keys.a||keys.arrowleft?STEER_AXIS.left:0);}
@@ -1209,7 +1209,7 @@ function drawWorld(){
  }
  }
  // DRIVELLA GTS — original angular GT, now with a squared rear and real light mounting planes.
- const yaw=garageMode?0:carYaw;
+ const yaw=garageMode?0:carYaw,brakeLampLevel=clamp(brakeLight,0,1);
  // 3DFX / PASS 01 — four independent soft tyre contact shadows, anchored to the wheel centres.
  const shadowY=garageMode?-.052:.018;
  gl.enable(gl.BLEND);gl.blendFunc(gl.SRC_ALPHA,gl.ONE_MINUS_SRC_ALPHA);gl.depthMask(false);
@@ -1296,11 +1296,13 @@ function drawWorld(){
  // Rear: a genuinely flat full-width fascia. Every light now sits OUTSIDE the body cap.
  drawCarMesh(rearFascia,carX,carZ,C.body,yaw,PAINT_MATERIAL);
  gl.enable(gl.BLEND);gl.blendFunc(gl.SRC_ALPHA,gl.ONE);gl.depthMask(false);
- drawCarMesh(rearLampGlowL,carX,carZ,[.72,.006,.018,.24],yaw,8);drawCarMesh(rearLampGlowR,carX,carZ,[.72,.006,.018,.24],yaw,8);
+ const rearGlowColor=[.56+.38*brakeLampLevel,.006+.012*brakeLampLevel,.018+.020*brakeLampLevel,.22+.14*brakeLampLevel];
+ drawCarMesh(rearLampGlowL,carX,carZ,rearGlowColor,yaw,8);drawCarMesh(rearLampGlowR,carX,carZ,rearGlowColor,yaw,8);
  gl.depthMask(true);gl.disable(gl.BLEND);
  drawCarMesh(rearLampFrameL,carX,carZ,C.trim,yaw,0);drawCarMesh(rearLampFrameR,carX,carZ,C.trim,yaw,0);
- drawCarMesh(rearLampL,carX,carZ,[.82,.008,.025,1],yaw,8);drawCarMesh(rearLampR,carX,carZ,[.82,.008,.025,1],yaw,8);
- const ledColor=[1.18,.025,.055,1];
+ const rearLampColor=[.54+.43*brakeLampLevel,.006+.012*brakeLampLevel,.020+.022*brakeLampLevel,1];
+ drawCarMesh(rearLampL,carX,carZ,rearLampColor,yaw,8);drawCarMesh(rearLampR,carX,carZ,rearLampColor,yaw,8);
+ const ledColor=[.46+.50*brakeLampLevel,.012+.024*brakeLampLevel,.035+.030*brakeLampLevel,1];
  for(const led of [rearLedL1,rearLedL2,rearLedL3])drawCarMesh(led,carX,carZ,ledColor,yaw,8);
  for(const led of [rearLedR1,rearLedR2,rearLedR3])drawCarMesh(led,carX,carZ,ledColor,yaw,8);
  drawCarMesh(rearSignalL,carX,carZ,steerNow<0&&signalOn?[1.55,.48,.055,1]:[.16,.052,.008,1],yaw,steerNow<0&&signalOn?8:0);
@@ -1391,8 +1393,8 @@ function drawVehicleLensFlares(){
  const blink=Math.sin(performance.now()*.012)>-.15,signalSide=readSteeringInput();
  sources.push({kind:'signal',p:point(bodyWorld,[-.795,.47,2.974]),n:frontNormal,c:[1,.48,.10],power:signalSide<0&&blink?1.22:0});
  sources.push({kind:'signal',p:point(bodyWorld,[.795,.47,2.974]),n:frontNormal,c:[1,.48,.10],power:signalSide>0&&blink?1.22:0});
- sources.push({kind:'tail',p:point(bodyWorld,[-.93,.665,-2.982]),n:rearNormal,c:[1,.045,.085],power:.92});
- sources.push({kind:'tail',p:point(bodyWorld,[.93,.665,-2.982]),n:rearNormal,c:[1,.045,.085],power:.92});
+ sources.push({kind:'tail',p:point(bodyWorld,[-.93,.665,-2.982]),n:rearNormal,c:[1,.045,.085],power:.92+.28*brakeLight});
+ sources.push({kind:'tail',p:point(bodyWorld,[.93,.665,-2.982]),n:rearNormal,c:[1,.045,.085],power:.92+.28*brakeLight});
  if(blink&&signalSide<0)sources.push({kind:'signal',p:point(bodyWorld,[-1.085,.67,-2.982]),n:rearNormal,c:[1,.56,.16],power:1.26});
  if(blink&&signalSide>0)sources.push({kind:'signal',p:point(bodyWorld,[1.085,.67,-2.982]),n:rearNormal,c:[1,.56,.16],power:1.26});
  fctx.save();fctx.globalCompositeOperation='lighter';
@@ -1493,6 +1495,8 @@ function frame(now){
  const lampTarget=headlightsUp?1:0;
  headlightDeploy+=(lampTarget-headlightDeploy)*Math.min(1,dt*7.0);
  const up=keys.w||keys.arrowup,down=keys.s||keys.arrowdown,handbrake=!!keys[' '];
+ const brakeTarget=(down&&speed>.5)||handbrake?1:0;
+ brakeLight+=(brakeTarget-brakeLight)*Math.min(1,dt*(brakeTarget?18:8));
  if(started&&!paused){
   // Smooth throttle/brake response with a little drivetrain inertia.
   if(up)speed+=72*dt;else if(down)speed+=speed>0?-112*dt:82*dt;else speed*=Math.pow(.994,dt*60);
