@@ -646,7 +646,9 @@ function makeCarHull(keys,wheelArches=false,flatRoof=false,windowOpenings=false,
   if(outerSkinOnly&&(j<3||j>10))continue;
   if(windowOpenings&&(j===4||j===9)&&zMid>=-1.60&&zMid<=.945)continue;
   const a=rings[i][j],b=rings[i][(j+1)%N],c=rings[i+1][j],d=rings[i+1][(j+1)%N];
-  out.push(...a,...c,...d,...a,...d,...b);
+  // Mirror the left shoulder-to-upper face with the same diagonal as the right side.
+  if(j===9)out.push(...b,...d,...c,...b,...a,...c);
+  else out.push(...a,...c,...d,...a,...d,...b);
  }
  const cap=(ring,reverse)=>{const center=[0,ring.reduce((v,p)=>v+p[1],0)/N,ring[0][2]];for(let j=0;j<N;j++){const a=ring[j],b=ring[(j+1)%N];if(reverse)out.push(...center,...b,...a);else out.push(...center,...a,...b);}};
  if(!outerSkinOnly){cap(rings[0],true);cap(rings[rings.length-1],false);}return mesh(out);
@@ -802,7 +804,7 @@ function makeBodySideBand(profile,side,zMin,zMax,offsetX=.014){
  for(let i=0;i<zs.length-1;i++){
   const z0=zs[i],z1=zs[i+1],sh0=point(z0,false),up0=point(z0,true),sh1=point(z1,false),up1=point(z1,true);
   if(side>0)out.push(...sh0,...sh1,...up1,...sh0,...up1,...up0);
-  else out.push(...up0,...up1,...sh1,...up0,...sh1,...sh0);
+  else out.push(...sh0,...sh1,...up1,...sh0,...up0,...up1);
  }
  return mesh(out);
 }
