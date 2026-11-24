@@ -2,11 +2,12 @@
 
 A browser-based synthwave drift-racing prototype with a custom low-poly 3D car, a procedural neon environment, and a hand-built WebGL renderer.
 
-> **Status:** Playable prototype under active development. Current renderer reference: **v0.18.37 / BUILD 103**.
+> **Status:** Playable prototype under active development. Current renderer reference: **v0.18.38 / BUILD 104**.
 
 ## Current game
 
 - Custom WebGL 1 renderer for the 3D vehicle, road, garage, and procedural environments.
+- All four wheels animate as a single rolling assembly: tyre, brake disc, alloy spokes, and hub share one spin phase, with the rotation direction matched to forward travel.
 - Canvas 2D overlay for the synthwave sunset.
 - Four camera modes, acceleration, braking, steering, drifting, and handbrake handling. During a race, hold and drag the left mouse button to temporarily look around; releasing it immediately restores the selected automatic camera. Press **C** to cycle camera modes.
 - Procedural city, coastline, palms, mountains, road markings, and neon roadside elements.
