@@ -2,7 +2,7 @@
 
 A browser-based synthwave drift-racing prototype with a custom low-poly 3D car, a procedural neon environment, and a hand-built WebGL renderer.
 
-> **Status:** Playable prototype under active development. Current renderer reference: **v0.18.44 / BUILD 110**.
+> **Status:** Playable prototype under active development. Current renderer reference: **v0.18.45 / BUILD 111**.
 
 ## Current game
 
@@ -16,10 +16,10 @@ A browser-based synthwave drift-racing prototype with a custom low-poly 3D car, 
 - Canvas 2D overlay for the synthwave sunset.
 - Four camera modes, acceleration, braking, steering, drifting, and handbrake handling. During a race, hold and drag the left mouse button to temporarily look around; releasing it immediately restores the selected automatic camera. Press **C** to cycle camera modes.
 - Procedural city, coastline, palms, mountains, road markings, and neon roadside elements.
-- Dynamic directional shadows with a shared opaque-scene caster path, PCSS-style soft filtering, and camera-adaptive coverage. BUILD 110 fixes the shadow pass so opaque garage/track geometry is included; translucent and emissive effects remain excluded by the central material policy.
+- Dynamic directional shadows with a shared opaque-scene caster path, PCSS-style soft filtering, and camera-adaptive coverage. BUILD 110 fixes the shadow pass so opaque garage/track geometry is included; translucent and emissive effects remain excluded by the central material policy. BUILD 111 greatly reduces directional shadow reception on vehicle meshes to avoid one-sided self-shadow patches, while the car continues to cast shadows onto the road and scene.
 - Two animated, shader-based headlight spotlights track the pop-up lamp mechanism and illuminate ordinary world materials. CPU-side mesh/cone culling skips per-pixel lighting outside the beams. BUILD 102 corrects two-sided diffuse response so the road surface receives the beams and removes the obsolete translucent polygon-beam meshes. BUILD 103 restores compact white-blue upper-headlight lens glints using the same lightweight Canvas 2D profile as the indicators, at slightly higher intensity; the former large bloom, blur, long streaks, diffraction and chromatic ghosts remain removed. A live FPS meter and F3 renderer diagnostics are available in the garage and during races; **H** temporarily toggles diffuse spotlight illumination for testing.
 - Emissive front, rear, and indicator lamps. Compact screen-space glints are used for the upper headlights, lower auxiliary lamps, rear lamps and indicators; only the expensive oversized upper-headlight flare treatment is disabled. Rear red lamps and LED bars brighten smoothly while the brake pedal or handbrake is held.
-- Half-resolution full-scene SSAO with a restrained contact-only strength, a separate car contour pass, and layered neon underglow. BUILD 109 removes a world-coordinate animated highlight that previously slid across vehicle parts as the chassis rotated.
+- Half-resolution full-scene SSAO with a restrained contact-only strength, a separate car contour pass, and layered neon underglow. BUILD 109 removes the world-coordinate animated highlight; BUILD 111 also removes the remaining mesh-local red lower-side mask that created inconsistent patches on separate bumper and rear-quarter parts.
 - Speed / distance HUD, boot screen, garage, options, and optional local soundtrack.
 - No external rendering engine, JavaScript libraries, fonts, CDNs, or runtime network dependencies.
 
