@@ -304,7 +304,8 @@ function renderShadowMap(){
   lookAt(focusX+direction[0]*lightDistance,focusY+direction[1]*lightDistance,focusZ+direction[2]*lightDistance,focusX,focusY,focusZ)
  );
  const sceneCalls=drawCalls;
- renderShadowPassTo(shadowTarget,sunShadowVP,false);
+ renderShadowPassTo(shadowTarget,sunShadowVP,'all');
+ // The vehicle samples an environment-only solar map: never let any car mesh shadow another car mesh.
  renderShadowPassTo(vehicleShadowTarget,sunShadowVP,'environment-only');
  const localSources=garageMode?GARAGE_LOCAL_LIGHTS:[];
  for(let slot=0;slot<LOCAL_SHADOW_CAPACITY;slot++){
