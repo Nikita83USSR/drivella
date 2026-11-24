@@ -411,7 +411,7 @@ function projectCabinRoofFrontSeam(vp,carX,carZ,yaw,cam){
  return {px:[left.x,left.y,right.x,right.y],depth:[left.depth,right.depth],visible:left.inFrustum&&right.inFrustum?1:0};
 }
 function renderCarOutlines(){
- if(wireframeMode||(!FX.outlines&&!FX.ssao)||!ensureOutlineTarget()||!ensureAOTarget())return;
+ if((wireframeMode&&!FX.ssao)||(!FX.outlines&&!FX.ssao)||!ensureOutlineTarget()||!ensureAOTarget())return;
  const sceneCalls=drawCalls;
  // Pass A: full opaque scene normals/depth at half resolution for SSAO.
  outlinePass=true;aoScenePass=true;
@@ -440,7 +440,7 @@ function renderCarOutlines(){
  const roofEdge=outlineCabinEdge||{px:[0,0,0,0],depth:[0,0],visible:0};
  gl.uniform4fv(outlineLoc.roofEdgePx,roofEdge.px);
  gl.uniform2fv(outlineLoc.roofEdgeDepth,roofEdge.depth);
- gl.uniform1f(outlineLoc.roofEdgeVisible,roofEdge.visible);gl.uniform1f(outlineLoc.outlinesEnabled,FX.outlines?1:0);gl.uniform1f(outlineLoc.aoEnabled,FX.ssao?1:0);
+ gl.uniform1f(outlineLoc.roofEdgeVisible,roofEdge.visible);gl.uniform1f(outlineLoc.outlinesEnabled,FX.outlines&&!wireframeMode?1:0);gl.uniform1f(outlineLoc.aoEnabled,FX.ssao?1:0);
  gl.activeTexture(gl.TEXTURE0);
  gl.bindTexture(gl.TEXTURE_2D,outlineTarget.texture);
  gl.uniform1i(outlineLoc.normalMask,0);
@@ -1384,6 +1384,8 @@ function drawWorld(){
   for(const end of [-1,1])draw(underglowDisk,carX,shadowY+.003,carZ+end*2.48,.88,.0015,.42,[1.0,.010,.042,.22],yaw,0,5);
   gl.depthMask(true);gl.disable(gl.BLEND);
  }
+ // Restore the solid opaque draw state even when both neon overlays are disabled.
+ gl.depthMask(true);gl.disable(gl.BLEND);
  // Continuous hull with broad painted planes and shader-driven clear-coat highlights.
  drawCarMesh(bodyMesh,carX,carZ,C.body,yaw,PAINT_MATERIAL,false,false);
  // Clean flanks without floating diagonal graphics.
