@@ -1341,11 +1341,11 @@ function drawWorld(){
   drawCarPart(carX,carZ,side*.925,1.10,.60,.095,.065,.12,C.bodyLight,yaw,side<0?mirrorShellL:mirrorShellR,PAINT_MATERIAL);
   drawCarPart(carX,carZ,side*.925,1.10,.60,.097,.047,.091,[.025,.095,.15,1],yaw,side<0?mirrorFaceL:mirrorFaceR,3);
   drawCarMesh(side<0?sideVentL:sideVentR,carX,carZ,C.trim,yaw,0);
-  drawCarMesh(side<0?sideVentSlat1L:sideVentSlat1R,carX,carZ,PAINT_RED,yaw,PAINT_MATERIAL,true,false);
-  drawCarMesh(side<0?sideVentSlat2L:sideVentSlat2R,carX,carZ,[.30,.34,.42,1],yaw,0,true,false);
+  drawCarMesh(side<0?sideVentSlat1L:sideVentSlat1R,carX,carZ,PAINT_RED,yaw,PAINT_MATERIAL,false,false);
+  drawCarMesh(side<0?sideVentSlat2L:sideVentSlat2R,carX,carZ,[.30,.34,.42,1],yaw,0,false,false);
  }
- drawCarMesh(doorSeamL,carX,carZ,[.025,.006,.018,1],yaw,0,true,false);
- drawCarMesh(doorSeamR,carX,carZ,[.025,.006,.018,1],yaw,0,true,false);
+ drawCarMesh(doorSeamL,carX,carZ,[.025,.006,.018,1],yaw,0,false,false);
+ drawCarMesh(doorSeamR,carX,carZ,[.025,.006,.018,1],yaw,0,false,false);
  // Raised wheel-arch overlays removed to leave the tyres unobstructed.
  // Four low-profile tyres with machined five-spoke alloy faces. Spin follows world travel.
  const wheelSpin=garageMode?0:-distance/WHEEL_RADIUS;
