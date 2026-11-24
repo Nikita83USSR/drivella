@@ -142,7 +142,7 @@ const loc={p:gl.getAttribLocation(prog,'p'),normal:gl.getAttribLocation(prog,'no
 const SUN_LIGHT={id:'sun',type:'directional',direction:[0,.75,.6614378],castsShadow:true};
 // Artistic specular fill only. It does not illuminate shadow maps or create shadows.
 const NON_SHADOW_FILL_DIRECTION=[.58,.34,-.72];
-const LOCAL_LIGHT_CAPACITY=4,LOCAL_SHADOW_CAPACITY=2,LOCAL_SHADOW_MAP_SIZE=1024,VEHICLE_SHADOW_MAP_SIZE=2048;
+const LOCAL_LIGHT_CAPACITY=4,LOCAL_SHADOW_CAPACITY=2,LOCAL_SHADOW_MAP_SIZE=1024,VEHICLE_SHADOW_MAP_SIZE=Math.min(2048,gl.getParameter(gl.MAX_TEXTURE_SIZE)||1024);
 const GARAGE_LOCAL_LIGHTS=[
  {id:'garage-spot-left',type:'spot',position:[-3.8,4.48,.75],range:9.5,color:[.80,.91,1.0],power:2.2,direction:[.62,-.77,-.12],cutoff:.82,castsShadow:true,shadowSlot:0},
  {id:'garage-spot-right',type:'spot',position:[3.8,4.48,.75],range:9.5,color:[1.0,.84,.92],power:2.2,direction:[-.62,-.77,-.12],cutoff:.82,castsShadow:true,shadowSlot:1}
@@ -260,7 +260,7 @@ function createShadowTarget(size,filter=gl.NEAREST){
  return {texture,depth,framebuffer,size};
 }
 function ensureShadowTarget(){if(!shadowTarget)shadowTarget=createShadowTarget(SHADOW_MAP_SIZE);return !!shadowTarget;}
-function ensureVehicleShadowTarget(){if(!vehicleShadowTarget)vehicleShadowTarget=createShadowTarget(VEHICLE_SHADOW_MAP_SIZE,gl.LINEAR);return !!vehicleShadowTarget;}
+function ensureVehicleShadowTarget(){if(!vehicleShadowTarget){vehicleShadowTarget=createShadowTarget(VEHICLE_SHADOW_MAP_SIZE,gl.LINEAR);if(!vehicleShadowTarget&&VEHICLE_SHADOW_MAP_SIZE>1024)vehicleShadowTarget=createShadowTarget(1024,gl.LINEAR);}return !!vehicleShadowTarget;}
 function ensureLocalShadowTarget(index){if(!localShadowTargets[index])localShadowTargets[index]=createShadowTarget(LOCAL_SHADOW_MAP_SIZE);return !!localShadowTargets[index];}
 function invalidateShadowCaches(){shadowSceneRevision++;localShadowSignatures=['',''];}
 function renderShadowPassTo(target,matrix,casterMode='all',momentPass=false){
