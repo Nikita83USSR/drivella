@@ -2,7 +2,7 @@
 
 A browser-based synthwave drift-racing prototype with a custom low-poly 3D car, a procedural neon environment, and a hand-built WebGL renderer.
 
-> **Status:** Playable prototype under active development. Current renderer reference: **v0.18.56 / BUILD 122**.
+> **Status:** Playable prototype under active development. Current renderer reference: **v0.18.57 / BUILD 123**.
 > **Release identification:** every published game change increments the visible BUILD number in the HUD and startup screen; README and rendering architecture are updated in the same release.
 
 ## Current game
@@ -110,3 +110,5 @@ No license has been added yet. All rights reserved by the repository owner unles
 - **BUILD 121:** replace vehicle self-shadow filtering with a binary monochrome mask: one depth comparison per receiver pixel, one fixed shadow strength, and a hard contour. No PCF taps, penumbra, or internal tonal variation. This affects vehicle self-shadowing only.
 
 - **BUILD 122:** save a complete pre-cleanup game backup at `backups/index_BUILD121_pre_vehicle_cleanup.html`. Rebuild the cabin mesh as an exterior-only shell: remove its lower inner sidewalls, underside faces and end caps that were hidden inside/overlapping the main body hull. The visible roof, window surround, outer pillars and glass remain. The cabin's exterior shell continues to cast vehicle self-shadows.
+
+- **BUILD 123:** save `backups/index_BUILD122_pre_cabin_rebuild.html` before the cabin rebuild. Remove the separate interpolated cabin hull and replace it with one roof panel plus shared-coordinate roof rails and A/C pillars. Generate all four side panes from the exact shoulder/upper strips removed from `bodyMesh`, including the same wheel-arch/profile stations; use one mirrored helper for both sides. The windshield meets the front roof/body corners, the rear screen meets the roof and rear deck, and a single body-aligned B-pillar fills the split between front and rear side glazing. Obsolete cabin profile, duplicate inner rails and unused window-frame meshes are removed.
