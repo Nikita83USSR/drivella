@@ -94,13 +94,13 @@
 <body>
 <canvas id="scene"></canvas><canvas id="sun"></canvas>
 <div id="hud">
- <div class="top"><div class="logo">DRIVELLA<small>3D SYNTHWAVE DRIFT RACING</small></div><div class="version-label" id="version-label">v0.18.1 · BUILD 067</div><div class="stat">DISTANCE<b id="distance">000.0 KM</b></div><div class="stat">LOCATION<b>VIOLET COAST</b></div></div>
+ <div class="top"><div class="logo">DRIVELLA<small>3D SYNTHWAVE DRIFT RACING</small></div><div class="version-label" id="version-label">v0.18.2 · BUILD 068</div><div class="stat">DISTANCE<b id="distance">000.0 KM</b></div><div class="stat">LOCATION<b>VIOLET COAST</b></div></div>
  <div class="right"><div id="speed">000 <span>KM/H</span></div><div id="direction">▶ FORWARD</div><div id="music">♫ MUSIC SCANNING…</div></div>
- <div class="bottom"><div class="hint"><strong>W / ↑</strong> ACCELERATE　<strong>S / ↓</strong> BRAKE / REVERSE<br><strong>A / ←　D / →</strong> STEER　<strong>SPACE</strong> HANDBRAKE　<strong>M</strong> MUSIC　<strong>1–4</strong> CAMERA　<strong>L</strong> LIGHTS　<strong>K</strong> WIREFRAME</div><div>3D NEON HIGHWAY // BUILD 067</div></div>
+ <div class="bottom"><div class="hint"><strong>W / ↑</strong> ACCELERATE　<strong>S / ↓</strong> BRAKE / REVERSE<br><strong>A / ←　D / →</strong> STEER　<strong>SPACE</strong> HANDBRAKE　<strong>M</strong> MUSIC　<strong>1–4</strong> CAMERA　<strong>L</strong> LIGHTS　<strong>K</strong> WIREFRAME</div><div>3D NEON HIGHWAY // BUILD 068</div></div>
 </div>
 <div id="tools-ui"><button id="cam-prev" aria-label="Previous camera">◀</button><span id="cam-label">CAM 2 · CLOSE</span><button id="cam-next" aria-label="Next camera">▶</button><button id="debug-toggle">DEBUG</button></div>
 <div id="debug-panel"><div class="debug-title">DRIVELLA DIAGNOSTICS</div><div id="debug-data">Initializing…</div></div>
-<div id="boot-screen"><div class="boot-content"><div class="boot-kicker">NIGHT DRIVE SYSTEMS // INITIALIZING</div><div class="boot-logo">DRIVELLA</div><div class="boot-subtitle">3D SYNTHWAVE DRIFT RACING</div><div class="boot-mark"></div><div class="boot-status" id="boot-status">BUILDING THE 3D WORLD</div><div class="boot-track"><div class="boot-progress" id="boot-progress"></div></div><div class="boot-meta"><span>3D ENGINE ONLINE</span><span id="boot-percent">00%</span></div><div class="boot-footer">ENGINE STARTUP // v0.18.1 · BUILD 067</div></div></div>
+<div id="boot-screen"><div class="boot-content"><div class="boot-kicker">NIGHT DRIVE SYSTEMS // INITIALIZING</div><div class="boot-logo">DRIVELLA</div><div class="boot-subtitle">3D SYNTHWAVE DRIFT RACING</div><div class="boot-mark"></div><div class="boot-status" id="boot-status">BUILDING THE 3D WORLD</div><div class="boot-track"><div class="boot-progress" id="boot-progress"></div></div><div class="boot-meta"><span>3D ENGINE ONLINE</span><span id="boot-percent">00%</span></div><div class="boot-footer">ENGINE STARTUP // v0.18.2 · BUILD 068</div></div></div>
 <div id="main-menu"><div class="menu-content"><div class="menu-brand">DRIVELLA GTS</div><div class="menu-sub">RIDE THE RETRO FUTURE</div><div class="menu-actions"><button class="menu-btn" id="menu-start">СТАРТ</button><button class="menu-btn" id="menu-garage">ГАРАЖ</button><button class="menu-btn" id="menu-options">НАСТРОЙКИ</button></div></div><div class="menu-footer">РАЗРАБОТЧИК — <b>НИКИТА МАРКИН</b></div></div>
 <div id="garage-screen"><div class="garage-head">ГАРАЖ // DRIVELLA GTS</div><div class="garage-copy">ТЕКУЩИЙ АВТОМОБИЛЬ<br>DRIVELLA GTS · RETRO GT COUPE<br>ПОКАЖИ ЕЁ СО ВСЕХ СТОРОН</div><div class="garage-controls"><button id="garage-back">← НАЗАД В МЕНЮ</button></div><div class="garage-tip">ЗАЖМИ И ТЯНИ — ВРАЩЕНИЕ<br>КОЛЁСИКО — ПРИБЛИЗИТЬ / ОТДАЛИТЬ</div></div>
 <div id="options-screen"><div class="options-head">ОПЦИИ</div><div class="options-card"><div class="option-row"><span>МУЗЫКА</span><button id="option-music">ВКЛЮЧЕНА</button></div><div class="option-row"><span>ГРОМКОСТЬ</span><input id="option-volume" type="range" min="0" max="100" value="52"></div><div class="option-row"><span>ЗВУК ДВИГАТЕЛЯ</span><button id="option-sfx">ВКЛЮЧЁН</button></div><div class="option-row"><span>КАМЕРА</span><span>КЛАВИШИ 1–4</span></div><button id="options-back" style="width:100%;margin-top:18px">← НАЗАД В МЕНЮ</button></div></div>
@@ -108,7 +108,7 @@
 <script>
 (()=>{
 'use strict';
-const VERSION='v0.18.1',BUILD='064';
+const VERSION='v0.18.2',BUILD='064';
 const canvas=document.getElementById('scene'),gl=canvas.getContext('webgl',{antialias:true,alpha:true}),sun=document.getElementById('sun'),sctx=sun.getContext('2d');
 const $=id=>document.getElementById(id);
 const clamp=(v,a,b)=>Math.max(a,Math.min(b,v));
@@ -652,12 +652,14 @@ const flankShadeL=makeProfileLine(bodyProfile,-1,-2.48,2.45,'mid',1.005,.105,.02
 const flankShadeR=makeProfileLine(bodyProfile,1,-2.48,2.45,'mid',1.005,.105,.022);
 const hoodSheenL=sideRibbon(-1,[[.73,2.55,.47],[.86,2.15,.59],[.91,1.72,.60],[.88,1.30,.58]],.018);
 const hoodSheenR=sideRibbon(1,[[.73,2.55,.47],[.86,2.15,.59],[.91,1.72,.60],[.88,1.30,.58]],.018);
-// Short diagonal corner graphics: black slashes edged with deep red, kept away from the doors.
+// One shared body-paint swatch for every painted red component.
+const PAINT_RED=[.72,.018,.095,1];
+// Short diagonal corner graphics: black slashes edged with the same body paint, kept away from the doors.
 const cornerSlashes=[];
 for(const side of [-1,1]){
  cornerSlashes.push(
   {mesh:sideRibbon(side,[[.34,2.62,1.035],[.57,2.34,1.155]],.070),color:[.008,.009,.018,1]},
-  {mesh:sideRibbon(side,[[.425,2.62,1.052],[.655,2.34,1.172]],.026),color:[.92,.025,.10,1]},
+  {mesh:sideRibbon(side,[[.425,2.62,1.052],[.655,2.34,1.172]],.026),color:PAINT_RED},
   {mesh:sideRibbon(side,[[.405,-2.68,1.285],[.655,-2.40,1.245]],.070),color:[.008,.009,.018,1]},
   {mesh:sideRibbon(side,[[.49,-2.68,1.302],[.74,-2.40,1.262]],.026),color:[.92,.025,.10,1]}
  );
@@ -665,7 +667,7 @@ for(const side of [-1,1]){
 const C={
  ground:[.025,.025,.065,1],grid:[.09,.34,.48,.72],grid2:[.34,.10,.40,.55],
  road:[.055,.055,.105,1],road2:[.075,.07,.13,1],pink:[1,.13,.60,1],cyan:[.20,.88,1,1],white:[.92,.96,1,1],
- body:[.72,.018,.095,1],bodyLight:[.72,.018,.095,1],bodyShade:[.19,.006,.035,1],
+ body:PAINT_RED,bodyLight:PAINT_RED,bodyShade:PAINT_RED,
  glass:[.012,.035,.075,1],glassLight:[.055,.17,.28,1],trim:[.012,.016,.026,1],
  tire:[.012,.014,.019,1],hub:[.55,.52,.68,1],brake:[.20,.20,.28,1],city:[.085,.045,.12,1],mount:[.08,.045,.14,1]
 };
@@ -938,7 +940,7 @@ function drawWorld(){
   drawCarPart(carX,carZ,side*.925,1.10,.60,.095,.065,.12,C.bodyLight,yaw,side<0?mirrorShellL:mirrorShellR,1);
   drawCarPart(carX,carZ,side*.925,1.10,.60,.097,.047,.091,[.025,.095,.15,1],yaw,side<0?mirrorFaceL:mirrorFaceR,3);
   drawCarMesh(side<0?sideVentL:sideVentR,carX,carZ,C.trim,yaw,0);
-  drawCarMesh(side<0?sideVentSlat1L:sideVentSlat1R,carX,carZ,[.42,.055,.095,1],yaw,0);
+  drawCarMesh(side<0?sideVentSlat1L:sideVentSlat1R,carX,carZ,PAINT_RED,yaw,1);
   drawCarMesh(side<0?sideVentSlat2L:sideVentSlat2R,carX,carZ,[.30,.34,.42,1],yaw,0);
  }
  drawCarMesh(doorSeamL,carX,carZ,[.025,.006,.018,1],yaw,0);
