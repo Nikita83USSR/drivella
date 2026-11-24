@@ -1,6 +1,6 @@
 # DRIVELLA — Rendering Architecture
 
-Current reference: **v0.18.41 / BUILD 107**  
+Current reference: **v0.18.42 / BUILD 108**  
 Main renderer: `index.html` — custom WebGL 1 renderer, no external rendering engine.
 
 This document records the rendering decisions that future vehicle, environment, lighting, and effects work must preserve. The goal is a reusable scene pipeline: new world geometry should take part in shadows and ambient occlusion automatically when it uses the shared draw path.
@@ -84,6 +84,7 @@ A shared local-light evaluator is now available independently of the two moving 
 - The shader supports **four simultaneous local sources** through fixed-size uniform arrays: position + range, RGB colour + power, and direction + cone cutoff.
 - A source with a direction is a spotlight; a source without a direction is treated as a point light. Both use the same range fade and distance attenuation.
 - Each source contributes a two-sided diffuse response and a view-dependent specular highlight. The same evaluator is used by ordinary world materials, painted body materials, glass, and the generic lit-material branch. Emissive lamps, outlines, shadow depth, and tyre-contact overlays keep their dedicated paths.
+- **BUILD 108 shadow interaction:** painted-body local-light response is added after the directional shadow multiplier. A garage spotlight can therefore brighten a body panel even when the main directional light places that panel in shadow; it does not inherit the sun-shadow attenuation.
 - Source configuration stays on the JavaScript side in world coordinates. `uploadLocalLights(sources)` clears unused slots and uploads the active source records once per scene draw. New fixtures should add data to the source list rather than introducing one-off shader code.
 - **Current garage sources:** two aimed spotlights, one cool cyan and one magenta, at approximately `(-4.7, 4.15, 1.1)` and `(4.7, 4.15, 1.1)`. Both have a 13-unit range and point inward toward the display car. Their visible fixtures and shafts were moved down from the old ceiling position to bring them closer to the garage camera framing.
 - The local-light list is currently enabled for the garage scene only. Track and roadside sources remain inactive until selected environment objects are ready to use the same shared path.
