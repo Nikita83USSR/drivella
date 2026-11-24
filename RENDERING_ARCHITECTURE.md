@@ -1,6 +1,6 @@
 # DRIVELLA — Rendering Architecture
 
-Current reference: **v0.18.24 / BUILD 090**  
+Current reference: **v0.18.25 / BUILD 091**  
 Main renderer: `index.html` — custom WebGL 1 renderer, no external rendering engine.
 
 This document records the rendering decisions that future vehicle, environment, lighting, and effects work must preserve. The goal is a reusable scene pipeline: new world geometry should take part in shadows and ambient occlusion automatically when it uses the shared draw path.
@@ -21,7 +21,7 @@ The scene is intentionally drawn through the same `drawWorld()` path in the norm
 - Shadow map size: **2048 × 2048**.
 - WebGL 1 compatible depth storage: an RGBA colour texture plus a `DEPTH_COMPONENT16` renderbuffer. The shader packs the depth value into the red/green channels; the receiver unpacks it for comparisons.
 - The shadow pass calls `drawWorld()` with `shadowPass = true`. World geometry and car geometry are rendered from the same scene functions used by the visible pass.
-- The light direction is currently fixed to the renderer's key-light direction `(-0.48, 0.82, 0.30)`.
+- The main directional shadow light is currently fixed to the renderer's key-light direction `(-0.48, 0.82, 0.30)`.
 - The light-space orthographic bounds adapt to viewport aspect ratio, active camera mode, driving look-ahead, and garage zoom. The map follows the vehicle and shifts its focus forward in driving cameras.
 - Each mesh receives a local `boundsRadius` when `mesh(data)` is created. The shadow pass transforms this bound and culls meshes outside the current light frustum before issuing draw calls.
 - The map is rebuilt each frame, so moving vehicles, changing geometry, and newly generated environment props are reflected without per-object shadow maps.
@@ -39,6 +39,18 @@ The single policy is centralized in `shadowCasterAllowed(color, material)`:
 Receiving is separate from casting. The main shader samples shadows for regular scene materials below mode 4.5; glass receives a reduced shadow response. Emissive and contact-shadow modes bypass shadow reception.
 
 For future additions, keep this policy central. Do not add per-object shadow textures or hand-authored shadow decals. If a future material needs a different rule, extend the shared material classification deliberately and update this document.
+
+## Stage 2 — Dynamic headlight illumination
+
+The first Stage 2 lighting layer adds two local spotlight sources for the pop-up headlight assemblies:
+
+- Each light position is calculated from the same rigid hinge transform used to animate the triangular headlight pods. It follows the car's world position, yaw, body roll, and deployment angle.
+- The light direction is transformed from the lamp's stowed optical axis through the hinge rotation, then receives a small downward aim correction. Light intensity eases in with the pop-up animation.
+- The main material shader evaluates each light using a cone cutoff, distance fade, distance attenuation, and the receiver normal. The resulting cool-white/blue diffuse contribution is applied to ordinary world materials using their world position and normal.
+- Because the lighting is evaluated in the shared material shader, new opaque environment meshes on the normal `drawWorld()` path receive the headlight illumination without per-object light code.
+- The existing translucent road beam meshes remain as a visual beam layer; they are not the source of surface illumination.
+
+This is a stylized real-time spotlight approximation, not a physically calibrated automotive photometric model. The two headlight sources do **not** yet create their own shadow maps, volumetric scattering, or reflective light transport. Painted car body and glass retain their dedicated material shader paths and do not receive this diffuse spotlight contribution in this iteration.
 
 ## PCSS-style soft shadow filtering
 
@@ -98,6 +110,7 @@ When adding a new material mode, define its casting, receiving, AO, and transpar
 - PCSS is a bounded blocker-search approximation, not physically accurate penumbra from arbitrary area lights.
 - SSAO is half-resolution and screen-space; it can miss off-screen occluders and may require tuning for unusually large or thin objects.
 - The map and post-process passes add GPU work. Any future change to resolution, sample count, or extra passes should be evaluated against frame time.
-- The light direction is currently fixed; if dynamic sun or multiple lights are introduced, shadow-camera generation and receiver sampling must be updated together.
+- The main directional shadow light remains fixed; the new headlight spotlights illuminate surfaces but do not cast independent shadows. If dynamic sun or additional shadow-producing lights are introduced, shadow-camera generation and receiver sampling must be updated together.
+- Stage 2 still needs reusable garage/environment light sources, controlled emissive bloom, improved road/body/glass reflections, and atmospheric depth / grading.
 
 **Maintenance rule:** preserve the shared scene pipeline and central material policy. Future environment additions should become shadow casters and AO participants by using the normal scene draw functions, not by receiving bespoke shadow code.
