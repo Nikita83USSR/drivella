@@ -1,6 +1,6 @@
 # DRIVELLA — Rendering Architecture
 
-Current reference: **v0.18.42 / BUILD 108**  
+Current reference: **v0.18.44 / BUILD 110**  
 Main renderer: `index.html` — custom WebGL 1 renderer, no external rendering engine.
 
 This document records the rendering decisions that future vehicle, environment, lighting, and effects work must preserve. The goal is a reusable scene pipeline: new world geometry should take part in shadows and ambient occlusion automatically when it uses the shared draw path.
@@ -14,7 +14,7 @@ The render loop currently runs these passes in order:
 3. `renderCarOutlines()` — render a half-resolution normal/depth mask for the complete opaque scene, render a separate full-resolution mask for car contours, then composite full-scene AO and car-only ink edges.
 4. `drawSun()` — draw the 2D synthwave sun overlay.
 
-The scene is intentionally drawn through the same `drawWorld()` path in the normal and shadow passes. Do not build one-off shadow meshes or hard-code a shadow for every new prop.
+The scene is intentionally drawn through the same `drawWorld()` path in the normal, directional-shadow, and scene-AO passes. The shared-scene gate is `if (!outlinePass || aoScenePass)`: it includes opaque world geometry during the shadow pass and the full-scene AO capture, while the separate car-contour pass draws only car parts. `shadowCasterAllowed()` remains the single policy for excluding translucent and emissive materials. Do not build one-off shadow meshes or hard-code a shadow for every new prop.
 
 ## Camera controls — BUILD 101
 
@@ -60,7 +60,7 @@ The first Stage 2 lighting layer adds two local spotlight sources for the pop-up
 - **BUILD 099 mesh-level light culling:** before each normal-pass draw of a material that receives dynamic light, the CPU transforms the mesh's precomputed bounding-sphere radius into world scale and tests the sphere against both spotlight cones and the original 42-unit limit. Objects fully outside both beams receive zero headlight intensity for that draw, allowing the shader's zero-intensity early return to skip the per-fragment calculations. The cone test uses the original outer cutoff (`cos = 0.91`) and expands the cone by the mesh radius, so boundary-intersecting meshes are retained. The wide base-ground mesh is excluded from redundant light evaluation. This changes neither the beam shape nor any in-beam pixel's lighting math; there is no downsampling or light-range reduction. The debug panel reports eligible meshes tested and culled.
 - **BUILD 099 FPS meter:** the always-running frame loop updates a compact on-screen FPS indicator in both garage and gameplay. FPS is measured from real `performance.now()` elapsed time rather than the clamped physics delta, so long frames are reflected accurately.
 - **BUILD 100–102 headlight diagnostics and fixes:** `H` disables only the upper pop-up headlight diffuse contribution by setting its per-mesh intensity to zero; the physical pop-up modules and emissive lamp cores remain active. The oversized upper-headlight screen-space flare sources were removed in BUILD 102, while smaller lower-front, rear and indicator flares remain. BUILD 103 restores two compact upper-headlight glints using the same lightweight `kind:'signal'` Canvas 2D profile as the indicators, with a cool white-blue tint and approximately 23% greater authored source power than the turn-signal profile. They use the compact secondary-source haze, short streak, two small rays and minimal secondary ghosts; they do not re-enable the former main-headlight radius, long anamorphic streak, extra diffraction rays, blurred concentric rings or four larger chromatic ghosts. BUILD 102 also removed the legacy translucent polygon beam meshes and changed spotlight diffuse response to `abs(dot(normal, lightDirection))`. The latter is intentional for this renderer's two-sided cube winding: the cube top-face normals point down, so a one-sided positive dot product prevented the asphalt top surface from receiving the headlights. The cone shape, range, source positions, culling and full-resolution shader illumination remain unchanged. The F3 panel reports the active `GARAGE` / `ROAD` scene, H diagnostic state, pop-up deployment, draw calls, and mesh-culling counts. The debug panel remains available in garage mode.
-- **Current garage-scene limitation:** `garageMode` does select a separate branch in `drawWorld()` and suppresses the road grid, road segments and biomes. However, that branch is currently only a dark oversized floor, a small layered circular display platform, and two ceiling-light fixtures with vertical beams. It is not yet a fully modelled enclosed showroom. The default orbit camera looks downward toward the car and the fixtures at Y≈5.8 m sit above its visible vertical frustum, so they are mostly or entirely out of view. The flat floor can look like a plain road surface, but the road geometry is not being drawn in garage mode. A proper visible garage enclosure, wall/ceiling architecture, and camera-framed lighting remain future work.
+- **Current garage-scene limitation:** `garageMode` selects a separate branch in `drawWorld()` and suppresses the road grid, road segments and biomes. The branch is still a dark floor and a small layered circular display platform rather than a fully modelled enclosed showroom. Two compact suspended LED fixtures sit on an upper support rail near Y≈5.1 m; their actual illumination comes from the shared shader spotlights, not translucent shafts or floor decals. The flat floor can look like a plain road surface because garage walls and a ceiling are not yet modelled. A proper enclosed showroom, wall/ceiling architecture, and camera-framed lighting remain future work.
 - Because the headlight lighting is evaluated in the shared material shader, new eligible opaque environment meshes on the normal `drawWorld()` path receive the beam illumination without per-object light code.
 - The obsolete translucent polygon beam meshes were removed in BUILD 102. The road receives the actual shader spotlight contribution; there is no legacy triangle beam under the bumper.
 - BUILD 106 adds a separate reusable local-light path for garage and future environment fixtures. Unlike the pop-up headlight contribution, this path is evaluated in the world, painted-body, glass and generic lit-material branches.
@@ -79,17 +79,27 @@ This is a stylized screen-space glare effect rather than a physically simulated 
 
 ## Reusable local lighting — BUILD 106
 
-A shared local-light evaluator is now available independently of the two moving headlight spotlights.
+A shared local-light evaluator is available independently of the two moving headlight spotlights.
 
 - The shader supports **four simultaneous local sources** through fixed-size uniform arrays: position + range, RGB colour + power, and direction + cone cutoff.
 - A source with a direction is a spotlight; a source without a direction is treated as a point light. Both use the same range fade and distance attenuation.
-- Each source contributes a two-sided diffuse response and a view-dependent specular highlight. The same evaluator is used by ordinary world materials, painted body materials, glass, and the generic lit-material branch. Emissive lamps, outlines, shadow depth, and tyre-contact overlays keep their dedicated paths.
+- Each source contributes a two-sided diffuse response modulated by the receiving material's base colour plus a restrained view-dependent specular highlight. The same evaluator is used by ordinary world materials, painted body materials, glass, and the generic lit-material branch. Emissive lamps, outlines, shadow depth, and tyre-contact overlays keep their dedicated paths.
 - **BUILD 108 shadow interaction:** painted-body local-light response is added after the directional shadow multiplier. A garage spotlight can therefore brighten a body panel even when the main directional light places that panel in shadow; it does not inherit the sun-shadow attenuation.
+- **BUILD 109 material response:** local-light diffuse energy now modulates the material albedo instead of adding saturated RGB independently of the surface colour. Specular energy remains tinted by the source but is deliberately restrained. Spotlight cones are tighter, and range attenuation is steeper to avoid broad colour washes over the car and tyres.
 - Source configuration stays on the JavaScript side in world coordinates. `uploadLocalLights(sources)` clears unused slots and uploads the active source records once per scene draw. New fixtures should add data to the source list rather than introducing one-off shader code.
-- **Current garage sources:** two aimed spotlights, one cool cyan and one magenta, at approximately `(-4.7, 4.15, 1.1)` and `(4.7, 4.15, 1.1)`. Both have a 13-unit range and point inward toward the display car. Their visible fixtures and shafts were moved down from the old ceiling position to bring them closer to the garage camera framing.
+- **Current garage sources:** two narrow near-white spotlights at approximately `(-3.8, 4.48, 0.75)` and `(3.8, 4.48, 0.75)`. They have a 9.5-unit range and point inward and down toward the display car. The source colours are lightly cool and warm rather than saturated cyan/magenta.
+- **BUILD 109 fixtures:** the translucent vertical shafts and broad semi-transparent square floor patches were removed. The garage now uses opaque suspended housings with compact emissive lens faces; the cone evaluated by the shared shader is the actual light contribution, not a drawn transparent decal.
 - The local-light list is currently enabled for the garage scene only. Track and roadside sources remain inactive until selected environment objects are ready to use the same shared path.
 
-These local sources **do not cast shadows** and do not perform occlusion against intervening geometry. They add direct stylized lighting and specular response only; the existing directional shadow map remains the only shadow-producing light. Keep the four-source limit in mind when adding more fixtures, and prefer selecting a few visually important lights rather than enabling every neon prop at once.
+These local sources **do not cast shadows** and do not perform occlusion against intervening geometry. They add direct material-aware lighting and specular response only; the existing directional shadow map remains the only shadow-producing light. Keep the four-source limit in mind when adding more fixtures, and prefer selecting a few visually important lights rather than enabling every neon prop at once.
+
+## BUILD 109–110 render consistency cleanup
+
+- The material-mode-1 animated highlight previously used `vWorldPos.z`. That made the stripe slide across vehicle parts as the car yaw changed even though the camera angle did not. The world-space animation was removed rather than replacing it with another sliding or per-part pattern.
+- The garage UI overlay gradient was reduced so it no longer veils the scene behind the text panel.
+- Directional shadow casting, normal rendering, and full-scene AO now share the same opaque world-scene branch. BUILD 110 corrected the guard that had skipped garage/track environment geometry during `renderShadowMap()` while still rendering the car; environment meshes now cast and receive through the same central classification.
+- The directional shadow filter received a slightly larger slope-scaled bias and a reduced maximum darkness. SSAO opacity was reduced and remains a local contact effect. These adjustments are intended to remove crawling/self-shadow noise and keep the image clean without deleting the dynamic shadow system.
+- Opaque light housings use the ordinary shared scene path and can participate in directional shadows/AO; emissive lenses are excluded from the opaque caster/AO masks by material mode. Transparent shafts and fake light patches are no longer present.
 
 ## Procedural glass reflections — BUILD 106
 
@@ -111,7 +121,7 @@ The receiver uses a bounded Percentage-Closer Soft Shadows approximation:
 1. A **3 × 3 blocker search** estimates the average depth of geometry between the light and receiver.
 2. The depth separation between blocker and receiver determines a variable penumbra radius.
 3. A second **3 × 3 comparison filter** samples using that radius; the radius is clamped to avoid unstable or excessively broad shadows.
-4. A normal-dependent depth bias reduces self-shadow acne.
+4. A normal-dependent depth bias reduces self-shadow acne. BUILD 109 slightly increased the minimum and slope-scaled bias to reduce self-shadow patterning, while lowering the maximum shadow darkening from 68% to 50% so shadowed surfaces retain a cleaner base value.
 
 This is a practical screen-space/filtering approximation for the current single directional light, not a physically exact area-light simulation. Keep blocker and filter loops bounded for WebGL 1 compatibility.
 
@@ -121,7 +131,7 @@ The two effects use separate masks so environment geometry does not acquire the 
 
 - **Scene AO mask:** half the canvas width and height, containing encoded world-space normals in RGB and normalized view depth in alpha. It is rendered from the same opaque scene geometry as the shadow caster policy.
 - **Car contour mask:** full resolution and car-only. It preserves the existing normal/depth edge detection and the explicit roof seam treatment.
-- The fullscreen composite samples the car mask for ink contours and the scene mask for SSAO. Near and farther screen-space samples estimate depth discontinuities and normal creases; the resulting darkening is clamped.
+- The fullscreen composite samples the car mask for ink contours and the scene mask for SSAO. Near and farther screen-space samples estimate depth discontinuities and normal creases; the resulting darkening is clamped to 0.12 alpha in BUILD 109 so AO remains local contact shading instead of a broad dim veil.
 - Glass, translucent fades, neon, and contact-shadow overlays are omitted from the opaque AO mask to avoid false occlusion.
 
 SSAO is screen-space: it only sees geometry represented in the current camera's normal/depth buffer. It cannot infer hidden geometry behind the camera or off-screen. It is a local contact/crease approximation, not global illumination.
