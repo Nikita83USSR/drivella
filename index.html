@@ -94,13 +94,13 @@
 <body>
 <canvas id="scene"></canvas><canvas id="sun"></canvas>
 <div id="hud">
- <div class="top"><div class="logo">DRIVELLA<small>3D SYNTHWAVE DRIFT RACING</small></div><div class="version-label" id="version-label">v0.18.6 · BUILD 072</div><div class="stat">DISTANCE<b id="distance">000.0 KM</b></div><div class="stat">LOCATION<b>VIOLET COAST</b></div></div>
+ <div class="top"><div class="logo">DRIVELLA<small>3D SYNTHWAVE DRIFT RACING</small></div><div class="version-label" id="version-label">v0.18.7 · BUILD 073</div><div class="stat">DISTANCE<b id="distance">000.0 KM</b></div><div class="stat">LOCATION<b>VIOLET COAST</b></div></div>
  <div class="right"><div id="speed">000 <span>KM/H</span></div><div id="direction">▶ FORWARD</div><div id="music">♫ MUSIC SCANNING…</div></div>
- <div class="bottom"><div class="hint"><strong>W / ↑</strong> ACCELERATE　<strong>S / ↓</strong> BRAKE / REVERSE<br><strong>A / ←　D / →</strong> STEER　<strong>SPACE</strong> HANDBRAKE　<strong>M</strong> MUSIC　<strong>1–4</strong> CAMERA　<strong>L</strong> LIGHTS　<strong>K</strong> WIREFRAME</div><div>3D NEON HIGHWAY // BUILD 072</div></div>
+ <div class="bottom"><div class="hint"><strong>W / ↑</strong> ACCELERATE　<strong>S / ↓</strong> BRAKE / REVERSE<br><strong>A / ←　D / →</strong> STEER　<strong>SPACE</strong> HANDBRAKE　<strong>M</strong> MUSIC　<strong>1–4</strong> CAMERA　<strong>L</strong> LIGHTS　<strong>K</strong> WIREFRAME</div><div>3D NEON HIGHWAY // BUILD 073</div></div>
 </div>
 <div id="tools-ui"><button id="cam-prev" aria-label="Previous camera">◀</button><span id="cam-label">CAM 2 · CLOSE</span><button id="cam-next" aria-label="Next camera">▶</button><button id="debug-toggle">DEBUG</button></div>
 <div id="debug-panel"><div class="debug-title">DRIVELLA DIAGNOSTICS</div><div id="debug-data">Initializing…</div></div>
-<div id="boot-screen"><div class="boot-content"><div class="boot-kicker">NIGHT DRIVE SYSTEMS // INITIALIZING</div><div class="boot-logo">DRIVELLA</div><div class="boot-subtitle">3D SYNTHWAVE DRIFT RACING</div><div class="boot-mark"></div><div class="boot-status" id="boot-status">BUILDING THE 3D WORLD</div><div class="boot-track"><div class="boot-progress" id="boot-progress"></div></div><div class="boot-meta"><span>3D ENGINE ONLINE</span><span id="boot-percent">00%</span></div><div class="boot-footer">ENGINE STARTUP // v0.18.6 · BUILD 072</div></div></div>
+<div id="boot-screen"><div class="boot-content"><div class="boot-kicker">NIGHT DRIVE SYSTEMS // INITIALIZING</div><div class="boot-logo">DRIVELLA</div><div class="boot-subtitle">3D SYNTHWAVE DRIFT RACING</div><div class="boot-mark"></div><div class="boot-status" id="boot-status">BUILDING THE 3D WORLD</div><div class="boot-track"><div class="boot-progress" id="boot-progress"></div></div><div class="boot-meta"><span>3D ENGINE ONLINE</span><span id="boot-percent">00%</span></div><div class="boot-footer">ENGINE STARTUP // v0.18.7 · BUILD 073</div></div></div>
 <div id="main-menu"><div class="menu-content"><div class="menu-brand">DRIVELLA GTS</div><div class="menu-sub">RIDE THE RETRO FUTURE</div><div class="menu-actions"><button class="menu-btn" id="menu-start">СТАРТ</button><button class="menu-btn" id="menu-garage">ГАРАЖ</button><button class="menu-btn" id="menu-options">НАСТРОЙКИ</button></div></div><div class="menu-footer">РАЗРАБОТЧИК — <b>НИКИТА МАРКИН</b></div></div>
 <div id="garage-screen"><div class="garage-head">ГАРАЖ // DRIVELLA GTS</div><div class="garage-copy">ТЕКУЩИЙ АВТОМОБИЛЬ<br>DRIVELLA GTS · RETRO GT COUPE<br>ПОКАЖИ ЕЁ СО ВСЕХ СТОРОН</div><div class="garage-controls"><button id="garage-back">← НАЗАД В МЕНЮ</button></div><div class="garage-tip">ЗАЖМИ И ТЯНИ — ВРАЩЕНИЕ<br>КОЛЁСИКО — ПРИБЛИЗИТЬ / ОТДАЛИТЬ</div></div>
 <div id="options-screen"><div class="options-head">ОПЦИИ</div><div class="options-card"><div class="option-row"><span>МУЗЫКА</span><button id="option-music">ВКЛЮЧЕНА</button></div><div class="option-row"><span>ГРОМКОСТЬ</span><input id="option-volume" type="range" min="0" max="100" value="52"></div><div class="option-row"><span>ЗВУК ДВИГАТЕЛЯ</span><button id="option-sfx">ВКЛЮЧЁН</button></div><div class="option-row"><span>КАМЕРА</span><span>КЛАВИШИ 1–4</span></div><button id="options-back" style="width:100%;margin-top:18px">← НАЗАД В МЕНЮ</button></div></div>
@@ -108,7 +108,7 @@
 <script>
 (()=>{
 'use strict';
-const VERSION='v0.18.6',BUILD='072';
+const VERSION='v0.18.7',BUILD='073';
 const canvas=document.getElementById('scene'),gl=canvas.getContext('webgl',{antialias:true,alpha:true}),sun=document.getElementById('sun'),sctx=sun.getContext('2d');
 const $=id=>document.getElementById(id);
 const clamp=(v,a,b)=>Math.max(a,Math.min(b,v));
@@ -282,10 +282,12 @@ function profileValue(z,keys){
  for(const k of ['w','sideW','midW','shoulderW','upperW','topW','floor','side','mid','shoulder','upper','top'])o[k]=get(a,k)+(get(b,k)-get(a,k))*u;
  return o;
 }
+// Shared wheel datum: lower all four wheels by 8 mm while retaining minimal ground clearance.
+const WHEEL_CENTER_Y=.457,WHEEL_RADIUS=.455;
 function makeCarHull(keys,wheelArches=false,flatRoof=false,windowOpenings=false){
  // Keep only designed profile stations. The two wheel arches add a few deliberate silhouette points.
  const out=[],N=14,rings=[],zSet=new Set(keys.map(p=>p.z));
- const archY=(z,center)=>{const d=Math.abs(z-center),r=.455,cy=.465,clear=.008;if(d<=r)return cy+Math.sqrt(Math.max(0,r*r-d*d))+clear;if(d>=r+.16)return .33;const t=(d-r)/.16,u=t*t*(3-2*t);return (cy+clear)*(1-u)+.33*u;};
+ const archY=(z,center)=>{const d=Math.abs(z-center),r=WHEEL_RADIUS,cy=WHEEL_CENTER_Y,clear=.008;if(d<=r)return cy+Math.sqrt(Math.max(0,r*r-d*d))+clear;if(d>=r+.16)return .33;const t=(d-r)/.16,u=t*t*(3-2*t);return (cy+clear)*(1-u)+.33*u;};
  if(wheelArches)for(const center of [-1.6375,1.6375])for(const offset of [-.615,-.55,-.455,-.34,-.2275,-.114,0,.114,.2275,.34,.455,.55,.615])zSet.add(center+offset);
  const zSamples=[...zSet].sort((a,b)=>a-b);
  for(const z of zSamples){
@@ -394,7 +396,7 @@ function makeMirrorArm(side){
 const mirrorShellL=makeMirrorShell(-1),mirrorShellR=makeMirrorShell(1),mirrorFaceL=makeMirrorFace(-1),mirrorFaceR=makeMirrorFace(1),mirrorArmL=makeMirrorArm(-1),mirrorArmR=makeMirrorArm(1);function makeWheelArch(center,side){
  const out=[],steps=12;
  for(let i=0;i<steps;i++){
-  const d0=-.465+.93*i/steps,d1=-.465+.93*(i+1)/steps,y0=.465+Math.sqrt(Math.max(0,.455*.455-d0*d0))+.045,y1=.465+Math.sqrt(Math.max(0,.455*.455-d1*d1))+.045,x=side*1.205,x2=side*1.175;
+  const d0=-WHEEL_RADIUS+2*WHEEL_RADIUS*i/steps,d1=-WHEEL_RADIUS+2*WHEEL_RADIUS*(i+1)/steps,y0=WHEEL_CENTER_Y+Math.sqrt(Math.max(0,WHEEL_RADIUS*WHEEL_RADIUS-d0*d0))+.045,y1=WHEEL_CENTER_Y+Math.sqrt(Math.max(0,WHEEL_RADIUS*WHEEL_RADIUS-d1*d1))+.045,x=side*1.205,x2=side*1.175;
   const a=[x,y0,center+d0],b=[x2,y0-.012,center+d0],c=[x2,y1-.012,center+d1],d=[x,y1,center+d1];out.push(...a,...b,...c,...a,...c,...d);
  }return mesh(out);
 }
@@ -416,7 +418,7 @@ function makeArchLine(center,side,width,offset=.012){
  const pts=[],steps=12;
  for(let i=0;i<=steps;i++){
   const z=center-.48+.96*i/steps,d=z-center;
-  const y=.465+Math.sqrt(Math.max(0,.455*.455-d*d))+.045;
+  const y=WHEEL_CENTER_Y+Math.sqrt(Math.max(0,WHEEL_RADIUS*WHEEL_RADIUS-d*d))+.045;
   pts.push([y,z,1.205+offset]);
  }
  return sideRibbon(side,pts,width);
@@ -960,9 +962,9 @@ function drawWorld(){
  drawCarMesh(doorSeamR,carX,carZ,[.025,.006,.018,1],yaw,0);
  // Raised wheel-arch overlays removed to leave the tyres unobstructed.
  // Four low-profile tyres with machined five-spoke alloy faces. Spin follows world travel.
- const wheelSpin=garageMode?0:distance/.455;
+ const wheelSpin=garageMode?0:distance/WHEEL_RADIUS;
  for(const side of [-1,1])for(const wz of [-1.6375,1.6375]){
-  const wx=1.105,wy=.465,tyreR=.455;
+  const wx=1.105,wy=WHEEL_CENTER_Y,tyreR=WHEEL_RADIUS;
   drawCarPart(carX,carZ,side*wx,wy,wz,tyreR,.145,tyreR,C.tire,yaw,wheel,1,wheelSpin);
   drawCarPart(carX,carZ,side*(wx+.128),wy,wz,.328,.020,.328,C.brake,yaw,wheelFace,1,wheelSpin);
   drawCarPart(carX,carZ,side*(wx+.148),wy,wz,.318,.018,.318,C.hub,yaw,wheelFace);
