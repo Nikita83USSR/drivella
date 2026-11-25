@@ -538,3 +538,8 @@ A backup of the complete BUILD 135 page is stored at `backups/index_BUILD135_bef
 **Headlight rendering policy:** BUILD 137 intentionally removes the dynamic world-space headlight lights from the WebGL path. The `calcHeadlightEnergy()` GLSL function, all headlight position/direction/intensity uniforms, their JavaScript bindings, per-mesh cone culling and Stage 2 uniform uploads are removed. H now only switches emissive lens brightness and a compact Canvas2D radial halo at the four real optical centres. The headlight halo is slightly larger than turn-signal/taillight halos but does not cast a beam on the road or run lighting calculations for each world fragment. This is a deliberate performance trade-off to restore the light-weight emissive treatment used in the earlier BUILD 102/103 phase. The general garage spotlights and solar/vehicle shadows remain independent and unchanged.
 
 The full BUILD 136 page is preserved at `backups/index_BUILD136_before_unified_headlamp_and_lighting_simplification_BUILD137.html`. BUILD 137 passed JavaScript syntax validation and source-level checks for removal of the old headlight shader references. Visual stow/deploy fit and real-device FPS still require an in-game check.
+
+
+### BUILD 138 — GLSL startup fix
+
+Removed an accidental closing brace after the fragment-shader varying declarations. The brace had been left behind when the previous build removed the per-fragment headlight-lighting function, causing WebGL to abort fragment-shader compilation at startup. No rendering or vehicle behavior was intentionally changed in this fix.
