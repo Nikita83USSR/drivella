@@ -2,7 +2,7 @@
 
 A browser-based synthwave drift-racing prototype with a custom low-poly 3D car, a procedural neon environment, and a hand-built WebGL renderer.
 
-> **Status:** Playable prototype under active development. Current renderer reference: **v0.18.95 / BUILD 161**.
+> **Status:** Playable prototype under active development. Current renderer reference: **v0.18.96 / BUILD 162**.
 > **Release identification:** every published game change increments the visible BUILD number in the HUD and startup screen; README and rendering architecture are updated in the same release.
 
 ## Current game
@@ -277,3 +277,8 @@ BUILD 159 is preserved at `backups/index_BUILD159_before_outward_occluder_halo_B
 BUILD 160 is preserved at `backups/index_BUILD160_before_inner_surface_solar_wrap_BUILD161.html`. Replace the exterior, away-facing halo with an interior surface light-wrap. The screen-space normal still comes from the negative scene-mask coverage gradient; the desired visible face points toward the sun, so use `dot(outward, toSun)`. Reuse the linearly filtered half-resolution scene mask and 5×5 Gaussian sample (radius 2.75) to estimate how far a pixel lies inside the silhouette: `inwardDistance = max(0, (-log(1 - blurredCoverage) - ln(2)) * 0.27)`. Multiply the centre coverage by `solarAuraEnergy(inwardDistance)` to confine a smooth gradient to the inside edge and fade it into the object's surface.
 
 The light's source direction is not reversed or remapped: evaluate `sourceRadialOffset = max(sourceDistance - 1, 0)` and pass this through the same `solarAuraEnergy`, `solarAuraColor` and `solarAuraPulse` used by the solar disc. Thus the hue and energy follow the same radial wavefront from the sun, while the inward edge falloff only deposits that light on the object's visible surface at the contact line. The active source region is limited to 1.98 sun radii, matching the sun shader's corona extent; no exterior halo or opposite-side glow is drawn. Reuse the existing mask and fullscreen composite; no new framebuffer, scene capture or render pass is added. JavaScript syntax and source invariants passed; GLSL runtime, in-game appearance and FPS require target-browser validation. Version `v0.18.95` / BUILD 161.
+
+
+### BUILD 162 — F4 solar-aura debug overlay
+
+BUILD 161 is preserved at `backups/index_BUILD161_before_sun_aura_debug_overlay_BUILD162.html`. Add an opt-in `sunAuraDebug` switch to the F4 effects panel, disabled by default. When enabled, reuse the existing full-scene half-resolution mask and fullscreen post composite to display an unmistakable diagnostic visualization of the actual inner-surface aura field: a bright contact band at the silhouette, repeated contour stripes that show the decay depth into the object, and a heat colour shifting from the solar hue at contact toward cyan farther inward. The debug shader is composited after the 3D world, so these marks remain visible over the occluding geometry. The existing foreground `#flare` canvas receives a source-center crosshair, labelled `SOURCE // SUN`, concentric radial falloff guides and outward arrowheads, all drawn after the scene and lens flares so the source and propagation direction are always visible in front of objects. No extra canvas, WebGL target, framebuffer or render pass is added; the mask and post composite are reused. The diagnostic is off by default and can be toggled in F4. JavaScript syntax and source invariants passed; GLSL runtime and target-browser appearance remain to be verified. Version `v0.18.96` / BUILD 162.
