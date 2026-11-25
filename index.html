@@ -118,9 +118,9 @@
 <body>
 <canvas id="scene"></canvas><canvas id="sun"></canvas><canvas id="flare"></canvas>
 <div id="hud">
- <div class="top"><div class="logo">DRIVELLA<small>3D SYNTHWAVE DRIFT RACING</small></div><div class="version-label" id="version-label">v0.18.80 · BUILD 146</div><div class="stat">DISTANCE<b id="distance">000.0 KM</b></div><div class="stat">LOCATION<b>VIOLET COAST</b></div></div>
+ <div class="top"><div class="logo">DRIVELLA<small>3D SYNTHWAVE DRIFT RACING</small></div><div class="version-label" id="version-label">v0.18.81 · BUILD 147</div><div class="stat">DISTANCE<b id="distance">000.0 KM</b></div><div class="stat">LOCATION<b>VIOLET COAST</b></div></div>
  <div class="right"><div id="speed">000 <span>KM/H</span></div><div id="direction">▶ FORWARD</div><div id="music">♫ MUSIC SCANNING…</div></div>
- <div class="bottom"><div class="hint"><strong>W / ↑</strong> ACCELERATE　<strong>S / ↓</strong> BRAKE / REVERSE<br><strong>A / ←　D / →</strong> STEER　<strong>SPACE</strong> HANDBRAKE　<strong>C</strong> CAMERA　<strong>HOLD + DRAG LMB</strong> LOOK　<strong>L</strong> LIGHTS　<strong>K</strong> WIREFRAME</div><div class="build-credit"><span>3D NEON HIGHWAY // BUILD 146</span><a class="asset-credit" href="https://sketchfab.com/3d-models/low-poly-lamborghini-countach-c9b28a4ad5c74649a09afa613dd3fae1" target="_blank" rel="noopener noreferrer">Original model: 3DShinobi · Sketchfab · CC BY · modified for DRIVELLA</a></div></div>
+ <div class="bottom"><div class="hint"><strong>W / ↑</strong> ACCELERATE　<strong>S / ↓</strong> BRAKE / REVERSE<br><strong>A / ←　D / →</strong> STEER　<strong>SPACE</strong> HANDBRAKE　<strong>C</strong> CAMERA　<strong>HOLD + DRAG LMB</strong> LOOK　<strong>L</strong> LIGHTS　<strong>K</strong> WIREFRAME</div><div class="build-credit"><span>3D NEON HIGHWAY // BUILD 147</span><a class="asset-credit" href="https://sketchfab.com/3d-models/low-poly-lamborghini-countach-c9b28a4ad5c74649a09afa613dd3fae1" target="_blank" rel="noopener noreferrer">Original model: 3DShinobi · Sketchfab · CC BY · modified for DRIVELLA</a></div></div>
 </div>
 <div id="fps-counter" aria-live="off">FPS --</div>
 <div id="effects-menu" aria-hidden="true">
@@ -173,7 +173,7 @@
 <script>
 (()=>{
 'use strict';
-const VERSION='v0.18.80',BUILD='146';
+const VERSION='v0.18.81',BUILD='147';
 const canvas=document.getElementById('scene'),gl=canvas.getContext('webgl',{antialias:true,alpha:true}),sun=document.getElementById('sun'),sctx=sun.getContext('2d'),flare=document.getElementById('flare'),fctx=flare.getContext('2d');
 const $=id=>document.getElementById(id);
 let countachModel=null,countachModelReady=false;
@@ -523,7 +523,7 @@ async function loadCountachModel(){
   const stream=new Blob([packed]).stream().pipeThrough(new DecompressionStream('deflate'));
   const raw=new Uint8Array(await new Response(stream).arrayBuffer());
   if(raw.byteLength!==meta.rawBytes)throw new Error('Нарушена целостность геометрии Countach');
-  const view=new DataView(raw.buffer,raw.byteOffset,raw.byteLength),model={wheelCenters:meta.wheelCenters};
+  const view=new DataView(raw.buffer,raw.byteOffset,raw.byteLength),model={wheelCenters:meta.wheelCenters},extractedHeadlampCaps={left:[],right:[]};
   const mirrorX=data=>{
    const mirrored=new Float32Array(data.length);
    for(let i=0;i<data.length;i+=9){
@@ -556,7 +556,12 @@ async function loadCountachModel(){
      const ax=Math.abs(p[0]);
      return ax>=.60&&ax<=1.12&&p[1]>=.63&&p[1]<=.86&&p[2]>=2.19&&p[2]<=2.46;
     });
-    if(oldTriangularHoodCap){removedOldHoodCaps++;continue;}
+    if(oldTriangularHoodCap){
+      removedOldHoodCaps++;
+      const capBuffer=triangle[0][0]<0?extractedHeadlampCaps.left:extractedHeadlampCaps.right;
+      for(const p of triangle)capBuffer.push(...p);
+      continue;
+     }
     // Remove only the two approved Countach front overlays: 48 triangles on each side.
     // Their verified panel lies on z=2.4561; all vertices stay inside the original lamp-frame bounds.
     const oldFrontHeadlampOverlay=part.name==='bodyPlastic'&&triangle.every(p=>
@@ -571,7 +576,13 @@ async function loadCountachModel(){
     for(const p of triangle){data[writeAt++]=p[0];data[writeAt++]=p[1];data[writeAt++]=p[2];}
    }
    const geometry=writeAt===data.length?data:data.slice(0,writeAt);
-   if(part.name==='bodyPaint')window.DRIVELLA_OLD_HOOD_CAP_TRIANGLES_REMOVED=removedOldHoodCaps;
+   if(part.name==='bodyPaint'){
+    window.DRIVELLA_OLD_HOOD_CAP_TRIANGLES_REMOVED=removedOldHoodCaps;
+    if(removedOldHoodCaps!==58||extractedHeadlampCaps.left.length!==261||extractedHeadlampCaps.right.length!==261)throw new Error('Не удалось извлечь точные панели pop-up фар Countach');
+    model.movingLampCapL=mesh(new Float32Array(extractedHeadlampCaps.left));
+    model.movingLampCapR=mesh(new Float32Array(extractedHeadlampCaps.right));
+    window.DRIVELLA_MOVING_HEADLAMP_CAP_TRIANGLES={left:29,right:29};
+   }
    if(part.name==='bodyPlastic')window.DRIVELLA_OLD_FRONT_HEADLAMP_OVERLAYS_REMOVED=removedOldFrontOverlays;
    model[part.name]=mesh(geometry);
    if(part.name==='bodyBlack'){
@@ -1034,6 +1045,18 @@ function countachClosedHeadlampTransform(side){
  );
  return matMul(hinge,mount);
 }
+function invertCountachAffine(m){
+ const a=m[0],b=m[4],c=m[8],d=m[1],e=m[5],f=m[9],g=m[2],h=m[6],i=m[10];
+ const det=a*(e*i-f*h)-b*(d*i-f*g)+c*(d*h-e*g);
+ if(Math.abs(det)<1e-9)throw new Error('Вырожденная матрица крепления pop-up фары');
+ const ia=(e*i-f*h)/det,ib=(c*h-b*i)/det,ic=(b*f-c*e)/det;
+ const id=(f*g-d*i)/det,ie=(a*i-c*g)/det,iff=(c*d-a*f)/det;
+ const ig=(d*h-e*g)/det,ih=(b*g-a*h)/det,ii=(a*e-b*d)/det;
+ return [ia,id,ig,0,ib,ie,ih,0,ic,iff,ii,0,
+  -(ia*m[12]+ib*m[13]+ic*m[14]),-(id*m[12]+ie*m[13]+iff*m[14]),-(ig*m[12]+ih*m[13]+ii*m[14]),1];
+}
+const countachClosedHeadlampInverseL=invertCountachAffine(countachClosedHeadlampTransform(-1));
+const countachClosedHeadlampInverseR=invertCountachAffine(countachClosedHeadlampTransform(1));
 function transformCountachLampPoint(m,p){
  return [
   m[0]*p[0]+m[4]*p[1]+m[8]*p[2]+m[12],
@@ -1056,11 +1079,8 @@ function makeLampTrianglePod(side){
  pushLampQuad(out,A0,A1,B1,B0);
  return mesh(out);
 }
-const POP_LAMP_CAP_REAR_EXTENSION=.060;
 function makeLampCap(side){
- // Extend only the rear skin edge; it remains one mesh on the existing shared Countach hinge/mount.
- const rearZ=POP_LAMP_Z_REAR-POP_LAMP_CAP_REAR_EXTENSION;
- const outline=[[side*.423,rearZ],[side*.877,rearZ],[side*.905,rearZ+.028],[side*.905,POP_LAMP_Z_FRONT-.028],[side*.877,POP_LAMP_Z_FRONT],[side*.423,POP_LAMP_Z_FRONT],[side*.395,POP_LAMP_Z_FRONT-.028],[side*.395,rearZ+.028]];
+ const outline=[[side*.423,POP_LAMP_Z_REAR],[side*.877,POP_LAMP_Z_REAR],[side*.905,POP_LAMP_Z_REAR+.028],[side*.905,POP_LAMP_Z_FRONT-.028],[side*.877,POP_LAMP_Z_FRONT],[side*.423,POP_LAMP_Z_FRONT],[side*.395,POP_LAMP_Z_FRONT-.028],[side*.395,POP_LAMP_Z_REAR+.028]];
  // Fit the cap against the real stowed transform, including the mount's X/Z scaling.
  const closedTransform=countachClosedHeadlampTransform(side);
  const fittedY=(x,z)=>{
@@ -1475,14 +1495,17 @@ function drawCountachLegacyHeadlampAssembly(side,cx,cz,color,yaw=0){
  const lens=side<0?popLampLensL:popLampLensR;
  const rings=side<0?popLampRingsL:popLampRingsR;
  const core=side<0?popLampCoreL:popLampCoreR;
- const cap=side<0?popLampCapL:popLampCapR;
+ const cap=side<0?countachModel.movingLampCapL:countachModel.movingLampCapR;
+ const capInverse=side<0?countachClosedHeadlampInverseL:countachClosedHeadlampInverseR;
  bindMesh(housing,model,[.035,.043,.055,1],1,1,true,true);
  bindMesh(front,model,[.012,.022,.038,1],1,1,false,true);
  bindMesh(bezel,model,[.52,.56,.66,1],1,2,false,true);
  bindMesh(lens,model,[.045,.115,.17,1],1,3,false,true);
  bindMesh(rings,model,[.70,.78,.90,1],1,2,false,true);
  bindMesh(core,model,color,1,8,false,true);
- bindMesh(cap,model,C.bodyLight,1,PAINT_MATERIAL,true,true);
+ // The extracted source cap is in body coordinates; undo its stowed transform at rest,
+ // then reapply the live pod transform so the original panel follows the existing hinge exactly.
+ bindMesh(cap,matMul(model,capInverse),C.bodyLight,1,PAINT_MATERIAL,true,true);
 }
 
 function matIdentity(){return [1,0,0,0,0,1,0,0,0,0,1,0,0,0,0,1];}
