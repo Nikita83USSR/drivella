@@ -63,14 +63,14 @@ try {
   assert(pageErrors.length === 0, 'Browser page errors: ' + pageErrors.join('\n'));
   console.log('ALL SHADER REGRESSION CHECKS PASSED');
   const metaScript = await readFile('assets/countach_model_0.js', 'utf8');
-  const metaMatch = metaScript.match(/window\\.DRIVELLA_COUNTACH_META=(\\{[\\s\\S]*?\\});/);
+  const metaMatch = metaScript.match(/window\.DRIVELLA_COUNTACH_META=(\{[\s\S]*?\});/);
   assert(metaMatch, 'Countach metadata JSON was not found');
   const modelMeta = JSON.parse(metaMatch[1]);
   const chunkNames = ['0a','0b','0c','0d','1','2','3a','3b','3c','3d'];
   let encodedModel = '';
   for (const chunk of chunkNames) {
     const source = await readFile('assets/countach_model_' + chunk + '.js', 'utf8');
-    const part = source.match(/window\\.DRIVELLA_COUNTACH_DATA\\+='([^']+)'/);
+    const part = source.match(/window\.DRIVELLA_COUNTACH_DATA\+='([^']+)'/);
     assert(part, 'Countach geometry chunk is missing: ' + chunk);
     encodedModel += part[1];
   }
