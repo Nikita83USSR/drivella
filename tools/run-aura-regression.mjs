@@ -57,7 +57,7 @@ try {
   await page.goto(baseUrl + '/tools/game-shader-compile.html', { waitUntil: 'load', timeout: 20000 });
   await page.waitForFunction(() => Boolean(window.__GAME_SHADER_RESULT__), null, { timeout: 20000 });
   const result = await page.evaluate(() => window.__GAME_SHADER_RESULT__);
-  await page.screenshot({ path: 'artifacts/god-rays-build189-thresholded-scene-bloom.png', fullPage: true });
+  await page.screenshot({ path: 'artifacts/god-rays-build190-thresholded-scene-bloom.png', fullPage: true });
   console.log('PRODUCTION SCENE BLOOM + GOD RAYS + GARAGE SHOWROOM + SHADER + VEHICLE REGRESSION\n' + JSON.stringify(result, null, 2));
   assert(result.pass, 'Production shader regression failed: ' + JSON.stringify(result));
   assert(pageErrors.length === 0, 'Browser page errors: ' + pageErrors.join('\n'));
