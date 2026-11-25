@@ -158,3 +158,8 @@ The original seven-part dual-projector pop-up lamp assembly (wedge housing, fron
 ### BUILD 140 — Countach lamp seating and source-optic suppression
 
 Lower the complete restored seven-part headlamp module by 0.0206 game units (about 2 cm) so the closed painted cap sits closer to the imported bonnet. The same mount matrix continues to drive the housing, front plate, bezel, lens, projector rings, cores, cap and flare positions; the hinge axis and easing are unchanged. The importer now explicitly skips the source model's `headlampR` and `headlampL` meshes so the old fixed optics cannot be reintroduced above the replacement module. Version `v0.18.74` / `BUILD 140`. Source-level JavaScript syntax validation passed; visual seating still needs an in-game check.
+
+
+### BUILD 141 — Remove legacy triangular hood lamp covers
+
+Removed only the two disconnected triangular painted hood-cap shells from the imported Countach `bodyPaint` mesh. The loader filters triangles by their verified vertex-space bounds; the two shells contain 29 triangles each (58 total). The independent black/plastic hood meshes, Countach body shell, restored DRIVELLA seven-part pop-up headlamp assemblies, shared hinge, and lens flares are not modified. Version `v0.18.75` / `BUILD 141`.
