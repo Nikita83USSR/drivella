@@ -71,7 +71,6 @@ try {
   assert(runtimeLampCheck.build.includes('v0.19.17')&&runtimeLampCheck.build.includes('BUILD 183'),'Production game did not load BUILD 183: '+JSON.stringify(runtimeLampCheck));
   assert(runtimeLampCheck.rearSignals?.left===2&&runtimeLampCheck.rearSignals?.right===2,'Runtime failed to create both rear signal meshes: '+JSON.stringify(runtimeLampCheck));
   assert(gameErrors.length===0,'Production game runtime errors: '+gameErrors.join('\\n'));
-  await gamePage.screenshot({path:'artifacts/vehicle-lamps-build183.png',fullPage:true});
   console.log('PRODUCTION GAME RUNTIME // '+JSON.stringify(runtimeLampCheck));
   const metaScript = await readFile('assets/countach_model_0.js', 'utf8');
   const metaMatch = metaScript.match(/window\.DRIVELLA_COUNTACH_META=(\{[\s\S]*?\});/);
