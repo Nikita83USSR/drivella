@@ -395,3 +395,43 @@ Drift handling has its own persistent state:
 - Lateral velocity is limited to `0.60 × forward speed`. The HUD retains the DRIFT state after the handbrake is released; F3 exposes lock state, slip angle and yaw rate for handling diagnostics.
 
 Keep ordinary steering and drift recovery as separate response paths. Do not reintroduce a hard bound on `carYaw`; tune yaw response, rear grip, and countersteer recovery instead. BUILD 131 is `v0.18.65` / `BUILD 131`.
+
+
+
+## Vehicle movement and NFS-style drift model — BUILD 132
+
+The car is simulated in its own horizontal body frame. `speed / 3.6` is longitudinal velocity (V_{long}) along the nose; `lateralVelocity` is transverse velocity (V_{lat}), positive toward the car's local right side. The slip angle is:
+
+`slipAngle = atan2(Vlat, max(2, abs(Vlong)))`
+
+The front-axle lateral demand is derived from the actual speed-sensitive steering angle and the 3.275 m wheelbase, capped at 10.5 m/s². It follows the steered front wheels. Rear-axle lateral damping is selected by a four-state controller:
+
+| State | Rear lateral damping | Behaviour |
+|---|---:|---|
+| GRIP | 9.0 | Both axles hold the line; slip is removed quickly |
+| INITIATION | 0.12 | A brief yaw impulse and almost-free rear axle break traction |
+| DRIFT | 0.24 | Front steering controls the nose while the tail slides outward |
+| RECOVERY | 0.24 → 10.0 over 0.38 s | Rear grip returns progressively while the nose aligns with the velocity vector |
+
+### State transitions and driver inputs
+
+- **Initiation:** a SPACE key-down produces one 160 ms handbrake pulse; with steering at speed it starts an initiation and a yaw impulse. A sharp steering input above the lateral-demand threshold or braking while turning can also initiate the slide. Holding SPACE does not hold the rear axle permanently locked.
+- **Sustained drift:** once slip exceeds 7° after the initiation phase, the state latches into DRIFT. Releasing SPACE does not end it. Steering in the direction of the current rotation adds yaw and increases the slip; opposite steering adds countersteer authority and reduces the angle.
+- **Auto-countersteer:** when the player releases the steering key, a softer slip-angle alignment term turns the nose toward the velocity vector. This lets the car continue sliding along an arc before grip is restored, rather than snapping straight or spinning indefinitely.
+- **Transition:** while countersteering, if the slip angle crosses through neutral and continues to the other side, the controller starts a new initiation in the opposite direction. Releasing countersteer near neutral instead allows Recovery to complete.
+- **Recovery:** with the steering released, or after the driver has reduced slip below 11°, rear damping rises to grip level over 0.38 s. GRIP is restored when slip is below 10° and yaw rate is below 0.28 rad/s; a 1.2 s failsafe prevents a stuck recovery state. Slip above 76° or speed below 10.5 m/s also forces recovery. Yaw acceleration is progressively reduced as slip approaches 60°.
+- **Pedals:** engine acceleration acts on (V_{long}), so throttle pushes along the vehicle's nose even when the velocity vector points elsewhere. Drift drag rises with slip when the driver lifts. The normal brake adds front load and a yaw impulse while steering, making brake-turn initiation possible. A no-steer handbrake tap during DRIFT adds a short lateral velocity impulse without forcing a new nose angle.
+
+### World-space integration
+
+The body-frame velocities are rotated by the current, unbounded `carYaw` to obtain one world velocity:
+
+`VworldX = Vlong·sin(yaw) + Vlat·cos(yaw)`
+
+`VworldZ = Vlong·cos(yaw) − Vlat·sin(yaw)`
+
+Both world coordinates are integrated from this same vector using `WORLD_MOTION_SCALE = 0.432`. The previous implementation advanced world Z from scalar throttle speed regardless of vehicle heading; do not reintroduce that split. A 360° rotation now carries the car around the corresponding world-space arc instead of leaving its trajectory pointed down the original road axis.
+
+`distance` is the car's world-Z track coordinate and may decrease when it travels backward. `travelDistance` is the non-decreasing odometer accumulated from the world-velocity magnitude. `wheelTravel` integrates longitudinal body travel and drives the rolling angle of all four wheels. The speedometer and engine/skid audio use the magnitude of the complete velocity vector, not just its longitudinal projection.
+
+Keep the four-state drift controller, body-frame velocity and shared X/Z world integration together. Vehicle rendering, headlights, shadows and chase camera continue to use the same `carYaw` heading. BUILD 132 is `v0.18.66` / `BUILD 132`.
