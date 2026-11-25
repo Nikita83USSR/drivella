@@ -381,3 +381,17 @@ The side-glass upper corners move to `y=1.209`, `z=0.270` at the front and `z=-1
 BUILD 129 aligned the body-side window openings and moved the upper glass corners under the raised roof, but the `makeCarHull()` call still limited the original body-roof cut to `[-1.42, 0.275]`, the length of the roof panel alone. The windshield and rear screen extend beyond those stations down to their lower corners (`z=0.945` and `z=-1.6375`). Consequently, the original body hull still emitted roof strips in the front and rear glazing spans. Those leftover body polygons could appear through or beside the end glass, with the asymmetry most noticeable at the left edge.
 
 BUILD 130 changes the `roofOpening` argument to `[CABIN_GLASS_REAR_BOTTOM_Z, CABIN_GLASS_FRONT_BOTTOM_Z]`, covering the complete cabin and both windscreen footprints. The existing `makeCarHull()` roof-strip removal for both top halves (`j=6` and `j=7`) now suppresses every longitudinal roof segment beneath the side glazing, windshield, rear screen, and raised roof. The front and rear glass remain the visible closure surfaces; the hood and rear deck outside their lower edges are retained. The raised roof mesh itself, planar side windows, and BUILD 129 body-to-side-glass fit are unchanged. BUILD 130 is `v0.18.64` / `BUILD 130`.
+
+
+## Driving physics — full rotation and persistent arcade drift (BUILD 131)
+
+The vehicle heading `carYaw` is an accumulated angle, not a steering-angle clamp. Do not clamp it to a small range: `drawWorld()`, the vehicle transforms, shadow focus and lamp transforms all consume the same heading, and the rotation matrices handle angles beyond (2\pi). The yaw-rate ceiling is `±2.4 rad/s`; ordinary steering still uses `getSteeringAngle()` and its speed-sensitive response. SPACE with a steering direction adds a short yaw impulse, allowing a deliberate 360° spin while the player holds the turn.
+
+Drift handling has its own persistent state:
+- `driftLocked` becomes active when SPACE and steering are applied above roughly 29 km/h, or when a high-speed slide exceeds the natural-drift threshold.
+- `driftDirection` stores the turn direction that initiated the slide. Releasing SPACE or the steering key does not clear the lock.
+- While locked, rear lateral grip is deliberately low (`0.36`); applying the opposite steering direction is treated as countersteer and raises grip to `5.2`. Countersteer authority scales down as the slip angle approaches neutral, avoiding a violent snap into an opposite spin.
+- The lock ends after countersteer recentres or slightly crosses the slip angle, or when speed falls below the low-speed threshold. A `0.75 s` re-arm cooldown prevents the same recovery input from instantly creating a second automatic drift.
+- Lateral velocity is limited to `0.60 × forward speed`. The HUD retains the DRIFT state after the handbrake is released; F3 exposes lock state, slip angle and yaw rate for handling diagnostics.
+
+Keep ordinary steering and drift recovery as separate response paths. Do not reintroduce a hard bound on `carYaw`; tune yaw response, rear grip, and countersteer recovery instead. BUILD 131 is `v0.18.65` / `BUILD 131`.
