@@ -27,7 +27,7 @@ const response=await fetch('../index.html',{cache:'no-store'});
 must(response.ok,'Cannot fetch production index.html: HTTP '+response.status);
 const html=await response.text();
 const version=html.match(/const VERSION='([^']+)',BUILD='([^']+)'/);
-must(version&&version[1]==='v0.19.02'&&version[2]==='168','Unexpected production version marker: '+JSON.stringify(version));
+must(version&&version[1]==='v0.19.03'&&version[2]==='169','Unexpected production version marker: '+JSON.stringify(version));
 function expression(name,endMarker){
  const marker='const '+name+'=';
  const start=html.indexOf(marker);
@@ -179,7 +179,7 @@ gl.finish();
 const bloomPixels=new Uint8Array(W*H*4);gl.readPixels(0,0,W,H,gl.RGBA,gl.UNSIGNED_BYTE,bloomPixels);
 function sampleBloom(x,y){const offset=((H-1-y)*W+x)*4;return Array.from(bloomPixels.slice(offset,offset+4));}
 const bloomProbes={
- deepInterior:sampleBloom(430,270),
+ deepInterior:sampleBloom(440,270),
  innerMid:sampleBloom(450,270),
  sunwardInnerEdge:sampleBloom(462,270),
  justOutside:sampleBloom(470,270),
