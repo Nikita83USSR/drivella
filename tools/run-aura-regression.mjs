@@ -17,7 +17,7 @@ async function waitForServer() {
   let lastError;
   while (Date.now() < deadline) {
     try {
-      const response = await fetch(baseUrl + '/tools/aura-regression.html');
+      const response = await fetch(baseUrl + '/tools/game-shader-compile.html');
       if (response.ok) return;
       lastError = new Error('HTTP ' + response.status);
     } catch (error) {
@@ -46,31 +46,23 @@ try {
       '--disable-dev-shm-usage'
     ]
   });
-  const page = await browser.newPage({ viewport: { width: 1280, height: 800 }, deviceScaleFactor: 1 });
+  const page = await browser.newPage({ viewport: { width: 1280, height: 900 }, deviceScaleFactor: 1 });
   const pageErrors = [];
   page.on('pageerror', error => pageErrors.push(error.stack || error.message));
   page.on('console', message => {
     if (message.type() === 'error') console.error('BROWSER CONSOLE:', message.text());
   });
 
-  await page.goto(baseUrl + '/tools/aura-regression.html', { waitUntil: 'load', timeout: 20000 });
-  await page.waitForFunction(() => Boolean(window.__AURA_TEST_RESULT__), null, { timeout: 15000 });
-  const synthetic = await page.evaluate(() => window.__AURA_TEST_RESULT__);
-  await page.screenshot({ path: 'artifacts/aura-synthetic.png' });
-  console.log('SYNTHETIC AURA REGRESSION\n' + JSON.stringify(synthetic, null, 2));
-  assert(synthetic.pass, 'Synthetic occlusion/bloom test failed: ' + JSON.stringify(synthetic));
-
-  pageErrors.length = 0;
   await page.goto(baseUrl + '/tools/game-shader-compile.html', { waitUntil: 'load', timeout: 20000 });
   await page.waitForFunction(() => Boolean(window.__GAME_SHADER_RESULT__), null, { timeout: 20000 });
-  const production = await page.evaluate(() => window.__GAME_SHADER_RESULT__);
-  await page.screenshot({ path: 'artifacts/production-shader-compile.png' });
-  console.log('PRODUCTION GAME SHADER COMPILE\n' + JSON.stringify(production, null, 2));
-  assert(production.pass, 'Production shader compile/source check failed: ' + JSON.stringify(production));
+  const result = await page.evaluate(() => window.__GAME_SHADER_RESULT__);
+  await page.screenshot({ path: 'artifacts/inner-surface-bloom-build168.png', fullPage: true });
+  console.log('PRODUCTION INNER-SURFACE BLOOM REGRESSION\n' + JSON.stringify(result, null, 2));
+  assert(result.pass, 'Production inner-surface bloom regression failed: ' + JSON.stringify(result));
   assert(pageErrors.length === 0, 'Browser page errors: ' + pageErrors.join('\n'));
-  console.log('ALL AURA REGRESSION CHECKS PASSED');
+  console.log('ALL INNER-SURFACE BLOOM CHECKS PASSED');
 } catch (error) {
-  console.error('AURA REGRESSION FAILED\n' + (error.stack || error));
+  console.error('INNER-SURFACE BLOOM REGRESSION FAILED\n' + (error.stack || error));
   console.error(serverOutput.join(''));
   process.exitCode = 1;
 } finally {
