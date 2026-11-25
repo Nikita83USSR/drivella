@@ -65,9 +65,9 @@ try {
   const gamePageErrors = [];
   gamePage.on('pageerror', error => gamePageErrors.push(error.stack || error.message));
   await gamePage.goto(baseUrl + '/index.html', { waitUntil: 'domcontentloaded', timeout: 25000 });
-  await gamePage.waitForFunction(() => typeof countachModelReady !== 'undefined' && countachModelReady && Boolean(window.DRIVELLA_COUNTACH_GEOMETRY_BOUNDS), null, { timeout: 25000 });
-  const modelGeometry = await gamePage.evaluate(() => ({ ready: typeof countachModelReady !== 'undefined' && countachModelReady, bounds: window.DRIVELLA_COUNTACH_GEOMETRY_BOUNDS }));
-  assert(modelGeometry.ready, 'Imported Countach geometry did not finish loading');
+  await gamePage.waitForFunction(() => Boolean(window.DRIVELLA_COUNTACH_GEOMETRY_BOUNDS || window.DRIVELLA_COUNTACH_MODEL_ERROR), null, { timeout: 25000 });
+  const modelGeometry = await gamePage.evaluate(() => ({ ready: typeof countachModelReady !== 'undefined' && countachModelReady, bounds: window.DRIVELLA_COUNTACH_GEOMETRY_BOUNDS, error: window.DRIVELLA_COUNTACH_MODEL_ERROR, status: document.getElementById('boot-status')?.textContent }));
+  assert(modelGeometry.ready, 'Imported Countach geometry failed: ' + (modelGeometry.error || modelGeometry.status || 'no load status'));
   assert(gamePageErrors.length === 0, 'Game startup page errors: ' + gamePageErrors.join('\\n'));
   console.log('COUNTACH MODEL PART BOUNDS\\n' + JSON.stringify(modelGeometry.bounds, null, 2));
   await gamePage.close();
