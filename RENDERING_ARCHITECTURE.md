@@ -1,6 +1,6 @@
 # DRIVELLA — Rendering Architecture
 
-Current reference: **v0.18.96 / BUILD 162**  
+Current reference: **v0.18.97 / BUILD 163**  
 Main renderer: `index.html` — custom WebGL 1 renderer, no external rendering engine.
 
 **Release marker policy:** every published renderer/game change increments `BUILD` in `index.html` and updates the visible HUD, boot screen, README, and this document in the same release. Increment the patch version with the build when appropriate. Never publish a renderer change while leaving the visible build number unchanged.
@@ -681,3 +681,8 @@ Estimate inner distance from the silhouette from the existing linearly filtered 
 BUILD 161 is preserved at `backups/index_BUILD161_before_sun_aura_debug_overlay_BUILD162.html`. Introduce an opt-in `FX.sunAuraDebug` switch in the F4 effects menu. When active, it forces the existing half-resolution scene-mask capture even when normal sun wrap is disabled, but it reuses the existing AO target and fullscreen outline composite. A new `uSunAuraDebug` shader uniform enables an overlay based on the exact inner-wrap quantities: scene coverage, the 5×5 Gaussian estimate of inward distance, source radial energy and source-facing normal. The contact edge is highlighted; repeated contour stripes encode the direction and depth of attenuation into the object's surface; a warm-to-cyan colour ramp makes the decrease visible. As part of the post composite, this diagnostic layer is drawn after the 3D world and is not occluded by the object being inspected.
 
 The existing `#flare` Canvas2D overlay draws a sun-center crosshair and `SOURCE // SUN` label, concentric radial guide rings, 16 outward arrows and a `RAYS → DECAY` legend. The overlay is drawn after the scene and optical flares, therefore it remains in the foreground. This adds no canvas, texture, framebuffer, scene capture or render pass. The default remains off. JavaScript syntax/source invariants pass; WebGL shader compilation and visual inspection must be confirmed in the target browser. Version `v0.18.96` / BUILD 162.
+
+
+### BUILD 163 — Object-surface aura diagnostics
+
+The F4 aura test is now object-only. Remove the BUILD 162 `#flare` overlay that drew circles and outward arrows around the sun. The diagnostic shader now renders a bright contact edge on the sun-facing silhouette, repeated chevrons pointing along the inward screen-space direction, and contour bands fading from warm at contact toward cyan deeper inside the occluding geometry. A high-intensity contact marker identifies the source edge on the object itself. The overlay remains part of the existing fullscreen post composite, after the 3D scene and depth test; the normal solar-disc aura is unchanged. No canvas, texture, framebuffer or render pass is added. The test remains disabled by default. JavaScript parsing and source invariants pass; target-browser GLSL compilation and visual inspection remain outstanding. Version `v0.18.97` / BUILD 163.
