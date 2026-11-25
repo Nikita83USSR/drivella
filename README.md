@@ -2,7 +2,7 @@
 
 A browser-based synthwave drift-racing prototype with a custom low-poly 3D car, a procedural neon environment, and a hand-built WebGL renderer.
 
-> **Status:** Playable prototype under active development. Current renderer reference: **v0.19.19 / BUILD 185**.
+> **Status:** Playable prototype under active development. Current renderer reference: **v0.19.20 / BUILD 186**.
 > **Release identification:** every published game change increments the visible BUILD number in the HUD and startup screen; README and rendering architecture are updated in the same release.
 
 ## Current game
@@ -12,6 +12,7 @@ A browser-based synthwave drift-racing prototype with a custom low-poly 3D car, 
 - **BUILD 117:** add an interactive **F4 Visual Effects** panel with independent toggles for car ink outlines, SSAO, wireframe, solar/world shadows, vehicle self-shadows, glass reflections, paint highlights, lamp emission, pop-up headlights, headlight illumination, garage spotlights and their shadows, the sunset disc, vehicle lens flares, underglow and tyre-contact shadows. Settings apply immediately; existing `K`, `L` and `H` shortcuts stay synchronized with the panel.
 - **BUILD 118:** reduce the vehicle self-shadow receiver map from 2048² to 1024² and render it from vehicle detail casters only; the road grid, biome and environment meshes are skipped during this secondary pass. The F4 self-shadow checkbox now truly skips receiver-map allocation/rendering when off. This removes the redundant full-scene 2048² pass that had become a major frame-time cost. The main 2048² world-shadow map remains unchanged.
 - **BUILD 119:** add F3 pass profiling. CPU timings are recorded for shadow generation, main world rendering, post-processing (SSAO/ink outlines), and total JavaScript frame work. When the browser exposes `EXT_disjoint_timer_query`, asynchronous GPU timings for the same three render passes are shown; unavailable GPU timer support is reported rather than blocking the frame.
+- **BUILD 186:** add depth-aware solar God Rays. The quarter-resolution WebGL pass samples the existing half-resolution visible-scene mask along 24 radial steps toward the GPU sun; solid foreground geometry blocks the destination and attenuates rays behind occluders. The effect has an independent F4 toggle and appears in F3 diagnostics. GLSL/pixel regression verifies the synthetic occlusion case; visual balance and GTX 1650 frame-time still require in-game validation.
 - **BUILD 184:** add a restrained four-ray cross flare to each deployed Countach pop-up headlight. The rays are projected from the same hinge- and side-mount-transformed projector centres as the headlight glow, so the cross follows the lamp as it opens. The larger upper-headlight anamorphic streak, broad diffraction and lens ghosts remain disabled.
 - **BUILD 183:** reposition the Countach rear lamp optical effects to the imported `bodyTail` lens bars. The red source lenses retain brake-responsive brightness; the outer rear bar on each side receives a separate amber turn-signal overlay. Move front turn indicators to the two existing outboard lower-bumper lamp pads; the inner pair remains white auxiliary lamps. The Canvas 2D flare sources use the same measured lamp centres. No body, bumper or source-model geometry is edited.
 - Custom WebGL 1 renderer for the 3D vehicle, road, garage, and procedural environments.
@@ -84,9 +85,21 @@ Core implementation completed: adaptive directional shadows, PCSS-style filterin
 - [x] Build a reusable four-slot local-light shader and use it for the two coloured garage spotlights.
 - [x] Bind outdoor shadows to the actual sun source and garage spot shadows to each fixture's own position, direction and cone; isolate vehicle self-shadow receivers from the main car shell.
 - [x] Make environment reflections clearly visible on the windshield, rear glass and side glazing.
-- [~] **Stage 2 / item 1: smooth GPU sun aura and disc-localized light wrap (BUILD 149–154).** BUILD 154 removes the plasma ribbons and narrow yellow ring. The disc now has a continuous multi-layer warm glow: orange close to the sun, coral through the middle and magenta farther out, with only a slow overall pulse. The object light-wrap uses three spatial scales to create a wider, softer transition along silhouettes crossing the disc instead of a thin yellow stripe. It reuses the existing scene mask and one bounded sun draw call. Check shader compilation, visual balance and FPS in-game before depth-aware god rays.
-- [ ] **Depth-aware mini-RTX god rays.** Generate sun shafts from a low-resolution scene-occlusion mask so buildings, mountains and palms interrupt the rays; use bounded radial scattering at quarter resolution.
-- [ ] **GPU bloom and lens optics.** Add controlled thresholded bloom, anamorphic streaks, diffraction spikes, optical rings and chromatic ghosts; migrate current Canvas 2D vehicle flare profiles without restoring oversized headlight glare.
+- [~] **Stage 2 / item 1: smooth GPU sun aura and disc-localized light wrap (BUILD 149–154).** BUILD 154 removes the plasma ribbons and narrow yellow ring. The disc now has a continuous multi-layer warm glow: orange close to the sun, coral through the middle and magenta farther out, with only a slow overall pulse. The object light-wrap uses three spatial scales to create a wider, softer transition along silhouettes crossing the disc instead of a thin yellow stripe. It reuses the existing scene mask and one bounded sun draw call. Target-browser visual balance and FPS validation remain part of final sign-off.
+- [ ] **Add selected local lights to track and environment props**, using the shared four-slot source format.
+- [ ] Improve painted-body and road reflections beyond the procedural glass environment.
+- [ ] Add instanced rendering for repeated road markings, lamps, vegetation and environment props to reduce CPU draw-call overhead across normal, shadow and AO passes.
+- [ ] Move high-count particle simulation to GPU only when effects and profiling justify it; keep vehicle physics and gameplay state on CPU.
+
+### Stage 3 — Atmosphere and cinematic lighting
+
+- [~] **Depth-aware solar God Rays — BUILD 186.** Screen-space radial scattering at 25% width/height resolution, using 24 samples through the existing half-resolution scene-visibility mask. Foreground geometry blocks the visible destination and reduces shafts behind occluders. F4 toggle is independent of Sun Bloom; F3 reports the active state. Automated WebGL shader and synthetic-occluder pixel validation is being added; visual quality and GTX 1650 frame-time still need in-game confirmation.
+- [ ] **Thresholded GPU Bloom and glare.** Extract bright regions from the scene at reduced resolution and create controlled multi-scale glow for the sun, lamps and selected neon without washing out the image.
+- [ ] **GPU lens optics.** Move vehicle flare streaks, diffraction spikes, rings and chromatic ghosts from Canvas 2D to shader compositing, preserving source-specific behaviour and compact headlight effects.
+- [ ] **Atmospheric integration and final grading.** Add depth-aware distance/horizon scattering and a restrained final colour grade while preserving readable road/car contrast and the synthwave palette.
+
+### Rendering and performance work
+ Add controlled thresholded bloom, anamorphic streaks, diffraction spikes, optical rings and chromatic ghosts; migrate current Canvas 2D vehicle flare profiles without restoring oversized headlight glare.
 - [ ] **Atmospheric scattering and final grading.** Add depth-aware horizon haze and atmospheric light integration while preserving road/car readability and the synthwave palette.
 - [ ] Add selected local lights to track and environment props, using the shared four-slot source format.
 - [ ] Improve painted-body and road reflections beyond the procedural glass environment.
