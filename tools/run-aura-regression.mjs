@@ -55,8 +55,9 @@ try {
   });
 
   await page.goto(baseUrl + '/tools/game-shader-compile.html', { waitUntil: 'load', timeout: 20000 });
-  await page.waitForFunction(() => Boolean(window.__GAME_SHADER_RESULT__), null, { timeout: 20000 });
+  await page.waitForFunction(() => Boolean(window.__GAME_SHADER_RESULT__) || document.title.startsWith('FAIL'), null, { timeout: 60000 });
   const result = await page.evaluate(() => window.__GAME_SHADER_RESULT__);
+  assert(result, 'Browser test page reported failure without a result object: ' + await page.title());
   await page.screenshot({ path: 'artifacts/showroom-instancing-build195-regression.png', fullPage: true });
   console.log('PRODUCTION SHOWROOM + BIOME + ROAD INSTANCING + ATMOSPHERE + GPU LENS OPTICS + SCENE BLOOM + GOD RAYS + VEHICLE REGRESSION\n' + JSON.stringify(result, null, 2));
   assert(result.pass, 'Production shader regression failed: ' + JSON.stringify(result));
