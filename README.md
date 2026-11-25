@@ -2,7 +2,7 @@
 
 A browser-based synthwave drift-racing prototype with a custom low-poly 3D car, a procedural neon environment, and a hand-built WebGL renderer.
 
-> **Status:** Playable prototype under active development. Current renderer reference: **v0.18.91 / BUILD 157**.
+> **Status:** Playable prototype under active development. Current renderer reference: **v0.18.92 / BUILD 158**.
 > **Release identification:** every published game change increments the visible BUILD number in the HUD and startup screen; README and rendering architecture are updated in the same release.
 
 ## Current game
@@ -251,3 +251,10 @@ Replace the axis-aligned 3/4-sample silhouette gradients with a circular 12-tap 
 BUILD 156 is preserved at `backups/index_BUILD156_before_soft_solar_bloom_BUILD157.html`. Increase the radial sun aura to three overlapping exponential falloffs with a stronger warm inner bloom and a broad magenta outer haze. Keep the aura in the same bounded GPU sun draw, behind opaque scene geometry; preserve the striped disc, pulse, and Canvas2D fallback.
 
 Replace the prior 12-point ring-contrast detector with a two-scale circular blur field over the existing half-resolution scene mask. Each scale samples 16 evenly spaced directions; the filtered coverage difference between the centre and blurred neighbourhood forms a soft silhouette band. The vector sum of the same circular samples estimates the edge's outward direction so the wrap is stronger on source-facing edges. The result is still an image-space approximation, not physical light transport. No new framebuffer, scene capture, or fullscreen pass is added, but the active sun region now has 32 mask samples per output pixel; compare in-game F3 post GPU timing and FPS. JavaScript parsing and source invariants passed; shader compile and rendered smoothness require target-browser verification. Version `v0.18.91` / BUILD 157.
+
+
+### BUILD 158 — Unified solar palette and surface-only soft light-wrap
+
+BUILD 157 is preserved at `backups/index_BUILD157_before_surface_only_sun_wrap_BUILD158.html`. Reduce the sun corona radius and brightness so it remains a compact glow adjacent to the disc rather than a large fog bank. Define one shared solar colour ramp (hot orange → coral → magenta) and use it for both the disc aura and the foreground-object wrap.
+
+Replace the sparse circular ring detector with a weighted 5×5 Gaussian convolution of the existing linearly filtered half-resolution scene mask. Use only the positive centre-minus-blurred-coverage difference, multiplied by centre coverage, so the highlight is drawn on the inside surface of the silhouette and does not create a matching outside halo rectangle. Estimate source-facing direction from the smooth mask gradient. The existing AO target and post composite are reused; no new framebuffer or scene pass is added. The Gaussian kernel uses 25 mask samples in the solar source region; compare F3 post timing and FPS. JavaScript parsing and source invariants passed; GLSL runtime compilation and in-game visual quality remain to be verified. Version `v0.18.92` / BUILD 158.
