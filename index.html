@@ -264,7 +264,7 @@ void main(){
 }catch(e){gpuSunReady=false;gpuSunProgram=null;gpuSunBuffer=null;gpuSunLoc=null;console.warn('GPU sun unavailable; Canvas2D fallback remains active.',e);}
 function renderSunBloom(maskTexture){
  if(!gpuSunReady||!FX.sunAuraBloom||!maskTexture||!ensureSunBloomTargets())return null;
- const targets=sunBloomTargets,now=performance.now(),sunPosition=getSunScreenMetrics(),x=sunPosition.x,y=sunPosition.y,r=sunPosition.r;
+ const profile=SUN_BLOOM_PROFILES[sunBloomQuality]||SUN_BLOOM_PROFILES.performance,targets=sunBloomTargets,now=performance.now(),sunPosition=getSunScreenMetrics(),x=sunPosition.x,y=sunPosition.y,r=sunPosition.r;
  const breathe=1+Math.sin(now*0.00092)*0.035+Math.sin(now*0.00046+1.2)*0.012,glowPulse=0.88+Math.sin(now*0.00092-0.35)*0.075;
  gl.bindFramebuffer(gl.FRAMEBUFFER,targets.source.framebuffer);gl.viewport(0,0,targets.source.width,targets.source.height);gl.clearColor(0,0,0,0);gl.clear(gl.COLOR_BUFFER_BIT);
  gl.disable(gl.DEPTH_TEST);gl.disable(gl.BLEND);gl.depthMask(false);gl.useProgram(gpuSunProgram);gl.bindBuffer(gl.ARRAY_BUFFER,gpuSunBuffer);
