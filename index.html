@@ -1377,7 +1377,7 @@ function countachLegacyHeadlampMount(side){
  // The legacy optical face is built at 45° in its stowed coordinate system.
  // Counter-rotate it by 45° so the current Countach hinge (45° closed -> 0° open) remains authoritative.
  // The mapped projector centre is fitted to the source Countach lamp datum; scale only the pod footprint.
- const mountScaleX=.9215686274509803,mountScaleZ=.5687,mountOffsetX=.25098,mountOffsetY=-.0054;
+ const mountScaleX=.9215686274509803,mountScaleZ=.5687,mountOffsetX=.23230,mountOffsetY=-.0054;
  return matMul(
   translate(side*mountOffsetX,COUNTACH_HEADLIGHT_HINGE_Y+mountOffsetY,COUNTACH_HEADLIGHT_HINGE_Z),
   matMul(
