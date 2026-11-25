@@ -1057,7 +1057,9 @@ function getVehicleSpeed(){return Math.hypot(speed/3.6,lateralVelocity)*3.6;}
 function readSteeringInput(){return (keys.d||keys.arrowright?STEER_AXIS.right:0)+(keys.a||keys.arrowleft?STEER_AXIS.left:0);}
 function getSteeringAngle(){return steer*.32/(1+getVehicleSpeed()/115);}
 function getFrontWheelSteerAngle(side){
- const angle=getSteeringAngle(),magnitude=Math.abs(angle);
+ const slipAngle=Math.atan2(lateralVelocity,Math.max(2,Math.abs(speed/3.6)));
+ const autoCounter=driftState===DRIFT_STATE.DRIFT?.28:driftState===DRIFT_STATE.RECOVERY?.42:0;
+ const angle=clamp(getSteeringAngle()+slipAngle*autoCounter,-.42,.42),magnitude=Math.abs(angle);
  if(magnitude<.0001)return 0;
  // Ackermann correction: the wheel on the inside of the turn steers slightly farther.
  const wheelbase=3.275,halfTrack=1.105,turnRadius=wheelbase/Math.tan(magnitude),inner=side*Math.sign(angle)>0;
@@ -1676,6 +1678,7 @@ function updateDebug(dt){
    '<strong>CAMERA</strong> '+(cameraMode+1)+' / 4 — '+CAMERA_NAMES[cameraMode]+'<br>'+
    '<strong>SPEED</strong> '+getVehicleSpeed().toFixed(1)+' km/h<br>'+
     '<strong>DRIFT STATE / SLIP / YAW</strong> '+['GRIP','INIT','DRIFT','RECOVERY'][driftState]+' / '+(Math.atan2(lateralVelocity,Math.max(2,Math.abs(speed)/3.6))*180/Math.PI).toFixed(1)+'° / '+(yawRate*180/Math.PI).toFixed(0)+'°/s<br>'+
+    '<strong>VELOCITY LONG / LAT</strong> '+(speed/3.6).toFixed(1)+' / '+lateralVelocity.toFixed(1)+' m/s<br>'+
    '<strong>WORLD Z</strong> '+distance.toFixed(2)+'<br>'+
    '<strong>STEER / X / ROLL</strong> '+steer.toFixed(2)+' / '+playerX.toFixed(2)+' / '+bodyRoll.toFixed(3)+'<br>'+
    '<strong>WEBGL</strong> '+(gl.getParameter(gl.VERSION)||'OK')+'<br>'+
