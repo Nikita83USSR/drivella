@@ -470,3 +470,45 @@ For front wheels, this local contact velocity is projected onto the steered whee
 `drawCarPart()` treats the tyre cylinder, tread patches and alloy faces as parts of the same rotating wheel assembly. The front brake caliper is a suspension-fixed component: it receives the front steering pivot but zero wheel spin. The wheel face geometry now has a stepped dish, multi-spoke design, lug details and centre cap. The tread is built from repeating low-poly blocks around the tyre circumference and spans the full tyre width. Keep all rotating details on the same spin argument, and keep brake hardware stationary relative to the hub/suspension.
 
 The front axle continues to use `getFrontWheelSteerAngle(side)`, including Ackermann correction and BUILD 132's visual auto-countersteer overlay. Garage mode keeps all four wheels stationary and straight. BUILD 133 is `v0.18.67` / `BUILD 133`.
+
+
+## Imported Countach model — BUILD 135
+
+The active car renderer now uses the imported low-poly Countach source mesh by 3DShinobi (Sketchfab, CC BY). The previous procedural BUILD 133 car renderer remains intact as a fallback if the local model asset cannot be decoded. Do not remove that fallback until the imported path has been visually validated on the target browsers.
+
+### Offline geometry payload
+
+The model is bundled locally; runtime does not download a GLB/GLTF or depend on a model-loading library.
+
+- `assets/countach_model_0.js` declares `DRIVELLA_COUNTACH_META` and initializes `DRIVELLA_COUNTACH_DATA`.
+- `assets/countach_model_0a.js` through `0d.js`, `1.js`, `2.js` and `3a.js` through `3d.js` append the Base64 payload in order. Keep the synchronous script include order in `index.html`; reordering or omitting any chunk corrupts the stream.
+- The payload is deflate-compressed. `loadCountachModel()` uses the browser's native `DecompressionStream('deflate')`, verifies the decoded byte count against metadata, reads quantized signed 16-bit vertex positions and unsigned 16-bit indices, expands indexed triangles into the renderer's flat `mesh()` input and uploads them through the existing WebGL path.
+- The raw geometry is 78,636 bytes. Position quantization is 1e-4 game units. Geometry is grouped by source object/material so body paint, plastic, black trim, metal, tail panel, front details, mirrors, exhausts, lamps, tyres and rims can be styled independently without adding another renderer.
+- The runtime asset is self-contained and offline. If the model is updated, regenerate the metadata and all payload chunks from the source together; never hand-edit Base64 fragments. Verify every chunk against the generated source and confirm the decoded byte count before committing.
+
+### Imported wheel assemblies
+
+The source model provides separate front and rear tyre/rim geometry. The renderer instantiates four assemblies at the source wheel centres:
+
+- Half-track: 0.9274 game units.
+- Front axle Z: +1.6402; rear axle Z: -1.6422.
+- Wheel radius for travel-to-spin conversion: 0.4.
+- Wheelbase: 3.2824 game units.
+
+The left assemblies are mirrored from the right-side mesh about local X. The mirror operation reverses triangle winding; preserve that correction or face culling/normals will be wrong. Since the mirrored wheel axle points in the opposite X direction, left wheel spin uses the opposite sign from the right. Do not apply one global spin sign to all four source wheels.
+
+Each assembly still uses its own `wheelTravel.fl/fr/rl/rr`. The front wheels apply the existing `getFrontWheelSteerAngle(side)` pivot, so Ackermann steering and the visual countersteer remain connected to the imported geometry. Tyre, rim and front inner wheel-detail meshes share the same wheel rotation. The rear source has no `extra_NoMaterial` part; do not draw that optional part for the rear axle.
+
+### Imported pop-up headlights and lighting
+
+The imported `headlampL` and `headlampR` are separate meshes. They rotate around local hinge Y=0.76, Z=2.30. Their authored pose is already forward-facing, so the imported transform is intentionally different from the old procedural lamp geometry:
+
+- Stowed: +45° around local X.
+- Deployed: 0° around local X.
+- Interpolation: smoothstep from `headlightDeploy`.
+
+The imported mesh transform, world spotlight origins/direction and lens-flare source positions all use the same eased hinge. Keep these three paths synchronized whenever the hinge or lamp anchor is moved. Lamp anchor centres are approximately X=±0.84984, Y=0.76117, Z=2.46559. The old procedural lamp assembly retains its original -45° deployment transform only in the fallback path.
+
+### Source attribution
+
+Original model: [Low Poly Lamborghini Countach](https://sketchfab.com/3d-models/low-poly-lamborghini-countach-c9b28a4ad5c74649a09afa613dd3fae1), by 3DShinobi, Sketchfab, CC BY. The in-game HUD displays this attribution and links to the source. The model geometry, materials, mirroring and rig integration are modified for DRIVELLA.
