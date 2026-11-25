@@ -152,6 +152,13 @@ function makeTarget(width,height){
 }
 // Production bright-pass pixel fixture: a dim pixel must be rejected, a mid highlight
 // must pass softly, and a near-white emitter must yield a stronger extraction.
+const sceneBloomSceneTexture=texture(W,H,gl.LINEAR),sceneBloomSceneDepth=gl.createRenderbuffer(),sceneBloomSceneFramebuffer=gl.createFramebuffer();
+gl.bindRenderbuffer(gl.RENDERBUFFER,sceneBloomSceneDepth);gl.renderbufferStorage(gl.RENDERBUFFER,gl.DEPTH_COMPONENT16,W,H);
+gl.bindFramebuffer(gl.FRAMEBUFFER,sceneBloomSceneFramebuffer);gl.framebufferTexture2D(gl.FRAMEBUFFER,gl.COLOR_ATTACHMENT0,gl.TEXTURE_2D,sceneBloomSceneTexture,0);gl.framebufferRenderbuffer(gl.FRAMEBUFFER,gl.DEPTH_ATTACHMENT,gl.RENDERBUFFER,sceneBloomSceneDepth);
+const sceneBloomSceneFramebufferStatus=gl.checkFramebufferStatus(gl.FRAMEBUFFER);
+const sceneBloomQuarterTargets=Array.from({length:5},()=>makeTarget(Math.max(1,W>>2),Math.max(1,H>>2)));
+must(sceneBloomSceneFramebufferStatus===gl.FRAMEBUFFER_COMPLETE,'Full-resolution Scene Bloom colour/depth framebuffer incomplete');
+must(sceneBloomQuarterTargets.every(target=>target.status===gl.FRAMEBUFFER_COMPLETE),'Scene Bloom quarter-resolution blur framebuffer incomplete');
 const sceneBloomFixtureSource=texture(3,1,gl.NEAREST);
 gl.bindTexture(gl.TEXTURE_2D,sceneBloomFixtureSource);
 gl.texImage2D(gl.TEXTURE_2D,0,gl.RGBA,3,1,0,gl.RGBA,gl.UNSIGNED_BYTE,new Uint8Array([
@@ -350,6 +357,8 @@ const sceneBloomSource=sceneBloomStart>=0&&sceneBloomEnd>sceneBloomStart?html.sl
 const garageRaysStart=html.indexOf('function renderGodRays(maskTexture){'),garageRaysEnd=html.indexOf('\nfunction renderGpuSunBackground',garageRaysStart);
 const garageGodRaysSource=garageRaysStart>=0&&garageRaysEnd>garageRaysStart?html.slice(garageRaysStart,garageRaysEnd):'';
 const checks={
+ sceneBloomSceneFramebufferComplete:sceneBloomSceneFramebufferStatus===gl.FRAMEBUFFER_COMPLETE,
+ sceneBloomQuarterResolutionTargetsComplete:sceneBloomQuarterTargets.length===5&&sceneBloomQuarterTargets.every(target=>target.status===gl.FRAMEBUFFER_COMPLETE&&target.width===Math.max(1,W>>2)&&target.height===Math.max(1,H>>2)),
  sceneBloomF4TogglePresent:html.includes('data-fx="sceneBloom" checked')&&html.includes('sceneBloom:true'),
  sceneBloomHasDedicatedFullscreenPrograms:!!sceneBloomExtractP.program&&!!sceneBloomCompositeP.program&&!!sceneCopyP.program,
  sceneBloomRendersTheCompletedScene:html.includes('FX.sceneBloom&&ensureSceneColorTarget()')&&html.includes('sceneColorTarget.framebuffer')&&sceneBloomSource.includes('sceneColorTarget.texture'),
@@ -364,6 +373,8 @@ const checks={
  garageShowroomUsesProductionCountachCopies:html.includes('function drawGarageReplica(')&&html.includes('drawGarageReplica(-10.2,0,0')&&html.includes('drawGarageReplica(10.2,0,Math.PI'),
  garageHasThreeDimensionalHomesAndPalms:html.includes('function drawGarageHouse(')&&html.includes('function drawGaragePalm(')&&html.includes('drawGarageHouse(-19.8,-18')&&html.includes('drawGaragePalm(-14.4,-9.8'),
  garageCameraCanFrameTheShowroom:html.includes('garageZoom=22')&&html.includes('garageZoom+Math.sign(e.deltaY)*.8,7,36'),
+ sceneBloomF3ReportsGarageGodRays:html.includes("'<strong>GOD RAYS</strong> '+(FX.sunGodRays&&gpuSunReady?'ON · 25% RES':'OFF')+'<br>'+"),
+ sceneBloomF3ReportsFallbackState:html.includes("sceneBloomTargets?'ON · 25% RES / 2 SCALES':'FALLBACK · COPY ONLY'"),
  sceneBloomExtractionShaderCompiled:true,
  sceneBloomCompositeShaderCompiled:true,
  sceneColourFallbackShaderCompiled:true,
