@@ -1048,7 +1048,7 @@ const C={
  glass:[.012,.035,.075,1],glassLight:[.055,.17,.28,1],trim:[.012,.016,.026,1],
  tire:[.012,.014,.019,1],hub:[.55,.52,.68,1],brake:[.20,.20,.28,1],city:[.085,.045,.12,1],mount:[.08,.045,.14,1]
 };
-let keys={},headlightsUp=false,headlightDeploy=0,wireframeMode=false,started=false,paused=true,speed=0,playerX=0,steer=0,bodyRoll=0,distance=0,boost=0,carYaw=0,yawRate=0,lateralVelocity=0,driftIntensity=0,driftState=0,driftDirection=0,driftTimer=0,driftPeakSlip=0,countersteerTime=0,driftCooldown=0,handbrakePulse=0,previousHandbrake=false,previousSteerInput=0,wheelTravel=0,handbrakeActive=false,brakeLight=0,last=performance.now(),musicOn=true,track=0,trackOrder=[],trackPos=0,audio=null,musicPending=true,foundTracks=[],audioCtx=null,engineOsc=null,engineOsc2=null,engineGain=null,engineFilter=null,skidGain=null,skidFilter=null,roadGain=null,roadFilter=null,audioNoise=null;
+let keys={},headlightsUp=false,headlightDeploy=0,wireframeMode=false,started=false,paused=true,speed=0,playerX=0,steer=0,bodyRoll=0,distance=0,travelDistance=0,boost=0,carYaw=0,yawRate=0,lateralVelocity=0,driftIntensity=0,driftState=0,driftDirection=0,driftTimer=0,driftPeakSlip=0,countersteerTime=0,driftCooldown=0,handbrakePulse=0,previousHandbrake=false,previousSteerInput=0,wheelTravel=0,handbrakeActive=false,brakeLight=0,last=performance.now(),musicOn=true,track=0,trackOrder=[],trackPos=0,audio=null,musicPending=true,foundTracks=[],audioCtx=null,engineOsc=null,engineOsc2=null,engineGain=null,engineFilter=null,skidGain=null,skidFilter=null,roadGain=null,roadFilter=null,audioNoise=null;
 // One axis convention shared by controls, car movement, body lean and indicators.
 const STEER_AXIS=Object.freeze({left:-1,right:1,screenRight:1,bodyLean:-1});
 const DRIFT_STATE=Object.freeze({GRIP:0,INITIATION:1,DRIFT:2,RECOVERY:3});
@@ -1806,6 +1806,7 @@ function frame(now){
   const worldVelocityZ=vLong*forwardZ+lateralVelocity*rightZ;
   const oldRoadX=roadX(distance);
   distance+=worldVelocityZ*dt*WORLD_MOTION_SCALE;
+  travelDistance+=Math.hypot(worldVelocityX,worldVelocityZ)*dt*WORLD_MOTION_SCALE;
   playerX=clamp(playerX+worldVelocityX*dt*WORLD_MOTION_SCALE-(roadX(distance)-oldRoadX),-10.5,10.5);
   wheelTravel+=vLong*dt*WORLD_MOTION_SCALE;
   driftIntensity=clamp((updatedSlipAbs-.055)/.72,0,1);
@@ -1831,7 +1832,7 @@ function frame(now){
  updateCarAudio();
  $('speed').innerHTML=String(Math.round(getVehicleSpeed())).padStart(3,'0')+' <span>KM/H</span>';
  $('direction').textContent=speed< -1?'◀ REVERSE':driftState===DRIFT_STATE.DRIFT?'✦ DRIFT':driftState===DRIFT_STATE.INITIATION?'✦ INITIATION':driftState===DRIFT_STATE.RECOVERY?'↗ RECOVERY':driftIntensity>.18?'✦ SLIDE':'▶ FORWARD';$('direction').style.color=speed< -1?'#ffb56f':driftState!==DRIFT_STATE.GRIP||driftIntensity>.18?'#ff70dc':'#ff8de9';
- $('distance').textContent=Math.max(0,distance).toFixed(1).padStart(5,'0')+' KM';
+ $('distance').textContent=travelDistance.toFixed(1).padStart(5,'0')+' KM';
  cpuPassMs.frame=performance.now()-frameCpuStart;
  requestAnimationFrame(frame);
 }
