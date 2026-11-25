@@ -57,11 +57,11 @@ try {
   await page.goto(baseUrl + '/tools/game-shader-compile.html', { waitUntil: 'load', timeout: 20000 });
   await page.waitForFunction(() => Boolean(window.__GAME_SHADER_RESULT__), null, { timeout: 20000 });
   const result = await page.evaluate(() => window.__GAME_SHADER_RESULT__);
-  await page.screenshot({ path: 'artifacts/god-rays-build187-directional-source.png', fullPage: true });
-  console.log('PRODUCTION DIRECTIONAL GOD RAYS + SHADER + VEHICLE REGRESSION\n' + JSON.stringify(result, null, 2));
+  await page.screenshot({ path: 'artifacts/god-rays-build188-garage-showroom.png', fullPage: true });
+  console.log('PRODUCTION GOD RAYS + GARAGE SHOWROOM + SHADER + VEHICLE REGRESSION\n' + JSON.stringify(result, null, 2));
   assert(result.pass, 'Production shader regression failed: ' + JSON.stringify(result));
   assert(pageErrors.length === 0, 'Browser page errors: ' + pageErrors.join('\n'));
-  console.log('ALL DIRECTIONAL GOD RAYS, SHADER AND VEHICLE CHECKS PASSED');
+  console.log('ALL GOD RAYS, GARAGE SHOWROOM, SHADER AND VEHICLE CHECKS PASSED');
   const metaScript = await readFile('assets/countach_model_0.js', 'utf8');
   const metaMatch = metaScript.match(/window\.DRIVELLA_COUNTACH_META=(\{[\s\S]*?\});/);
   assert(metaMatch, 'Countach metadata JSON was not found');
