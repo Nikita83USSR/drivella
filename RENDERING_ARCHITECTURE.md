@@ -570,3 +570,12 @@ The existing animated painted cap is now fitted in inverse space against the exa
 ### BUILD 143 — Preserve imported Countach after front-overlay filtering
 
 The BUILD 142 front-overlay filter incremented `removedOldFrontOverlays` without declaring it. Because the error occurred during the import loop, `loadCountachModel()` caught a `ReferenceError` and left `countachModelReady` false; the vehicle renderer consequently selected its legacy procedural fallback. BUILD 143 declares the counter within the current part's import scope alongside the triangle write cursor and existing hood-cap counter. The two bodyPlastic overlay groups remain the only newly filtered geometry (48 triangles per side); all remaining Countach meshes and the replacement lamp assemblies continue through the imported-model draw branch. The Countach geometry assets, wheel centers, wheel animation, lamp mounting transform, hinge, flare behavior and rendering pipeline are unchanged.
+
+
+### BUILD 144 — Imported-surface headlamp caps, lower lamp-pad material split and legacy glow
+
+After Countach decoding, retain the filtered `bodyPaint` source triangles as a temporary CPU-side surface query. Rebuild both moving lamp caps from that mesh: sample the upper body surface at each transformed cap outline/centre point, interpolate over the actual triangles, and use the nearest mesh edge for points on the removed-panel boundary. The existing closed hinge and per-side mount are unchanged; the cap keeps its 3 mm body overlap and 40 mm return. This removes the generic-profile mismatch that could leave a visible seam above the lamps.
+
+In the imported `bodyBlack` part, split only the eight verified lower lamp-pad triangles (four on either side; all vertices within X ±0.62…1.07, Y 0.57…0.68 and Z 2.47…2.71). Store them as `frontLowerPaint` and draw with `C.body` plus `PAINT_MATERIAL`. Do not recolour the remaining `bodyBlack` geometry or the central intake/radiator assembly.
+
+The two current lamp pods now emit one BUILD 122-style white-blue Canvas2D glow each, centred at the paired-projector datum and transformed through `countachLegacyHeadlampMount(side)`. The existing facing, distance, anamorphic bloom and flare compositor are reused; no dynamic fragment spotlight or shadow work returns. BUILD 144 keeps the imported Countach draw branch, wheel rig, pop-up hinge and existing body geometry filters.
