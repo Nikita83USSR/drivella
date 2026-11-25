@@ -47,7 +47,7 @@ const sources={
  mainVertex:new Function('gl','return ('+expression('vs',';\nconst fs=')+');')(glExpression),
  mainFragment:new Function('gl','return ('+expression('fs',';\nfunction shader')+');')(glExpression),
  outlineVertex:new Function('gl','return ('+expression('outlineVs',';\nconst outlineFs=')+');')(glExpression),
- outlineFragment:new Function('gl','return ('+expression('outlineFs',';\nconst outlineProgram=')+');')(glExpression),
+ outlineFragment:new Function('gl','return ('+expression('outlineFs',';const outlineProgram=')+');')(glExpression),
  sunVertex:new Function('gl','return ('+expression('sunVs',';\n const sunFs=')+');')(glExpression),
  sunFragment:new Function('gl','return ('+expression('sunFs',';\n gpuSunProgram=')+');')(glExpression)
 };
