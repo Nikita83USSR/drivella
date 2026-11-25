@@ -60,11 +60,11 @@ try {
   await page.waitForFunction(() => Boolean(window.__GAME_SHADER_RESULT__) || document.title.startsWith('FAIL'), null, { timeout: 60000 });
   const result = await page.evaluate(() => window.__GAME_SHADER_RESULT__);
   assert(result, 'Browser test page reported failure without a result object: ' + await page.title());
-  await page.screenshot({ path: 'artifacts/surface-reflections-build197-regression.png', fullPage: true });
-  console.log('PRODUCTION SURFACE REFLECTIONS + TRACK LIGHTING + SHOWROOM + ROAD INSTANCING + ATMOSPHERE + GPU LENS OPTICS + SCENE BLOOM + GOD RAYS + VEHICLE REGRESSION\n' + JSON.stringify(result, null, 2));
+  await page.screenshot({ path: 'artifacts/opaque-distorted-reflections-build199-regression.png', fullPage: true });
+  console.log('PRODUCTION OPAQUE DISTORTED VEHICLE REFLECTION + CONTINUOUS ASPHALT + TRACK LIGHTING + SHOWROOM + ROAD INSTANCING + ATMOSPHERE + GPU LENS OPTICS + SCENE BLOOM + GOD RAYS + VEHICLE REGRESSION\n' + JSON.stringify(result, null, 2));
   assert(result.pass, 'Production shader regression failed: ' + JSON.stringify(result));
   assert(pageErrors.length === 0, 'Browser page errors: ' + pageErrors.join('\\n'));
-  console.log('ALL SURFACE REFLECTION/TRACK LIGHTING/SHOWROOM/BIOME/ROAD INSTANCING, ATMOSPHERE, GPU LENS OPTICS, SCENE BLOOM, GOD RAYS, SHADER AND VEHICLE CHECKS PASSED');
+  console.log('ALL OPAQUE VEHICLE REFLECTION/CONTINUOUS ASPHALT/HEADLIGHT/ROAD SEAM/TRACK LIGHTING/SHOWROOM/BIOME/ATMOSPHERE/BLOOM/GOD RAYS/SHADER AND VEHICLE CHECKS PASSED');
 
   const metaScript = await readFile('assets/countach_model_0.js', 'utf8');
   const metaMatch = metaScript.match(/window\.DRIVELLA_COUNTACH_META=(\{[\s\S]*?\});/);
