@@ -1,6 +1,6 @@
 # DRIVELLA — Rendering Architecture
 
-Current reference: **v0.18.89 / BUILD 155**  
+Current reference: **v0.18.90 / BUILD 156**  
 Main renderer: `index.html` — custom WebGL 1 renderer, no external rendering engine.
 
 **Release marker policy:** every published renderer/game change increments `BUILD` in `index.html` and updates the visible HUD, boot screen, README, and this document in the same release. Increment the patch version with the build when appropriate. Never publish a renderer change while leaving the visible build number unchanged.
@@ -12,9 +12,9 @@ This document records the rendering decisions that future vehicle, environment, 
 The render loop currently runs these passes in order:
 
 1. `renderShadowMap()` — render the full-scene solar map and garage spotlight maps into packed-depth textures. When `FX.vehicleShadows` is enabled, also render a 1024² packed-depth PCF receiver map using only selected vehicle detail casters; the normal/road/biome environment pass is skipped for this secondary map.
-2. `drawWorld()` — render the visible scene using the active driving or garage camera, sample the shadow map on receiving materials, and draw the striped GPU sun disc before opaque scene geometry on the main framebuffer. The broad radial aura is a separate Canvas2D layer underneath the transparent WebGL canvas.
+2. `drawWorld()` — render the visible scene using the active driving or garage camera, sample the shadow map on receiving materials, and draw the striped GPU sun disc plus radial corona before opaque scene geometry on the main framebuffer.
 3. `renderCarOutlines()` — render the half-resolution full-scene normal/depth mask for SSAO and/or the GPU sun aura-wrap effect; render the full-resolution car mask only when ink outlines are enabled, then composite SSAO, outlines and the sun-facing silhouette rim together. The aura-wrap path can keep the half-resolution mask active even when SSAO and ink outlines are disabled.
-4. `drawSun()` — when GPU sun is active, draw the continuous radial aura into the lower Canvas2D canvas; the WebGL scene canvas sits above it, so opaque foreground geometry naturally occludes the glow. When GPU sun is disabled/unavailable, the Canvas2D fallback draws both disc and aura. Vehicle lens flares remain on their separate Canvas2D overlay.
+4. `drawSun()` — when GPU sun is disabled or unavailable, draw the complete Canvas2D disc + halo fallback. Vehicle lens flares remain on their separate Canvas2D overlay.
 
 The scene is intentionally drawn through the same `drawWorld()` path in the normal, directional-shadow, and scene-AO passes. The shared-scene gate is `if (!outlinePass || aoScenePass)`: it includes opaque world geometry during the shadow pass and the full-scene AO capture, while the separate car-contour pass draws only car parts. `shadowCasterAllowed()` remains the single policy for excluding translucent and emissive materials. Do not build one-off shadow meshes or hard-code a shadow for every new prop.
 
@@ -632,3 +632,10 @@ BUILD 153 is preserved at `backups/index_BUILD153_before_smooth_solar_aura_BUILD
 BUILD 154 is preserved at `backups/index_BUILD154_before_canvas_solar_aura_BUILD155.html`. The GPU sun fragment shader now owns only the striped disc and its moving scan highlight; it no longer tries to create the surrounding halo in the same premultiplied WebGL quad. A new `drawSunCanvasAura()` renders a broad radial orange/coral/magenta gradient on the existing `#sun` canvas, which is already layered below `#scene`. This separation restores a genuinely smooth continuous aura while retaining natural scene occlusion: opaque WebGL geometry covers the lower Canvas2D glow. The GPU-off / initialization-failure Canvas2D fallback remains complete and unchanged.
 
 The existing AO scene-mask wrap now uses a `sceneCoverage()` smoothstep over the linearly filtered mask alpha rather than hard binary `step()` tests. Fine, medium and wide gradient offsets are broadened, edge strengths are smoothly ramped, and wrap opacity/palette are restrained to avoid discrete pixel-like yellow lines. It still reuses the same half-resolution AO target and fullscreen composite; no new capture or framebuffer is introduced. JavaScript source validation can confirm the surrounding script, but WebGL shader compilation, perceived bloom and edge quality, and FPS must be checked in the target browser. Version `v0.18.89` / BUILD 155.
+
+
+### BUILD 156 — Restored radial sun aura and circular silhouette wrap
+
+BUILD 155 is preserved at `backups/index_BUILD155_before_radial_sun_wrap_BUILD156.html`. Reintroduce the broad solar aura in the existing GPU sun fragment shader rather than relying on a lower Canvas2D layer. The halo is calculated from radial distance to the disc edge using three overlapping exponential falloffs, a subdued time pulse, warm-to-magenta colour interpolation and a smooth fade before the bounded quad edge. Its alpha is composited premultiplied with the disc. The sun remains one bounded GPU draw before opaque scene geometry, which preserves natural depth occlusion; the Canvas2D fallback path is untouched.
+
+The previous four-axis scene-mask gradient created a cross/square-like edge response. It is replaced by `sceneRingMean()`, a 12-direction circular filter at two radii (3.5 and 8 AO texels). Smooth mask coverage and the difference between centre coverage and circular-ring coverage estimate a soft radial silhouette band without axis-aligned lobes. The existing AO framebuffer and full-screen post composite are reused; no new framebuffer or scene capture is added. Texture sample count is higher within the sun gate, so frame timing needs a browser check. JavaScript parsing and source invariants passed; WebGL shader compile, rendered smoothness and FPS remain to be verified in-game. Version `v0.18.90` / BUILD 156.
