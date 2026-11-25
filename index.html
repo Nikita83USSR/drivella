@@ -132,7 +132,7 @@
    <label class="fx-row"><span><b>Отражения на стёклах</b><small>Процедурное отражение неонового окружения</small></span><input type="checkbox" data-fx="glassReflections" checked></label>
    <label class="fx-row"><span><b>Отражения на окрашенном кузове</b><small>Видимые цветные отражения неонового горизонта в лаке</small></span><input type="checkbox" data-fx="paintReflections" checked></label>
    <label class="fx-row"><span><b>Отражения на асфальте</b><small>Широкие размытые розово-голубые отражения вдоль дороги</small></span><input type="checkbox" data-fx="roadReflections" checked></label>
-   <label class="fx-row"><span><b>Отражение автомобиля и фар</b><small>Проекция геометрии кузова на покрытие и два зеркальных блика фар</small></span><input type="checkbox" data-fx="vehicleReflections" checked></label>
+   <label class="fx-row"><span><b>Отражение автомобиля и фар</b><small>Непрозрачное искажённое отражение кузова и фар на асфальте</small></span><input type="checkbox" data-fx="vehicleReflections" checked></label>
    <label class="fx-row"><span><b>Блики и лак на кузове</b><small>Clear-coat, солнечные и цветные блики</small></span><input type="checkbox" data-fx="paintHighlights" checked></label>
    <label class="fx-row"><span><b>Каркас автомобиля</b><small>Диагностический wireframe · клавиша K</small></span><input type="checkbox" data-fx="wireframe"></label>
   </div>
@@ -917,7 +917,7 @@ function mesh(data){
  const eb=gl.createBuffer();gl.bindBuffer(gl.ARRAY_BUFFER,eb);gl.bufferData(gl.ARRAY_BUFFER,new Float32Array(lineData),gl.STATIC_DRAW);
  return {b,nb,eb,n:data.length/3,en:lineData.length/3,boundsRadius};
 }
-const ROAD_SURFACE_SEGMENTS=108,ROAD_SURFACE_LENGTH=270,ROAD_SURFACE_WIDTH=9.4,ROAD_SURFACE_TOP=.005;
+const ROAD_SURFACE_SEGMENTS=108,ROAD_SURFACE_LENGTH=270,ROAD_SURFACE_BACK=40,ROAD_SURFACE_FORWARD=230,ROAD_SURFACE_CENTER_OFFSET=(ROAD_SURFACE_FORWARD-ROAD_SURFACE_BACK)*.5,ROAD_SURFACE_WIDTH=9.4,ROAD_SURFACE_TOP=.005;
 let roadSurfaceMesh=null,lastRoadSurfaceSegments=ROAD_SURFACE_SEGMENTS;
 function ensureRoadSurfaceMesh(){
  if(roadSurfaceMesh)return roadSurfaceMesh;
@@ -928,11 +928,11 @@ function ensureRoadSurfaceMesh(){
 }
 function updateRoadSurfaceMesh(centerZ){
  const shape=ensureRoadSurfaceMesh(),data=new Float32Array(ROAD_SURFACE_SEGMENTS*6*9),normals=new Float32Array(data.length);
- const centerX=roadX(centerZ),step=ROAD_SURFACE_LENGTH/ROAD_SURFACE_SEGMENTS;
+ const surfaceCenterZ=centerZ+ROAD_SURFACE_CENTER_OFFSET,centerX=roadX(surfaceCenterZ),step=ROAD_SURFACE_LENGTH/ROAD_SURFACE_SEGMENTS;
  let o=0;
  for(let i=0;i<ROAD_SURFACE_SEGMENTS;i++){
   const z0=-ROAD_SURFACE_LENGTH*.5+i*step,z1=z0+step;
-  const x0=roadX(centerZ+z0)-centerX,x1=roadX(centerZ+z1)-centerX;
+  const x0=roadX(surfaceCenterZ+z0)-centerX,x1=roadX(surfaceCenterZ+z1)-centerX;
   const left0=[x0-ROAD_SURFACE_WIDTH,ROAD_SURFACE_TOP,z0],right0=[x0+ROAD_SURFACE_WIDTH,ROAD_SURFACE_TOP,z0];
   const left1=[x1-ROAD_SURFACE_WIDTH,ROAD_SURFACE_TOP,z1],right1=[x1+ROAD_SURFACE_WIDTH,ROAD_SURFACE_TOP,z1];
   for(const v of [left0,right0,right1,left0,right1,left1]){data[o]=v[0];data[o+1]=v[1];data[o+2]=v[2];normals[o+1]=1;o+=3;}
@@ -940,7 +940,7 @@ function updateRoadSurfaceMesh(centerZ){
  gl.bindBuffer(gl.ARRAY_BUFFER,shape.b);gl.bufferData(gl.ARRAY_BUFFER,data,gl.DYNAMIC_DRAW);
  gl.bindBuffer(gl.ARRAY_BUFFER,shape.nb);gl.bufferData(gl.ARRAY_BUFFER,normals,gl.DYNAMIC_DRAW);
  shape.n=data.length/3;shape.boundsRadius=Math.hypot(ROAD_SURFACE_LENGTH*.5,ROAD_SURFACE_WIDTH);
- return {shape,model:translate(centerX,0,centerZ)};
+ return {shape,model:translate(centerX,0,surfaceCenterZ)};
 }
 function makeGlowDisk(){
  const out=[],segments=64;
@@ -1926,6 +1926,7 @@ function renderVehicleReflectionCapture(vp){
  lastVehicleRoadReflectionMeshCount=count;
  if(!FX.vehicleReflections||!count||!ensureVehicleReflectionTarget())return false;
  const previousFramebuffer=gl.getParameter(gl.FRAMEBUFFER_BINDING),previousViewport=gl.getParameter(gl.VIEWPORT);
+ gl.activeTexture(gl.TEXTURE7);gl.bindTexture(gl.TEXTURE_2D,null);gl.activeTexture(gl.TEXTURE0);
  gl.bindFramebuffer(gl.FRAMEBUFFER,vehicleReflectionTarget.framebuffer);gl.viewport(0,0,vehicleReflectionTarget.width,vehicleReflectionTarget.height);
  gl.enable(gl.DEPTH_TEST);gl.depthMask(true);gl.disable(gl.BLEND);gl.disable(gl.STENCIL_TEST);
  gl.clearColor(0,0,0,0);gl.clear(gl.COLOR_BUFFER_BIT|gl.DEPTH_BUFFER_BIT);
