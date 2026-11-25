@@ -2,7 +2,7 @@
 
 A browser-based synthwave drift-racing prototype with a custom low-poly 3D car, a procedural neon environment, and a hand-built WebGL renderer.
 
-> **Status:** Playable prototype under active development. Current renderer reference: **v0.19.12 / BUILD 178**.
+> **Status:** Playable prototype under active development. Current renderer reference: **v0.19.14 / BUILD 180**.
 > **Release identification:** every published game change increments the visible BUILD number in the HUD and startup screen; README and rendering architecture are updated in the same release.
 
 ## Current game
@@ -308,3 +308,14 @@ BUILD 172 moves the visible GPU sun disc/corona into a half-resolution source ta
 BUILD 176 replaces the single long source-ray lookup with three progressively farther mask samples toward the sun (4, 12 and 20 half-resolution texels), weighted 0.52 / 0.30 / 0.18. This makes the light-wrap strength decay with depth into the silhouette rather than treating a whole strip as equally sun-facing. BUILD 177 extends the wide blur reach. BUILD 178 sets the tight/wide mix to 0.90 / 0.46, tight/wide radii to 3.4 / 12.0 times DPR, and composite gain/cap to 1.50 / 0.46. The result retains a defined contact edge and adds a broader soft inner tail; the exterior and opposite edge remain unlit.
 
 The regression executes the production WebGL 1 sun, Gaussian-blur and object-composite shaders on a synthetic translucent occluder. BUILD 178 passes shader compilation/linkage, framebuffer, JavaScript, direction, fade, locality and occlusion checks. Measured RGB sums are 156 at the sunward inner edge, 97 at the shoulder, 61 at the mid-fade and 17 deeper inside; outside and opposite-side alpha are zero. The sun remains blocked behind the occluder (27) while visible beside it (372). This is a deterministic production-shader regression, not a full race-game run or visual confirmation on the target GPU. BUILD 172–177 source snapshots are preserved in `backups/`. Version `v0.19.12` / BUILD 178.
+
+
+### BUILD 180 — Restore Countach headlights, lower lamps and vehicle self-shadowing
+
+The imported Countach no longer relies on the old procedural-car headlight coordinates. The material shader again receives two dynamic light sources, whose positions and forward directions are calculated from the same rigid hinge + per-side mount transforms used to draw the two moving pop-up headlamp assemblies. The two beams use a soft cone, a gradual 38–57 unit distance fade, and per-mesh cone culling so distant/out-of-cone geometry does not pay the lighting cost. The lighting toggle remains connected to **H / F4**.
+
+The two imported Countach lower-bumper lamp pads are located directly from the compressed source mesh. Four small framed lenses are placed at the two pads on each side, with matching flare positions using the same four centre coordinates. The upper and lower flare points therefore track the new car geometry rather than the previous vehicle's nose.
+
+The secondary vehicle self-shadow map is generated only when **Самозатенение автомобиля** is enabled in F4. Restore the opaque Countach body, wheel assemblies and selected details as solar-shadow casters; keep emissive lens surfaces out of the depth map. The F4 description now reflects the working feature rather than the old deferred status.
+
+The BUILD 180 regression compiles the production WebGL 1 material, bloom and sun shaders, verifies the headlight uniforms/cone and shared pop-up transform wiring, checks that opaque body/wheel casters are enabled and emissive lower lenses are not casters, and decodes the actual compressed Countach geometry. It confirms four lower-lamp centres sit within the eight source bumper-pad triangles. The shader/geometry regression and Pages deployment passed. This is a code/GLSL/geometry regression, not a full visual run on the user's target GPU. BUILD 179 is preserved at `backups/index_BUILD179_before_headlight_and_shadow_restore_BUILD180.html`. Version `v0.19.14` / BUILD 180.
