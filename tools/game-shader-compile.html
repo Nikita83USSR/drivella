@@ -14,7 +14,7 @@ canvas{display:block;width:100%;height:auto;border:1px solid #58eaff55;margin:14
 </style>
 </head>
 <body><main>
-<h1>DRIVELLA // BUILD 195 SHOWROOM INSTANCING + PRODUCTION GLSL</h1>
+<h1>DRIVELLA // BUILD 196 TRACK LOCAL LIGHTING + SHOWROOM INSTANCING + PRODUCTION GLSL</h1>
 <canvas id="gl" width="960" height="540"></canvas>
 <pre id="report">Extracting production shaders…</pre>
 </main>
@@ -493,8 +493,28 @@ const roadGridAtStart=1+(Math.ceil(150/10)-Math.floor(-150/10)+1)+(Math.ceil(245
  (Math.floor(Math.ceil(230/10)/2)-Math.ceil(Math.floor(-40/10)/2)+1)*2+
  (Math.floor(Math.ceil(230/10)/3)-Math.ceil(Math.floor(-40/10)/3)+1)*2;
 
+// Execute the exact production point-light function in a GPU pixel fixture.
+const trackLightFunctionStart=sources.mainFragment.indexOf('vec3 evalLocalLight(');
+const trackLightFunctionEnd=sources.mainFragment.indexOf('\\nvec3 calcLocalLighting(',trackLightFunctionStart);
+must(trackLightFunctionStart>=0&&trackLightFunctionEnd>trackLightFunctionStart,'Production local-light evaluation function was not found');
+const trackLightFunction=sources.mainFragment.slice(trackLightFunctionStart,trackLightFunctionEnd);
+const trackLightProbeVs='attribute vec2 aPosition;varying vec3 vWorldPos;void main(){vWorldPos=vec3(aPosition.x*12.0,0.0,0.0);gl_Position=vec4(aPosition,0.0,1.0);}';
+const trackLightProbeFs='precision mediump float;varying vec3 vWorldPos;uniform vec4 uPosRange;uniform vec4 uColorPower;uniform vec4 uDirectionCone;'+trackLightFunction+'\\nvoid main(){vec3 energy=evalLocalLight(vec3(0.0,1.0,0.0),vec3(0.0,0.0,1.0),vec3(0.25),38.0,uPosRange,uColorPower,uDirectionCone,1.0);gl_FragColor=vec4(energy,1.0);}';
+const trackLightProbeProgram=makeProgram(trackLightProbeVs,trackLightProbeFs,'Production track point-light pixel fixture');
+const trackLightProbeTarget=makeTarget(3,1);
+must(trackLightProbeTarget.status===gl.FRAMEBUFFER_COMPLETE,'Track point-light fixture framebuffer incomplete');
+gl.bindFramebuffer(gl.FRAMEBUFFER,trackLightProbeTarget.framebuffer);gl.viewport(0,0,3,1);gl.disable(gl.DEPTH_TEST);gl.disable(gl.BLEND);gl.depthMask(false);gl.clearColor(0,0,0,0);gl.clear(gl.COLOR_BUFFER_BIT);
+gl.useProgram(trackLightProbeProgram);
+gl.uniform4f(location(trackLightProbeProgram,'uPosRange'),0,2,0,8);
+gl.uniform4f(location(trackLightProbeProgram,'uColorPower'),1,.12,.65,2.8);
+gl.uniform4f(location(trackLightProbeProgram,'uDirectionCone'),0,-1,0,-1);
+drawGeometry(trackLightProbeProgram,'aPosition',fullscreenVertices,gl.TRIANGLES);gl.finish();
+const trackLightPixels=new Uint8Array(12);gl.readPixels(0,0,3,1,gl.RGBA,gl.UNSIGNED_BYTE,trackLightPixels);
+const trackLightPixelSamples=[Array.from(trackLightPixels.slice(0,4)),Array.from(trackLightPixels.slice(4,8)),Array.from(trackLightPixels.slice(8,12))];
+const trackLocalLightPixelFixturePass=trackLightPixelSamples[1][0]>18&&trackLightPixelSamples[1][2]>8&&trackLightPixelSamples[0][0]<3&&trackLightPixelSamples[2][0]<3;
+gl.bindFramebuffer(gl.FRAMEBUFFER,null);gl.viewport(0,0,W,H);gl.depthMask(true);gl.enable(gl.DEPTH_TEST);
 const checks={
-  productionVersionVisibleEverywhere:html.includes('id="version-label">v0.19.29 · BUILD 195</div>')&&html.includes('3D NEON HIGHWAY // BUILD 195')&&html.includes('ENGINE STARTUP // v0.19.29 · BUILD 195'),
+  productionVersionVisibleEverywhere:html.includes('id="version-label">v0.19.30 · BUILD 196</div>')&&html.includes('3D NEON HIGHWAY // BUILD 196')&&html.includes('ENGINE STARTUP // v0.19.30 · BUILD 196'),
  roadInstancingProductionVertexCompiled:!!roadProbeV.shader,
  roadInstancingProbeProgramLinked:!!roadProbeP.program,
  roadInstancingAttributesArePresent:['attribute vec3 instancePosition;','attribute vec3 instanceScale;','attribute vec2 instanceYaw;','attribute vec4 instanceColor;','attribute float instanceHeadlight;','attribute float instanceMaterial;'].every(token=>sources.mainVertex.includes(token)),
@@ -514,6 +534,15 @@ const checks={
  environmentInstancingPreservesShadowAOCullingAndHeadlights:html.includes('shadowCasterAllowed(item.color,item.material)')&&html.includes('sceneMaskAllowed(item.color,item.material)')&&html.includes('headlightAffectsMesh(shape,model)'),
  environmentInstancingReportsF3:html.includes('BIOME GPU BATCH')&&html.includes('lastBiomeInstanceCount'),
   environmentInstancingPixelFixtureReadsMaterialAndColour:roadInstancingPixelFixturePass&&roadProbePixels.left[3]<roadProbePixels.right[3],
+  trackLocalLightsPixelFixtureFramebufferComplete:trackLightProbeTarget.status===gl.FRAMEBUFFER_COMPLETE,
+  trackLocalLightsPixelFixtureUsesProductionPointLightFunction:sources.mainFragment.includes('vec3 evalLocalLight(')&&!!trackLightProbeProgram,
+  trackLocalLightsPointLightContributesOnlyInsideRange:trackLocalLightPixelFixturePass,
+  trackLocalLightsUseFourExistingShaderSlots:html.includes('const LOCAL_LIGHT_CAPACITY=4')&&html.includes('const TRACK_LOCAL_LIGHTS=[')&&html.includes('updateTrackLocalLights():[]'),
+  trackLocalLightsAttachToRoadsidePosts:html.includes('TRACK_LOCAL_LIGHTS[0].position[0]=roadA-9')&&html.includes('TRACK_LOCAL_LIGHTS[1].position[0]=roadA+9')&&html.includes('cx-9,.42,z,.075,.45,.075,C.pink')&&html.includes('cx+9,.42,z,.075,.45,.075,C.cyan'),
+  trackLocalLightsCrossFadeAdjacentPairs:html.includes('blendT*blendT*(3-2*blendT)')&&html.includes('powerA=2.8*(1-blend),powerB=2.8*blend'),
+  trackLocalLightsDoNotCreateShadowMaps:html.includes("id:'track-pink-a'")&&html.includes("id:'track-cyan-a'")&&html.includes('castsShadow:false')&&html.includes("const localSources=garageMode&&FX.garageSpotlights?GARAGE_LOCAL_LIGHTS:[];"),
+  trackLocalLightsHaveF4ToggleAndDefault:html.includes('trackLights')&&html.includes('trackLights:true'),
+  trackLocalLightsReportInF3:html.includes('TRACK LOCAL LIGHTS')&&html.includes('4 POINT SOURCES'),
   showroomInstancingBatchesSpotlightHousings:html.includes("drawInstancedMesh(cube,garageSpotOpaque,'garage')")&&html.includes('queueBiomeInstance(garageSpotOpaque,sx,4.68'),
   showroomInstancingPreservesEmissiveLampLenses:html.includes("drawInstancedMesh(cube,garageSpotEmitters,'garage')")&&html.includes('queueBiomeInstance(garageSpotEmitters,sx,4.505,.75,.19,.012,.27')&&html.includes('fixtureYaw,8'),
   showroomInstancingBatchesPalmTrunks:html.includes("drawInstancedMesh(cylinder,garagePalmTrunks,'garage')")&&html.includes('queueGaragePalm(garagePalmTrunks,garagePalmRings,garagePalmLeaves'),
@@ -619,7 +648,7 @@ const result={pass:true,version:version[1],build:version[2],checks,probes:{...pr
 window.__GAME_SHADER_RESULT__=result;
 report.className='pass';
 report.textContent='PASS\\n'+JSON.stringify(result,null,2);
-document.title='PASS DRIVELLA BUILD 195 showroom + biome + road + atmosphere + lighting regression';
+document.title='PASS DRIVELLA BUILD 196 track local lighting + showroom + biome + road regression';
 })().catch(error=>{
  const report=document.getElementById('report');
  report.className='fail';
