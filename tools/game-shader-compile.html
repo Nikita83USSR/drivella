@@ -158,6 +158,10 @@ function drawGodRaysFixture(){
 const godRaysWithOccluder=drawGodRaysFixture();
 gl.bindFramebuffer(gl.FRAMEBUFFER,sceneFbo);gl.viewport(0,0,maskW,maskH);gl.clearColor(0,0,0,0);gl.clear(gl.COLOR_BUFFER_BIT|gl.DEPTH_BUFFER_BIT);gl.bindFramebuffer(gl.FRAMEBUFFER,null);
 const godRaysWithoutOccluder=drawGodRaysFixture();
+// Restore the original occluder mask before the independent production sun/Bloom pixel fixture.
+gl.bindFramebuffer(gl.FRAMEBUFFER,sceneFbo);gl.viewport(0,0,maskW,maskH);gl.clearColor(0,0,0,0);gl.clearDepth(1);gl.clear(gl.COLOR_BUFFER_BIT|gl.DEPTH_BUFFER_BIT);
+drawGeometry(occluderMaskProgram,'p',occluderVertices,gl.TRIANGLE_FAN);
+gl.bindFramebuffer(gl.FRAMEBUFFER,null);gl.viewport(0,0,W,H);
 const godRaysProbes={...godRaysWithOccluder,clearPath:godRaysWithoutOccluder.blockedPath,targetSize:[godRaysWidth,godRaysHeight]};
 
 const bloomSource=makeTarget(maskW,maskH);
