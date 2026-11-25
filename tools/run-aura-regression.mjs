@@ -65,10 +65,10 @@ try {
   const gamePage=await browser.newPage({viewport:{width:1280,height:900},deviceScaleFactor:1});
   const gameErrors=[];
   gamePage.on('pageerror',error=>gameErrors.push(error.stack||error.message));
-  await gamePage.goto(baseUrl+'/index.html',{waitUntil:'load',timeout:20000});
+  await gamePage.goto(baseUrl+'/index.html',{waitUntil:'domcontentloaded',timeout:20000});
   await gamePage.waitForFunction(()=>Boolean(window.DRIVELLA_REAR_SIGNAL_TRIANGLES),null,{timeout:20000});
   const runtimeLampCheck=await gamePage.evaluate(()=>({build:document.querySelector('.version-label')?.textContent||'',rearSignals:window.DRIVELLA_REAR_SIGNAL_TRIANGLES||null}));
-  assert(runtimeLampCheck.build.includes('v0.19.17')&&runtimeLampCheck.build.includes('BUILD 183'),'Production game did not load BUILD 183: '+JSON.stringify(runtimeLampCheck));
+  assert(runtimeLampCheck.build.includes('v0.19.18')&&runtimeLampCheck.build.includes('BUILD 184'),'Production game did not load BUILD 184: '+JSON.stringify(runtimeLampCheck));
   assert(runtimeLampCheck.rearSignals?.left===2&&runtimeLampCheck.rearSignals?.right===2,'Runtime failed to create both rear signal meshes: '+JSON.stringify(runtimeLampCheck));
   assert(gameErrors.length===0,'Production game runtime errors: '+gameErrors.join('\\n'));
   console.log('PRODUCTION GAME RUNTIME // '+JSON.stringify(runtimeLampCheck));
