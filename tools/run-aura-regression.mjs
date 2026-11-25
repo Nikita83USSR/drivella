@@ -56,7 +56,7 @@ try {
   await page.goto(baseUrl + '/tools/game-shader-compile.html', { waitUntil: 'load', timeout: 20000 });
   await page.waitForFunction(() => Boolean(window.__GAME_SHADER_RESULT__), null, { timeout: 20000 });
   const result = await page.evaluate(() => window.__GAME_SHADER_RESULT__);
-  await page.screenshot({ path: 'artifacts/inner-surface-bloom-build168.png', fullPage: true });
+  await page.screenshot({ path: 'artifacts/sun-bloom-build172.png', fullPage: true });
   console.log('PRODUCTION INNER-SURFACE BLOOM REGRESSION\n' + JSON.stringify(result, null, 2));
   assert(result.pass, 'Production inner-surface bloom regression failed: ' + JSON.stringify(result));
   assert(pageErrors.length === 0, 'Browser page errors: ' + pageErrors.join('\n'));
