@@ -60,8 +60,58 @@ try {
   await page.screenshot({ path: 'artifacts/biome-instancing-build194-regression.png', fullPage: true });
   console.log('PRODUCTION BIOME + ROAD INSTANCING + ATMOSPHERE + GPU LENS OPTICS + SCENE BLOOM + GOD RAYS + VEHICLE REGRESSION\n' + JSON.stringify(result, null, 2));
   assert(result.pass, 'Production shader regression failed: ' + JSON.stringify(result));
-  assert(pageErrors.length === 0, 'Browser page errors: ' + pageErrors.join('\n'));
+  assert(pageErrors.length === 0, 'Browser page errors: ' + pageErrors.join('\\n'));
   console.log('ALL BIOME/ROAD INSTANCING, ATMOSPHERE, GPU LENS OPTICS, SCENE BLOOM, GOD RAYS, SHADER AND VEHICLE CHECKS PASSED');
+
+  // Run the complete game twice with deterministic biome order so both new instanced paths execute.
+  async function smokeGameBiome(label, randomValue) {
+    const gamePage = await browser.newPage({ viewport: { width: 1280, height: 800 }, deviceScaleFactor: 1 });
+    const gameErrors = [];
+    gamePage.on('pageerror', error => gameErrors.push(error.stack || error.message));
+    await gamePage.addInitScript(value => { Math.random = () => value; }, randomValue);
+    await gamePage.goto(baseUrl + '/', { waitUntil: 'load', timeout: 30000 });
+    await gamePage.waitForFunction(
+      () => Boolean(document.getElementById('boot-screen')?.classList.contains('done')),
+      null,
+      { timeout: 15000 }
+    );
+    await gamePage.evaluate(() => document.getElementById('debug-toggle')?.click());
+    await gamePage.waitForFunction(
+      () => document.getElementById('debug-data')?.innerText.includes('BIOME GPU BATCH'),
+      null,
+      { timeout: 10000 }
+    );
+    const smoke = await gamePage.evaluate(() => {
+      const scene = document.getElementById('scene');
+      const gl = scene && scene.getContext('webgl');
+      const debug = document.getElementById('debug-data')?.innerText || '';
+      const version = document.getElementById('version-label')?.textContent || '';
+      const bootStatus = document.getElementById('boot-status')?.textContent || '';
+      const road = debug.match(/ROAD GPU BATCH\\s+(\\d+)\\s+BATCH\\s*\\/\\s*(\\d+)\\s+INSTANCES\\s*·\\s*(\\w+)/);
+      const biome = debug.match(/BIOME GPU BATCH\\s+(\\d+)\\s+BATCHES\\s*\\/\\s*(\\d+)\\s+INSTANCES/);
+      return {
+        version, bootStatus, road: road ? { batches:Number(road[1]), instances:Number(road[2]), mode:road[3] } : null,
+        biome: biome ? { batches:Number(biome[1]), instances:Number(biome[2]) } : null,
+        webgl: gl ? gl.getParameter(gl.VERSION) : null,
+        maxVertexAttribs: gl ? gl.getParameter(gl.MAX_VERTEX_ATTRIBS) : 0,
+        angleInstancing: !!(gl && gl.getExtension('ANGLE_instanced_arrays')),
+        glError: gl ? gl.getError() : -1,
+        canvas: scene ? [scene.width,scene.height] : null
+      };
+    });
+    assert(smoke.version.includes('BUILD 194'), label + ' game smoke loaded wrong version: ' + JSON.stringify(smoke));
+    assert(smoke.webgl && smoke.angleInstancing && smoke.maxVertexAttribs >= 8, label + ' WebGL instancing context unavailable: ' + JSON.stringify(smoke));
+    assert(smoke.road && smoke.road.mode === 'ANGLE_INSTANCED' && smoke.road.batches === 1 && smoke.road.instances === 192, label + ' road instance batch failed: ' + JSON.stringify(smoke));
+    assert(smoke.biome && smoke.biome.batches > 0 && smoke.biome.instances > 0, label + ' biome batch did not execute: ' + JSON.stringify(smoke));
+    assert(!bootStatus.startsWith('ОШИБКА ЗАПУСКА'), label + ' startup error: ' + smoke.bootStatus);
+    assert(smoke.glError === 0, label + ' WebGL error after scene rendering: ' + JSON.stringify(smoke));
+    assert(gameErrors.length === 0, label + ' browser errors: ' + gameErrors.join('\\n'));
+    await gamePage.screenshot({ path: 'artifacts/biome-instancing-build194-' + label + '-smoke.png', fullPage: true });
+    console.log('LIVE GAME ' + label.toUpperCase() + ' SMOKE\\n' + JSON.stringify(smoke,null,2));
+    await gamePage.close();
+  }
+  await smokeGameBiome('city',0.999999);
+  await smokeGameBiome('coast',0.0);
   const metaScript = await readFile('assets/countach_model_0.js', 'utf8');
   const metaMatch = metaScript.match(/window\.DRIVELLA_COUNTACH_META=(\{[\s\S]*?\});/);
   assert(metaMatch, 'Countach metadata JSON was not found');
