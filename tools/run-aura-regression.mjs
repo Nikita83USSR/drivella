@@ -103,7 +103,7 @@ try {
     assert(smoke.webgl && smoke.angleInstancing && smoke.maxVertexAttribs >= 8, label + ' WebGL instancing context unavailable: ' + JSON.stringify(smoke));
     assert(smoke.road && smoke.road.mode === 'ANGLE_INSTANCED' && smoke.road.batches === 1 && smoke.road.instances === 192, label + ' road instance batch failed: ' + JSON.stringify(smoke));
     assert(smoke.biome && smoke.biome.batches > 0 && smoke.biome.instances > 0, label + ' biome batch did not execute: ' + JSON.stringify(smoke));
-    assert(!bootStatus.startsWith('ОШИБКА ЗАПУСКА'), label + ' startup error: ' + smoke.bootStatus);
+    assert(!smoke.bootStatus.startsWith('ОШИБКА ЗАПУСКА'), label + ' startup error: ' + smoke.bootStatus);
     assert(smoke.glError === 0, label + ' WebGL error after scene rendering: ' + JSON.stringify(smoke));
     assert(gameErrors.length === 0, label + ' browser errors: ' + gameErrors.join('\\n'));
     await gamePage.screenshot({ path: 'artifacts/biome-instancing-build194-' + label + '-smoke.png', fullPage: true });
