@@ -512,8 +512,7 @@ const checks={
  environmentInstancingBatchesPalmCanopies:['leafMain=[[],[],[]]','leafAccent=[[],[],[]]','drawBiomeInstances(leafShapes[variant],leafMain[variant])','drawBiomeInstances(leafShapes[variant],leafAccent[variant])'].every(term=>html.includes(term)),
  environmentInstancingPreservesShadowAOCullingAndHeadlights:html.includes('shadowCasterAllowed(item.color,item.material)')&&html.includes('sceneMaskAllowed(item.color,item.material)')&&html.includes('headlightAffectsMesh(shape,model)'),
  environmentInstancingReportsF3:html.includes('BIOME GPU BATCH')&&html.includes('lastBiomeInstanceCount'),
- environmentInstancingPixelFixtureReadsMaterialAndColour:roadInstancingPixelFixturePass&&roadProbePixels.left[3]<roadProbePixels.right[3]
-
+ environmentInstancingPixelFixtureReadsMaterialAndColour:roadInstancingPixelFixturePass&&roadProbePixels.left[3]<roadProbePixels.right[3],
  atmosphereVertexShaderCompiled:!!atmosphereV.shader,
  atmosphereFragmentShaderCompiled:!!atmosphereF.shader,
  atmosphereFixtureProgramLinked:!!atmosphereProgram.program&&atmosphereFramebufferStatus===gl.FRAMEBUFFER_COMPLETE,
