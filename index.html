@@ -1715,10 +1715,10 @@ function frame(now){
   // Steering against the drift's original turn direction is an explicit recovery input.
   const countersteering=driftLocked&&steerDir!==0&&steerDir*driftDirection<0;
   const steerAngle=getSteeringAngle();
-  let yawTarget=clamp((v/3.35)*Math.tan(steerAngle)*reverseSign,-1.45,1.45);
+  let yawTarget=clamp((v/3.35)*Math.tan(steerAngle)*reverseSign,-.82,.82);
   // The handbrake adds a controllable yaw impulse instead of merely slowing the car.
   if(handbrakeActive&&steerDir!==0)yawTarget+=steerDir*Math.min(.88,v*.022);
-  if(driftLocked&&!countersteering&&steerDir!==0)yawTarget*=1.08;
+  if(driftLocked&&!countersteering&&steerDir!==0)yawTarget*=1.45;
   if(countersteering)yawTarget*=.42*clamp(slipAbs/.42,0,1);
   yawTarget=clamp(yawTarget,-2.1,2.1);
   const yawResponse=countersteering?4.5:handbrakeActive?4.1:driftLocked?3.6:5.2;
