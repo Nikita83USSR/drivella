@@ -64,8 +64,8 @@ try {
   const gamePage = await browser.newPage({ viewport: { width: 1280, height: 900 }, deviceScaleFactor: 1 });
   const gamePageErrors = [];
   gamePage.on('pageerror', error => gamePageErrors.push(error.stack || error.message));
-  await gamePage.goto(baseUrl + '/index.html', { waitUntil: 'load', timeout: 25000 });
-  await gamePage.waitForFunction(() => Boolean(window.DRIVELLA_COUNTACH_GEOMETRY_BOUNDS), null, { timeout: 25000 });
+  await gamePage.goto(baseUrl + '/index.html', { waitUntil: 'domcontentloaded', timeout: 25000 });
+  await gamePage.waitForFunction(() => typeof countachModelReady !== 'undefined' && countachModelReady && Boolean(window.DRIVELLA_COUNTACH_GEOMETRY_BOUNDS), null, { timeout: 25000 });
   const modelGeometry = await gamePage.evaluate(() => ({ ready: typeof countachModelReady !== 'undefined' && countachModelReady, bounds: window.DRIVELLA_COUNTACH_GEOMETRY_BOUNDS }));
   assert(modelGeometry.ready, 'Imported Countach geometry did not finish loading');
   assert(gamePageErrors.length === 0, 'Game startup page errors: ' + gamePageErrors.join('\\n'));
