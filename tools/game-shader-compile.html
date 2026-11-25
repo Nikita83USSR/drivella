@@ -551,7 +551,7 @@ const checks={
   showroomInstancingKeepsSixPalmPlacements:(html.split('queueGaragePalm(garagePalmTrunks').length-1)===6,
   showroomInstancingBatchesNeonRails:html.includes("drawInstancedMesh(cube,garageNeonRails,'garage')")&&html.includes('queueBiomeInstance(garageNeonRails,31.0,-.16,0'),
   showroomInstancingPreservesShadowAOCullingAndFallback:html.includes('shadowBoundsVisible(shape,model)')&&html.includes('shadowCasterAllowed(item.color,item.material)')&&html.includes('sceneMaskAllowed(item.color,item.material)')&&html.includes('if(!useInstancing)'),
-  showroomInstancingKeepsActualGarageSpotlightSources:html.includes('uploadLocalLights(garageMode&&FX.garageSpotlights?GARAGE_LOCAL_LIGHTS:[])')&&html.includes('GARAGE_LOCAL_LIGHTS'),
+  showroomInstancingKeepsActualGarageSpotlightSources:html.includes('uploadLocalLights(garageMode?(FX.garageSpotlights?GARAGE_LOCAL_LIGHTS:[]):(!shadowPass&&FX.trackLights?updateTrackLocalLights():[]))')&&html.includes('GARAGE_LOCAL_LIGHTS'),
   showroomInstancingReportsF3:html.includes('SHOWROOM GPU BATCH')&&html.includes('lastGarageInstanceCount')&&html.includes("batchKind==='garage'"),
  atmosphereVertexShaderCompiled:!!atmosphereV.shader,
  atmosphereFragmentShaderCompiled:!!atmosphereF.shader,
