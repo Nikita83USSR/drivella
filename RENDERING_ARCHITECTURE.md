@@ -1,6 +1,6 @@
 # DRIVELLA — Rendering Architecture
 
-Current reference: **v0.19.17 / BUILD 183**  
+Current reference: **v0.19.18 / BUILD 184**  
 Main renderer: `index.html` — custom WebGL 1 renderer, no external rendering engine.
 
 **Release marker policy:** every published renderer/game change increments `BUILD` in `index.html` and updates the visible HUD, boot screen, README, and this document in the same release. Increment the patch version with the build when appropriate. Never publish a renderer change while leaving the visible build number unchanged.
@@ -763,3 +763,12 @@ The existing frames and lens quads are aligned to the measured bumper normal `[0
 The imported `bodyTail` source part is a 12-triangle red rear-lens assembly at `z=-2.6039`, spanning `x=-1.079..1.079` and `y=0.7616..0.8695`. Each side has three vertical lens bars. The complete original mesh remains the red tail/brake surface and keeps the smoothed brake-level colour response. The two triangles forming the outermost bar on each side are duplicated into a separate turn-signal mesh and translated only `-0.004` on local Z so they sit just behind the original lens plane. A selected side renders amber on the active blink phase; the inactive state is a dark amber lens. No rear fascia, bumper or body mesh is reshaped. The screen-space tail and rear indicator glare use optical points centred on the matching source bars.
 
 `loadCountachModel()` validates that it extracts exactly two triangles for each rear signal side before marking the imported model ready. The automated regression additionally checks the original four bumper pads and eight source triangles, both rear source bars, flare-point bounds, the complete production script's syntax, production WebGL 1 shader compilation, and runtime creation of the two rear-signal meshes. This covers source geometry, parsing and loading; it is not a visual certification on the target GPU.
+
+
+## BUILD 184 — Compact cross flare on deployed upper headlights
+
+`drawVehicleLensFlares()` already calculates two independent upper-headlight sources from the current `headlightDeploy` hinge and per-side `countachLegacyHeadlampMount(side)` transform. The projected source point is therefore the actual centre of each moving projector. BUILD 184 adds a small cross directly after the existing soft radial veil for `kind==='headlight'` sources only.
+
+The cross uses four tapered line gradients in screen space: horizontal `2.55 × radius`, vertical `1.48 × radius`, and two diagonal rays `0.78 × radius`; their half-width factors are `0.050`, `0.042`, and `0.027`. Their central energy is `0.24 ×` the already bounded source intensity. This keeps the cross readable without reviving the longer anamorphic streak or the larger lens-optics stack. The existing `if(main) continue` still bypasses the old full flare treatment after drawing the new cross; tail and indicator flare paths are unchanged.
+
+The automated source regression checks the exact four-ray profile and confirms the cross stays within the upper-headlight source branch. The production WebGL shader tests and Countach lamp-placement/runtime tests remain active. The check validates source wiring and JavaScript parsing rather than visual appearance on the user's GPU.
