@@ -27,7 +27,7 @@ const response=await fetch('../index.html',{cache:'no-store'});
 must(response.ok,'Cannot fetch production index.html: HTTP '+response.status);
 const html=await response.text();
 const version=html.match(/const VERSION='([^']+)',BUILD='([^']+)'/);
-must(version&&version[1]==='v0.19.20'&&version[2]==='186','Unexpected production version marker: '+JSON.stringify(version));
+must(version&&version[1]==='v0.19.21'&&version[2]==='187','Unexpected production version marker: '+JSON.stringify(version));
 function expression(name,endMarker){
  const marker='const '+name+'=';
  const start=html.indexOf(marker);
@@ -149,20 +149,29 @@ function drawGodRaysFixture(){
  gl.useProgram(godRaysP.program);gl.activeTexture(gl.TEXTURE0);gl.bindTexture(gl.TEXTURE_2D,sceneMask);
  gl.uniform1i(location(godRaysP.program,'uSceneMask'),0);gl.uniform2f(location(godRaysP.program,'uSunCenter'),.65,.5);
  gl.uniform2f(location(godRaysP.program,'uSceneTexel'),1/maskW,1/maskH);gl.uniform1f(location(godRaysP.program,'uAspect'),aspect);
- gl.uniform1f(location(godRaysP.program,'uSunRadius'),sunRadius);gl.uniform1f(location(godRaysP.program,'uTime'),1.0);gl.uniform1f(location(godRaysP.program,'uStrength'),.22);
+ gl.uniform1f(location(godRaysP.program,'uSunRadius'),sunRadius);gl.uniform1f(location(godRaysP.program,'uTime'),1.0);gl.uniform1f(location(godRaysP.program,'uStrength'),.242);
  drawGeometry(godRaysP.program,'aPosition',fullscreenVertices,gl.TRIANGLES);gl.finish();
  const pixels=new Uint8Array(godRaysWidth*godRaysHeight*4);gl.readPixels(0,0,godRaysWidth,godRaysHeight,gl.RGBA,gl.UNSIGNED_BYTE,pixels);
  const sample=(u,v)=>{const x=Math.max(0,Math.min(godRaysWidth-1,Math.floor(u*godRaysWidth))),y=Math.max(0,Math.min(godRaysHeight-1,Math.floor(v*godRaysHeight)));const offset=(y*godRaysWidth+x)*4;return Array.from(pixels.slice(offset,offset+4));};
- return{blockedPath:sample(.18,.5),insideOccluder:sample(.39,.5),clearSky:sample(.50,.05)};
+ return{blockedPath:sample(.18,.5),insideOccluder:sample(.39,.5),clearSky:sample(.50,.05),directionalSourcePath:sample(.45,.35)};
 }
 const godRaysWithOccluder=drawGodRaysFixture();
 gl.bindFramebuffer(gl.FRAMEBUFFER,sceneFbo);gl.viewport(0,0,maskW,maskH);gl.clearColor(0,0,0,0);gl.clear(gl.COLOR_BUFFER_BIT|gl.DEPTH_BUFFER_BIT);gl.bindFramebuffer(gl.FRAMEBUFFER,null);
 const godRaysWithoutOccluder=drawGodRaysFixture();
+// Create a cross-shaped occluder that hides the sun centre and all four cardinal source taps, while leaving the diagonal solar rim exposed.
+const centreOccluderHorizontal=new Float32Array([.08,-.045,.52,-.045,.52,.045,.08,.045]);
+const centreOccluderVertical=new Float32Array([.255,-.36,.345,-.36,.345,.36,.255,.36]);
+gl.bindFramebuffer(gl.FRAMEBUFFER,sceneFbo);gl.viewport(0,0,maskW,maskH);gl.clearColor(0,0,0,0);gl.clearDepth(1);gl.clear(gl.COLOR_BUFFER_BIT|gl.DEPTH_BUFFER_BIT);
+drawGeometry(occluderMaskProgram,'p',centreOccluderHorizontal,gl.TRIANGLE_FAN);
+drawGeometry(occluderMaskProgram,'p',centreOccluderVertical,gl.TRIANGLE_FAN);gl.finish();
+const centreOcclusionMask=new Uint8Array(4);gl.readPixels(Math.floor(.65*maskW),Math.floor(.5*maskH),1,1,gl.RGBA,gl.UNSIGNED_BYTE,centreOcclusionMask);
+gl.bindFramebuffer(gl.FRAMEBUFFER,null);gl.viewport(0,0,W,H);
+const godRaysCentreBlocked=drawGodRaysFixture();
 // Restore the original occluder mask before the independent production sun/Bloom pixel fixture.
 gl.bindFramebuffer(gl.FRAMEBUFFER,sceneFbo);gl.viewport(0,0,maskW,maskH);gl.clearColor(0,0,0,0);gl.clearDepth(1);gl.clear(gl.COLOR_BUFFER_BIT|gl.DEPTH_BUFFER_BIT);
 drawGeometry(occluderMaskProgram,'p',occluderVertices,gl.TRIANGLE_FAN);
 gl.bindFramebuffer(gl.FRAMEBUFFER,null);gl.viewport(0,0,W,H);
-const godRaysProbes={...godRaysWithOccluder,clearPath:godRaysWithoutOccluder.blockedPath,targetSize:[godRaysWidth,godRaysHeight]};
+const godRaysProbes={...godRaysWithOccluder,clearPath:godRaysWithoutOccluder.blockedPath,centreOcclusionMask:Array.from(centreOcclusionMask),centreBlockedDirectionalSource:godRaysCentreBlocked.directionalSourcePath,targetSize:[godRaysWidth,godRaysHeight]};
 
 const bloomSource=makeTarget(maskW,maskH);
 const bloomTightHorizontal=makeTarget(maskW,maskH),bloomTightVertical=makeTarget(maskW,maskH);
@@ -297,6 +306,7 @@ bloomHasSoftWideBody:midStrength>=edgeStrength*0.12&&deepStrength>=edgeStrength*
  godRaysRespectGeometryCoverage:godRaysProbes.insideOccluder[3]<3,
  godRaysAreAttenuatedByOccluder:godRaysProbes.clearPath[3]>godRaysProbes.blockedPath[3]*1.20,
  godRaysUseQuarterResolution:godRaysTarget.status===gl.FRAMEBUFFER_COMPLETE&&godRaysWidth===Math.max(1,W>>2)&&godRaysHeight===Math.max(1,H>>2),
+ godRaysRemainWhenSunCentreOccluded:godRaysProbes.centreOcclusionMask[3]>100&&godRaysProbes.centreBlockedDirectionalSource[3]>4,
  webglStateClean:gl.getError()===gl.NO_ERROR
 };
 must(Object.values(pixelTests).every(Boolean),'Production inner-surface pixel regression failed: '+JSON.stringify({pixelTests,probes,brightness:{edge:edgeStrength,shoulder:shoulderStrength,mid:midStrength,deep:deepStrength}}));
@@ -315,6 +325,8 @@ const checks={
  godRaysTargetsComplete:godRaysTarget.status===gl.FRAMEBUFFER_COMPLETE,
  godRaysF4TogglePresent:html.includes('data-fx="sunGodRays" checked')&&html.includes('sunGodRays:true'),
  godRaysUsesDepthAware24TapMask:html.includes('for(int i=0;i<24;i++)')&&html.includes('accumulated+=openAir(sampleUv)*weight')&&html.includes('destinationAir'),
+ godRaysSamplesVisibleRimPerDirection:html.includes('vec2 radialFromSun=(vUv-uSunCenter)*vec2(uAspect,1.0)')&&html.includes('vec2 sourceUv=uSunCenter+')&&html.includes('mix(vUv,sourceUv,t*0.985)')&&html.includes('sourceVisible=openAir(sourceUv)'),
+ godRaysIntensityRaised10Percent:html.includes('godRaysLoc.strength,0.242')&&html.includes('clamp(energy*uStrength,0.0,0.242)'),
  godRaysCompositeIntegratedIntoExistingPost:html.includes('uGodRaysTexture')&&html.includes('godRaysCompositeActive'),
  sunBloomTargetsComplete:sunBloomFramebufferStatuses.every(v=>v===gl.FRAMEBUFFER_COMPLETE),
  allFourProgramsLinked:true,
@@ -360,7 +372,7 @@ const result={pass:true,version:version[1],build:version[2],checks,probes,bright
 window.__GAME_SHADER_RESULT__=result;
 report.className='pass';
 report.textContent='PASS\\n'+JSON.stringify(result,null,2);
-document.title='PASS DRIVELLA God Rays + solar Bloom regression';
+document.title='PASS DRIVELLA directional God Rays + solar Bloom regression';
 })().catch(error=>{
  const report=document.getElementById('report');
  report.className='fail';
