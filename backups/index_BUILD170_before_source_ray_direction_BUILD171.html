@@ -1,0 +1,2228 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,maximum-scale=1,user-scalable=no">
+<meta name="theme-color" content="#080817">
+<meta name="description" content="DRIVELLA — 3D synthwave drift racing">
+<title>DRIVELLA — Synthwave Drift Racing</title>
+<style>
+:root{color-scheme:dark}*{box-sizing:border-box}html,body{margin:0;width:100%;height:100%;overflow:hidden;background:linear-gradient(#080817 0%,#21133d 48%,#74305e 75%,#100d26 100%);color:#eafaff;font-family:Consolas,Monaco,monospace}
+/* Layer order: sunset background, transparent 3D scene, optical flare overlay, then HUD. */
+#sun{position:fixed;inset:0;width:100%;height:100%;pointer-events:none;z-index:0}
+#scene{position:fixed;inset:0;width:100%;height:100%;display:block;background:transparent;z-index:1}
+#flare{position:fixed;inset:0;width:100%;height:100%;pointer-events:none;z-index:2}
+#hud{position:fixed;inset:0;pointer-events:none}
+#fps-counter{position:fixed;left:50%;top:15px;transform:translateX(-50%);z-index:14;display:none;padding:6px 10px;border:1px solid #66eaff55;background:#080b1dcc;color:#8fffff;font:700 10px Consolas,monospace;letter-spacing:.16em;text-shadow:0 0 9px currentColor;pointer-events:none;box-shadow:0 0 14px #00d9ff18}
+.top{position:absolute;left:24px;top:20px;display:flex;gap:20px;align-items:flex-start}
+.logo{font-size:clamp(18px,2.4vw,30px);letter-spacing:.22em;font-weight:900;color:#fff;text-shadow:0 0 8px #ff35e9,0 0 25px #a900ff}
+.logo small{display:block;font-size:10px;letter-spacing:.35em;color:#76f8ff;margin-top:5px}
+.stat{border-left:1px solid #54eaff70;padding-left:12px;color:#8ceeff;font-size:10px;letter-spacing:.12em}
+.stat b{display:block;font-size:18px;color:#fff;margin-top:5px;text-shadow:0 0 10px #00eaff}
+.right{position:absolute;right:24px;top:20px;text-align:right;font-size:10px;color:#91a6cb;letter-spacing:.15em}
+#speed{font-size:clamp(34px,5vw,52px);line-height:1;color:#fff;text-shadow:0 0 10px #00eaff,0 0 25px #00eaff;font-weight:900}
+#speed span{font-size:12px;color:#83f5ff}
+#direction{margin-top:8px;font-size:12px;letter-spacing:.22em;color:#ff8de9;text-shadow:0 0 10px #ff38d8}
+#music{margin-top:9px;color:#9cefff}
+.bottom{position:absolute;bottom:17px;left:22px;right:22px;display:flex;justify-content:space-between;align-items:flex-end;color:#9eb2d6;font-size:10px;letter-spacing:.1em}
+.build-credit{display:flex;flex-direction:column;align-items:flex-end;gap:5px;text-align:right}
+.asset-credit{font-size:8px;letter-spacing:.06em;color:#7189a8;text-decoration:none;opacity:.9}
+.asset-credit:hover{color:#9cefff;text-shadow:0 0 8px #00eaff}
+.hint{line-height:1.8}.hint strong{color:#e8f9ff}
+#overlay{position:fixed;inset:0;z-index:5;display:flex;align-items:center;justify-content:center;background:#08081742}
+.panel{text-align:center;padding:22px 32px;border:1px solid #72f5ff55;background:#08091ac9;box-shadow:0 0 35px #6c00ff22;backdrop-filter:blur(7px)}
+.panel h1{margin:0 0 8px;font-size:clamp(25px,4vw,44px);letter-spacing:.28em;text-shadow:0 0 15px #f32be9}
+.panel p{margin:0;color:#a7c6e9;font-size:11px;letter-spacing:.18em;line-height:1.9}
+.panel .start{color:#77f9ff;margin-top:14px;animation:pulse 1.2s infinite}
+@keyframes pulse{50%{opacity:.35}}.hidden{display:none!important}
+#boot-screen{position:fixed;inset:0;z-index:20;display:flex;align-items:center;justify-content:center;background:radial-gradient(ellipse at 50% 42%,#28103eeb 0%,#0a091bf5 48%,#050610 100%);transition:opacity .7s,visibility .7s}
+#boot-screen.done{opacity:0;visibility:hidden;pointer-events:none}
+#boot-screen:before{content:"";position:absolute;inset:-30%;background:repeating-linear-gradient(0deg,transparent 0 3px,#b45cff0a 4px,transparent 5px 8px);animation:scan 9s linear infinite}
+.boot-content{position:relative;width:min(560px,86vw);text-align:center;padding:34px 28px 30px;border:1px solid #76f5ff45;background:linear-gradient(145deg,#11102bd9,#090817e8);box-shadow:0 0 70px #8b22ff2b,inset 0 0 35px #5e3cff12;backdrop-filter:blur(12px)}
+.boot-kicker{font-size:9px;letter-spacing:.48em;color:#78eaff;margin-bottom:18px}
+.boot-logo{font-family:Arial,sans-serif;font-size:clamp(34px,8vw,66px);font-weight:900;letter-spacing:.18em;color:#f8f5ff;text-shadow:0 0 8px #fff,0 0 22px #ff39df,0 0 48px #a000ff;animation:pulse 2.4s infinite}
+.boot-subtitle{margin-top:13px;font-size:10px;letter-spacing:.36em;color:#79f5ff}
+.boot-mark{height:1px;margin:28px 0 20px;background:linear-gradient(90deg,transparent,#ff39dc,#72f8ff,transparent)}
+.boot-status{min-height:15px;color:#b9c8ed;font-size:10px;letter-spacing:.2em}
+.boot-track{height:5px;margin:15px 0 9px;padding:1px;background:#ffffff13;border:1px solid #8af5ff50}
+.boot-progress{height:100%;width:0;background:linear-gradient(90deg,#a52dff,#ff3cce,#6ffaff);box-shadow:0 0 12px #ff38df}
+.boot-meta{display:flex;justify-content:space-between;color:#7085b2;font-size:9px;letter-spacing:.16em}#boot-percent{color:#8ffaff}
+.boot-footer{margin-top:25px;color:#58668d;font-size:8px;letter-spacing:.3em}
+@keyframes scan{to{transform:translateY(80px)}}
+#sun{z-index:0}#scene{z-index:1}#flare{z-index:2}#hud{z-index:3}
+.version-label{align-self:flex-end;margin:0 0 3px -8px;color:#8e9cbd;font-size:9px;letter-spacing:.12em;white-space:nowrap}
+#tools-ui{position:fixed;right:18px;bottom:58px;display:flex;gap:7px;align-items:center;pointer-events:auto;z-index:8}
+#tools-ui button{font:700 10px Consolas,monospace;letter-spacing:.12em;color:#a9f8ff;background:#0b1025dc;border:1px solid #63eaff80;padding:9px 11px;cursor:pointer;box-shadow:0 0 14px #00d9ff18}
+#tools-ui button:active{background:#18324b}
+#cam-label{min-width:112px;text-align:center;color:#e9d9ff;font-size:9px;letter-spacing:.1em;text-shadow:0 0 8px #bd59ff}
+#debug-panel{position:fixed;left:18px;bottom:65px;z-index:9;display:none;min-width:235px;padding:12px 14px;background:#080c1deF;border:1px solid #6bf2ff80;box-shadow:0 0 22px #00d9ff1c;color:#9db6d8;font-size:10px;line-height:1.7;letter-spacing:.06em;pointer-events:none}
+#debug-panel.visible{display:block}
+#debug-panel strong{color:#82f6ff;font-weight:700}
+#debug-panel .debug-title{color:#ff83df;letter-spacing:.2em;margin-bottom:5px}
+/* DRIVELLA front end */
+#main-menu{position:fixed;inset:0;z-index:12;display:none;align-items:flex-end;justify-content:center;padding:0 18px 7.5vh;background:linear-gradient(180deg,rgba(4,5,19,.08),rgba(4,5,19,.12)),url('assets/menu-background.svg') center/cover no-repeat;}
+#main-menu.show{display:flex;animation:menuIn .65s ease both}
+.menu-content{position:absolute;left:50%;bottom:7.5vh;transform:translateX(-50%);width:min(560px,90vw);margin:0}
+.menu-brand{display:block;position:fixed;left:clamp(22px,4.2vw,68px);top:clamp(22px,3.5vw,54px);white-space:nowrap;color:#ff5bce;font:italic 900 clamp(38px,5.4vw,76px)/.88 Arial,sans-serif;letter-spacing:.035em;text-shadow:0 0 9px #ff40c9,0 0 24px #f328bb,0 0 48px #8b31ff}
+.menu-sub{display:block;position:fixed;left:clamp(26px,4.5vw,72px);top:clamp(82px,9.6vw,126px);margin:0;color:#83efff;font:700 clamp(9px,.95vw,13px)/1 Consolas,monospace;letter-spacing:.38em;text-shadow:0 0 12px #1acfff}
+.menu-actions{display:grid;gap:10px;width:100%}
+.menu-btn{position:relative;width:100%;height:68px;min-height:68px;padding:0 54px;text-align:center;border:1px solid #a5f7ffb8;background:linear-gradient(105deg,rgba(5,7,25,.985),rgba(13,8,34,.985));color:#f4f0ff;font:900 clamp(15px,1.4vw,20px) Consolas,monospace;letter-spacing:.24em;cursor:pointer;clip-path:polygon(4% 0,96% 0,100% 50%,96% 100%,4% 100%,0 50%);transition:transform .2s,border-color .2s,filter .2s;box-shadow:inset 0 0 24px #3e39a344,0 0 16px #25cfff30;backdrop-filter:blur(12px);animation:menuNeon 2.8s ease-in-out infinite}
+.menu-btn:before{content:'›';position:absolute;left:28px;top:50%;transform:translateY(-53%);color:#8af8ff;font-size:30px;text-shadow:0 0 12px #22ddff}
+.menu-btn:nth-child(1){border-color:#ff65e6;box-shadow:inset 0 0 28px #ff23ce28,0 0 21px #ff1acb50;animation-delay:0s}
+.menu-btn:nth-child(1):before{content:'»';color:#ff74e8;text-shadow:0 0 12px #ff22d9}
+.menu-btn:nth-child(2){border-color:#58eaffaa;animation-delay:.45s}
+.menu-btn:nth-child(3){border-color:#a77bffbb;animation-delay:.9s}
+.menu-btn:hover,.menu-btn:focus-visible{outline:none;transform:scale(1.025);filter:brightness(1.3);border-color:#fff;box-shadow:0 0 30px #ff27d977,inset 0 0 28px #ff27d533}
+@keyframes menuNeon{0%,100%{filter:brightness(.9);box-shadow:inset 0 0 20px #5744aa28,0 0 13px #34ccff25}50%{filter:brightness(1.16);box-shadow:inset 0 0 28px #bd37d83a,0 0 24px #35dfff55}}
+.menu-btn:nth-child(1){animation-name:menuNeonPink}
+@keyframes menuNeonPink{0%,100%{filter:brightness(.94);box-shadow:inset 0 0 24px #ff24d92a,0 0 16px #ff24d94b}50%{filter:brightness(1.2);box-shadow:inset 0 0 32px #ff24d94a,0 0 29px #ff24d980}}
+.menu-footer{position:absolute;left:clamp(18px,3vw,42px);bottom:18px;color:#c5b9e8;font-size:10px;letter-spacing:.16em;text-shadow:0 2px 8px #000}
+.menu-footer b{color:#ff8cdd;font-weight:700}
+#garage-screen,#options-screen{position:fixed;inset:0;z-index:13;display:none;pointer-events:none;background:linear-gradient(90deg,rgba(7,9,27,.34) 0%,rgba(7,9,27,.10) 34%,transparent 62%)}
+#garage-screen.show,#options-screen.show{display:block}
+.garage-head,.options-head{position:absolute;left:clamp(20px,4vw,58px);top:clamp(20px,4vw,48px);color:#fff;text-shadow:0 0 15px #ff3cdb;letter-spacing:.24em;font-weight:900;font-size:clamp(25px,4vw,42px)}
+.garage-copy{position:absolute;left:clamp(20px,4vw,58px);top:112px;color:#8cefff;font-size:10px;letter-spacing:.18em;line-height:2}
+.garage-controls{position:absolute;left:clamp(20px,4vw,58px);bottom:clamp(22px,5vh,55px);display:grid;gap:12px;pointer-events:auto}
+.garage-controls button,.options-card button{padding:13px 18px;border:1px solid #65eaff99;background:#090d25eF;color:#eafaff;font:700 11px Consolas,monospace;letter-spacing:.15em;cursor:pointer}
+.garage-controls button:hover,.options-card button:hover{border-color:#ff55dc;box-shadow:0 0 18px #ff2ad455}
+.garage-tip{position:absolute;right:28px;bottom:30px;color:#a7b6d7;font-size:10px;letter-spacing:.12em;text-align:right}
+.options-card{position:absolute;left:clamp(20px,4vw,58px);top:145px;width:min(360px,86vw);padding:22px;border:1px solid #6ceaff66;background:#080b20eF;box-shadow:0 0 40px #a100ff22;pointer-events:auto;color:#c9d9f1;font-size:11px;letter-spacing:.1em}
+.option-row{display:flex;justify-content:space-between;align-items:center;gap:15px;padding:13px 0;border-bottom:1px solid #78cfff22}
+.option-row input{accent-color:#ff48d5;width:130px}
+#garage-screen{cursor:grab}#garage-screen.show{pointer-events:auto}#garage-screen.dragging{cursor:grabbing}body:not(.playing) #hud,body:not(.playing) #tools-ui{visibility:hidden}body:not(.playing):not(.garage-mode) #debug-panel{visibility:hidden}
+@keyframes menuIn{from{opacity:0;transform:scale(1.025)}to{opacity:1;transform:scale(1)}}
+@media(max-width:700px){#main-menu{background-position:center center;padding:0 12px 7vh;align-items:flex-end}.menu-content{left:50%;bottom:7vh;width:min(520px,92vw);margin:0}.menu-actions{gap:8px}.menu-btn{height:58px;min-height:58px;font-size:14px;letter-spacing:.18em;padding:0 36px}.menu-btn:before{left:18px;font-size:25px}.menu-footer{left:14px;bottom:10px;font-size:8px}.garage-copy{top:95px;font-size:8px}.garage-tip{right:15px;bottom:15px;font-size:8px;max-width:42vw}.options-card{top:125px}}
+@media(max-width:700px){.top{gap:8px}.version-label{font-size:7px;margin-left:0}.stat{display:none}#tools-ui{right:8px;bottom:48px;gap:4px}#tools-ui button{padding:8px 7px;font-size:9px}#cam-label{min-width:90px;font-size:8px}#debug-panel{left:8px;bottom:98px;min-width:205px;font-size:9px}.bottom{max-width:75%}}
+@media(max-width:700px){.top{left:10px;top:10px;gap:9px}.right{right:10px;top:10px}.bottom{left:10px;right:10px;bottom:9px}.stat{font-size:8px;padding-left:7px}.stat b{font-size:14px}.logo small{font-size:8px}.hint{font-size:8px}.boot-content{padding:28px 18px 24px}}
+/* F4 visual effects console */
+#effects-menu{position:fixed;inset:0;z-index:30;display:none;pointer-events:auto;background:linear-gradient(90deg,transparent 45%,rgba(2,4,18,.18))}
+#effects-menu.show{display:block}
+.fx-panel{position:absolute;top:clamp(12px,3vh,28px);right:clamp(10px,2vw,26px);width:min(414px,calc(100vw - 20px));max-height:94vh;overflow:auto;padding:18px 18px 14px;border:1px solid #68eaff8c;background:linear-gradient(145deg,rgba(8,13,34,.97),rgba(13,7,31,.97));box-shadow:0 0 34px #00dfff22,inset 0 0 28px #773aff12;backdrop-filter:blur(16px);color:#dcecff;scrollbar-width:thin;scrollbar-color:#6956a8 #090d20}
+.fx-head{display:flex;justify-content:space-between;align-items:center;gap:12px;padding-bottom:12px;border-bottom:1px solid #6aeaff38}
+.fx-kicker{color:#77f5ff;font-size:8px;letter-spacing:.28em}
+.fx-title{margin-top:5px;color:#fff;font-size:16px;font-weight:900;letter-spacing:.15em;text-shadow:0 0 12px #ff35dc66}
+.fx-close{width:32px;height:32px;border:1px solid #8af3ff66;background:#10152c;color:#aaf8ff;font:22px Consolas,monospace;cursor:pointer}
+.fx-help{padding:10px 0 5px;color:#8397bb;font-size:9px;letter-spacing:.08em}
+.fx-group{padding-top:10px}
+.fx-group-title{padding:7px 0;color:#ff8ddd;font-size:9px;font-weight:800;letter-spacing:.20em;border-bottom:1px solid #b14eb52b}
+.fx-row{display:flex;justify-content:space-between;align-items:center;gap:14px;min-height:47px;padding:8px 2px;border-bottom:1px solid #7f91b51c;cursor:pointer}
+.fx-row b{display:block;color:#e8f4ff;font-size:10px;font-weight:700;letter-spacing:.035em}
+.fx-row small{display:block;margin-top:4px;color:#8193b7;font-size:8px;line-height:1.35;letter-spacing:.025em}
+.fx-row input{flex:0 0 auto;width:18px;height:18px;margin:0;accent-color:#ff4bd8;cursor:pointer;filter:drop-shadow(0 0 5px #41dfff33)}.fx-row select{flex:0 0 auto;max-width:158px;padding:7px 8px;border:1px solid #67eaff88;background:#0b1329;color:#aef8ff;font:700 9px Consolas,monospace;letter-spacing:.02em}
+.fx-row:has(input:checked) b{color:#a6f8ff}
+.fx-footer{display:flex;justify-content:space-between;align-items:center;gap:10px;padding-top:13px;color:#778db4;font-size:8px;letter-spacing:.1em}
+.fx-footer button{padding:9px 12px;border:1px solid #ff6fdf73;background:#1a102d;color:#ffb8ed;font:700 9px Consolas,monospace;letter-spacing:.12em;cursor:pointer}
+@media(max-width:700px){.fx-panel{top:8px;right:8px;width:min(390px,calc(100vw - 16px));max-height:calc(100vh - 16px);padding:14px}.fx-row{min-height:43px}.fx-row b{font-size:9px}}
+</style>
+</head>
+<body>
+<canvas id="scene"></canvas><canvas id="sun"></canvas><canvas id="flare"></canvas>
+<div id="hud">
+ <div class="top"><div class="logo">DRIVELLA<small>3D SYNTHWAVE DRIFT RACING</small></div><div class="version-label" id="version-label">v0.19.04 · BUILD 170</div><div class="stat">DISTANCE<b id="distance">000.0 KM</b></div><div class="stat">LOCATION<b>VIOLET COAST</b></div></div>
+ <div class="right"><div id="speed">000 <span>KM/H</span></div><div id="direction">▶ FORWARD</div><div id="music">♫ MUSIC SCANNING…</div></div>
+ <div class="bottom"><div class="hint"><strong>W / ↑</strong> ACCELERATE　<strong>S / ↓</strong> BRAKE / REVERSE<br><strong>A / ←　D / →</strong> STEER　<strong>SPACE</strong> HANDBRAKE　<strong>C</strong> CAMERA　<strong>HOLD + DRAG LMB</strong> LOOK　<strong>L</strong> LIGHTS　<strong>K</strong> WIREFRAME</div><div class="build-credit"><span>3D NEON HIGHWAY // BUILD 170</span><a class="asset-credit" href="https://sketchfab.com/3d-models/low-poly-lamborghini-countach-c9b28a4ad5c74649a09afa613dd3fae1" target="_blank" rel="noopener noreferrer">Original model: 3DShinobi · Sketchfab · CC BY · modified for DRIVELLA</a></div></div>
+</div>
+<div id="fps-counter" aria-live="off">FPS --</div>
+<div id="effects-menu" aria-hidden="true">
+ <aside class="fx-panel" id="fx-panel" role="dialog" aria-label="Графические эффекты DRIVELLA">
+  <div class="fx-head"><div><div class="fx-kicker">DRIVELLA // REALTIME RENDERER</div><div class="fx-title">ВИЗУАЛЬНЫЕ ЭФФЕКТЫ</div></div><button id="fx-close" class="fx-close" aria-label="Закрыть меню">×</button></div>
+  <div class="fx-help">F4 — открыть / закрыть · Настройки применяются сразу</div>
+  <div class="fx-group"><div class="fx-group-title">КОНТУРЫ И МАТЕРИАЛЫ</div>
+   <label class="fx-row"><span><b>Мультяшные контуры кузова</b><small>Чёрные ink-линии и контуры граней</small></span><input type="checkbox" data-fx="outlines" checked></label>
+   <label class="fx-row"><span><b>SSAO — контактное затенение</b><small>Мягкие затемнения в стыках и углублениях</small></span><input type="checkbox" data-fx="ssao" checked></label>
+   <label class="fx-row"><span><b>Отражения на стёклах</b><small>Процедурное отражение неонового окружения</small></span><input type="checkbox" data-fx="glassReflections" checked></label>
+   <label class="fx-row"><span><b>Блики и лак на кузове</b><small>Clear-coat, солнечные и цветные блики</small></span><input type="checkbox" data-fx="paintHighlights" checked></label>
+   <label class="fx-row"><span><b>Каркас автомобиля</b><small>Диагностический wireframe · клавиша K</small></span><input type="checkbox" data-fx="wireframe"></label>
+  </div>
+  <div class="fx-group"><div class="fx-group-title">СВЕТ И ТЕНИ</div>
+   <label class="fx-row"><span><b>Солнечные тени окружения</b><small>Тени машины и объектов на дороге</small></span><input type="checkbox" data-fx="worldShadows" checked></label>
+   <label class="fx-row"><span><b>Самозатенение автомобиля</b><small>ОТЛОЖЕНО: доработка контура и артефактов · включается вручную</small></span><input type="checkbox" data-fx="vehicleShadows"></label>
+   <label class="fx-row"><span><b>Выдвижные фары</b><small>Механизм pop-up · клавиша L</small></span><input type="checkbox" data-fx="headlights"></label>
+   <label class="fx-row"><span><b>Свет от фар</b><small>Динамическое освещение дороги · клавиша H</small></span><input type="checkbox" data-fx="headlightLighting" checked></label>
+   <label class="fx-row"><span><b>Освещение прожекторами гаража</b><small>Два локальных источника света</small></span><input type="checkbox" data-fx="garageSpotlights" checked></label>
+   <label class="fx-row"><span><b>Тени прожекторов гаража</b><small>Отдельные карты теней двух светильников</small></span><input type="checkbox" data-fx="garageSpotShadows" checked></label>
+  </div>
+  <div class="fx-group"><div class="fx-group-title">НЕОН И ОПТИКА</div>
+   <label class="fx-row"><span><b>Солнце и закатный диск</b><small>Визуальный synthwave-диск позади сцены</small></span><input type="checkbox" data-fx="sunDisc" checked></label>
+   <label class="fx-row"><span><b>GPU-рендер солнца</b><small>WebGL shader · выключи для сравнения с Canvas2D</small></span><input type="checkbox" data-fx="sunGpu" checked></label>
+   <label class="fx-row"><span><b>Внутренний bloom по кромкам</b><small>Свечение только внутри силуэта с плавным затуханием от солнечного контакта</small></span><input type="checkbox" data-fx="sunAuraWrap" checked></label>
+   <label class="fx-row"><span><b>ТЕСТ: внутренний bloom</b><small>Контактная кромка тёплая, затухание идёт внутрь; снаружи силуэта свечения нет</small></span><input type="checkbox" data-fx="sunAuraDebug"></label>
+   <label class="fx-row"><span><b>Оптические блики фар и фонарей</b><small>Ореолы, streaks, diffraction и lens ghosts</small></span><input type="checkbox" data-fx="lensFlares" checked></label>
+   <label class="fx-row"><span><b>Неоновая подсветка днища</b><small>Красное свечение пола и боковые неоновые линии</small></span><input type="checkbox" data-fx="underglow" checked></label>
+   <label class="fx-row"><span><b>Контактные тени колёс</b><small>Мягкие локальные тени под четырьмя шинами</small></span><input type="checkbox" data-fx="tireContact" checked></label>
+   <label class="fx-row"><span><b>Свечение ламп автомобиля</b><small>Emissive-материалы фар, стоп-сигналов и поворотников</small></span><input type="checkbox" data-fx="lampEmission" checked></label>
+  </div>
+  <div class="fx-footer"><button id="fx-reset" type="button">СБРОСИТЬ ЭФФЕКТЫ</button><span>F3 — диагностика</span></div>
+ </aside>
+</div>
+<div id="tools-ui"><button id="cam-prev" aria-label="Previous camera">◀</button><span id="cam-label">CAM 2 · CLOSE</span><button id="cam-next" aria-label="Next camera">▶</button><button id="debug-toggle">DEBUG</button></div>
+<div id="debug-panel"><div class="debug-title">DRIVELLA DIAGNOSTICS</div><div id="debug-data">Initializing…</div></div>
+<div id="boot-screen"><div class="boot-content"><div class="boot-kicker">NIGHT DRIVE SYSTEMS // INITIALIZING</div><div class="boot-logo">DRIVELLA</div><div class="boot-subtitle">3D SYNTHWAVE DRIFT RACING</div><div class="boot-mark"></div><div class="boot-status" id="boot-status">BUILDING THE 3D WORLD</div><div class="boot-track"><div class="boot-progress" id="boot-progress"></div></div><div class="boot-meta"><span>3D ENGINE ONLINE</span><span id="boot-percent">00%</span></div><div class="boot-footer">ENGINE STARTUP // v0.19.04 · BUILD 170</div></div></div>
+<div id="main-menu"><div class="menu-content"><div class="menu-brand">DRIVELLA GTS</div><div class="menu-sub">RIDE THE RETRO FUTURE</div><div class="menu-actions"><button class="menu-btn" id="menu-start">СТАРТ</button><button class="menu-btn" id="menu-garage">ГАРАЖ</button><button class="menu-btn" id="menu-options">НАСТРОЙКИ</button></div></div><div class="menu-footer">РАЗРАБОТЧИК — <b>НИКИТА МАРКИН</b></div></div>
+<div id="garage-screen"><div class="garage-head">ГАРАЖ // DRIVELLA GTS</div><div class="garage-copy">ТЕКУЩИЙ АВТОМОБИЛЬ<br>DRIVELLA GTS · RETRO GT COUPE<br>ПОКАЖИ ЕЁ СО ВСЕХ СТОРОН</div><div class="garage-controls"><button id="garage-back">← НАЗАД В МЕНЮ</button></div><div class="garage-tip">ЗАЖМИ И ТЯНИ — ВРАЩЕНИЕ<br>КОЛЁСИКО — ПРИБЛИЗИТЬ / ОТДАЛИТЬ</div></div>
+<div id="options-screen"><div class="options-head">ОПЦИИ</div><div class="options-card"><div class="option-row"><span>МУЗЫКА</span><button id="option-music">ВКЛЮЧЕНА</button></div><div class="option-row"><span>ГРОМКОСТЬ</span><input id="option-volume" type="range" min="0" max="100" value="52"></div><div class="option-row"><span>ЗВУК ДВИГАТЕЛЯ</span><button id="option-sfx">ВКЛЮЧЁН</button></div><div class="option-row"><span>КАМЕРА</span><span>КЛАВИШИ 1–4</span></div><button id="options-back" style="width:100%;margin-top:18px">← НАЗАД В МЕНЮ</button></div></div>
+<div id="overlay" class="hidden"><div class="panel"><h1>DRIVELLA</h1><p>VIOLET COAST // NIGHT DRIVE</p><p class="start">PRESS W / ↑ TO DRIVE</p><p>W FORWARD · S REVERSE · A/D STEER · SPACE HANDBRAKE</p></div></div>
+<script src="assets/countach_model_0.js"></script>
+<script src="assets/countach_model_0a.js"></script>
+<script src="assets/countach_model_0b.js"></script>
+<script src="assets/countach_model_0c.js"></script>
+<script src="assets/countach_model_0d.js"></script>
+<script src="assets/countach_model_1.js"></script>
+<script src="assets/countach_model_2.js"></script>
+<script src="assets/countach_model_3a.js"></script>
+<script src="assets/countach_model_3b.js"></script>
+<script src="assets/countach_model_3c.js"></script>
+<script src="assets/countach_model_3d.js"></script>
+<script>
+(()=>{
+'use strict';
+const VERSION='v0.19.04',BUILD='170';
+const canvas=document.getElementById('scene'),gl=canvas.getContext('webgl',{antialias:true,alpha:true}),sun=document.getElementById('sun'),sctx=sun.getContext('2d'),flare=document.getElementById('flare'),fctx=flare.getContext('2d');
+const $=id=>document.getElementById(id);
+let countachModel=null,countachModelReady=false;
+const clamp=(v,a,b)=>Math.max(a,Math.min(b,v));
+function reportStartupError(message){
+ const status=$('boot-status');
+ if(status){status.textContent='ОШИБКА ЗАПУСКА: '+String(message||'неизвестная ошибка').slice(0,110);status.style.color='#ff718a';}
+}
+window.addEventListener('error',e=>reportStartupError(e.message||'JavaScript error'));
+window.addEventListener('unhandledrejection',e=>reportStartupError(e.reason&&e.reason.message||e.reason||'Promise rejected'));
+
+let W=innerWidth,H=innerHeight,DPR=1,outlinePass=false,shadowPass=false,shadowCasterMode='all',aoScenePass=false,outlineTarget=null,aoTarget=null,shadowTarget=null,vehicleShadowTarget=null,localShadowTargets=[null,null],localShadowVPs=[null,null],localShadowSignatures=['',''],shadowVP=null,sunShadowVP=null,shadowSceneRevision=1,outlineCabinEdge=null;
+function resize(){
+ DPR=Math.min(devicePixelRatio||1,2);W=innerWidth;H=innerHeight;
+ for(const c of [canvas,sun,flare]){c.width=Math.round(W*DPR);c.height=Math.round(H*DPR);c.style.width=W+'px';c.style.height=H+'px';}
+ if(gl)gl.viewport(0,0,canvas.width,canvas.height);
+ sctx.setTransform(DPR,0,0,DPR,0,0);fctx.setTransform(DPR,0,0,DPR,0,0);
+}
+addEventListener('resize',resize);
+if(!gl){$('boot-status').textContent='WEBGL NOT AVAILABLE';throw new Error('WebGL unavailable');}
+const vs='attribute vec3 p;attribute vec3 normal;uniform mat4 vp;uniform mat4 model;uniform mat3 normalMatrix;uniform mat4 shadowVP;uniform mat4 localShadowVP0;uniform mat4 localShadowVP1;varying vec3 vNormal;varying vec3 vWorldPos;varying vec3 vLocalPos;varying vec4 vShadowCoord;varying vec4 vLocalShadowCoord0;varying vec4 vLocalShadowCoord1;void main(){vec4 world=model*vec4(p,1.0);vWorldPos=world.xyz;vLocalPos=p;vShadowCoord=shadowVP*world;vLocalShadowCoord0=localShadowVP0*world;vLocalShadowCoord1=localShadowVP1*world;vNormal=normalize(normalMatrix*normal);gl_Position=vp*world;}';
+const fs=(gl.getShaderPrecisionFormat(gl.FRAGMENT_SHADER,gl.HIGH_FLOAT).precision>0?'precision highp float;':'precision mediump float;')+'uniform vec4 color;uniform float toon;uniform float materialMode;uniform float outlinePass;uniform float shadowPass;uniform float shadowMomentPass;uniform float aoScenePass;uniform float shadowEnabled;uniform float vehicleShadowEnabled;uniform float glassReflectionEnabled;uniform float paintHighlightsEnabled;uniform float lampEmissionEnabled;uniform sampler2D shadowMap;uniform sampler2D vehicleShadowMap;uniform vec2 shadowTexel;uniform vec2 vehicleShadowTexel;uniform sampler2D localShadowMap0;uniform sampler2D localShadowMap1;uniform vec2 localShadowTexel0;uniform vec2 localShadowTexel1;uniform vec2 localShadowEnabled;uniform vec3 keyLightDir;uniform vec3 nonShadowFillDir;uniform vec3 viewPos;uniform float showroom;uniform float time;uniform float localLightCount;uniform vec4 localLightPosRange[4];uniform vec4 localLightColorPower[4];uniform vec4 localLightDirectionCone[4];varying vec3 vNormal;varying vec3 vWorldPos;varying vec3 vLocalPos;varying vec4 vShadowCoord;varying vec4 vLocalShadowCoord0;varying vec4 vLocalShadowCoord1;\nvec2 packMoment16(float value){float scaled=clamp(value,0.0,1.0)*255.0;return vec2(floor(scaled)/255.0,fract(scaled));}\nfloat unpackVehicleDepth(vec2 packedDepth){return packedDepth.x+packedDepth.y/255.0;}\nfloat sampleVehicleDepth(vec2 uv){return unpackVehicleDepth(texture2D(vehicleShadowMap,uv).rg);}\nfloat vehicleShadowTap(vec2 uv,float receiver){return receiver>sampleVehicleDepth(uv)?1.0:0.0;}\nfloat calcVehicleSoftShadow(vec2 uv,float receiverDepth,float bias){\n // Binary self-shadow mask: one depth test, one fixed shade, no penumbra or internal tonal variation.\n float receiver=receiverDepth-bias;\n float stored=sampleVehicleDepth(uv);\n return receiver>stored?0.58:1.0;\n}\nfloat sampleSunShadowDepth(vec2 uv,float vehicleReceiver){\n vec2 packedDepth;\n if(vehicleReceiver>0.5)packedDepth=texture2D(vehicleShadowMap,uv).rg;\n else packedDepth=texture2D(shadowMap,uv).rg;\n return packedDepth.x+packedDepth.y/255.0;\n}\nfloat calcSunShadow(float vehicleReceiver){\n vec4 coord=vShadowCoord;float invW=1.0/max(coord.w,0.0001);\n vec3 ndc=coord.xyz*invW;vec2 uv=ndc.xy*0.5+0.5;float receiverDepth=ndc.z*0.5+0.5;\n if(uv.x<=0.001||uv.x>=0.999||uv.y<=0.001||uv.y>=0.999||receiverDepth<=0.0||receiverDepth>=1.0)return 1.0;\n vec2 texel=mix(shadowTexel,vehicleShadowTexel,vehicleReceiver);\n float ndotl=abs(dot(normalize(vNormal),normalize(keyLightDir)));\n float bias=vehicleReceiver>0.5?max(0.00030,0.00090*(1.0-ndotl)):max(0.00024,0.00072*(1.0-ndotl));\n if(vehicleReceiver>0.5)return calcVehicleSoftShadow(uv,receiverDepth,bias);\n float blockerDepthSum=0.0,blockerCount=0.0;\n for(int by=-1;by<=1;by++){for(int bx=-1;bx<=1;bx++){\n  vec2 tap=uv+vec2(float(bx),float(by))*texel*2.2;\n  float stored=sampleSunShadowDepth(tap,vehicleReceiver);\n  if(stored<receiverDepth-bias){blockerDepthSum+=stored;blockerCount+=1.0;}\n }}\n if(blockerCount<=0.0)return 1.0;\n float averageBlocker=blockerDepthSum/blockerCount;\n float penumbra=clamp((receiverDepth-averageBlocker)/max(averageBlocker,0.045)*24.0,1.0,5.5);\n float shadowAmount=0.0,shadowWeight=0.0;\n for(int sy=-1;sy<=1;sy++){for(int sx=-1;sx<=1;sx++){\n  float tapWeight=(sx==0?2.0:1.0)*(sy==0?2.0:1.0);\n  vec2 tap=uv+vec2(float(sx),float(sy))*texel*penumbra;\n  float stored=sampleSunShadowDepth(tap,vehicleReceiver);\n  shadowAmount+=(receiverDepth-bias>stored)?tapWeight:0.0;shadowWeight+=tapWeight;\n }}\n return 1.0-(shadowAmount/max(shadowWeight,1.0))*0.50;\n}\nfloat calcLocalSpotShadow0(vec4 coord,vec3 N,vec3 L){\n if(localShadowEnabled.x<0.5)return 1.0;\n float invW=1.0/max(coord.w,0.0001);vec3 ndc=coord.xyz*invW;\n vec2 uv=ndc.xy*0.5+0.5;float receiverDepth=ndc.z*0.5+0.5;\n if(uv.x<=0.001||uv.x>=0.999||uv.y<=0.001||uv.y>=0.999||receiverDepth<=0.0||receiverDepth>=1.0)return 1.0;\n float bias=max(0.00045,0.00125*(1.0-abs(dot(normalize(N),normalize(L)))));\n float shadow=0.0,weight=0.0;\n for(int y=0;y<2;y++){for(int x=0;x<2;x++){\n  vec2 offset=(vec2(float(x),float(y))-0.5)*localShadowTexel0;\n  vec2 packedDepthSample=texture2D(localShadowMap0,uv+offset).rg;\n  float stored=packedDepthSample.x+packedDepthSample.y/255.0;\n  shadow+=(receiverDepth-bias>stored)?1.0:0.0;weight+=1.0;\n }}\n return 1.0-(shadow/max(weight,1.0))*0.72;\n}\nfloat calcLocalSpotShadow1(vec4 coord,vec3 N,vec3 L){\n if(localShadowEnabled.y<0.5)return 1.0;\n float invW=1.0/max(coord.w,0.0001);vec3 ndc=coord.xyz*invW;\n vec2 uv=ndc.xy*0.5+0.5;float receiverDepth=ndc.z*0.5+0.5;\n if(uv.x<=0.001||uv.x>=0.999||uv.y<=0.001||uv.y>=0.999||receiverDepth<=0.0||receiverDepth>=1.0)return 1.0;\n float bias=max(0.00045,0.00125*(1.0-abs(dot(normalize(N),normalize(L)))));\n float shadow=0.0,weight=0.0;\n for(int y=0;y<2;y++){for(int x=0;x<2;x++){\n  vec2 offset=(vec2(float(x),float(y))-0.5)*localShadowTexel1;\n  vec2 packedDepthSample=texture2D(localShadowMap1,uv+offset).rg;\n  float stored=packedDepthSample.x+packedDepthSample.y/255.0;\n  shadow+=(receiverDepth-bias>stored)?1.0:0.0;weight+=1.0;\n }}\n return 1.0-(shadow/max(weight,1.0))*0.72;\n}\nvec3 evalLocalLight(vec3 N,vec3 V,vec3 albedo,float gloss,vec4 posRange,vec4 colorPower,vec4 directionCone,float shadowVisibility){\n if(colorPower.w<=0.001||posRange.w<=0.01)return vec3(0.0);\n vec3 delta=posRange.xyz-vWorldPos;float distSq=dot(delta,delta),range=posRange.w;\n if(distSq>=range*range)return vec3(0.0);\n float dist=sqrt(max(distSq,0.0001));vec3 L=delta/max(dist,0.001);\n float radial=1.0-smoothstep(range*0.52,range,dist);float attenuation=radial*radial/(1.0+distSq*0.026);\n float cone=1.0;if(directionCone.w> -0.5){float spotDot=dot(normalize(directionCone.xyz),-L);cone=smoothstep(directionCone.w,min(directionCone.w+0.10,0.999),spotDot);}\n float diffuse=abs(dot(N,L));vec3 H=normalize(L+V);float specular=pow(max(abs(dot(N,H)),0.0),gloss);\n vec3 diffuseTerm=albedo*colorPower.rgb*(diffuse*0.28);vec3 specularTerm=colorPower.rgb*(specular*0.18);return (diffuseTerm+specularTerm)*colorPower.w*attenuation*cone*shadowVisibility;\n}\nvec3 calcLocalLighting(vec3 N,vec3 V,vec3 albedo,float gloss){\n if(localLightCount<0.5)return vec3(0.0);\n float localVisibility0=calcLocalSpotShadow0(vLocalShadowCoord0,N,normalize(localLightPosRange[0].xyz-vWorldPos));\n vec3 sum=evalLocalLight(N,V,albedo,gloss,localLightPosRange[0],localLightColorPower[0],localLightDirectionCone[0],localVisibility0);\n if(localLightCount>1.5){float localVisibility1=calcLocalSpotShadow1(vLocalShadowCoord1,N,normalize(localLightPosRange[1].xyz-vWorldPos));sum+=evalLocalLight(N,V,albedo,gloss,localLightPosRange[1],localLightColorPower[1],localLightDirectionCone[1],localVisibility1);}\n if(localLightCount>2.5)sum+=evalLocalLight(N,V,albedo,gloss,localLightPosRange[2],localLightColorPower[2],localLightDirectionCone[2],1.0);\n if(localLightCount>3.5)sum+=evalLocalLight(N,V,albedo,gloss,localLightPosRange[3],localLightColorPower[3],localLightDirectionCone[3],1.0);\n return sum;\n}\nvoid main(){if(outlinePass>0.5){vec3 edgeN=normalize(vNormal);float viewDepth=clamp(length(viewPos-vWorldPos)/(aoScenePass>0.5?110.0:24.0),0.0,1.0);gl_FragColor=vec4(edgeN*0.5+0.5,0.25+viewDepth*0.75);return;}if(shadowPass>0.5){float depthValue=gl_FragCoord.z;if(shadowMomentPass>0.5){vec2 first=packMoment16(depthValue),second=packMoment16(depthValue*depthValue);gl_FragColor=vec4(first,second);}else{gl_FragColor=vec4(floor(depthValue*255.0)/255.0,fract(depthValue*255.0),0.0,1.0);}return;}if(materialMode>6.5&&materialMode<7.5){float radius=length(vec2(vLocalPos.x*0.92,vLocalPos.z*0.78));float core=exp(-radius*radius*5.8);float soft=exp(-radius*radius*1.72);float edgeFade=1.0-smoothstep(0.78,1.0,radius);float contact=clamp((core*0.62+soft*0.38)*edgeFade,0.0,1.0);gl_FragColor=vec4(vec3(0.006,0.004,0.012),color.a*contact);return;}if(materialMode>7.5){gl_FragColor=vec4(color.rgb*(lampEmissionEnabled>0.5?1.55:0.18),color.a);return;}float shadowVisibility=1.0;if(materialMode<4.5){if(toon>0.5&&vehicleShadowEnabled>0.5)shadowVisibility=calcSunShadow(1.0);else if(toon<0.5&&shadowEnabled>0.5)shadowVisibility=calcSunShadow(0.0);}if(materialMode>5.5){float across=abs(vLocalPos.x);float railCore=exp(-pow(across/0.14,2.0));float railHalo=exp(-pow(across/0.48,2.0));float railHaze=exp(-pow(across/0.88,2.0));float endFade=1.0-smoothstep(0.86,1.0,abs(vLocalPos.z));float railEnergy=(railCore*0.13+railHalo*0.46+railHaze*0.27)*endFade;float railAlpha=color.a*clamp(railEnergy,0.0,0.78);vec3 railColor=mix(color.rgb,vec3(1.0,0.20,0.42),railCore*0.36);gl_FragColor=vec4(railColor,railAlpha);return;}if(materialMode>4.5){float radius=length(vLocalPos.xz);float broadHalo=exp(-radius*radius*0.58);float softHalo=exp(-radius*radius*1.48);float bodyGlow=exp(-radius*radius*3.65);float emitter=exp(-radius*radius*8.2);float edgeFade=1.0-smoothstep(0.91,1.0,radius);float glow=(broadHalo*0.58+softHalo*0.30+bodyGlow*0.105+emitter*0.018)*edgeFade;float softAlpha=color.a*clamp(glow,0.0,0.72);vec3 neonColor=mix(color.rgb,vec3(1.0,0.18,0.40),bodyGlow*0.40);gl_FragColor=vec4(neonColor,softAlpha);return;}if(toon<0.5){vec3 worldLit=color.rgb*shadowVisibility;worldLit+=calcLocalLighting(normalize(vNormal),normalize(viewPos-vWorldPos),color.rgb,38.0);gl_FragColor=vec4(worldLit,color.a);return;}if(materialMode>2.5&&materialMode<3.5){if(glassReflectionEnabled<0.5){gl_FragColor=vec4(color.rgb,color.a);return;}vec3 glassN=normalize(vNormal);vec3 glassV=normalize(viewPos-vWorldPos);vec3 reflected=reflect(-glassV,glassN);float facing=clamp(abs(dot(glassN,glassV)),0.0,1.0);float fresnel=pow(1.0-facing,2.0);float skyBlend=smoothstep(-0.36,0.58,reflected.y);vec3 reflectedEnv=mix(vec3(0.012,0.010,0.052),vec3(0.075,0.30,0.56),skyBlend);float horizonBand=exp(-pow((reflected.y-0.10)*7.5,2.0));float cyanBand=exp(-pow((reflected.y+0.10)*20.0,2.0));float magentaBand=exp(-pow((reflected.y-0.34)*17.0,2.0));float skylinePulse=0.68+0.32*sin(reflected.x*24.0+reflected.z*9.0+time*0.035);reflectedEnv+=vec3(1.0,0.13,0.39)*horizonBand*0.62;reflectedEnv+=vec3(0.06,0.66,1.0)*cyanBand*skylinePulse*0.62;reflectedEnv+=vec3(0.78,0.13,0.72)*magentaBand*0.42;float cityNeon=pow(max(0.0,sin(reflected.x*38.0+reflected.z*13.0+time*0.025)),12.0);reflectedEnv+=vec3(0.12,0.82,1.0)*cityNeon*cyanBand*0.34;float sunReflection=pow(max(dot(reflected,normalize(keyLightDir)),0.0),28.0);reflectedEnv+=vec3(1.0,0.72,0.48)*sunReflection*1.05;vec3 glassBase=mix(color.rgb,vec3(0.025,0.045,0.095),0.30);float reflectionStrength=clamp(0.54+fresnel*0.34,0.54,0.88);vec3 glassTint=mix(glassBase,reflectedEnv,reflectionStrength);vec3 glassH=normalize(normalize(keyLightDir)+glassV);float ndh=clamp(abs(dot(glassN,glassH)),0.0,1.0);float broadGlint=pow(ndh,8.0)*0.18;float sunGlint=pow(ndh,42.0)*0.72;glassTint+=vec3(1.0,0.88,0.72)*(broadGlint+sunGlint);float edgeGlint=pow(fresnel,1.25)*0.16;glassTint+=vec3(0.24,0.72,1.0)*edgeGlint;glassTint+=calcLocalLighting(glassN,glassV,glassTint,58.0)*0.82;glassTint*=mix(1.0,shadowVisibility,0.24);gl_FragColor=vec4(glassTint,color.a);return;}if(materialMode>3.5){vec3 paintN=normalize(vNormal);vec3 paintV=normalize(viewPos-vWorldPos);vec3 paintK=normalize(keyLightDir);vec3 paintF=normalize(nonShadowFillDir);vec3 paintH=normalize(paintK+paintV);vec3 fillH=normalize(paintF+paintV);float nh=clamp(abs(dot(paintN,paintH)),0.0,1.0);float fillNh=clamp(abs(dot(paintN,fillH)),0.0,1.0);float satinSheen=pow(nh,11.0)*0.19*paintHighlightsEnabled;float sunGlint=pow(nh,58.0)*0.62*paintHighlightsEnabled;float softSun=pow(nh,7.0)*0.045*paintHighlightsEnabled;float coolFill=pow(fillNh,20.0)*0.12*paintHighlightsEnabled;float rim=pow(1.0-clamp(abs(dot(paintN,paintV)),0.0,1.0),2.0)*paintHighlightsEnabled;vec3 paintColor=color.rgb;paintColor+=vec3(0.30,0.24,0.24)*satinSheen;paintColor+=vec3(1.0,0.91,0.82)*(sunGlint+softSun);paintColor+=vec3(0.12,0.36,0.54)*coolFill;paintColor+=vec3(1.0,0.22,0.34)*rim*0.025;if(showroom>0.5){float studioSheen=pow(nh,8.0)*0.075*paintHighlightsEnabled;paintColor+=vec3(1.0,0.78,0.70)*studioSheen;}paintColor*=shadowVisibility;paintColor+=calcLocalLighting(paintN,paintV,paintColor,62.0)*0.78;gl_FragColor=vec4(paintColor,color.a);return;}vec3 N=normalize(vNormal);vec3 K=normalize(keyLightDir);vec3 F=normalize(nonShadowFillDir);float key=abs(dot(N,K));float fill=abs(dot(N,F));float illum=clamp(key*0.78+fill*0.30,0.0,1.0);float band=illum<0.27?0.46:(illum<0.59?0.78:1.12);vec3 V=normalize(viewPos-vWorldPos);vec3 HK=normalize(K+V);vec3 HF=normalize(F+V);float power=materialMode>1.5?58.0:26.0;float specK=pow(max(abs(dot(N,HK)),0.0),power);float specF=pow(max(abs(dot(N,HF)),0.0),power*0.78);float strength=materialMode>1.5?1.28:(materialMode>0.5?0.92:0.06);float fresnel=pow(1.0-clamp(abs(dot(N,V)),0.0,1.0),2.0);vec3 lit=color.rgb*band;lit+=vec3(1.0,0.82,0.86)*specK*strength;if(materialMode>0.5&&materialMode<1.5){float topFacing=clamp(N.y*0.72+0.28,0.0,1.0);lit+=vec3(0.92,0.18,0.36)*fresnel*0.16;}if(showroom>0.5&&materialMode<1.5){float sunSharp=pow(max(abs(dot(N,HK)),0.0),110.0);float sunSoft=pow(max(abs(dot(N,HK)),0.0),28.0);lit+=vec3(1.0,0.97,0.88)*(sunSharp*1.75+sunSoft*0.28);float edgeGlint=pow(fresnel,1.55)*sunSoft;lit+=vec3(1.0,0.48,0.24)*edgeGlint*0.22;}lit+=vec3(0.22,0.78,1.0)*specF*(materialMode>1.5?0.62:0.24);if(materialMode>1.5){lit+=vec3(0.12,0.62,0.92)*fresnel*0.58;lit+=vec3(0.78,0.94,1.0)*pow(specK,0.32)*0.16;}lit*=shadowVisibility;lit+=calcLocalLighting(N,V,lit,44.0);gl_FragColor=vec4(lit,color.a);}';
+function shader(type,src){const s=gl.createShader(type);gl.shaderSource(s,src);gl.compileShader(s);if(!gl.getShaderParameter(s,gl.COMPILE_STATUS))throw new Error(gl.getShaderInfoLog(s));return s;}
+const prog=gl.createProgram();gl.attachShader(prog,shader(gl.VERTEX_SHADER,vs));gl.attachShader(prog,shader(gl.FRAGMENT_SHADER,fs));gl.linkProgram(prog);
+if(!gl.getProgramParameter(prog,gl.LINK_STATUS))throw new Error(gl.getProgramInfoLog(prog));
+gl.useProgram(prog);
+
+let gpuSunReady=false,gpuSunProgram=null,gpuSunBuffer=null,gpuSunLoc=null;
+try{
+ const sunVs='precision mediump float;attribute vec2 aPosition;uniform vec2 uViewport;uniform vec2 uCenter;uniform float uExtent;varying vec2 vSun;void main(){vec2 offset=vec2(aPosition.x,-aPosition.y);vec2 pixel=uCenter+offset*uExtent;vec2 clip=vec2(pixel.x/uViewport.x*2.0-1.0,1.0-pixel.y/uViewport.y*2.0);gl_Position=vec4(clip,0.0,1.0);vSun=offset*3.8;}';
+ const sunFs=`precision mediump float;
+varying vec2 vSun;
+uniform float uTime;
+uniform float uRadius;
+uniform float uBreathe;
+uniform float uGlowPulse;
+uniform sampler2D uOcclusionMask;
+uniform vec2 uCanvasSize;
+uniform float uOcclusionEnabled;
+vec3 solarAuraColor(float t){vec3 orange=vec3(1.0,0.43,0.23);vec3 coral=vec3(1.0,0.24,0.32);vec3 magenta=vec3(0.78,0.12,0.50);return mix(mix(orange,coral,smoothstep(0.0,0.45,t)),magenta,smoothstep(0.45,1.0,t));}float solarAuraEnergy(float radialOffset){float innerGlow=exp(-radialOffset*4.4)*0.38;float middleGlow=exp(-radialOffset*2.3)*0.18;float outerGlow=exp(-radialOffset*1.35)*0.045;float fade=1.0-smoothstep(0.58,0.95,radialOffset);return (innerGlow+middleGlow+outerGlow)*fade;}float solarAuraPulse(float t){return 0.98+0.02*sin(t*0.58+0.35*sin(t*0.21));}float band(float y,float center,float halfWidth){return 1.0-smoothstep(halfWidth,halfWidth+0.006,abs(y-center));}
+void main(){
+ float d=length(vSun)/uBreathe;
+ if(d>3.72){gl_FragColor=vec4(0.0);return;}
+ float y=vSun.y/uBreathe;
+ float radialDistance=max(d-1.0,0.0);
+ float haloEnergy=solarAuraEnergy(radialDistance)*solarAuraPulse(uTime);
+ float glowAlpha=clamp(haloEnergy*uGlowPulse*0.72,0.0,0.42);
+ vec3 glowColor=solarAuraColor(clamp(radialDistance/1.35,0.0,1.0));
+ float v=clamp(y*0.5+0.5,0.0,1.0);
+ vec3 discColor=mix(vec3(1.0,0.58,0.33),vec3(1.0,0.24,0.22),smoothstep(0.0,0.52,v));
+ discColor=mix(discColor,vec3(0.66,0.17,0.47),smoothstep(0.45,1.0,v));
+ float upperSlices=max(band(y,-0.64,0.0125),max(band(y,-0.49,0.0135),band(y,-0.34,0.016)));
+ float lowerSlices=max(max(band(y,-0.19,0.020),band(y,-0.035,0.026)),max(max(band(y,0.13,0.0325),band(y,0.31,0.041)),max(band(y,0.53,0.0525),band(y,0.78,0.065))));
+ discColor=mix(discColor,vec3(0.15,0.025,0.105),upperSlices*0.48);
+ discColor=mix(discColor,vec3(0.075,0.012,0.075),lowerSlices*0.62);
+ float slitWidth=max(1.2/uRadius,0.008)*0.5;
+ float slit=max(1.0-smoothstep(slitWidth,slitWidth+0.006,abs(y-0.04)),1.0-smoothstep(slitWidth,slitWidth+0.006,abs(y-0.48)));
+ discColor+=vec3(1.0,0.73,0.54)*slit*0.22;
+ float scanY=-1.0+fract(uTime*0.055)*2.0;
+ float scanWidth=max(7.0/uRadius,0.026);
+ float scan=1.0-smoothstep(scanWidth*0.35,scanWidth,abs(y-scanY));
+ discColor+=vec3(1.0,0.78,0.65)*scan*0.16*uGlowPulse;
+ float disc=1.0-smoothstep(0.995,1.008,d);
+ float alpha=disc+(1.0-disc)*glowAlpha;
+ vec3 premultiplied=discColor*disc+glowColor*glowAlpha*(1.0-disc);
+ float sceneCoverage=texture2D(uOcclusionMask,gl_FragCoord.xy/max(uCanvasSize,vec2(1.0))).a;
+ float sunVisibility=mix(1.0,1.0-smoothstep(0.015,0.08,sceneCoverage),uOcclusionEnabled);
+ alpha*=sunVisibility;premultiplied*=sunVisibility;
+ gl_FragColor=vec4(premultiplied,alpha);
+}`;
+ gpuSunProgram=gl.createProgram();
+ gl.attachShader(gpuSunProgram,shader(gl.VERTEX_SHADER,sunVs));
+ gl.attachShader(gpuSunProgram,shader(gl.FRAGMENT_SHADER,sunFs));
+ gl.linkProgram(gpuSunProgram);
+ if(!gl.getProgramParameter(gpuSunProgram,gl.LINK_STATUS))throw new Error(gl.getProgramInfoLog(gpuSunProgram));
+ gpuSunLoc={position:gl.getAttribLocation(gpuSunProgram,'aPosition'),viewport:gl.getUniformLocation(gpuSunProgram,'uViewport'),center:gl.getUniformLocation(gpuSunProgram,'uCenter'),extent:gl.getUniformLocation(gpuSunProgram,'uExtent'),time:gl.getUniformLocation(gpuSunProgram,'uTime'),radius:gl.getUniformLocation(gpuSunProgram,'uRadius'),breathe:gl.getUniformLocation(gpuSunProgram,'uBreathe'),glowPulse:gl.getUniformLocation(gpuSunProgram,'uGlowPulse'),occlusionMask:gl.getUniformLocation(gpuSunProgram,'uOcclusionMask'),canvasSize:gl.getUniformLocation(gpuSunProgram,'uCanvasSize'),occlusionEnabled:gl.getUniformLocation(gpuSunProgram,'uOcclusionEnabled')};
+ if(gpuSunLoc.position<0||Object.values(gpuSunLoc).slice(1).some(v=>v===null))throw new Error('GPU sun shader uniforms are incomplete');
+ gpuSunBuffer=gl.createBuffer();
+ if(!gpuSunBuffer)throw new Error('GPU sun quad buffer allocation failed');
+ gl.bindBuffer(gl.ARRAY_BUFFER,gpuSunBuffer);
+ gl.bufferData(gl.ARRAY_BUFFER,new Float32Array([-1,-1,1,-1,-1,1,-1,1,1,-1,1,1]),gl.STATIC_DRAW);
+ gpuSunReady=true;
+}catch(e){gpuSunReady=false;gpuSunProgram=null;gpuSunBuffer=null;gpuSunLoc=null;console.warn('GPU sun unavailable; Canvas2D fallback remains active.',e);}
+function getSunScreenMetrics(){
+ const roadHeading=Math.atan((roadX(distance+90)-roadX(distance-30))/120),viewYaw=garageMode?0:carYaw+roadHeading;
+ return{x:W*.5-viewYaw*W*.48,y:H*(cameraMode===0?0.405:cameraMode===3?0.445:0.425),r:Math.min(W*.415,H*.305,232)};
+}
+function renderGpuSunBackground(maskTexture){
+ if(!gpuSunReady||!FX.sunGpu||!FX.sunDisc||shadowPass||outlinePass||!maskTexture)return;
+ const now=performance.now(),sunPosition=getSunScreenMetrics(),x=sunPosition.x,y=sunPosition.y,r=sunPosition.r;
+ const breathe=1+Math.sin(now*0.00092)*0.035+Math.sin(now*0.00046+1.2)*0.012,glowPulse=0.88+Math.sin(now*0.00092-0.35)*0.075;
+ gl.viewport(0,0,canvas.width,canvas.height);gl.useProgram(gpuSunProgram);gl.bindBuffer(gl.ARRAY_BUFFER,gpuSunBuffer);
+ gl.enableVertexAttribArray(gpuSunLoc.position);gl.vertexAttribPointer(gpuSunLoc.position,2,gl.FLOAT,false,0,0);
+ gl.uniform2f(gpuSunLoc.viewport,W,H);gl.uniform2f(gpuSunLoc.center,x,y);gl.uniform1f(gpuSunLoc.extent,r*3.8);gl.uniform1f(gpuSunLoc.time,now*0.001);
+ gl.uniform1f(gpuSunLoc.radius,r);gl.uniform1f(gpuSunLoc.breathe,breathe);gl.uniform1f(gpuSunLoc.glowPulse,glowPulse);
+ gl.activeTexture(gl.TEXTURE2);gl.bindTexture(gl.TEXTURE_2D,maskTexture);gl.uniform1i(gpuSunLoc.occlusionMask,2);
+ gl.uniform2f(gpuSunLoc.canvasSize,canvas.width,canvas.height);gl.uniform1f(gpuSunLoc.occlusionEnabled,1.0);
+ gl.disable(gl.DEPTH_TEST);gl.depthMask(false);gl.enable(gl.BLEND);gl.blendFunc(gl.ONE,gl.ONE_MINUS_SRC_ALPHA);
+ gl.drawArrays(gl.TRIANGLES,0,6);
+ gl.disableVertexAttribArray(gpuSunLoc.position);gl.disable(gl.BLEND);gl.depthMask(true);
+ gl.bindTexture(gl.TEXTURE_2D,null);gl.activeTexture(gl.TEXTURE0);gl.useProgram(prog);gl.enable(gl.DEPTH_TEST);
+}
+
+const loc={p:gl.getAttribLocation(prog,'p'),normal:gl.getAttribLocation(prog,'normal'),vp:gl.getUniformLocation(prog,'vp'),model:gl.getUniformLocation(prog,'model'),normalMatrix:gl.getUniformLocation(prog,'normalMatrix'),color:gl.getUniformLocation(prog,'color'),toon:gl.getUniformLocation(prog,'toon'),materialMode:gl.getUniformLocation(prog,'materialMode'),outlinePass:gl.getUniformLocation(prog,'outlinePass'),shadowPass:gl.getUniformLocation(prog,'shadowPass'),aoScenePass:gl.getUniformLocation(prog,'aoScenePass'),shadowMomentPass:gl.getUniformLocation(prog,'shadowMomentPass'),shadowEnabled:gl.getUniformLocation(prog,'shadowEnabled'),vehicleShadowEnabled:gl.getUniformLocation(prog,'vehicleShadowEnabled'),glassReflectionEnabled:gl.getUniformLocation(prog,'glassReflectionEnabled'),paintHighlightsEnabled:gl.getUniformLocation(prog,'paintHighlightsEnabled'),lampEmissionEnabled:gl.getUniformLocation(prog,'lampEmissionEnabled'),shadowMap:gl.getUniformLocation(prog,'shadowMap'),vehicleShadowMap:gl.getUniformLocation(prog,'vehicleShadowMap'),localShadowMap0:gl.getUniformLocation(prog,'localShadowMap0'),localShadowMap1:gl.getUniformLocation(prog,'localShadowMap1'),localShadowVP0:gl.getUniformLocation(prog,'localShadowVP0'),localShadowVP1:gl.getUniformLocation(prog,'localShadowVP1'),localShadowEnabled:gl.getUniformLocation(prog,'localShadowEnabled'),vehicleShadowTexel:gl.getUniformLocation(prog,'vehicleShadowTexel'),localShadowTexel0:gl.getUniformLocation(prog,'localShadowTexel0'),localShadowTexel1:gl.getUniformLocation(prog,'localShadowTexel1'),shadowVP:gl.getUniformLocation(prog,'shadowVP'),shadowTexel:gl.getUniformLocation(prog,'shadowTexel'),keyLightDir:gl.getUniformLocation(prog,'keyLightDir'),nonShadowFillDir:gl.getUniformLocation(prog,'nonShadowFillDir'),viewPos:gl.getUniformLocation(prog,'viewPos'),showroom:gl.getUniformLocation(prog,'showroom'),time:gl.getUniformLocation(prog,'time'),localLightCount:gl.getUniformLocation(prog,'localLightCount'),localLightPosRange:gl.getUniformLocation(prog,'localLightPosRange[0]'),localLightColorPower:gl.getUniformLocation(prog,'localLightColorPower[0]'),localLightDirectionCone:gl.getUniformLocation(prog,'localLightDirectionCone[0]')};
+// The sole outdoor shadow-casting source: direction points from the scene toward the sun, in vehicle/world coordinates.
+const SUN_LIGHT={id:'sun',type:'directional',direction:[0,.75,.6614378],castsShadow:true};
+// Artistic specular fill only. It does not illuminate shadow maps or create shadows.
+const NON_SHADOW_FILL_DIRECTION=[.58,.34,-.72];
+const LOCAL_LIGHT_CAPACITY=4,LOCAL_SHADOW_CAPACITY=2,LOCAL_SHADOW_MAP_SIZE=1024,VEHICLE_SHADOW_MAP_SIZE=Math.min(1024,gl.getParameter(gl.MAX_TEXTURE_SIZE)||1024);
+const GARAGE_LOCAL_LIGHTS=[
+ {id:'garage-spot-left',type:'spot',position:[-3.8,4.48,.75],range:9.5,color:[.80,.91,1.0],power:2.2,direction:[.62,-.77,-.12],cutoff:.82,castsShadow:true,shadowSlot:0},
+ {id:'garage-spot-right',type:'spot',position:[3.8,4.48,.75],range:9.5,color:[1.0,.84,.92],power:2.2,direction:[-.62,-.77,-.12],cutoff:.82,castsShadow:true,shadowSlot:1}
+];
+const localLightPosRangeData=new Float32Array(LOCAL_LIGHT_CAPACITY*4);
+const localLightColorPowerData=new Float32Array(LOCAL_LIGHT_CAPACITY*4);
+const localLightDirectionConeData=new Float32Array(LOCAL_LIGHT_CAPACITY*4);
+const localShadowEnabledData=new Float32Array(2);
+function uploadLocalLights(sources){
+ localLightPosRangeData.fill(0);localLightColorPowerData.fill(0);localLightDirectionConeData.fill(0);localShadowEnabledData.fill(0);
+ const count=Math.min(LOCAL_LIGHT_CAPACITY,sources.length);
+ for(let i=0;i<count;i++){
+  const light=sources[i],o=i*4;
+  localLightPosRangeData.set([...light.position,light.range],o);
+  localLightColorPowerData.set([...light.color,light.power],o);
+  localLightDirectionConeData.set([...(light.direction||[0,-1,0]),light.direction?light.cutoff:-1],o);
+  if(i<LOCAL_SHADOW_CAPACITY&&FX.garageSpotShadows&&light.castsShadow&&light.shadowSlot===i&&localShadowTargets[i])localShadowEnabledData[i]=1;
+ }
+ gl.uniform1f(loc.localLightCount,count);
+ gl.uniform4fv(loc.localLightPosRange,localLightPosRangeData);
+ gl.uniform4fv(loc.localLightColorPower,localLightColorPowerData);
+ gl.uniform4fv(loc.localLightDirectionCone,localLightDirectionConeData);
+ gl.uniform2fv(loc.localShadowEnabled,localShadowEnabledData);
+}
+const outlineVs='attribute vec2 aPosition;varying vec2 vUv;void main(){vUv=aPosition*0.5+0.5;gl_Position=vec4(aPosition,0.0,1.0);}';
+const outlineFs='precision mediump float;uniform sampler2D uNormalMask;uniform sampler2D uSceneMask;uniform vec2 uTexel;uniform vec2 uSceneTexel;uniform vec4 uRoofEdgePx;uniform vec2 uRoofEdgeDepth;uniform float uRoofEdgeVisible;uniform float uOutlinesEnabled;uniform float uAOEnabled;uniform float uSunWrapEnabled;uniform float uSunAuraDebug;uniform vec2 uSunCenter;uniform float uSunRadius;uniform float uSunAspect;uniform float uSunTime;varying vec2 vUv;float sampleEdge(vec2 uv,vec3 centerN,float centerDepth){vec4 q=texture2D(uNormalMask,uv);if(q.a<0.12)return 1.0;vec3 neighbourN=normalize(q.rgb*2.0-1.0);float normalDelta=1.0-clamp(abs(dot(centerN,neighbourN)),0.0,1.0);float neighbourDepth=clamp((q.a-0.25)/0.75,0.0,1.0);float depthDelta=abs(centerDepth-neighbourDepth);float normalEdge=smoothstep(0.022,0.18,normalDelta);float depthEdge=smoothstep(0.006,0.030,depthDelta);return max(normalEdge,depthEdge);}float aoSample(vec2 uv,vec3 centerN,float centerDepth){vec4 q=texture2D(uSceneMask,uv);if(q.a<0.12)return 0.0;vec3 neighbourN=normalize(q.rgb*2.0-1.0);float neighbourDepth=clamp((q.a-0.25)/0.75,0.0,1.0);float depthDelta=centerDepth-neighbourDepth;if(depthDelta<0.0045||depthDelta>0.082)return 0.0;float depthWeight=smoothstep(0.0045,0.022,depthDelta)*(1.0-smoothstep(0.052,0.082,depthDelta));float crease=1.0-clamp(abs(dot(centerN,neighbourN)),0.0,1.0);float creaseWeight=smoothstep(0.08,0.48,crease);return depthWeight*creaseWeight;}vec3 solarAuraColor(float t){vec3 orange=vec3(1.0,0.43,0.23);vec3 coral=vec3(1.0,0.24,0.32);vec3 magenta=vec3(0.78,0.12,0.50);return mix(mix(orange,coral,smoothstep(0.0,0.45,t)),magenta,smoothstep(0.45,1.0,t));}float solarAuraEnergy(float radialOffset){float innerGlow=exp(-radialOffset*4.4)*0.38;float middleGlow=exp(-radialOffset*2.3)*0.18;float outerGlow=exp(-radialOffset*1.35)*0.045;float fade=1.0-smoothstep(0.58,0.95,radialOffset);return (innerGlow+middleGlow+outerGlow)*fade;}float solarAuraPulse(float t){return 0.98+0.02*sin(t*0.58+0.35*sin(t*0.21));}float sceneCoverage(vec2 uv){return smoothstep(0.025,0.24,texture2D(uSceneMask,uv).a);}float sceneCircularBlur(vec2 uv,float radius){vec2 t=uSceneTexel*radius;float b=sceneCoverage(uv)*0.22;vec2 r=t*1.15;b+=sceneCoverage(uv+r*vec2(1.0,0.0))*0.075;b+=sceneCoverage(uv+r*vec2(0.5,0.8660254))*0.075;b+=sceneCoverage(uv+r*vec2(-0.5,0.8660254))*0.075;b+=sceneCoverage(uv+r*vec2(-1.0,0.0))*0.075;b+=sceneCoverage(uv+r*vec2(-0.5,-0.8660254))*0.075;b+=sceneCoverage(uv+r*vec2(0.5,-0.8660254))*0.075;vec2 q=t*2.30;b+=sceneCoverage(uv+q*vec2(1.0,0.0))*0.04125;b+=sceneCoverage(uv+q*vec2(0.7071068,0.7071068))*0.04125;b+=sceneCoverage(uv+q*vec2(0.0,1.0))*0.04125;b+=sceneCoverage(uv+q*vec2(-0.7071068,0.7071068))*0.04125;b+=sceneCoverage(uv+q*vec2(-1.0,0.0))*0.04125;b+=sceneCoverage(uv+q*vec2(-0.7071068,-0.7071068))*0.04125;b+=sceneCoverage(uv+q*vec2(0.0,-1.0))*0.04125;b+=sceneCoverage(uv+q*vec2(0.7071068,-0.7071068))*0.04125;return b;}void main(){vec4 center=texture2D(uNormalMask,vUv);vec4 sceneCenter=texture2D(uSceneMask,vUv);float hasCar=step(0.12,center.a),hasScene=step(0.12,sceneCenter.a);vec3 carN=normalize(center.rgb*2.0-1.0);float carDepth=clamp((center.a-0.25)/0.75,0.0,1.0);vec3 sceneN=normalize(sceneCenter.rgb*2.0-1.0);float sceneDepth=clamp((sceneCenter.a-0.25)/0.75,0.0,1.0);vec2 px=uTexel;float edge=0.0;if(hasCar>0.5&&uOutlinesEnabled>0.5){edge=max(edge,sampleEdge(vUv+vec2(px.x,0.0),carN,carDepth));edge=max(edge,sampleEdge(vUv-vec2(px.x,0.0),carN,carDepth));edge=max(edge,sampleEdge(vUv+vec2(0.0,px.y),carN,carDepth));edge=max(edge,sampleEdge(vUv-vec2(0.0,px.y),carN,carDepth));edge=max(edge,sampleEdge(vUv+px,carN,carDepth));edge=max(edge,sampleEdge(vUv-px,carN,carDepth));edge=max(edge,sampleEdge(vUv+vec2(px.x,-px.y),carN,carDepth));edge=max(edge,sampleEdge(vUv+vec2(-px.x,px.y),carN,carDepth));vec2 detailPx=px*1.38;edge=max(edge,sampleEdge(vUv+vec2(detailPx.x,0.0),carN,carDepth)*0.72);edge=max(edge,sampleEdge(vUv-vec2(detailPx.x,0.0),carN,carDepth)*0.72);edge=max(edge,sampleEdge(vUv+vec2(0.0,detailPx.y),carN,carDepth)*0.72);edge=max(edge,sampleEdge(vUv-vec2(0.0,detailPx.y),carN,carDepth)*0.72);}float ao=0.0;if(hasScene>0.5&&uAOEnabled>0.5){vec2 aoNear=uSceneTexel*2.1,aoFar=uSceneTexel*3.9;ao+=aoSample(vUv+vec2(aoNear.x,0.0),sceneN,sceneDepth);ao+=aoSample(vUv-vec2(aoNear.x,0.0),sceneN,sceneDepth);ao+=aoSample(vUv+vec2(0.0,aoNear.y),sceneN,sceneDepth);ao+=aoSample(vUv-vec2(0.0,aoNear.y),sceneN,sceneDepth);ao+=aoSample(vUv+vec2(aoNear.x,-aoNear.y),sceneN,sceneDepth);ao+=aoSample(vUv+vec2(-aoNear.x,aoNear.y),sceneN,sceneDepth);ao+=aoSample(vUv+vec2(aoFar.x,0.0),sceneN,sceneDepth)*0.65;ao+=aoSample(vUv-vec2(aoFar.x,0.0),sceneN,sceneDepth)*0.65;ao+=aoSample(vUv+vec2(0.0,aoFar.y),sceneN,sceneDepth)*0.65;ao+=aoSample(vUv-vec2(0.0,aoFar.y),sceneN,sceneDepth)*0.65;ao=clamp(ao*0.082,0.0,0.12);}vec2 lineA=uRoofEdgePx.xy,lineB=uRoofEdgePx.zw,ba=lineB-lineA;float lineT=clamp(dot(gl_FragCoord.xy-lineA,ba)/max(dot(ba,ba),1.0),0.0,1.0);float lineDistance=length(gl_FragCoord.xy-(lineA+ba*lineT));float lineShape=1.0-smoothstep(0.62,1.30,lineDistance);float expectedDepth=mix(uRoofEdgeDepth.x,uRoofEdgeDepth.y,lineT);float depthMatch=1.0-smoothstep(0.0035,0.014,abs(carDepth-expectedDepth));float roofCrease=lineShape*depthMatch*uRoofEdgeVisible*hasCar;float ink=max(smoothstep(0.12,0.62,edge),roofCrease);float outlineAlpha=uOutlinesEnabled>0.5?clamp(ink*0.86,0.0,0.86):0.0;float aoAlpha=uAOEnabled>0.5?ao:0.0;float baseAlpha=max(outlineAlpha,aoAlpha);float sunWrapAlpha=0.0;vec3 sunWrapColor=vec3(1.0,0.55,0.30);if(uSunWrapEnabled>0.5||uSunAuraDebug>0.5){vec2 sourceDelta=(uSunCenter-vUv)*vec2(uSunAspect,1.0);float sourceDistance=length(sourceDelta)/max(uSunRadius,0.001);if(sourceDistance<2.15){float centerCoverage=smoothstep(0.14,0.235,texture2D(uSceneMask,vUv).a);float blurredCoverage=sceneCircularBlur(vUv,7.0);vec2 gradientStep=uSceneTexel*1.15;float blurRight=sceneCircularBlur(vUv+vec2(gradientStep.x,0.0),7.0);float blurLeft=sceneCircularBlur(vUv-vec2(gradientStep.x,0.0),7.0);float blurUp=sceneCircularBlur(vUv+vec2(0.0,gradientStep.y),7.0);float blurDown=sceneCircularBlur(vUv-vec2(0.0,gradientStep.y),7.0);vec2 blurGradient=vec2(blurRight-blurLeft,blurUp-blurDown);vec2 outward=normalize(-blurGradient+vec2(0.00001,0.00001));vec2 toSun=normalize(sourceDelta+vec2(0.00001,0.00001));float sunFacing=smoothstep(-0.08,0.52,dot(outward,toSun));float inwardDistance=max(0.0,(-log(max(1.0-clamp(blurredCoverage,0.0,0.999),0.001))-0.69314718)*0.27);float surfaceFalloff=solarAuraEnergy(inwardDistance*0.78);float sourceEnergy=solarAuraEnergy(max(sourceDistance-1.0,0.0));float bloomField=centerCoverage*surfaceFalloff*sourceEnergy*sunFacing*solarAuraPulse(uSunTime);if(uSunAuraDebug>0.5){float debugStrength=clamp(bloomField*4.0,0.0,0.86);float fadeMix=smoothstep(0.015,0.82,inwardDistance*0.78);vec3 sourceTint=solarAuraColor(clamp(max(sourceDistance-1.0,0.0)/1.35,0.0,1.0));sunWrapColor=mix(sourceTint,vec3(0.04,0.86,1.0),fadeMix);sunWrapAlpha=debugStrength;}else{float colourShift=clamp(max(sourceDistance-1.0,0.0)/1.35,0.0,1.0);sunWrapColor=solarAuraColor(colourShift);sunWrapAlpha=clamp(bloomField*2.75,0.0,0.58);}}}float alpha=1.0-(1.0-baseAlpha)*(1.0-sunWrapAlpha);vec3 baseColor=vec3(0.006,0.008,0.016);vec3 premultiplied=baseColor*baseAlpha*(1.0-sunWrapAlpha)+sunWrapColor*sunWrapAlpha;gl_FragColor=vec4(premultiplied,alpha);}';const outlineProgram=gl.createProgram();
+gl.attachShader(outlineProgram,shader(gl.VERTEX_SHADER,outlineVs));
+gl.attachShader(outlineProgram,shader(gl.FRAGMENT_SHADER,outlineFs));
+gl.linkProgram(outlineProgram);
+if(!gl.getProgramParameter(outlineProgram,gl.LINK_STATUS))throw new Error(gl.getProgramInfoLog(outlineProgram));
+const outlineLoc={position:gl.getAttribLocation(outlineProgram,'aPosition'),normalMask:gl.getUniformLocation(outlineProgram,'uNormalMask'),sceneMask:gl.getUniformLocation(outlineProgram,'uSceneMask'),texel:gl.getUniformLocation(outlineProgram,'uTexel'),sceneTexel:gl.getUniformLocation(outlineProgram,'uSceneTexel'),roofEdgePx:gl.getUniformLocation(outlineProgram,'uRoofEdgePx'),roofEdgeDepth:gl.getUniformLocation(outlineProgram,'uRoofEdgeDepth'),roofEdgeVisible:gl.getUniformLocation(outlineProgram,'uRoofEdgeVisible'),outlinesEnabled:gl.getUniformLocation(outlineProgram,'uOutlinesEnabled'),aoEnabled:gl.getUniformLocation(outlineProgram,'uAOEnabled'),sunWrapEnabled:gl.getUniformLocation(outlineProgram,'uSunWrapEnabled'),sunAuraDebug:gl.getUniformLocation(outlineProgram,'uSunAuraDebug'),sunCenter:gl.getUniformLocation(outlineProgram,'uSunCenter'),sunRadius:gl.getUniformLocation(outlineProgram,'uSunRadius'),sunAspect:gl.getUniformLocation(outlineProgram,'uSunAspect'),sunTime:gl.getUniformLocation(outlineProgram,'uSunTime')};
+const outlineQuad=gl.createBuffer();
+gl.bindBuffer(gl.ARRAY_BUFFER,outlineQuad);
+gl.bufferData(gl.ARRAY_BUFFER,new Float32Array([-1,-1,1,-1,-1,1,-1,1,1,-1,1,1]),gl.STATIC_DRAW);
+function ensureOutlineTarget(){
+ const width=canvas.width,height=canvas.height;
+ if(!width||!height)return false;
+ if(outlineTarget&&outlineTarget.width===width&&outlineTarget.height===height)return true;
+ if(outlineTarget){gl.deleteTexture(outlineTarget.texture);gl.deleteRenderbuffer(outlineTarget.depth);gl.deleteFramebuffer(outlineTarget.framebuffer);}
+ const texture=gl.createTexture();
+ gl.bindTexture(gl.TEXTURE_2D,texture);
+ gl.texParameteri(gl.TEXTURE_2D,gl.TEXTURE_MIN_FILTER,gl.NEAREST);
+ gl.texParameteri(gl.TEXTURE_2D,gl.TEXTURE_MAG_FILTER,gl.NEAREST);
+ gl.texParameteri(gl.TEXTURE_2D,gl.TEXTURE_WRAP_S,gl.CLAMP_TO_EDGE);
+ gl.texParameteri(gl.TEXTURE_2D,gl.TEXTURE_WRAP_T,gl.CLAMP_TO_EDGE);
+ gl.texImage2D(gl.TEXTURE_2D,0,gl.RGBA,width,height,0,gl.RGBA,gl.UNSIGNED_BYTE,null);
+ const depth=gl.createRenderbuffer();
+ gl.bindRenderbuffer(gl.RENDERBUFFER,depth);
+ gl.renderbufferStorage(gl.RENDERBUFFER,gl.DEPTH_COMPONENT16,width,height);
+ const framebuffer=gl.createFramebuffer();
+ gl.bindFramebuffer(gl.FRAMEBUFFER,framebuffer);
+ gl.framebufferTexture2D(gl.FRAMEBUFFER,gl.COLOR_ATTACHMENT0,gl.TEXTURE_2D,texture,0);
+ gl.framebufferRenderbuffer(gl.FRAMEBUFFER,gl.DEPTH_ATTACHMENT,gl.RENDERBUFFER,depth);
+ const complete=gl.checkFramebufferStatus(gl.FRAMEBUFFER)===gl.FRAMEBUFFER_COMPLETE;
+ gl.bindFramebuffer(gl.FRAMEBUFFER,null);
+ gl.bindTexture(gl.TEXTURE_2D,null);
+ gl.bindRenderbuffer(gl.RENDERBUFFER,null);
+ if(!complete){
+  gl.deleteTexture(texture);gl.deleteRenderbuffer(depth);gl.deleteFramebuffer(framebuffer);
+  outlineTarget=null;
+  return false;
+ }
+ outlineTarget={texture,depth,framebuffer,width,height};
+ return true;
+}
+function ensureAOTarget(){
+ const width=Math.max(1,Math.round(canvas.width*.5)),height=Math.max(1,Math.round(canvas.height*.5));
+ if(!width||!height)return false;
+ if(aoTarget&&aoTarget.width===width&&aoTarget.height===height)return true;
+ if(aoTarget){gl.deleteTexture(aoTarget.texture);gl.deleteRenderbuffer(aoTarget.depth);gl.deleteFramebuffer(aoTarget.framebuffer);}
+ const texture=gl.createTexture();
+ gl.bindTexture(gl.TEXTURE_2D,texture);
+ gl.texParameteri(gl.TEXTURE_2D,gl.TEXTURE_MIN_FILTER,gl.LINEAR);
+ gl.texParameteri(gl.TEXTURE_2D,gl.TEXTURE_MAG_FILTER,gl.LINEAR);
+ gl.texParameteri(gl.TEXTURE_2D,gl.TEXTURE_WRAP_S,gl.CLAMP_TO_EDGE);
+ gl.texParameteri(gl.TEXTURE_2D,gl.TEXTURE_WRAP_T,gl.CLAMP_TO_EDGE);
+ gl.texImage2D(gl.TEXTURE_2D,0,gl.RGBA,width,height,0,gl.RGBA,gl.UNSIGNED_BYTE,null);
+ const depth=gl.createRenderbuffer();
+ gl.bindRenderbuffer(gl.RENDERBUFFER,depth);
+ gl.renderbufferStorage(gl.RENDERBUFFER,gl.DEPTH_COMPONENT16,width,height);
+ const framebuffer=gl.createFramebuffer();
+ gl.bindFramebuffer(gl.FRAMEBUFFER,framebuffer);
+ gl.framebufferTexture2D(gl.FRAMEBUFFER,gl.COLOR_ATTACHMENT0,gl.TEXTURE_2D,texture,0);
+ gl.framebufferRenderbuffer(gl.FRAMEBUFFER,gl.DEPTH_ATTACHMENT,gl.RENDERBUFFER,depth);
+ const complete=gl.checkFramebufferStatus(gl.FRAMEBUFFER)===gl.FRAMEBUFFER_COMPLETE;
+ gl.bindFramebuffer(gl.FRAMEBUFFER,null);
+ gl.bindTexture(gl.TEXTURE_2D,null);
+ gl.bindRenderbuffer(gl.RENDERBUFFER,null);
+ if(!complete){
+  gl.deleteTexture(texture);gl.deleteRenderbuffer(depth);gl.deleteFramebuffer(framebuffer);
+  aoTarget=null;
+  return false;
+ }
+ aoTarget={texture,depth,framebuffer,width,height};
+ return true;
+}
+const SHADOW_MAP_SIZE=2048;
+function createShadowTarget(size,filter=gl.NEAREST){
+ const texture=gl.createTexture();
+ gl.bindTexture(gl.TEXTURE_2D,texture);
+ gl.texParameteri(gl.TEXTURE_2D,gl.TEXTURE_MIN_FILTER,filter);
+ gl.texParameteri(gl.TEXTURE_2D,gl.TEXTURE_MAG_FILTER,filter);
+ gl.texParameteri(gl.TEXTURE_2D,gl.TEXTURE_WRAP_S,gl.CLAMP_TO_EDGE);
+ gl.texParameteri(gl.TEXTURE_2D,gl.TEXTURE_WRAP_T,gl.CLAMP_TO_EDGE);
+ gl.texImage2D(gl.TEXTURE_2D,0,gl.RGBA,size,size,0,gl.RGBA,gl.UNSIGNED_BYTE,null);
+ const depth=gl.createRenderbuffer();gl.bindRenderbuffer(gl.RENDERBUFFER,depth);
+ gl.renderbufferStorage(gl.RENDERBUFFER,gl.DEPTH_COMPONENT16,size,size);
+ const framebuffer=gl.createFramebuffer();gl.bindFramebuffer(gl.FRAMEBUFFER,framebuffer);
+ gl.framebufferTexture2D(gl.FRAMEBUFFER,gl.COLOR_ATTACHMENT0,gl.TEXTURE_2D,texture,0);
+ gl.framebufferRenderbuffer(gl.FRAMEBUFFER,gl.DEPTH_ATTACHMENT,gl.RENDERBUFFER,depth);
+ const complete=gl.checkFramebufferStatus(gl.FRAMEBUFFER)===gl.FRAMEBUFFER_COMPLETE;
+ gl.bindFramebuffer(gl.FRAMEBUFFER,null);gl.bindTexture(gl.TEXTURE_2D,null);gl.bindRenderbuffer(gl.RENDERBUFFER,null);
+ if(!complete){gl.deleteTexture(texture);gl.deleteRenderbuffer(depth);gl.deleteFramebuffer(framebuffer);return null;}
+ return {texture,depth,framebuffer,size};
+}
+function ensureShadowTarget(){if(!shadowTarget)shadowTarget=createShadowTarget(SHADOW_MAP_SIZE);return !!shadowTarget;}
+function ensureVehicleShadowTarget(){if(!vehicleShadowTarget){vehicleShadowTarget=createShadowTarget(VEHICLE_SHADOW_MAP_SIZE,gl.NEAREST);if(!vehicleShadowTarget&&VEHICLE_SHADOW_MAP_SIZE>1024)vehicleShadowTarget=createShadowTarget(1024,gl.NEAREST);}return !!vehicleShadowTarget;}
+function ensureLocalShadowTarget(index){if(!localShadowTargets[index])localShadowTargets[index]=createShadowTarget(LOCAL_SHADOW_MAP_SIZE);return !!localShadowTargets[index];}
+function invalidateShadowCaches(){shadowSceneRevision++;localShadowSignatures=['',''];}
+function renderShadowPassTo(target,matrix,casterMode='all',momentPass=false){
+ if(!target)return false;
+ // A texture must not remain bound for sampling while it is attached to the active framebuffer.
+ for(let unit=1;unit<=4;unit++){gl.activeTexture(gl.TEXTURE0+unit);gl.bindTexture(gl.TEXTURE_2D,null);}
+ gl.activeTexture(gl.TEXTURE0);
+ shadowVP=matrix;shadowCasterMode=casterMode;shadowPass=true;gl.uniform1f(loc.shadowMomentPass,momentPass?1:0);
+ gl.bindFramebuffer(gl.FRAMEBUFFER,target.framebuffer);gl.viewport(0,0,target.size,target.size);
+ gl.enable(gl.DEPTH_TEST);gl.disable(gl.BLEND);gl.depthMask(true);
+ gl.clearColor(1,0,momentPass?1:0,momentPass?0:1);gl.clearDepth(1);gl.clear(gl.COLOR_BUFFER_BIT|gl.DEPTH_BUFFER_BIT);
+ gl.useProgram(prog);gl.uniform1f(loc.outlinePass,0);gl.uniform1f(loc.shadowPass,1);gl.uniform1f(loc.shadowEnabled,0);
+ gl.uniformMatrix4fv(loc.shadowVP,false,new Float32Array(matrix));
+ drawWorld();
+ shadowPass=false;shadowCasterMode='all';gl.uniform1f(loc.shadowMomentPass,0);
+ return true;
+}
+function spotShadowMatrix(light){
+ const p=light.position,d=light.direction,dl=Math.hypot(d[0],d[1],d[2])||1,dir=[d[0]/dl,d[1]/dl,d[2]/dl];
+ const cutoff=clamp(light.cutoff||.7,.15,.985),fov=clamp(2*Math.acos(cutoff-.025),.35,2.65);
+ const target=[p[0]+dir[0]*light.range,p[1]+dir[1]*light.range,p[2]+dir[2]*light.range];
+ return matMul(perspective(fov,1,.12,light.range),lookAt(p[0],p[1],p[2],target[0],target[1],target[2]));
+}
+function localShadowSignature(light){
+ // Static fixtures can cache their maps, but animated car-mounted casters must invalidate them.
+ const vehiclePose=[headlightDeploy,bodyRoll,carYaw,playerX,distance].map(v=>Number(v).toFixed(3)).join(',');
+ return [shadowSceneRevision,light.id,light.position.join(','),light.direction.join(','),light.range,light.cutoff,vehiclePose].join('|');
+}
+function renderShadowMap(){
+ if(!SUN_LIGHT.castsShadow||!ensureShadowTarget()){gl.uniform1f(loc.shadowEnabled,0);gl.uniform1f(loc.vehicleShadowEnabled,0);return false;}
+ const vehicleMapActive=!!FX.vehicleShadows&&ensureVehicleShadowTarget();
+ const carZ=garageMode?0:distance,trackCenter=garageMode?0:roadX(carZ),carX=garageMode?0:trackCenter+playerX;
+ const direction=SUN_LIGHT.direction,focusY=.46,aspect=clamp(W/Math.max(1,H),1.0,2.5);
+ const modeScale=garageMode?1.0:([.84,1.0,1.28,1.12][cameraMode]||1.0);
+ const span=garageMode?clamp(garageZoom*1.55,15,30):38*modeScale;
+ const halfWidth=span*Math.sqrt(aspect/1.78),halfDepth=garageMode?span*.92:span*.82;
+ const ahead=garageMode?0:([9,15,24,19][cameraMode]||15);
+ const focusX=carX+Math.sin(carYaw)*ahead*.42,focusZ=carZ+Math.cos(carYaw)*ahead;
+ const lightDistance=garageMode?34:46;
+ sunShadowVP=matMul(
+  orthographic(-halfWidth,halfWidth,-halfDepth,halfDepth,.1,garageMode?105:142),
+  lookAt(focusX+direction[0]*lightDistance,focusY+direction[1]*lightDistance,focusZ+direction[2]*lightDistance,focusX,focusY,focusZ)
+ );
+ // Snap the shared directional projection to the active shadow-map texel grid.
+ const snapResolution=vehicleMapActive?Math.min(shadowTarget.size,vehicleShadowTarget.size):shadowTarget.size,snapStep=2/Math.max(1,snapResolution);
+ sunShadowVP[12]=Math.round(sunShadowVP[12]/snapStep)*snapStep;
+ sunShadowVP[13]=Math.round(sunShadowVP[13]/snapStep)*snapStep;
+ const sceneCalls=drawCalls;
+ renderShadowPassTo(shadowTarget,sunShadowVP,'all');
+ // The secondary map renders only selected vehicle detail casters; road and environment meshes are skipped.
+ if(vehicleMapActive)renderShadowPassTo(vehicleShadowTarget,sunShadowVP,'vehicle-self-only',false);
+ const localSources=garageMode&&FX.garageSpotlights?GARAGE_LOCAL_LIGHTS:[];
+ for(let slot=0;slot<LOCAL_SHADOW_CAPACITY;slot++){
+  const light=FX.garageSpotShadows?localSources.find(q=>q.castsShadow&&q.type==='spot'&&q.shadowSlot===slot):null;
+  if(!light){localShadowVPs[slot]=matIdentity();localShadowSignatures[slot]='';continue;}
+  const signature=localShadowSignature(light),matrix=spotShadowMatrix(light);
+  localShadowVPs[slot]=matrix;
+  if(localShadowSignatures[slot]!==signature){
+   if(ensureLocalShadowTarget(slot)){
+    renderShadowPassTo(localShadowTargets[slot],matrix,'vehicle-details');
+    localShadowSignatures[slot]=signature;
+   }else localShadowEnabledData[slot]=0;
+  }
+ }
+ shadowVP=sunShadowVP;shadowCasterMode='all';shadowPass=false;
+ drawCalls=sceneCalls;
+ gl.bindFramebuffer(gl.FRAMEBUFFER,null);gl.viewport(0,0,canvas.width,canvas.height);
+ gl.useProgram(prog);gl.uniform1f(loc.shadowPass,0);
+ gl.uniformMatrix4fv(loc.shadowVP,false,new Float32Array(sunShadowVP));
+ gl.uniformMatrix4fv(loc.localShadowVP0,false,new Float32Array(localShadowVPs[0]||matIdentity()));
+ gl.uniformMatrix4fv(loc.localShadowVP1,false,new Float32Array(localShadowVPs[1]||matIdentity()));
+ gl.activeTexture(gl.TEXTURE1);gl.bindTexture(gl.TEXTURE_2D,shadowTarget.texture);gl.uniform1i(loc.shadowMap,1);
+ gl.uniform2f(loc.shadowTexel,1/shadowTarget.size,1/shadowTarget.size);
+ gl.activeTexture(gl.TEXTURE2);gl.bindTexture(gl.TEXTURE_2D,vehicleMapActive?vehicleShadowTarget.texture:null);gl.uniform1i(loc.vehicleShadowMap,2);
+ const vehicleTexelSize=vehicleMapActive?vehicleShadowTarget.size:VEHICLE_SHADOW_MAP_SIZE;
+ gl.uniform2f(loc.vehicleShadowTexel,1/vehicleTexelSize,1/vehicleTexelSize);
+ gl.activeTexture(gl.TEXTURE3);gl.bindTexture(gl.TEXTURE_2D,localShadowTargets[0]?.texture||null);gl.uniform1i(loc.localShadowMap0,3);
+ gl.uniform2f(loc.localShadowTexel0,1/(localShadowTargets[0]?.size||LOCAL_SHADOW_MAP_SIZE),1/(localShadowTargets[0]?.size||LOCAL_SHADOW_MAP_SIZE));
+ gl.activeTexture(gl.TEXTURE4);gl.bindTexture(gl.TEXTURE_2D,localShadowTargets[1]?.texture||null);gl.uniform1i(loc.localShadowMap1,4);
+ gl.uniform2f(loc.localShadowTexel1,1/(localShadowTargets[1]?.size||LOCAL_SHADOW_MAP_SIZE),1/(localShadowTargets[1]?.size||LOCAL_SHADOW_MAP_SIZE));
+ gl.activeTexture(gl.TEXTURE0);gl.uniform1f(loc.shadowEnabled,1);
+ return true;
+}
+function projectCabinRoofFrontSeam(vp,carX,carZ,yaw,cam){
+ const model=matMul(translate(carX,0,carZ),matMul(rotateY(yaw),matMul(rotateZ(bodyRoll),matIdentity())));
+ const project=x=>{
+  const y=1.157,z=.36;
+  const wx=model[0]*x+model[4]*y+model[8]*z+model[12];
+  const wy=model[1]*x+model[5]*y+model[9]*z+model[13];
+  const wz=model[2]*x+model[6]*y+model[10]*z+model[14];
+  const cx=vp[0]*wx+vp[4]*wy+vp[8]*wz+vp[12];
+  const cy=vp[1]*wx+vp[5]*wy+vp[9]*wz+vp[13];
+  const cz=vp[2]*wx+vp[6]*wy+vp[10]*wz+vp[14];
+  const cw=vp[3]*wx+vp[7]*wy+vp[11]*wz+vp[15];
+  if(cw<=.01)return null;
+  const nx=cx/cw,ny=cy/cw,nz=cz/cw;
+  const depth=Math.min(1,Math.hypot(cam.x-wx,cam.y-wy,cam.z-wz)/24);
+  return {x:(nx*.5+.5)*canvas.width,y:(ny*.5+.5)*canvas.height,depth,inFrustum:nz>=-1&&nz<=1};
+ };
+ const left=project(-.80),right=project(.80);
+ if(!left||!right)return {px:[0,0,0,0],depth:[0,0],visible:0};
+ return {px:[left.x,left.y,right.x,right.y],depth:[left.depth,right.depth],visible:left.inFrustum&&right.inFrustum?1:0};
+}
+function renderCarOutlines(){
+ const drawAO=!!FX.ssao;
+ const drawCarOutline=!!(FX.outlines&&!wireframeMode&&ensureOutlineTarget());
+ const sunOcclusionActive=!!(gpuSunReady&&FX.sunGpu&&FX.sunDisc&&!garageMode);
+ const sunWrapActive=!!(sunOcclusionActive&&FX.sunAuraWrap);
+ const sunAuraDebugActive=!!(sunOcclusionActive&&FX.sunAuraDebug);
+ if(!drawAO&&!drawCarOutline&&!sunOcclusionActive&&!sunWrapActive&&!sunAuraDebugActive)return;
+ if(!ensureAOTarget())return;
+ const sceneCalls=drawCalls;
+ outlinePass=true;aoScenePass=true;
+ gl.bindFramebuffer(gl.FRAMEBUFFER,aoTarget.framebuffer);
+ gl.viewport(0,0,aoTarget.width,aoTarget.height);
+ gl.clearColor(0,0,0,0);gl.clearDepth(1);
+ gl.clear(gl.COLOR_BUFFER_BIT|gl.DEPTH_BUFFER_BIT);
+ gl.useProgram(prog);
+ gl.uniform1f(loc.outlinePass,1);gl.uniform1f(loc.aoScenePass,1);
+ drawWorld();
+ if(drawCarOutline){
+  aoScenePass=false;
+  gl.bindFramebuffer(gl.FRAMEBUFFER,outlineTarget.framebuffer);
+  gl.viewport(0,0,outlineTarget.width,outlineTarget.height);
+  gl.clearColor(0,0,0,0);gl.clearDepth(1);
+  gl.clear(gl.COLOR_BUFFER_BIT|gl.DEPTH_BUFFER_BIT);
+  gl.uniform1f(loc.aoScenePass,0);
+  drawWorld();
+ }
+ outlinePass=false;aoScenePass=false;drawCalls=sceneCalls;
+ gl.bindFramebuffer(gl.FRAMEBUFFER,null);
+ gl.viewport(0,0,canvas.width,canvas.height);
+ if(sunOcclusionActive)renderGpuSunBackground(aoTarget.texture);
+ if(!drawAO&&!drawCarOutline&&!sunWrapActive&&!sunAuraDebugActive){gl.useProgram(prog);gl.uniform1f(loc.outlinePass,0);gl.uniform1f(loc.aoScenePass,0);gl.enable(gl.DEPTH_TEST);return;}
+ gl.disable(gl.DEPTH_TEST);gl.enable(gl.BLEND);
+ gl.blendFunc(gl.ONE,gl.ONE_MINUS_SRC_ALPHA);gl.depthMask(false);
+ gl.useProgram(outlineProgram);
+ const roofEdge=outlineCabinEdge||{px:[0,0,0,0],depth:[0,0],visible:0};
+ const normalTarget=drawCarOutline?outlineTarget:aoTarget,sunPosition=getSunScreenMetrics();
+ gl.uniform4fv(outlineLoc.roofEdgePx,roofEdge.px);
+ gl.uniform2fv(outlineLoc.roofEdgeDepth,roofEdge.depth);
+ gl.uniform1f(outlineLoc.roofEdgeVisible,roofEdge.visible);
+ gl.uniform1f(outlineLoc.outlinesEnabled,drawCarOutline?1:0);
+ gl.uniform1f(outlineLoc.aoEnabled,drawAO?1:0);
+ gl.uniform1f(outlineLoc.sunWrapEnabled,sunWrapActive?1:0);
+ gl.uniform1f(outlineLoc.sunAuraDebug,sunAuraDebugActive?1:0);
+ gl.uniform2f(outlineLoc.sunCenter,sunPosition.x/Math.max(1,W),1-sunPosition.y/Math.max(1,H));
+ gl.uniform1f(outlineLoc.sunRadius,sunPosition.r/Math.max(1,H));
+ gl.uniform1f(outlineLoc.sunAspect,W/Math.max(1,H));
+ gl.uniform1f(outlineLoc.sunTime,performance.now()*.001);
+ gl.activeTexture(gl.TEXTURE0);gl.bindTexture(gl.TEXTURE_2D,normalTarget.texture);gl.uniform1i(outlineLoc.normalMask,0);
+ gl.activeTexture(gl.TEXTURE1);gl.bindTexture(gl.TEXTURE_2D,aoTarget.texture);gl.uniform1i(outlineLoc.sceneMask,1);
+ gl.uniform2f(outlineLoc.texel,1/normalTarget.width,1/normalTarget.height);
+ gl.uniform2f(outlineLoc.sceneTexel,1/aoTarget.width,1/aoTarget.height);
+ gl.bindBuffer(gl.ARRAY_BUFFER,outlineQuad);
+ gl.enableVertexAttribArray(outlineLoc.position);gl.vertexAttribPointer(outlineLoc.position,2,gl.FLOAT,false,0,0);
+ gl.drawArrays(gl.TRIANGLES,0,6);
+ gl.disableVertexAttribArray(outlineLoc.position);
+ gl.activeTexture(gl.TEXTURE0);gl.bindTexture(gl.TEXTURE_2D,null);
+ gl.activeTexture(gl.TEXTURE1);gl.bindTexture(gl.TEXTURE_2D,null);
+ gl.activeTexture(gl.TEXTURE0);
+ gl.depthMask(true);gl.disable(gl.BLEND);
+ gl.useProgram(prog);gl.uniform1f(loc.outlinePass,0);gl.uniform1f(loc.aoScenePass,0);gl.enable(gl.DEPTH_TEST);
+}
+
+function mesh(data){
+ const normals=new Float32Array(data.length),edges=new Map();let boundsRadius=0;
+ for(let i=0;i<data.length;i+=3)boundsRadius=Math.max(boundsRadius,Math.hypot(data[i],data[i+1],data[i+2]));
+ const vertexKey=p=>p.map(v=>Number(v).toFixed(5)).join(',');
+ for(let i=0;i<data.length;i+=9){
+  const ax=data[i],ay=data[i+1],az=data[i+2],bx=data[i+3],by=data[i+4],bz=data[i+5],cx=data[i+6],cy=data[i+7],cz=data[i+8];
+  const ux=bx-ax,uy=by-ay,uz=bz-az,vx=cx-ax,vy=cy-ay,vz=cz-az;
+  let nx=uy*vz-uz*vy,ny=uz*vx-ux*vz,nz=ux*vy-uy*vx,len=Math.hypot(nx,ny,nz)||1;
+  nx/=len;ny/=len;nz/=len;
+  for(let j=0;j<3;j++){normals[i+j*3]=nx;normals[i+j*3+1]=ny;normals[i+j*3+2]=nz;}
+  const v=[[ax,ay,az],[bx,by,bz],[cx,cy,cz]];
+  for(const pair of [[0,1],[1,2],[2,0]]){
+   const a=v[pair[0]],b=v[pair[1]],ka=vertexKey(a),kb=vertexKey(b),key=ka<kb?ka+'|'+kb:kb+'|'+ka;
+   const old=edges.get(key);
+   if(old){old.count++;if(Math.abs(old.nx*nx+old.ny*ny+old.nz*nz)<.9995)old.crease=true;}
+   else edges.set(key,{a,b,count:1,crease:false,nx,ny,nz});
+  }
+ }
+ // Keep silhouette and hard-angle edges; discard coplanar triangle diagonals.
+ const lineData=[];
+ for(const edge of edges.values())if(edge.count===1||edge.crease)lineData.push(...edge.a,...edge.b);
+ const b=gl.createBuffer();gl.bindBuffer(gl.ARRAY_BUFFER,b);gl.bufferData(gl.ARRAY_BUFFER,new Float32Array(data),gl.STATIC_DRAW);
+ const nb=gl.createBuffer();gl.bindBuffer(gl.ARRAY_BUFFER,nb);gl.bufferData(gl.ARRAY_BUFFER,normals,gl.STATIC_DRAW);
+ const eb=gl.createBuffer();gl.bindBuffer(gl.ARRAY_BUFFER,eb);gl.bufferData(gl.ARRAY_BUFFER,new Float32Array(lineData),gl.STATIC_DRAW);
+ return {b,nb,eb,n:data.length/3,en:lineData.length/3,boundsRadius};
+}
+function makeGlowDisk(){
+ const out=[],segments=64;
+ for(let i=0;i<segments;i++){const a=i*Math.PI*2/segments,b=(i+1)*Math.PI*2/segments;out.push(0,0,0,Math.cos(a),0,Math.sin(a),Math.cos(b),0,Math.sin(b));}
+ return mesh(out);
+}
+
+async function loadCountachModel(){
+ try{
+  const meta=window.DRIVELLA_COUNTACH_META,encoded=window.DRIVELLA_COUNTACH_DATA;
+  if(!meta||!encoded)throw new Error('Отсутствует assets/countach_model.js');
+  if(meta.version!==2)throw new Error('Неизвестная версия формата Countach');
+  if(typeof DecompressionStream==='undefined')throw new Error('Браузер не поддерживает распаковку геометрии');
+  const packedText=atob(encoded),packed=new Uint8Array(packedText.length);
+  for(let i=0;i<packedText.length;i++)packed[i]=packedText.charCodeAt(i);
+  const stream=new Blob([packed]).stream().pipeThrough(new DecompressionStream('deflate'));
+  const raw=new Uint8Array(await new Response(stream).arrayBuffer());
+  if(raw.byteLength!==meta.rawBytes)throw new Error('Нарушена целостность геометрии Countach');
+  const view=new DataView(raw.buffer,raw.byteOffset,raw.byteLength),model={wheelCenters:meta.wheelCenters},extractedHeadlampCaps={left:[],right:[]};
+  const mirrorX=data=>{
+   const mirrored=new Float32Array(data.length);
+   for(let i=0;i<data.length;i+=9){
+    mirrored[i]=-data[i+6];mirrored[i+1]=data[i+7];mirrored[i+2]=data[i+8];
+    mirrored[i+3]=-data[i+3];mirrored[i+4]=data[i+4];mirrored[i+5]=data[i+5];
+    mirrored[i+6]=-data[i];mirrored[i+7]=data[i+1];mirrored[i+8]=data[i+2];
+   }
+   return mirrored;
+  };
+  for(const part of meta.parts){
+   // The imported Countach's original fixed headlamp optics are intentionally omitted;
+   // the restored DRIVELLA dual-projector pop-up pods are the only visible upper lamps.
+   if(part.name==='headlampR'||part.name==='headlampL')continue;
+   const data=new Float32Array(part.indexCount*3);
+   let writeAt=0,removedOldHoodCaps=0,removedOldFrontOverlays=0,removedLowerBlackPanels=0;
+   const frontLowerBodyColorData=[];
+   for(let i=0;i<part.indexCount;i+=3){
+    const triangle=[];
+    for(let j=0;j<3;j++){
+     const vertex=view.getUint16(part.indexOffset+(i+j)*2,true),v=part.vertexOffset+vertex*6;
+     triangle.push([
+      view.getInt16(v,true)/meta.unitsPerGameUnit,
+      view.getInt16(v+2,true)/meta.unitsPerGameUnit,
+      view.getInt16(v+4,true)/meta.unitsPerGameUnit
+     ]);
+    }
+    // Remove only the two disconnected painted Countach hood-cap shells (29 triangles each).
+    // The DRIVELLA pop-up lamp assemblies are separate meshes and are deliberately untouched.
+    const oldTriangularHoodCap=part.name==='bodyPaint'&&triangle.every(p=>{
+     const ax=Math.abs(p[0]);
+     return ax>=.60&&ax<=1.12&&p[1]>=.63&&p[1]<=.86&&p[2]>=2.19&&p[2]<=2.46;
+    });
+    if(oldTriangularHoodCap){
+      removedOldHoodCaps++;
+      const capBuffer=triangle[0][0]<0?extractedHeadlampCaps.left:extractedHeadlampCaps.right;
+      for(const p of triangle)capBuffer.push(...p);
+      continue;
+     }
+    // Remove only the two approved Countach front overlays: 48 triangles on each side.
+    // Their verified panel lies on z=2.4561; all vertices stay inside the original lamp-frame bounds.
+    const oldFrontHeadlampOverlay=part.name==='bodyPlastic'&&triangle.every(p=>
+     Math.abs(p[2]-2.4561)<.00015&&Math.abs(p[0])>=.62&&Math.abs(p[0])<=1.07&&p[1]>=.67&&p[1]<=.86
+    );
+    if(oldFrontHeadlampOverlay){removedOldFrontOverlays++;continue;}
+    // Move only the two small four-triangle lower lamp pads out of the black mesh for body-colour rendering.
+    const oldLowerBlackHeadlampPanel=part.name==='bodyBlack'&&triangle.every(p=>
+     Math.abs(p[0])>=.62&&Math.abs(p[0])<=1.07&&p[1]>=.57&&p[1]<=.68&&p[2]>=2.47&&p[2]<=2.71
+    );
+    if(oldLowerBlackHeadlampPanel){for(const p of triangle)frontLowerBodyColorData.push(...p);removedLowerBlackPanels++;continue;}
+    for(const p of triangle){data[writeAt++]=p[0];data[writeAt++]=p[1];data[writeAt++]=p[2];}
+   }
+   const geometry=writeAt===data.length?data:data.slice(0,writeAt);
+   if(part.name==='bodyPaint'){
+    window.DRIVELLA_OLD_HOOD_CAP_TRIANGLES_REMOVED=removedOldHoodCaps;
+    if(removedOldHoodCaps!==58||extractedHeadlampCaps.left.length!==261||extractedHeadlampCaps.right.length!==261)throw new Error('Не удалось извлечь точные панели pop-up фар Countach');
+    model.movingLampCapL=mesh(new Float32Array(extractedHeadlampCaps.left));
+    model.movingLampCapR=mesh(new Float32Array(extractedHeadlampCaps.right));
+    window.DRIVELLA_MOVING_HEADLAMP_CAP_TRIANGLES={left:29,right:29};
+   }
+   if(part.name==='bodyPlastic')window.DRIVELLA_OLD_FRONT_HEADLAMP_OVERLAYS_REMOVED=removedOldFrontOverlays;
+   model[part.name]=mesh(geometry);
+   if(part.name==='bodyBlack'){
+    model.frontLowerPaint=mesh(new Float32Array(frontLowerBodyColorData));
+    window.DRIVELLA_LOWER_HEADLAMP_BLACK_PANELS_RECOLORED=removedLowerBlackPanels;
+   }
+   if(['front_tyre','front_rims','front_extra_NoMaterial','rear_tyre','rear_rims'].includes(part.name))model[part.name+'Left']=mesh(mirrorX(geometry));
+   if(part.name==='sideMirror_bodyPlastic')model.sideMirror_bodyPlasticLeft=mesh(mirrorX(geometry));
+  }
+  countachModel=model;countachModelReady=true;
+  const status=$('boot-status');if(status)status.textContent='COUNTACH MODEL LOADED';
+ }catch(error){
+  countachModelReady=false;
+  reportStartupError('Модель Countach: '+(error&&error.message||error));
+ }
+}
+const underglowDisk=makeGlowDisk();
+const cube=mesh([
+-1,-1,-1,1,-1,-1,1,1,-1,-1,-1,-1,1,1,-1,-1,1,-1,
+-1,-1,1,1,1,1,1,-1,1,-1,-1,1,-1,1,1,1,1,1,
+-1,-1,-1,-1,1,-1,-1,1,1,-1,-1,-1,-1,1,1,-1,-1,1,
+1,-1,-1,1,-1,1,1,1,1,1,-1,-1,1,1,1,1,1,-1,
+-1,1,-1,1,1,-1,1,1,1,-1,1,-1,1,1,1,-1,1,1,
+-1,-1,-1,-1,-1,1,1,-1,1,-1,-1,-1,1,-1,1,1,-1,-1
+]);
+function cylinder(){
+ let a=[],n=40;
+ for(let i=0;i<n;i++){
+  const p=i*2*Math.PI/n,q=(i+1)*2*Math.PI/n,x=Math.cos(p),z=Math.sin(p),X=Math.cos(q),Z=Math.sin(q);
+  a.push(x,-1,z,X,-1,Z,X,1,Z,x,-1,z,X,1,Z,x,1,z);
+  a.push(0,1,0,X,1,Z,x,1,z,0,-1,0,x,-1,z,X,-1,Z);
+ }
+ return mesh(a);
+}
+function makeWheelTread(){
+ const out=[],segments=28,point=(a,y)=>[Math.cos(a)*1.006,y,Math.sin(a)*1.006];
+ for(let row=0;row<4;row++)for(let i=0;i<segments;i++){
+  const base=i*Math.PI*2/segments+row*.055,half=Math.PI/segments*.30,y0=-.88+row*.48,y1=y0+.30;
+  const a=base-half,b=base+half,A=point(a,y0),B=point(b,y0),C=point(b,y1),D=point(a,y1);
+  out.push(...A,...B,...C,...A,...C,...D);
+ }
+ return mesh(out);
+}
+const wheel=cylinder(),wheelTread=makeWheelTread();
+function makeRidge(seed,count,width){
+ let out=[],r=seed>>>0;const rand=()=>{r=(r*1664525+1013904223)>>>0;return r/4294967296;};
+ for(let i=0;i<count;i++){const x=-width/2+i*width/count,span=width/count*(1.25+rand()*.8),peak=x+span*(.15+rand()*.7),h=.35+rand()*.65;out.push(x,0,0,peak,h,0,x+span,0,0);}return mesh(out);
+}
+const ridgeFar=makeRidge(713,42,280),ridgeMid=makeRidge(991,34,250),ridgeNear=makeRidge(1827,27,220);
+function makeRidgeEdge(seed,count,width){
+ let out=[],r=seed>>>0;const rand=()=>{r=(r*1664525+1013904223)>>>0;return r/4294967296;};
+ for(let i=0;i<count;i++){const x=-width/2+i*width/count,span=width/count*(1.25+rand()*.8),peak=x+span*(.15+rand()*.7),h=.35+rand()*.65,t=.009;
+  out.push(x,0,0,peak,h,0,peak,h-t,0,x,0,0,peak,h-t,0,x,t,0);
+  out.push(peak,h,0,x+span,0,0,x+span,t,0,peak,h,0,x+span,t,0,peak,h-t,0);
+ }return mesh(out);
+}
+const ridgeFarEdge=makeRidgeEdge(713,42,280),ridgeMidEdge=makeRidgeEdge(991,34,250),ridgeNearEdge=makeRidgeEdge(1827,27,220);
+const pine=mesh([-.50,0,0,0,1,0,.50,0,0,-.43,.34,.015,0,1.34,.015,.43,.34,.015,-.34,.70,.03,0,1.65,.03,.34,.70,.03]);
+let biomeOrder=[0,1,2];for(let i=2;i>0;i--){const j=Math.floor(Math.random()*(i+1));[biomeOrder[i],biomeOrder[j]]=[biomeOrder[j],biomeOrder[i]];}
+function biomeWeights(z){const span=1120,fade=210,cycle=Math.floor(Math.max(0,z)/span),local=Math.max(0,z)-cycle*span,current=biomeOrder[cycle%3],next=biomeOrder[(cycle+1)%3],t=clamp((local-(span-fade))/fade,0,1),u=t*t*(3-2*t),w=[0,0,0];w[current]=1-u;w[next]+=u;return w;}
+function hash01(n){let x=Math.imul(n^0x9e3779b9,0x85ebca6b);x^=x>>>13;x=Math.imul(x,0xc2b2ae35);x^=x>>>16;return (x>>>0)/4294967295;}
+function makeMountainSide(side,seed){
+ let out=[],r=seed>>>0;const rand=()=>{r=(r*1664525+1013904223)>>>0;return r/4294967296;};
+ const seg=34,step=250/seg;let ridge=[],near=[],far=[];
+ for(let i=0;i<=seg;i++){ridge.push(18+rand()*17);near.push(25+rand()*7);far.push(78+rand()*18);}
+ for(let i=0;i<seg;i++){
+  const z0=-125+i*step,z1=z0+step,h0=ridge[i],h1=ridge[i+1],n0=near[i],n1=near[i+1],f0=far[i],f1=far[i+1];
+  const p0=[side*n0,0,z0],p1=[side*n0,h0,z0],p2=[side*f0,0,z0],p3=[side*f0,0,z1],p4=[side*n1,h1,z1],p5=[side*f1,0,z1];
+  out.push(...p0,...p1,...p4,...p0,...p4,...[side*n1,0,z1]);
+  out.push(...p1,...p2,...p5,...p1,...p5,...p4);
+  out.push(...p2,...p3,...p5);
+  const mid0=[side*(n0+f0)*.53,h0*.43,z0],mid1=[side*(n1+f1)*.53,h1*.43,z1];
+  out.push(...p1,...mid0,...mid1,...p1,...mid1,...p4);
+ }
+ return mesh(out);
+}
+const mountainL=makeMountainSide(-1,801),mountainR=makeMountainSide(1,1927);
+function makePalmLeaves(seed,variant){
+ let out=[],r=seed>>>0;const rand=()=>{r=(r*1664525+1013904223)>>>0;return r/4294967296;};
+ const count=variant===0?7:variant===1?9:6;
+ for(let i=0;i<count;i++){
+  const ang=i*Math.PI*2/count+variant*.19,len=(variant===1?3.5:variant===2?2.55:3.05)+rand()*.45;
+  const dx=Math.cos(ang),dz=Math.sin(ang),sideX=-dz*(.10+rand()*.035),sideZ=dx*(.10+rand()*.035);
+  const root=[0,0,0],mid=[dx*len*.48,.48+rand()*.18,dz*len*.48],tip=[dx*len,-.42+rand()*.12,dz*len];
+  const left=[mid[0]+sideX,mid[1],mid[2]+sideZ],right=[mid[0]-sideX,mid[1],mid[2]-sideZ];
+  out.push(...root,...left,...tip,...root,...tip,...right,...root,...mid,...tip);
+ }
+ return mesh(out);
+}
+const palmLeafA=makePalmLeaves(42,0),palmLeafB=makePalmLeaves(91,1),palmLeafC=makePalmLeaves(18,2);
+function drawBiome(z,weight,type){
+ if(weight<.012)return;const a=weight;
+ if(type===2){
+  draw(mountainL,0,0,z+125,1,1,1,[.095,.055,.22,a]);
+  draw(mountainR,0,0,z+125,1,1,1,[.095,.055,.22,a]);
+  return;
+ }
+ if(type===0){
+  const start=Math.floor((z+30)/34),end=Math.ceil((z+245)/34);
+  for(let i=start;i<=end;i++){
+   const side=i%2?-1:1,zz=i*34,cx=roadX(zz)+side*(36+hash01(i*19+5)*13),h=13+hash01(i*23+7)*22,w=6+hash01(i*37+3)*6,depth=9+hash01(i*41+9)*8;
+   draw(cube,cx,h*.5,zz,w,h*.5,depth,[.045,.032,.095,a]);
+   draw(cube,cx,h+.12,zz,w*1.04,.14,depth*1.04,[.18,.055,.30,a]);
+   const rows=Math.floor(h/2.5),cols=Math.max(2,Math.floor(depth/2.5));
+   for(let row=0;row<rows;row++)for(let col=0;col<cols;col++){
+    const n=i*131+row*17+col*7;if(hash01(n)<.39)continue;
+    const wz=zz-depth*.72+col*(depth*1.44/Math.max(1,cols-1)),wy=1.25+row*2.45;
+    const tint=hash01(n+91)>.72?[.95,.25,.53,a*.68]:[.12,.60,.88,a*.62];
+    draw(cube,cx-side*(w+.035),wy,wz,.045,.48,.38,tint);
+   }
+   if(i%3===0)draw(cube,cx,h+.65,zz,.055,.55,.055,[.25,.65,.92,a*.65]);
+   draw(cube,cx-side*(w+.02),h*.48,zz,.045,h*.48,depth*.78,[.62,.10,.38,a*.48]);
+  }
+ }else{
+  const start=Math.floor((z+25)/26),end=Math.ceil((z+230)/26);
+  for(let i=start;i<=end;i++){
+   const zz=i*26;
+   for(const side of [-1,1]){
+    const coastX=roadX(zz)+side*57;
+    draw(cube,coastX,-.22,zz,25,.18,13,[.66,.34,.48,a]);
+    draw(cube,coastX+side*34,-.48,zz,38,.12,13,[.018,.13,.27,a]);
+    draw(cube,coastX+side*34,-.34,zz,38,.035,13,[.025,.38,.70,a*.65]);
+   }
+   if(i%2!==0)continue;
+   for(const side of [-1,1]){
+    const variant=Math.abs(i%3),scale=variant===0?1:variant===1?1.15:.88;
+    const cx=roadX(zz)+side*(27+hash01(i*19+side*31)*7),h=5.8+hash01(i*23+side*7)*2.1;
+    draw(cylinder,cx,h*.48,zz,.115*scale,h*.48,.115*scale,[.38,.19,.095,a]);
+    draw(cylinder,cx,h*.48,zz,.055*scale,h*.48,.055*scale,[.68,.36,.16,a]);
+    const leaves=variant===0?palmLeafA:variant===1?palmLeafB:palmLeafC;
+    draw(leaves,cx,h,zz,scale,scale,scale,[.035,.42,.13,a]);
+    draw(leaves,cx,h,zz,scale*.98,scale*.98,scale*.98,[.08,.68,.22,a*.85],.14);
+   }
+  }
+ }
+}
+function quad(a,b,c,d){return mesh([...a,...b,...c,...a,...c,...d]);}
+function mirroredQuadPair(a,b,c,d){
+ const mirror=p=>[-p[0],p[1],p[2]];
+ return [quad(a,b,c,d),quad(mirror(a),mirror(d),mirror(c),mirror(b))];
+}
+function profileValue(z,keys){
+ let i=0;while(i<keys.length-2&&z>keys[i+1].z)i++;
+ const a=keys[i],b=keys[i+1],t=clamp((z-a.z)/(b.z-a.z),0,1),u=t,o={z};
+ const get=(p,k)=>p[k]??(k==='sideW'||k==='midW'?p.w:k==='shoulderW'?p.w*.96:k==='upperW'?p.w*.66:k==='topW'?p.w*.48:0);
+ for(const k of ['w','sideW','midW','shoulderW','upperW','topW','floor','side','mid','shoulder','upper','top'])o[k]=get(a,k)+(get(b,k)-get(a,k))*u;
+ return o;
+}
+// Shared wheel datum: lower all four wheels by 8 mm while retaining minimal ground clearance.
+const WHEEL_CENTER_Y=.457,WHEEL_RADIUS=.455,COUNTACH_WHEEL_RADIUS=.400;
+function makeCarHull(keys,wheelArches=false,flatRoof=false,windowOpenings=false,roofOpening=null,fitWindowPlane=false){
+ // Keep only designed profile stations. The two wheel arches add a few deliberate silhouette points.
+ const out=[],N=14,rings=[],zSet=new Set(keys.map(p=>p.z));
+ const archY=(z,center)=>{const d=Math.abs(z-center),r=WHEEL_RADIUS,cy=WHEEL_CENTER_Y,clear=.008;if(d<=r)return cy+Math.sqrt(Math.max(0,r*r-d*d))+clear;if(d>=r+.16)return .33;const t=(d-r)/.16,u=t*t*(3-2*t);return (cy+clear)*(1-u)+.33*u;};
+ if(wheelArches)for(const center of [-1.6375,1.6375])for(const offset of [-.615,-.55,-.455,-.34,-.2275,-.114,0,.114,.2275,.34,.455,.55,.615])zSet.add(center+offset);
+ if(windowOpenings){
+  zSet.add(CABIN_GLASS_REAR_BOTTOM_Z);zSet.add(CABIN_GLASS_FRONT_BOTTOM_Z);
+  if(fitWindowPlane){zSet.add(CABIN_GLASS_REAR_TOP_Z);zSet.add(CABIN_GLASS_FRONT_TOP_Z);}
+ }
+ if(roofOpening){zSet.add(roofOpening[0]);zSet.add(roofOpening[1]);}
+ const zSamples=[...zSet].sort((a,b)=>a-b);
+ for(const z of zSamples){
+  const p=profileValue(z,keys);
+  let side=p.side,floor=p.floor;
+  if(wheelArches){const arch=Math.max(archY(z,-1.6375),archY(z,1.6375));side=Math.max(side,arch);}
+  const sideW=p.sideW??p.w,midW=p.midW??p.w,shoulderW=p.shoulderW??p.w*.96,upperW=p.upperW??p.w*.66,topW=p.topW??p.w*.48;
+  rings.push([
+   [0,floor,z],[sideW*.72,floor,z],[sideW,side,z],[midW,p.mid,z],
+   [shoulderW,p.shoulder,z],[upperW,p.upper,z],[topW,p.top,z],[0,p.top+(flatRoof||z>=.72?0:.026),z],
+   [-topW,p.top,z],[-upperW,p.upper,z],[-shoulderW,p.shoulder,z],[-midW,p.mid,z],
+   [-sideW,side,z],[-sideW*.72,floor,z]
+  ]);
+  // Fit the actual shoulder and roof-edge vertices to the exact cross-section of the planar side-glass quad.
+  if(windowOpenings&&fitWindowPlane&&z>=CABIN_GLASS_REAR_BOTTOM_Z-1e-7&&z<=CABIN_GLASS_FRONT_BOTTOM_Z+1e-7){
+   const upperY=cabinWindowUpperYAt(z),lowerY=CABIN_GLASS_BOTTOM_Y;
+   const xAtY=y=>cabinWindowXAtY(y),lowerX=xAtY(lowerY),upperX=xAtY(upperY),midY=(lowerY+upperY)*.5,midX=xAtY(midY);
+   const ring=rings[rings.length-1];
+   ring[4]=[lowerX,lowerY,z];ring[5]=[midX,midY,z];ring[6]=[upperX,upperY,z];
+   ring[10]=[-lowerX,lowerY,z];ring[9]=[-midX,midY,z];ring[8]=[-upperX,upperY,z];
+  }
+ }
+ for(let i=0;i<rings.length-1;i++)for(let j=0;j<N;j++){
+  const zMid=(rings[i][0][2]+rings[i+1][0][2])*.5;
+  // Remove the complete shoulder-to-roof strip on both sides for actual window apertures.
+  if(windowOpenings&&zMid>=-1.6375&&zMid<=.945&&(j===4||j===5||j===8||j===9))continue;
+  // Remove the original body roof under the complete cabin and windscreen footprint; the glass closes these front/rear spans.
+  if(roofOpening&&zMid>=roofOpening[0]&&zMid<=roofOpening[1]&&(j===6||j===7))continue;
+  const a=rings[i][j],b=rings[i][(j+1)%N],c=rings[i+1][j],d=rings[i+1][(j+1)%N];
+  // Mirror the left shoulder-to-upper face with the same diagonal as the right side.
+  if(j===9)out.push(...b,...d,...c,...b,...a,...c);
+  else out.push(...a,...c,...d,...a,...d,...b);
+ }
+ const cap=(ring,reverse)=>{const center=[0,ring.reduce((v,p)=>v+p[1],0)/N,ring[0][2]];for(let j=0;j<N;j++){const a=ring[j],b=ring[(j+1)%N];if(reverse)out.push(...center,...b,...a);else out.push(...center,...a,...b);}};
+ cap(rings[0],true);cap(rings[rings.length-1],false);return mesh(out);
+}
+const CABIN_ROOF_STATIONS=[
+  // Lower, flatter Countach canopy with a wider roof rail and a long wedge windscreen.
+  {z:-1.30,w:.86,edge:1.155,crown:1.185},
+  {z:-.77,w:.86,edge:1.155,crown:1.190},
+  {z:-.18,w:.86,edge:1.155,crown:1.190},
+  {z:.36,w:.86,edge:1.155,crown:1.185}
+ ];
+function cabinRoofAt(z){
+ const stations=CABIN_ROOF_STATIONS;
+ let i=0;while(i<stations.length-2&&z>stations[i+1].z)i++;
+ const a=stations[i],b=stations[i+1],t=clamp((z-a.z)/(b.z-a.z),0,1);
+ return {z,w:a.w+(b.w-a.w)*t,edge:a.edge+(b.edge-a.edge)*t,crown:a.crown+(b.crown-a.crown)*t};
+}
+function makeRoof(){
+ // Single raised outer roof. The original body roof directly beneath it is removed.
+ const stations=CABIN_ROOF_STATIONS;
+ const out=[],steps=stations.length-1;
+ const sample=t=>{
+  const span=t*(stations.length-1),i=Math.min(stations.length-2,Math.floor(span)),u=span-i,a=stations[i],b=stations[i+1];
+  return {z:a.z+(b.z-a.z)*u,w:a.w+(b.w-a.w)*u,edge:a.edge+(b.edge-a.edge)*u,crown:a.crown+(b.crown-a.crown)*u};
+ };
+ for(let i=0;i<steps;i++){
+  const a=sample(i/steps),b=sample((i+1)/steps);
+  const pa=[[-a.w,a.edge,a.z],[0,a.crown,a.z],[a.w,a.edge,a.z]];
+  const pb=[[-b.w,b.edge,b.z],[0,b.crown,b.z],[b.w,b.edge,b.z]];
+  for(let j=0;j<2;j++)out.push(...pa[j],...pb[j],...pb[j+1],...pa[j],...pb[j+1],...pa[j+1]);
+ }
+ return mesh(out);
+}
+function makeExhaustTip(){
+ const out=[],n=12,ro=.108,ri=.070,z0=-.005,z1=-.235;
+ for(let i=0;i<n;i++){
+  const a=i*Math.PI*2/n,b=(i+1)*Math.PI*2/n;
+  const A=[Math.cos(a)*ro,Math.sin(a)*ro,z0],B=[Math.cos(b)*ro,Math.sin(b)*ro,z0];
+  const C=[Math.cos(b)*ro,Math.sin(b)*ro,z1],D=[Math.cos(a)*ro,Math.sin(a)*ro,z1];
+  const E=[Math.cos(a)*ri,Math.sin(a)*ri,z1],F=[Math.cos(b)*ri,Math.sin(b)*ri,z1];
+  const G=[Math.cos(b)*ri,Math.sin(b)*ri,z0],H=[Math.cos(a)*ri,Math.sin(a)*ri,z0];
+  out.push(...A,...B,...C,...A,...C,...D);
+  out.push(...D,...C,...F,...D,...F,...E);
+  out.push(...E,...F,...G,...E,...G,...H);
+  out.push(...H,...G,...B,...H,...B,...A);
+ }
+ return mesh(out);
+}
+function makeExhaustCore(){
+ const out=[],n=12,r=.069,z=-.238;
+ for(let i=0;i<n;i++){
+  const a=i*Math.PI*2/n,b=(i+1)*Math.PI*2/n;
+  out.push(0,0,z,Math.cos(a)*r,Math.sin(a)*r,z,Math.cos(b)*r,Math.sin(b)*r,z);
+ }
+ return mesh(out);
+}
+function makeWheelFace(){
+ const out=[],seg=40,tri=(a,b,c)=>out.push(...a,...b,...c);
+ const point=(r,a,y)=>[Math.cos(a)*r,y,Math.sin(a)*r];
+ const ring=(outer,inner,y)=>{
+  for(let i=0;i<seg;i++){
+   const a=i*Math.PI*2/seg,b=(i+1)*Math.PI*2/seg;
+   const A=point(outer,a,y),B=point(outer,b,y),C=point(inner,b,y),D=point(inner,a,y);
+   tri(A,B,C);tri(A,C,D);
+  }
+ };
+ for(const face of [-1,1]){
+  const y=face*.105;
+  ring(1,.88,y);ring(.86,.70,y*1.015);ring(.39,.29,y*1.04);
+  for(let k=0;k<5;k++){
+   const angle=k*Math.PI*2/5+.08,inner=.19,outer=.78;
+   const A=point(inner,angle-.17,face*.112),B=point(inner,angle+.17,face*.112);
+   const C=point(outer,angle+.075,face*.112),D=point(outer,angle-.075,face*.112);
+   tri(A,B,C);tri(A,C,D);
+  }
+  for(let k=0;k<5;k++){
+   const angle=k*Math.PI*2/5,center=point(.315,angle,face*.116),r=.035;
+   for(let i=0;i<6;i++){
+    const a=angle+i*Math.PI/3,b=angle+(i+1)*Math.PI/3;
+    tri(center,point(.315+r,a,face*.116),point(.315+r,b,face*.116));
+   }
+  }
+  for(let i=0;i<seg;i++){
+   const a=i*Math.PI*2/seg,b=(i+1)*Math.PI*2/seg;
+   tri([0,face*.116,0],point(.205,a,face*.116),point(.205,b,face*.116));
+  }
+ }
+ return mesh(out);
+}
+function makeMirrorShell(side){
+ const out=[],outline=[[.50,-1],[.82,-.62],[.92,-.08],[.72,.55],[.34,.92],[-.30,.98],[-.76,.60],[-.94,.06],[-.72,-.56],[-.28,-.90]],inner=side*.14,outer=side;
+ for(let i=0;i<outline.length;i++){
+  const a=outline[i],b=outline[(i+1)%outline.length];
+  out.push(outer,0,0,outer,a[0],a[1],outer,b[0],b[1]);
+  out.push(inner,0,0,inner,b[0],b[1],inner,a[0],a[1]);
+  out.push(outer,a[0],a[1],inner,a[0],a[1],inner,b[0],b[1],outer,a[0],a[1],inner,b[0],b[1],outer,b[0],b[1]);
+ }
+ return mesh(out);
+}
+function makeMirrorFace(side){
+ const out=[],outline=[[.38,-.72],[.68,-.42],[.76,.02],[.58,.47],[.20,.70],[-.38,.64],[-.66,.24],[-.62,-.34],[-.20,-.66]];
+ for(let i=0;i<outline.length;i++){const a=outline[i],b=outline[(i+1)%outline.length];out.push(side*1.012,0,0,side*1.012,a[0],a[1],side*1.012,b[0],b[1]);}
+ return mesh(out);
+}
+function makeMirrorArm(side){
+ // One canonical slanted mount, mirrored only across X so both sides share the same rake.
+ const out=[],base=[[-.82,-.845],[.62,.995],[.82,.845],[-.62,-.995]],a=base.map(p=>[side*p[0],p[1]]);
+ const front=a.map(p=>[p[0],p[1],-.42]),back=a.map(p=>[p[0],p[1],.42]);
+ const push=(p,q,r,t)=>out.push(...p,...q,...r,...p,...r,...t);
+ push(front[0],front[1],front[2],front[3]);push(back[3],back[2],back[1],back[0]);
+ for(let i=0;i<4;i++)push(front[i],back[i],back[(i+1)%4],front[(i+1)%4]);
+ return mesh(out);
+}
+const mirrorShellL=makeMirrorShell(-1),mirrorShellR=makeMirrorShell(1),mirrorFaceL=makeMirrorFace(-1),mirrorFaceR=makeMirrorFace(1),mirrorArmL=makeMirrorArm(-1),mirrorArmR=makeMirrorArm(1);function makeWheelArch(center,side){
+ const out=[],steps=12;
+ for(let i=0;i<steps;i++){
+  const d0=-WHEEL_RADIUS+2*WHEEL_RADIUS*i/steps,d1=-WHEEL_RADIUS+2*WHEEL_RADIUS*(i+1)/steps,y0=WHEEL_CENTER_Y+Math.sqrt(Math.max(0,WHEEL_RADIUS*WHEEL_RADIUS-d0*d0))+.045,y1=WHEEL_CENTER_Y+Math.sqrt(Math.max(0,WHEEL_RADIUS*WHEEL_RADIUS-d1*d1))+.045,x=side*1.29,x2=side*1.26;
+  const a=[x,y0,center+d0],b=[x2,y0-.012,center+d0],c=[x2,y1-.012,center+d1],d=[x,y1,center+d1];out.push(...a,...b,...c,...a,...c,...d);
+ }return mesh(out);
+}
+function sideRibbon(side,points,width){
+ const out=[];
+ for(let i=0;i<points.length-1;i++){
+  const a=points[i],b=points[i+1],dz=b[1]-a[1],dy=b[0]-a[0],len=Math.hypot(dz,dy)||1,ny=dz/len*width*.5,nz=-dy/len*width*.5,xa=side*a[2],xb=side*b[2];
+  out.push(xa,a[0]+ny,a[1]+nz,xa,a[0]-ny,a[1]-nz,xb,b[0]-ny,b[1]-nz,
+           xa,a[0]+ny,a[1]+nz,xb,b[0]-ny,b[1]-nz,xb,b[0]+ny,b[1]+nz);
+ }return mesh(out);
+}
+function makeProfileLine(keys,side,zStart,zEnd,yKey,xFactor,width,offset=0){
+ // Every contour point sits on an actual profile station, never on a guessed interpolated grid.
+ const zSamples=[zStart,...keys.map(p=>p.z).filter(z=>z>zStart&&z<zEnd),zEnd].sort((a,b)=>a-b);
+ const pts=zSamples.map(z=>{const p=profileValue(z,keys);return [p[yKey],z,p.w*xFactor+offset];});
+ return sideRibbon(side,pts,width);
+}
+function makeArchLine(center,side,width,offset=.012){
+ const pts=[],steps=12;
+ for(let i=0;i<=steps;i++){
+  const z=center-.48+.96*i/steps,d=z-center;
+  const y=WHEEL_CENTER_Y+Math.sqrt(Math.max(0,WHEEL_RADIUS*WHEEL_RADIUS-d*d))+.045;
+  pts.push([y,z,1.295+offset]);
+ }
+ return sideRibbon(side,pts,width);
+}
+// Scaled 1.25x from the design sheet: 5.75 x 2.475 x 1.40 game units.
+const bodyProfile=[
+ // Countach wedge: low pointed nose, flat rear engine deck and broad rear haunches.
+ {z:-2.875,w:1.28,floor:.20,side:.36,mid:.70,shoulder:.99,upper:1.015,top:1.015},
+ {z:-2.70,w:1.34,floor:.20,side:.37,mid:.75,shoulder:1.06,upper:1.075,top:1.075},
+ {z:-2.20,w:1.31,floor:.18,side:.35,mid:.70,shoulder:1.00,upper:1.04,top:1.04},
+ {z:-1.6375,w:1.34,floor:.18,side:.34,mid:.72,shoulder:1.04,upper:1.09,top:1.10},
+ {z:-1.25,w:1.26,floor:.18,side:.33,mid:.68,shoulder:.96,upper:1.015,top:1.02},
+ {z:-.70,w:1.17,floor:.18,side:.31,mid:.58,shoulder:.84,upper:.90,top:.91},
+ {z:0,w:1.15,floor:.18,side:.30,mid:.55,shoulder:.80,upper:.87,top:.88},
+ {z:.72,w:1.18,sideW:1.18,midW:1.15,shoulderW:1.07,upperW:.95,topW:.86,floor:.18,side:.31,mid:.57,shoulder:.84,upper:.89,top:.90},
+ {z:.945,w:1.22,sideW:1.22,midW:1.18,shoulderW:1.12,upperW:1.04,topW:.96,floor:.18,side:.32,mid:.61,shoulder:.89,upper:.94,top:.94},
+ {z:1.31,w:1.26,sideW:1.26,midW:1.21,shoulderW:1.16,upperW:1.08,topW:1.00,floor:.18,side:.34,mid:.65,shoulder:.92,upper:.95,top:.96},
+ {z:1.6375,w:1.30,sideW:1.30,midW:1.24,shoulderW:1.19,upperW:1.10,topW:1.03,floor:.18,side:.34,mid:.68,shoulder:.95,upper:.97,top:.98},
+ {z:2.15,w:1.22,sideW:1.22,midW:1.17,shoulderW:1.10,upperW:1.02,topW:.95,floor:.18,side:.33,mid:.60,shoulder:.82,upper:.83,top:.84},
+ {z:2.55,w:1.15,sideW:1.15,midW:1.12,shoulderW:1.06,upperW:.98,topW:.92,floor:.18,side:.29,mid:.49,shoulder:.70,upper:.71,top:.71},
+ {z:2.875,w:1.10,sideW:1.10,midW:1.08,shoulderW:1.02,upperW:.94,topW:.88,floor:.18,side:.27,mid:.40,shoulder:.59,upper:.62,top:.62}
+ ];
+// Remove the upper side skin behind the glazing as well; otherwise the original body shell shows through as a second cabin.
+// One vertical side-glass plane per side. Top corners overlap the roof edge by 4–5 mm to close raster seams.
+const CABIN_GLASS_TOP_X=.86,CABIN_GLASS_TOP_Y=1.159;
+const CABIN_GLASS_BOTTOM_X=1.10,CABIN_GLASS_BOTTOM_Y=.895;
+const CABIN_GLASS_FRONT_TOP_Z=.36,CABIN_GLASS_REAR_TOP_Z=-1.30;
+const CABIN_GLASS_FRONT_BOTTOM_Z=.945,CABIN_GLASS_REAR_BOTTOM_Z=-1.55;
+function cabinWindowUpperYAt(z){
+ if(z>CABIN_GLASS_FRONT_TOP_Z){
+  const t=clamp((z-CABIN_GLASS_FRONT_TOP_Z)/(CABIN_GLASS_FRONT_BOTTOM_Z-CABIN_GLASS_FRONT_TOP_Z),0,1);
+  return CABIN_GLASS_TOP_Y+(CABIN_GLASS_BOTTOM_Y-CABIN_GLASS_TOP_Y)*t;
+ }
+ if(z<CABIN_GLASS_REAR_TOP_Z){
+  const t=clamp((CABIN_GLASS_REAR_TOP_Z-z)/(CABIN_GLASS_REAR_TOP_Z-CABIN_GLASS_REAR_BOTTOM_Z),0,1);
+  return CABIN_GLASS_TOP_Y+(CABIN_GLASS_BOTTOM_Y-CABIN_GLASS_TOP_Y)*t;
+ }
+ return CABIN_GLASS_TOP_Y;
+}
+function cabinWindowXAtY(y){
+ const t=clamp((CABIN_GLASS_TOP_Y-y)/(CABIN_GLASS_TOP_Y-CABIN_GLASS_BOTTOM_Y),0,1);
+ return CABIN_GLASS_TOP_X+(CABIN_GLASS_BOTTOM_X-CABIN_GLASS_TOP_X)*t;
+}
+const bodyMesh=makeCarHull(bodyProfile,true,false,true,[CABIN_GLASS_REAR_BOTTOM_Z,CABIN_GLASS_FRONT_BOTTOM_Z],true);
+const roofMesh=makeRoof(),wheelFace=makeWheelFace(),exhaustTip=makeExhaustTip(),exhaustCore=makeExhaustCore();
+const archFrontL=makeWheelArch(1.6375,-1),archFrontR=makeWheelArch(1.6375,1),archRearL=makeWheelArch(-1.6375,-1),archRearR=makeWheelArch(-1.6375,1);
+
+function cabinSidePairAt(t,side){
+ const topZ=CABIN_GLASS_FRONT_TOP_Z+(CABIN_GLASS_REAR_TOP_Z-CABIN_GLASS_FRONT_TOP_Z)*t;
+ const bottomZ=CABIN_GLASS_FRONT_BOTTOM_Z+(CABIN_GLASS_REAR_BOTTOM_Z-CABIN_GLASS_FRONT_BOTTOM_Z)*t;
+ return {
+  upper:[side*CABIN_GLASS_TOP_X,CABIN_GLASS_TOP_Y,topZ],
+  lower:[side*CABIN_GLASS_BOTTOM_X,CABIN_GLASS_BOTTOM_Y,bottomZ]
+ };
+}
+function makeCabinSideGlass(side){
+ const a=cabinSidePairAt(0,side),b=cabinSidePairAt(1,side),out=[];
+ if(side>0)out.push(...a.lower,...b.lower,...b.upper,...a.lower,...b.upper,...a.upper);
+ else out.push(...a.lower,...b.lower,...b.upper,...a.lower,...a.upper,...b.upper);
+ return mesh(out);
+}
+function makeCabinPillar(side,t,width){
+ const p=cabinSidePairAt(t,side);
+ // Push the metal frame slightly outside the glass so it remains visible as a true outer trim.
+ return sideRibbon(side,[[p.upper[1]+.006,p.upper[2],Math.abs(p.upper[0])+.020],[p.lower[1]+.006,p.lower[2],Math.abs(p.lower[0])+.020]],width);
+}
+const sideGlassL=makeCabinSideGlass(-1);
+const sideGlassR=makeCabinSideGlass(1);
+const sideAPillarL=makeCabinPillar(-1,0,.070),sideAPillarR=makeCabinPillar(1,0,.070);
+const sideBPillarL=makeCabinPillar(-1,.58,.075),sideBPillarR=makeCabinPillar(1,.58,.075);
+const sideCPillarL=makeCabinPillar(-1,1,.075),sideCPillarR=makeCabinPillar(1,1,.075);
+function makeCabinRoofRail(side){
+ const points=CABIN_ROOF_STATIONS.map(p=>[p.edge+.006,p.z,p.w+.020]);
+ return sideRibbon(side,points,.050);
+}
+const sideRoofRailL=makeCabinRoofRail(-1),sideRoofRailR=makeCabinRoofRail(1);
+
+// Front and rear windscreens connect the roof to the body end sections.
+const rearDeck=profileValue(-1.6375,bodyProfile);
+const windshield=quad(
+ [-CABIN_GLASS_TOP_X,CABIN_GLASS_TOP_Y,CABIN_GLASS_FRONT_TOP_Z],
+ [-CABIN_GLASS_BOTTOM_X,CABIN_GLASS_BOTTOM_Y,CABIN_GLASS_FRONT_BOTTOM_Z],
+ [CABIN_GLASS_BOTTOM_X,CABIN_GLASS_BOTTOM_Y,CABIN_GLASS_FRONT_BOTTOM_Z],
+ [CABIN_GLASS_TOP_X,CABIN_GLASS_TOP_Y,CABIN_GLASS_FRONT_TOP_Z]
+);
+// Rear screen closes the cabin against the actual rear deck top profile.
+const rearRoof=cabinRoofAt(-1.30);
+const rearGlass=quad(
+ [-CABIN_GLASS_TOP_X,CABIN_GLASS_TOP_Y,CABIN_GLASS_REAR_TOP_Z],
+ [-CABIN_GLASS_BOTTOM_X,CABIN_GLASS_BOTTOM_Y,CABIN_GLASS_REAR_BOTTOM_Z],
+ [CABIN_GLASS_BOTTOM_X,CABIN_GLASS_BOTTOM_Y,CABIN_GLASS_REAR_BOTTOM_Z],
+ [CABIN_GLASS_TOP_X,CABIN_GLASS_TOP_Y,CABIN_GLASS_REAR_TOP_Z]
+);
+// Clean rear-quarter intake, fine door shut-lines and lower sills.
+const [sideVentL,sideVentR]=mirroredQuadPair([-1.145,.775,-.56],[-1.225,.775,-1.46],[-1.300,.405,-1.34],[-1.255,.405,-.70]);
+const [sideVentSlat1L,sideVentSlat1R]=mirroredQuadPair([-1.175,.710,-.65],[-1.245,.710,-1.39],[-1.270,.682,-1.35],[-1.205,.682,-.69]);
+const [sideVentSlat2L,sideVentSlat2R]=mirroredQuadPair([-1.195,.600,-.70],[-1.270,.600,-1.34],[-1.292,.572,-1.30],[-1.230,.572,-.73]);
+const doorSeamL=sideRibbon(-1,[[.78,.85,.95],[.72,-.68,1.03],[.40,-.78,1.12],[.39,.82,1.12]],.010);
+const doorSeamR=sideRibbon(1,[[.78,.85,.95],[.39,.82,1.12],[.40,-.78,1.12],[.72,-.68,1.03]],.010);
+const sideSillL=makeProfileLine(bodyProfile,-1,-2.68,2.68,'side',1.012,.045,.014);
+const sideSillR=makeProfileLine(bodyProfile,1,-2.68,2.68,'side',1.012,.045,.014);
+// Countach-style dual pop-up lamp pods; their rigid 45° lift and light transforms are shared.
+function hoodSurfaceY(x,z){
+ const p=profileValue(z,bodyProfile),ax=Math.abs(x);
+ const stations=[[0,p.top],[p.topW,p.top],[p.upperW,p.upper],[p.shoulderW,p.shoulder]];
+ for(let i=0;i<stations.length-1;i++){
+  const a=stations[i],b=stations[i+1];
+  if(ax<=b[0]){const t=clamp((ax-a[0])/(b[0]-a[0]),0,1);return a[1]+(b[1]-a[1])*t;}
+ }
+ return p.shoulder;
+}
+const POP_HINGE_Z=2.30;
+const POP_LAMP_OUTER_X=.895,POP_LAMP_INNER_X=.445,POP_LAMP_Z_REAR=2.30,POP_LAMP_Z_FRONT=2.60;
+const POP_LAMP_FACE_H=.22,POP_LAMP_DIAG=Math.SQRT1_2;
+const POP_HINGE_Y=hoodSurfaceY(.65,POP_HINGE_Z)+.003;
+const COUNTACH_HEADLIGHT_HINGE_Y=.76,COUNTACH_HEADLIGHT_HINGE_Z=2.30;
+const COUNTACH_LAMP_MOUNT_SCALE_X=.9215686274509803,COUNTACH_LAMP_MOUNT_SCALE_Z=.5687;
+const COUNTACH_LAMP_MOUNT_OFFSET_X=.23230,COUNTACH_LAMP_MOUNT_OFFSET_Y=-.0260;
+function countachClosedHeadlampTransform(side){
+ const hinge=matMul(
+  translate(0,COUNTACH_HEADLIGHT_HINGE_Y,COUNTACH_HEADLIGHT_HINGE_Z),
+  matMul(rotateX(Math.PI*.25),translate(0,-COUNTACH_HEADLIGHT_HINGE_Y,-COUNTACH_HEADLIGHT_HINGE_Z))
+ );
+ const mount=matMul(
+  translate(side*COUNTACH_LAMP_MOUNT_OFFSET_X,COUNTACH_HEADLIGHT_HINGE_Y+COUNTACH_LAMP_MOUNT_OFFSET_Y,COUNTACH_HEADLIGHT_HINGE_Z),
+  matMul(
+   scale(COUNTACH_LAMP_MOUNT_SCALE_X,1,COUNTACH_LAMP_MOUNT_SCALE_Z),
+   matMul(rotateX(-Math.PI*.25),translate(0,-POP_HINGE_Y,-POP_HINGE_Z))
+  )
+ );
+ return matMul(hinge,mount);
+}
+function invertCountachAffine(m){
+ const a=m[0],b=m[4],c=m[8],d=m[1],e=m[5],f=m[9],g=m[2],h=m[6],i=m[10];
+ const det=a*(e*i-f*h)-b*(d*i-f*g)+c*(d*h-e*g);
+ if(Math.abs(det)<1e-9)throw new Error('Вырожденная матрица крепления pop-up фары');
+ const ia=(e*i-f*h)/det,ib=(c*h-b*i)/det,ic=(b*f-c*e)/det;
+ const id=(f*g-d*i)/det,ie=(a*i-c*g)/det,iff=(c*d-a*f)/det;
+ const ig=(d*h-e*g)/det,ih=(b*g-a*h)/det,ii=(a*e-b*d)/det;
+ return [ia,id,ig,0,ib,ie,ih,0,ic,iff,ii,0,
+  -(ia*m[12]+ib*m[13]+ic*m[14]),-(id*m[12]+ie*m[13]+iff*m[14]),-(ig*m[12]+ih*m[13]+ii*m[14]),1];
+}
+// Source Countach hood panels are authored in the fully deployed/open lamp pose.
+// Use that pose as the datum so closing the lamps rotates the lids DOWN instead of lifting them again.
+const countachOpenHeadlampInverseL=invertCountachAffine(countachLegacyHeadlampMount(-1));
+const countachOpenHeadlampInverseR=invertCountachAffine(countachLegacyHeadlampMount(1));
+function transformCountachLampPoint(m,p){
+ return [
+  m[0]*p[0]+m[4]*p[1]+m[8]*p[2]+m[12],
+  m[1]*p[0]+m[5]*p[1]+m[9]*p[2]+m[13],
+  m[2]*p[0]+m[6]*p[1]+m[10]*p[2]+m[14]
+ ];
+}
+function lampXBounds(side){return side<0?[-POP_LAMP_OUTER_X,-POP_LAMP_INNER_X]:[POP_LAMP_INNER_X,POP_LAMP_OUTER_X];}
+function lampFrontPoint(x,t,offset=0){
+ const yTop=hoodSurfaceY(x,POP_LAMP_Z_FRONT)-.037,yBase=yTop-POP_LAMP_FACE_H*POP_LAMP_DIAG,zBase=POP_LAMP_Z_FRONT-POP_LAMP_FACE_H*POP_LAMP_DIAG;
+ // Stowed optical normal is tilted 45 degrees; the rigid -45 degree lift aligns it with +Z.
+ return [x,yBase+t*POP_LAMP_DIAG-offset*POP_LAMP_DIAG,zBase+t*POP_LAMP_DIAG+offset*POP_LAMP_DIAG];
+}
+function lampRearPoint(x){return [x,hoodSurfaceY(x,POP_LAMP_Z_REAR)-.037,POP_LAMP_Z_REAR];}
+function pushLampQuad(out,a,b,c,d){out.push(...a,...b,...c,...a,...c,...d);}
+function makeLampTrianglePod(side){
+ const [x0,x1]=lampXBounds(side),out=[],A0=lampRearPoint(x0),A1=lampRearPoint(x1),B0=lampFrontPoint(x0,0),B1=lampFrontPoint(x1,0),C0=lampFrontPoint(x0,POP_LAMP_FACE_H),C1=lampFrontPoint(x1,POP_LAMP_FACE_H);
+ // Genuine triangular side walls; the wedge keeps identical vertices throughout the animation.
+ out.push(...A0,...B0,...C0,...A1,...C1,...B1);
+ pushLampQuad(out,A0,A1,B1,B0);
+ return mesh(out);
+}
+function makeLampCap(side){
+ const outline=[[side*.423,POP_LAMP_Z_REAR],[side*.877,POP_LAMP_Z_REAR],[side*.905,POP_LAMP_Z_REAR+.028],[side*.905,POP_LAMP_Z_FRONT-.028],[side*.877,POP_LAMP_Z_FRONT],[side*.423,POP_LAMP_Z_FRONT],[side*.395,POP_LAMP_Z_FRONT-.028],[side*.395,POP_LAMP_Z_REAR+.028]];
+ // Fit the cap against the real stowed transform, including the mount's X/Z scaling.
+ const closedTransform=countachClosedHeadlampTransform(side);
+ const fittedY=(x,z)=>{
+  let lo=0,hi=1.5;
+  for(let i=0;i<30;i++){
+   const y=(lo+hi)*.5,world=transformCountachLampPoint(closedTransform,[x,y,z]);
+   const gap=world[1]-hoodSurfaceY(world[0],world[2]);
+   if(gap<-.003)lo=y;else hi=y;
+  }
+  return (lo+hi)*.5;
+ };
+ const top=outline.map(([x,z])=>[x,fittedY(x,z),z]),bottom=top.map(([x,y,z])=>[x,y-.040,z]);
+ const centerXZ=outline.reduce((p,v)=>[p[0]+v[0]/outline.length,p[1]+v[1]/outline.length],[0,0]);
+ const tc=[centerXZ[0],fittedY(centerXZ[0],centerXZ[1]),centerXZ[1]];
+ const bc=bottom.reduce((p,v)=>[p[0]+v[0]/bottom.length,p[1]+v[1]/bottom.length,p[2]+v[2]/bottom.length],[0,0,0]);
+ const out=[];
+ for(let i=0;i<top.length;i++){
+  const n=(i+1)%top.length;
+  // The painted skin overlaps the bonnet by 3 mm; the 40 mm return closes the perimeter.
+  out.push(...tc,...top[i],...top[n],...bc,...bottom[n],...bottom[i]);
+  out.push(...top[i],...bottom[i],...bottom[n],...top[i],...bottom[n],...top[n]);
+ }
+ return mesh(out);
+}
+function makeLampFrontPlate(side){
+ const [x0,x1]=lampXBounds(side),out=[],inset=.008,t0=.008,t1=POP_LAMP_FACE_H-.008;
+ pushLampQuad(out,lampFrontPoint(x0+inset,t0,.002),lampFrontPoint(x1-inset,t0,.002),lampFrontPoint(x1-inset,t1,.002),lampFrontPoint(x0+inset,t1,.002));
+ return mesh(out);
+}
+function makeLampBezel(side){
+ const [x0,x1]=lampXBounds(side),out=[],pad=.014,ix0=x0+.040,ix1=x1-.040,t0=.014,t1=POP_LAMP_FACE_H-.014,it0=.040,it1=POP_LAMP_FACE_H-.040,p=(x,t)=>lampFrontPoint(x,t,.006);
+ pushLampQuad(out,p(x0+pad,t0),p(x1-pad,t0),p(ix1,it0),p(ix0,it0));
+ pushLampQuad(out,p(x1-pad,t0),p(x1-pad,t1),p(ix1,it1),p(ix1,it0));
+ pushLampQuad(out,p(x1-pad,t1),p(x0+pad,t1),p(ix0,it1),p(ix1,it1));
+ pushLampQuad(out,p(x0+pad,t1),p(x0+pad,t0),p(ix0,it0),p(ix0,it1));
+ return mesh(out);
+}
+function makeLampLens(side){
+ const [x0,x1]=lampXBounds(side),out=[];
+ pushLampQuad(out,lampFrontPoint(x0+.040,.040,.008),lampFrontPoint(x1-.040,.040,.008),lampFrontPoint(x1-.040,POP_LAMP_FACE_H-.040,.008),lampFrontPoint(x0+.040,POP_LAMP_FACE_H-.040,.008));
+ return mesh(out);
+}
+function makeLampProjectorRings(side){
+ const [x0,x1]=lampXBounds(side),out=[],segments=24,cy=POP_LAMP_FACE_H*.5,centers=[x0+(x1-x0)*.34,x0+(x1-x0)*.66],ro=.037,ri=.028;
+ for(const cx of centers)for(let i=0;i<segments;i++){const a=i*Math.PI*2/segments,b=(i+1)*Math.PI*2/segments,point=(r,t)=>lampFrontPoint(cx+Math.cos(t)*r,cy+Math.sin(t)*r,.011),A=point(ro,a),B=point(ro,b),C=point(ri,b),D=point(ri,a);out.push(...A,...B,...C,...A,...C,...D);}
+ return mesh(out);
+}
+function makeLampProjectorCore(side){
+ const [x0,x1]=lampXBounds(side),out=[],segments=24,cy=POP_LAMP_FACE_H*.5,r=.028,centers=[x0+(x1-x0)*.34,x0+(x1-x0)*.66];
+ for(const cx of centers){const center=lampFrontPoint(cx,cy,.013);for(let i=0;i<segments;i++){const a=i*Math.PI*2/segments,b=(i+1)*Math.PI*2/segments,point=t=>lampFrontPoint(cx+Math.cos(t)*r,cy+Math.sin(t)*r,.013);out.push(...center,...point(a),...point(b));}}
+ return mesh(out);
+}
+const popLampHousingL=makeLampTrianglePod(-1),popLampHousingR=makeLampTrianglePod(1);
+const popLampCapL=makeLampCap(-1),popLampCapR=makeLampCap(1);
+const popLampFrontL=makeLampFrontPlate(-1),popLampFrontR=makeLampFrontPlate(1);
+const popLampBezelL=makeLampBezel(-1),popLampBezelR=makeLampBezel(1);
+const popLampLensL=makeLampLens(-1),popLampLensR=makeLampLens(1);
+const popLampRingsL=makeLampProjectorRings(-1),popLampRingsR=makeLampProjectorRings(1);
+const popLampCoreL=makeLampProjectorCore(-1),popLampCoreR=makeLampProjectorCore(1);
+// Wide central radiator with a bevelled surround and six horizontal cooling vanes.// Wide central radiator with a bevelled surround and six horizontal cooling vanes.
+const frontGrilleFrame=quad([-.70,.46,2.963],[.70,.46,2.963],[.62,.195,2.963],[-.62,.195,2.963]);
+const frontIntake=quad([-.645,.425,2.972],[.645,.425,2.972],[.585,.225,2.972],[-.585,.225,2.972]);
+function makeFrontGrilleSlats(){
+ const out=[];
+ for(let i=0;i<6;i++){
+  const y=.245+i*.028,half=.615-(i/6)*.035,h=.009;
+  const pts=[[-half,y,2.979],[half,y,2.979],[half,y+h,2.979],[-half,y+h,2.979]];
+  out.push(...pts[0],...pts[1],...pts[2],...pts[0],...pts[2],...pts[3]);
+ }
+ return mesh(out);
+}
+const frontGrilleSlats=makeFrontGrilleSlats();
+// Separate upper bumper crease and lower splitter define the blunt, straight nose.
+const frontBumperCrease=quad([-1.00,.535,2.958],[1.00,.535,2.958],[.94,.515,2.958],[-.94,.515,2.958]);
+const frontSplitter=quad([-1.06,.16,2.979],[1.06,.16,2.979],[.98,.125,2.979],[-.98,.125,2.979]);
+// Rectangular amber indicators outboard, with two compact fog / driving lamps on each side.
+const frontTurnSignalL=quad([-.87,.505,2.968],[-.72,.505,2.968],[-.72,.435,2.968],[-.87,.435,2.968]);
+const frontTurnSignalR=quad([.72,.505,2.968],[.87,.505,2.968],[.87,.435,2.968],[.72,.435,2.968]);
+const frontFogFrameL1=quad([-.88,.385,2.972],[-.73,.385,2.972],[-.73,.245,2.972],[-.88,.245,2.972]);
+const frontFogFrameL2=quad([-.68,.385,2.972],[-.53,.385,2.972],[-.53,.245,2.972],[-.68,.245,2.972]);
+const frontFogFrameR1=quad([.73,.385,2.972],[.88,.385,2.972],[.88,.245,2.972],[.73,.245,2.972]);
+const frontFogFrameR2=quad([.53,.385,2.972],[.68,.385,2.972],[.68,.245,2.972],[.53,.245,2.972]);
+const frontFogLensL1=quad([-.855,.360,2.981],[-.755,.360,2.981],[-.755,.270,2.981],[-.855,.270,2.981]);
+const frontFogLensL2=quad([-.655,.360,2.981],[-.555,.360,2.981],[-.555,.270,2.981],[-.655,.270,2.981]);
+const frontFogLensR1=quad([.755,.360,2.981],[.855,.360,2.981],[.855,.270,2.981],[.755,.270,2.981]);
+const frontFogLensR2=quad([.555,.360,2.981],[.655,.360,2.981],[.655,.270,2.981],[.555,.270,2.981]);
+// This flat, full-width rear panel is intentionally proud of the hull: the silhouette reads as a squared tail.
+const rearFascia=quad([-1.25,.96,-2.905],[1.25,.96,-2.905],[1.25,.30,-2.905],[-1.25,.30,-2.905]);
+const rearLampFrameL=quad([-1.23,.88,-2.92],[-.78,.88,-2.92],[-.78,.47,-2.92],[-1.23,.47,-2.92]);
+const rearLampFrameR=quad([1.23,.88,-2.92],[1.23,.47,-2.92],[.78,.47,-2.92],[.78,.88,-2.92]);
+const rearLampL=quad([-1.20,.82,-2.935],[-.82,.82,-2.935],[-.82,.52,-2.935],[-1.20,.52,-2.935]);
+const rearLampR=quad([1.20,.82,-2.935],[1.20,.52,-2.935],[.82,.52,-2.935],[.82,.82,-2.935]);
+const rearLampGlowL=quad([-1.25,.91,-2.93],[-.77,.91,-2.93],[-.77,.43,-2.93],[-1.25,.43,-2.93]);
+const rearLampGlowR=quad([1.25,.91,-2.93],[1.25,.43,-2.93],[.77,.43,-2.93],[.77,.91,-2.93]);
+const rearVent=quad([-.73,.84,-2.935],[.73,.84,-2.935],[.73,.34,-2.935],[-.73,.34,-2.935]);
+const rearDiffuser=quad([-.90,.36,-2.94],[.90,.36,-2.94],[.82,.235,-2.94],[-.82,.235,-2.94]);
+const rearLedL1=quad([-1.06,.755,-2.95],[-.80,.755,-2.95],[-.80,.715,-2.95],[-1.06,.715,-2.95]);
+const rearLedL2=quad([-1.06,.665,-2.95],[-.80,.665,-2.95],[-.80,.625,-2.95],[-1.06,.625,-2.95]);
+const rearLedL3=quad([-1.06,.575,-2.95],[-.80,.575,-2.95],[-.80,.535,-2.95],[-1.06,.535,-2.95]);
+const rearLedR1=quad([1.06,.755,-2.95],[1.06,.715,-2.95],[.80,.715,-2.95],[.80,.755,-2.95]);
+const rearLedR2=quad([1.06,.665,-2.95],[1.06,.625,-2.95],[.80,.625,-2.95],[.80,.665,-2.95]);
+const rearLedR3=quad([1.06,.575,-2.95],[1.06,.535,-2.95],[.80,.535,-2.95],[.80,.575,-2.95]);
+const rearSignalL=quad([-1.105,.785,-2.955],[-1.065,.785,-2.955],[-1.065,.555,-2.955],[-1.105,.555,-2.955]);
+const rearSignalR=quad([1.105,.785,-2.955],[1.105,.555,-2.955],[1.065,.555,-2.955],[1.065,.785,-2.955]);
+function makeSpoilerBlade(){
+ const out=[];
+ const top=[[-1.34,1.316,-2.38],[1.34,1.316,-2.38],[1.25,1.316,-2.72],[-1.25,1.316,-2.72]];
+ const bottom=top.map(p=>[p[0],1.26,p[2]]);
+ const push=(a,b,c,d)=>out.push(...a,...b,...c,...a,...c,...d);
+ push(...top);push(bottom[3],bottom[2],bottom[1],bottom[0]);
+ for(let i=0;i<4;i++)push(top[i],bottom[i],bottom[(i+1)%4],top[(i+1)%4]);
+ return mesh(out);
+}
+const spoilerBlade=makeSpoilerBlade();
+const spoilerTopGlint=quad([-1.12,1.322,-2.42],[1.12,1.322,-2.42],[1.08,1.322,-2.63],[-1.08,1.322,-2.63]);
+// Removed floating glass glints and roof overlay: clean uninterrupted cabin surfaces.
+// Black ink contours follow sampled body sections; every line shares the car profile.
+const shoulderInkL=makeProfileLine(bodyProfile,-1,-2.70,2.67,'shoulder',.985,.026,.012);
+const shoulderInkR=makeProfileLine(bodyProfile,1,-2.70,2.67,'shoulder',.985,.026,.012);
+const beltInkL=makeProfileLine(bodyProfile,-1,-2.68,2.62,'mid',1,.020,.018);
+const beltInkR=makeProfileLine(bodyProfile,1,-2.68,2.62,'mid',1,.020,.018);
+const sillInkL=makeProfileLine(bodyProfile,-1,-2.58,2.56,'side',.96,.028,.016);
+const sillInkR=makeProfileLine(bodyProfile,1,-2.58,2.56,'side',.96,.028,.016);
+const archInk=[makeArchLine(-1.6375,-1,.025),makeArchLine(-1.6375,1,.025),makeArchLine(1.6375,-1,.025),makeArchLine(1.6375,1,.025)];
+// Faceted paint zones: a dark lower flank and two crisp planes on the hood.
+const hoodFacetL=quad([-.38,.62,2.875],[-.59,.84,2.15],[0,.855,2.15],[0,.645,2.875]);
+const hoodFacetR=quad([.38,.62,2.875],[0,.645,2.875],[0,.855,2.15],[.59,.84,2.15]);
+const hoodCenterInk=sideRibbon(1,[[.65,2.70,.012],[.72,2.48,.012],[.84,2.15,.012],[.89,1.90,.012]],.014);
+const hoodEdgeL=sideRibbon(-1,[[.59,2.55,.98],[.78,2.15,1.17],[.90,1.72,1.19],[.95,1.30,1.15]],.025);
+const hoodEdgeR=sideRibbon(1,[[.59,2.55,.98],[.78,2.15,1.17],[.90,1.72,1.19],[.95,1.30,1.15]],.025);
+const flankShadeL=makeProfileLine(bodyProfile,-1,-2.48,2.45,'mid',1.005,.105,.022);
+const flankShadeR=makeProfileLine(bodyProfile,1,-2.48,2.45,'mid',1.005,.105,.022);
+const hoodSheenL=sideRibbon(-1,[[.73,2.55,.47],[.86,2.15,.59],[.91,1.72,.60],[.88,1.30,.58]],.018);
+const hoodSheenR=sideRibbon(1,[[.73,2.55,.47],[.86,2.15,.59],[.91,1.72,.60],[.88,1.30,.58]],.018);
+// One shared body-paint swatch for every painted red component.
+const PAINT_RED=[.72,.018,.095,1];
+const PAINT_MATERIAL=4;
+// Short diagonal corner graphics: black slashes edged with the same body paint, kept away from the doors.
+const cornerSlashes=[];
+for(const side of [-1,1]){
+ cornerSlashes.push(
+  {mesh:sideRibbon(side,[[.34,2.62,1.035],[.57,2.34,1.155]],.070),color:[.008,.009,.018,1]},
+  {mesh:sideRibbon(side,[[.425,2.62,1.052],[.655,2.34,1.172]],.026),color:PAINT_RED},
+  {mesh:sideRibbon(side,[[.405,-2.68,1.285],[.655,-2.40,1.245]],.070),color:[.008,.009,.018,1]},
+  {mesh:sideRibbon(side,[[.49,-2.68,1.302],[.74,-2.40,1.262]],.026),color:PAINT_RED}
+ );
+}
+const C={
+ ground:[.025,.025,.065,1],grid:[.09,.34,.48,.72],grid2:[.34,.10,.40,.55],
+ road:[.055,.055,.105,1],road2:[.075,.07,.13,1],pink:[1,.13,.60,1],cyan:[.20,.88,1,1],white:[.92,.96,1,1],
+ body:PAINT_RED,bodyLight:PAINT_RED,bodyShade:PAINT_RED,
+ glass:[.012,.035,.075,1],glassLight:[.055,.17,.28,1],trim:[.012,.016,.026,1],
+ tire:[.012,.014,.019,1],hub:[.55,.52,.68,1],brake:[.20,.20,.28,1],city:[.085,.045,.12,1],mount:[.08,.045,.14,1]
+};
+let keys={},headlightsUp=false,headlightDeploy=0,wireframeMode=false,started=false,paused=true,speed=0,playerX=0,steer=0,bodyRoll=0,distance=0,travelDistance=0,boost=0,carYaw=0,yawRate=0,lateralVelocity=0,driftIntensity=0,driftState=0,driftDirection=0,driftTimer=0,driftPeakSlip=0,countersteerTime=0,driftCooldown=0,handbrakePulse=0,previousHandbrake=false,previousSteerInput=0,wheelTravel={fl:0,fr:0,rl:0,rr:0},handbrakeActive=false,brakeLight=0,last=performance.now(),musicOn=true,track=0,trackOrder=[],trackPos=0,audio=null,musicPending=true,foundTracks=[],audioCtx=null,engineOsc=null,engineOsc2=null,engineGain=null,engineFilter=null,skidGain=null,skidFilter=null,roadGain=null,roadFilter=null,audioNoise=null;
+// One axis convention shared by controls, car movement, body lean and indicators.
+const STEER_AXIS=Object.freeze({left:-1,right:1,screenRight:1,bodyLean:-1});
+const DRIFT_STATE=Object.freeze({GRIP:0,INITIATION:1,DRIFT:2,RECOVERY:3});
+const VEHICLE_WHEELBASE=3.2824,WORLD_MOTION_SCALE=.432;
+const COUNTACH_WHEEL_X=.9274237,COUNTACH_FRONT_WHEEL_Z=1.6402421,COUNTACH_REAR_WHEEL_Z=-1.6421916;
+const COUNTACH_FRONT_WHEEL_Y=.3761337,COUNTACH_REAR_WHEEL_Y=.3871776;
+function getVehicleSpeed(){return Math.hypot(speed/3.6,lateralVelocity)*3.6;}
+function readSteeringInput(){return (keys.d||keys.arrowright?STEER_AXIS.right:0)+(keys.a||keys.arrowleft?STEER_AXIS.left:0);}
+function getSteeringAngle(){return steer*.32/(1+getVehicleSpeed()/115);}
+function getFrontWheelSteerAngle(side){
+ const slipAngle=Math.atan2(lateralVelocity,Math.max(2,Math.abs(speed/3.6)));
+ const autoCounter=driftState===DRIFT_STATE.DRIFT?.28:driftState===DRIFT_STATE.RECOVERY?.42:0;
+ const angle=clamp(getSteeringAngle()+slipAngle*autoCounter,-.42,.42),magnitude=Math.abs(angle);
+ if(magnitude<.0001)return 0;
+ // Ackermann correction: the wheel on the inside of the turn steers slightly farther.
+ const wheelbase=VEHICLE_WHEELBASE,halfTrack=COUNTACH_WHEEL_X,turnRadius=wheelbase/Math.tan(magnitude),inner=side*Math.sign(angle)>0;
+ return Math.sign(angle)*Math.atan(wheelbase/Math.max(.1,turnRadius+(inner?-halfTrack:halfTrack)));
+}
+let cameraMode=1,debugVisible=false,drawCalls=0,fps=0,fpsFrames=0,fpsTime=performance.now(),debugTime=0,bootDone=false,garageMode=false,garageAngle=0,garageTilt=.24,garageZoom=11,garageDrag=false,garageLastX=0,garageLastY=0,musicVolume=.52,sfxEnabled=true,headlightLightingEnabled=true,mouseLookActive=false,mouseLookYaw=0,mouseLookPitch=0,mouseLookX=0,mouseLookY=0,mouseLookPointerId=null,mouseLookReturning=false;
+const FX_DEFAULTS={outlines:true,ssao:true,wireframe:false,worldShadows:true,vehicleShadows:false,glassReflections:true,paintHighlights:true,lampEmission:true,headlights:false,headlightLighting:true,garageSpotlights:true,garageSpotShadows:true,sunDisc:true,sunGpu:true,sunAuraWrap:true,sunAuraDebug:false,lensFlares:true,underglow:true,tireContact:true};
+const FX={...FX_DEFAULTS};if(!gpuSunReady)FX.sunGpu=false;
+const gpuTimerExt=gl.getExtension('EXT_disjoint_timer_query');
+const gpuTimerQueue=[];let gpuTimerActive=null,gpuTimerPollAt=0;
+const gpuPassMs={shadow:null,world:null,post:null};
+const cpuPassMs={shadow:0,world:0,post:0,frame:0};
+function beginGpuPass(label){if(!debugVisible||!gpuTimerExt||gpuTimerActive||gpuTimerQueue.length>=12)return;const query=gpuTimerExt.createQueryEXT();if(!query)return;gpuTimerExt.beginQueryEXT(gpuTimerExt.TIME_ELAPSED_EXT,query);gpuTimerActive={label,query};}
+function endGpuPass(){if(!gpuTimerExt||!gpuTimerActive)return;gpuTimerExt.endQueryEXT(gpuTimerExt.TIME_ELAPSED_EXT);gpuTimerQueue.push(gpuTimerActive);gpuTimerActive=null;}
+function pollGpuPassTimes(){if(!gpuTimerExt||performance.now()<gpuTimerPollAt)return;gpuTimerPollAt=performance.now()+250;const disjoint=gl.getParameter(gpuTimerExt.GPU_DISJOINT_EXT);for(let i=gpuTimerQueue.length-1;i>=0;i--){const item=gpuTimerQueue[i];if(!gpuTimerExt.getQueryObjectEXT(item.query,gpuTimerExt.QUERY_RESULT_AVAILABLE_EXT))continue;const ns=gpuTimerExt.getQueryObjectEXT(item.query,gpuTimerExt.QUERY_RESULT_EXT);if(!disjoint&&Number.isFinite(ns)&&ns>=0){const ms=ns/1e6,old=gpuPassMs[item.label];gpuPassMs[item.label]=old===null?ms:old*.65+ms*.35;}gpuTimerExt.deleteQueryEXT(item.query);gpuTimerQueue.splice(i,1);}}
+function syncEffectsMenu(){const menu=$('effects-menu');if(!menu)return;for(const input of menu.querySelectorAll('[data-fx]')){const key=input.dataset.fx;input.checked=key==='wireframe'?wireframeMode:key==='headlights'?headlightsUp:key==='headlightLighting'?headlightLightingEnabled:!!FX[key];}}
+function setVisualEffect(key,value){if(!(key in FX))return;FX[key]=!!value;if(key==='wireframe')wireframeMode=!!value;if(key==='headlights')headlightsUp=!!value;if(key==='headlightLighting')headlightLightingEnabled=!!value;syncEffectsMenu();}
+function toggleEffectsMenu(){if(!bootDone)return;const menu=$('effects-menu'),open=!menu.classList.contains('show');if(open)endMouseLook();menu.classList.toggle('show',open);menu.setAttribute('aria-hidden',open?'false':'true');if(open)syncEffectsMenu();}
+function resetVisualEffects(){Object.assign(FX,FX_DEFAULTS);wireframeMode=FX.wireframe;headlightsUp=FX.headlights;headlightLightingEnabled=FX.headlightLighting;syncEffectsMenu();}
+const CAMERA_NAMES=['HOOD / FIRST PERSON','CLOSE CHASE','WIDE CHASE','LOW CHASE'];
+function setCamera(n){cameraMode=(n+4)%4;$('cam-label').textContent='CAM '+(cameraMode+1)+' · '+['HOOD','CLOSE','WIDE','LOW'][cameraMode];}
+function toggleDebug(){debugVisible=!debugVisible;$('debug-panel').classList.toggle('visible',debugVisible);$('debug-toggle').textContent=debugVisible?'DEBUG ON':'DEBUG';}
+$('effects-menu').querySelectorAll('[data-fx]').forEach(input=>input.addEventListener('change',()=>setVisualEffect(input.dataset.fx,input.checked)));
+ 
+$('fx-close').addEventListener('click',toggleEffectsMenu);
+$('fx-reset').addEventListener('click',resetVisualEffects);
+$('effects-menu').addEventListener('pointerdown',e=>{if(e.target===$('effects-menu'))toggleEffectsMenu();});
+addEventListener('keydown',e=>{
+ if(e.code==='F4'){e.preventDefault();toggleEffectsMenu();return;}
+ const k=e.key.toLowerCase();
+ if(k==='escape'&&$('effects-menu').classList.contains('show')){e.preventDefault();toggleEffectsMenu();return;}
+ if(k==='escape'){
+  e.preventDefault();
+  if(!bootDone)return;
+  if($('garage-screen').classList.contains('show')||$('options-screen').classList.contains('show'))showMenu();
+  else if(started&&!paused)pauseGame();
+  return;
+ }
+ keys[k]=true;
+ if(['arrowup','arrowdown','arrowleft','arrowright',' '].includes(e.key))e.preventDefault();
+ if(k==='m'&&bootDone)toggleMusic();
+ if(e.code==='KeyL'&&!e.repeat){headlightsUp=!headlightsUp;FX.headlights=headlightsUp;syncEffectsMenu();}
+ if(e.code==='KeyK'&&!e.repeat){wireframeMode=!wireframeMode;FX.wireframe=wireframeMode;syncEffectsMenu();}
+ if(bootDone){initAudio();if(musicPending&&musicOn)tryStartMusic();}
+ if(k==='f3'){e.preventDefault();toggleDebug();}
+ if(k==='h'&&!e.repeat){headlightLightingEnabled=!headlightLightingEnabled;FX.headlightLighting=headlightLightingEnabled;syncEffectsMenu();}
+ if(k==='c'&&!e.repeat&&started&&!paused&&!garageMode)setCamera(cameraMode+1);
+ if(['1','2','3','4'].includes(k))setCamera(Number(k)-1);
+ if(bootDone&&k==='enter'&&$('main-menu').classList.contains('show'))start();
+});
+addEventListener('keyup',e=>keys[e.key.toLowerCase()]=false);
+addEventListener('pointerdown',()=>{if(bootDone){initAudio();if(musicPending&&musicOn)tryStartMusic();}},{passive:true});
+$('cam-prev').addEventListener('click',()=>setCamera(cameraMode-1));
+$('cam-next').addEventListener('click',()=>setCamera(cameraMode+1));
+$('debug-toggle').addEventListener('click',toggleDebug);
+canvas.addEventListener('pointerdown',e=>{if(!started||paused||garageMode||e.button!==0)return;if(!mouseLookReturning){mouseLookYaw=0;mouseLookPitch=0;}mouseLookReturning=false;mouseLookActive=true;mouseLookPointerId=e.pointerId;mouseLookX=e.clientX;mouseLookY=e.clientY;canvas.style.cursor='grabbing';try{canvas.setPointerCapture(e.pointerId);}catch{}e.preventDefault();});
+canvas.addEventListener('pointermove',e=>{if(!mouseLookActive||e.pointerId!==mouseLookPointerId)return;const dx=e.clientX-mouseLookX,dy=e.clientY-mouseLookY;mouseLookX=e.clientX;mouseLookY=e.clientY;mouseLookYaw=clamp(mouseLookYaw+dx*.006,-Math.PI,Math.PI);mouseLookPitch=clamp(mouseLookPitch+dy*.0045,-.62,.62);});
+const endMouseLook=e=>{if(!mouseLookActive||(e&&e.pointerId!==undefined&&e.pointerId!==mouseLookPointerId))return;const id=mouseLookPointerId;mouseLookActive=false;mouseLookPointerId=null;mouseLookReturning=Math.abs(mouseLookYaw)>.004||Math.abs(mouseLookPitch)>.004;canvas.style.cursor='';try{if(id!==null&&canvas.hasPointerCapture(id))canvas.releasePointerCapture(id);}catch{}};
+canvas.addEventListener('pointerup',endMouseLook);canvas.addEventListener('pointercancel',endMouseLook);window.addEventListener('blur',endMouseLook);
+function showMenu(){
+ endMouseLook();garageMode=false;$('fps-counter').style.display='none';document.body.classList.remove('playing','garage-mode');
+ $('garage-screen').classList.remove('show');$('options-screen').classList.remove('show');$('main-menu').classList.add('show');
+}
+function showGarage(){endMouseLook();garageMode=true;$('fps-counter').style.display='block';garageAngle=0;garageTilt=.24;garageZoom=11;document.body.classList.remove('playing');document.body.classList.add('garage-mode');$('main-menu').classList.remove('show');$('options-screen').classList.remove('show');$('garage-screen').classList.add('show');}
+function showOptions(){$('fps-counter').style.display='none';document.body.classList.remove('playing');$('main-menu').classList.remove('show');$('garage-screen').classList.remove('show');$('options-screen').classList.add('show');}
+function pauseGame(){
+ if(!started||paused)return;
+ paused=true;keys={};showMenu();
+}
+function start(){
+ garageMode=false;$('fps-counter').style.display='block';started=true;paused=false;document.body.classList.remove('garage-mode');document.body.classList.add('playing');
+ initAudio();if(musicPending&&musicOn)tryStartMusic();
+ $('main-menu').classList.remove('show');$('garage-screen').classList.remove('show');$('options-screen').classList.remove('show');$('overlay').classList.add('hidden');
+}
+$('menu-start').addEventListener('click',start);$('menu-garage').addEventListener('click',showGarage);$('menu-options').addEventListener('click',showOptions);$('garage-back').addEventListener('click',showMenu);$('options-back').addEventListener('click',showMenu);
+$('option-music').addEventListener('click',()=>{toggleMusic();$('option-music').textContent=musicOn?'ВКЛЮЧЕНА':'ВЫКЛЮЧЕНА';});
+$('option-volume').addEventListener('input',e=>{musicVolume=Number(e.target.value)/100;if(audio)audio.volume=musicVolume;});
+$('option-sfx').addEventListener('click',()=>{sfxEnabled=!sfxEnabled;$('option-sfx').textContent=sfxEnabled?'ВКЛЮЧЁН':'ВЫКЛЮЧЕН';});
+$('garage-screen').addEventListener('pointerdown',e=>{if(e.target.closest('button'))return;garageDrag=true;garageLastX=e.clientX;garageLastY=e.clientY;$('garage-screen').classList.add('dragging');});
+addEventListener('pointermove',e=>{if(garageDrag){garageAngle+=(e.clientX-garageLastX)*.009;garageTilt=clamp(garageTilt+(e.clientY-garageLastY)*.006,-.04,1.28);garageLastX=e.clientX;garageLastY=e.clientY;}});
+addEventListener('pointerup',()=>{garageDrag=false;$('garage-screen').classList.remove('dragging');});
+$('garage-screen').addEventListener('wheel',e=>{if(!garageMode)return;e.preventDefault();garageZoom=clamp(garageZoom+Math.sign(e.deltaY)*.8,7,17);},{passive:false});
+const musicFiles=Array.from({length:20},(_,i)=>'assets/music/'+(i+1)+'.mp3');
+async function scanMusic(){
+ const checks=await Promise.all(musicFiles.map(async url=>{
+  try{const r=await fetch(url,{method:'HEAD',cache:'no-store'});return r.ok?url:null;}catch{return null;}
+ }));
+ foundTracks=checks.filter(Boolean);
+ $('music').textContent='♫ MUSIC '+foundTracks.length+' TRACK'+(foundTracks.length===1?'':'S')+' FOUND';
+ if(foundTracks.length){shuffleTracks();tryStartMusic();}
+}
+function tryStartMusic(){
+ if(!musicOn||!foundTracks.length)return;
+ if(!audio)audio=new Audio();
+ if(!trackOrder.length)shuffleTracks();
+ audio.src=foundTracks[trackOrder[trackPos]];audio.volume=musicVolume;audio.loop=false;
+ audio.onended=()=>{advanceTrack();};
+ audio.play().then(()=>{musicPending=false;updateMusicLabel();}).catch(()=>{musicPending=true;$('music').textContent='♫ '+foundTracks.length+' TRACKS · PRESS ANY KEY';});
+}
+function shuffleTracks(){trackOrder=foundTracks.map((_,i)=>i);for(let i=trackOrder.length-1;i>0;i--){const j=Math.floor(Math.random()*(i+1));[trackOrder[i],trackOrder[j]]=[trackOrder[j],trackOrder[i]];}trackPos=0;track=trackOrder[0]??0;}
+function advanceTrack(){if(!foundTracks.length)return;trackPos++;if(trackPos>=trackOrder.length){const previous=trackOrder[trackOrder.length-1];shuffleTracks();if(trackOrder.length>1&&trackOrder[0]===previous)[trackOrder[0],trackOrder[1]]=[trackOrder[1],trackOrder[0]];}track=trackOrder[trackPos];playTrack();}
+function playTrack(){if(!foundTracks.length)return;if(!trackOrder.length)shuffleTracks();track=trackOrder[trackPos];audio.src=foundTracks[track];audio.volume=musicVolume;audio.onended=advanceTrack;audio.play().catch(()=>{musicPending=true;});}
+function updateMusicLabel(){$('music').textContent=!musicOn?'♫ MUSIC OFF':foundTracks.length?'♫ RANDOM TRACK '+(track+1)+' / '+foundTracks.length:'♫ NO MUSIC FILES';}
+function toggleMusic(){musicOn=!musicOn;if(musicOn)tryStartMusic();else if(audio)audio.pause();updateMusicLabel();}
+function initAudio(){
+ if(audioCtx){if(audioCtx.state==='suspended')audioCtx.resume();return;}
+ const AC=window.AudioContext||window.webkitAudioContext;if(!AC)return;
+ audioCtx=new AC();
+ engineOsc=audioCtx.createOscillator();engineOsc.type='sawtooth';engineOsc.frequency.value=48;
+ engineOsc2=audioCtx.createOscillator();engineOsc2.type='triangle';engineOsc2.frequency.value=24;
+ engineFilter=audioCtx.createBiquadFilter();engineFilter.type='lowpass';engineFilter.frequency.value=180;
+ engineGain=audioCtx.createGain();engineGain.gain.value=0;
+ engineOsc.connect(engineFilter);engineOsc2.connect(engineFilter);engineFilter.connect(engineGain);engineGain.connect(audioCtx.destination);
+ const n=Math.floor(audioCtx.sampleRate*2),buf=audioCtx.createBuffer(1,n,audioCtx.sampleRate),data=buf.getChannelData(0);
+ for(let i=0;i<n;i++)data[i]=(Math.random()*2-1)*.7;
+ audioNoise=buf;
+ const noise=()=>{const src=audioCtx.createBufferSource();src.buffer=audioNoise;src.loop=true;return src;};
+ const skidSrc=noise();skidFilter=audioCtx.createBiquadFilter();skidFilter.type='bandpass';skidFilter.frequency.value=1450;skidFilter.Q.value=.7;
+ skidGain=audioCtx.createGain();skidGain.gain.value=0;skidSrc.connect(skidFilter);skidFilter.connect(skidGain);skidGain.connect(audioCtx.destination);skidSrc.start();
+ const roadSrc=noise();roadFilter=audioCtx.createBiquadFilter();roadFilter.type='lowpass';roadFilter.frequency.value=260;
+ roadGain=audioCtx.createGain();roadGain.gain.value=0;roadSrc.connect(roadFilter);roadFilter.connect(roadGain);roadGain.connect(audioCtx.destination);roadSrc.start();
+ engineOsc.start();engineOsc2.start();audioCtx.resume();
+}
+function updateCarAudio(){
+ if(!audioCtx)return;
+ const now=audioCtx.currentTime,spd=getVehicleSpeed(),drift=started&&!paused&&spd>32&&driftIntensity>.12;
+ const rpm=48+spd*.92+boost*38;
+ engineOsc.frequency.setTargetAtTime(rpm,now,.07);engineOsc2.frequency.setTargetAtTime(rpm*.48,now,.09);
+ engineFilter.frequency.setTargetAtTime(130+spd*3.3,now,.12);
+ engineGain.gain.setTargetAtTime(started&&!paused&&sfxEnabled?.065+Math.min(spd/310,.22)*.10:0,now,.12);
+ skidGain.gain.setTargetAtTime(sfxEnabled&&drift?Math.min(.20,driftIntensity*.16+spd/2200):0,now,.08);
+ skidFilter.frequency.setTargetAtTime(950+Math.abs(steer)*1200+spd*2,now,.08);
+ roadGain.gain.setTargetAtTime(sfxEnabled&&drift?Math.min(.13,driftIntensity*spd/1500):0,now,.12);
+ roadFilter.frequency.setTargetAtTime(170+spd*2.2,now,.15);
+}
+// Seeded procedural road: linked waypoints form long, varied bends.
+const roadWaypoints=[0];let roadSeed=(Math.random()*4294967296)>>>0;
+function roadRand(){roadSeed=(roadSeed*1664525+1013904223)>>>0;return roadSeed/4294967296;}
+for(let i=1;i<=2400;i++)roadWaypoints.push(clamp(roadWaypoints[i-1]+(roadRand()-.5)*27,-34,34));
+function roadX(z){z=Math.max(0,z);const seg=Math.floor(z/170),t=(z-seg*170)/170,a=roadWaypoints[clamp(seg,0,roadWaypoints.length-1)]||0,b=roadWaypoints[clamp(seg+1,0,roadWaypoints.length-1)]||a,u=t*t*(3-2*t);return a+(b-a)*u;}
+function normalMatrix3(m){
+ const ax=m[0],ay=m[1],az=m[2],bx=m[4],by=m[5],bz=m[6],cx=m[8],cy=m[9],cz=m[10];
+ const c0=[by*cz-bz*cy,bz*cx-bx*cz,bx*cy-by*cx];
+ const c1=[cy*az-cz*ay,cz*ax-cx*az,cx*ay-cy*ax];
+ const c2=[ay*bz-az*by,az*bx-ax*bz,ax*by-ay*bx];
+ const det=ax*c0[0]+ay*c0[1]+az*c0[2],inv=1/(Math.abs(det)<1e-9?1:det);
+ return new Float32Array([c0[0]*inv,c0[1]*inv,c0[2]*inv,c1[0]*inv,c1[1]*inv,c1[2]*inv,c2[0]*inv,c2[1]*inv,c2[2]*inv]);
+}
+const SHADOW_OPAQUE_ALPHA=0.78;
+// Visible crossfading scenery belongs in the aura mask even when it is too translucent to cast a hard shadow.
+function sceneMaskAllowed(color,material){return material<4.5&&color[3]>=0.035;}
+function shadowCasterAllowed(color,material){
+ // Any regular opaque scene material casts automatically; translucent and glow passes do not.
+ return material<4.5&&material!=3.0&&color[3]>=SHADOW_OPAQUE_ALPHA;
+}
+function shadowBoundsVisible(shape,model){
+ if(!shadowVP)return true;
+ const scaleMax=Math.max(Math.hypot(model[0],model[1],model[2]),Math.hypot(model[4],model[5],model[6]),Math.hypot(model[8],model[9],model[10]));
+ const radius=(shape.boundsRadius||1)*scaleMax,x=model[12],y=model[13],z=model[14],m=shadowVP;
+ const cx=m[0]*x+m[4]*y+m[8]*z+m[12],cy=m[1]*x+m[5]*y+m[9]*z+m[13],cz=m[2]*x+m[6]*y+m[10]*z+m[14],cw=m[3]*x+m[7]*y+m[11]*z+m[15];
+ if(cw<=0.0001)return false;
+ const rx=radius*Math.hypot(m[0],m[4],m[8]),ry=radius*Math.hypot(m[1],m[5],m[9]),rz=radius*Math.hypot(m[2],m[6],m[10]);
+ return cx>=-cw-rx&&cx<=cw+rx&&cy>=-cw-ry&&cy<=cw+ry&&cz>=-cw-rz&&cz<=cw+rz;
+}
+function bindMesh(shape,model,color,toon=0,material=0,vehicleShadowCaster=false,vehicleSolarShadowCaster=false){
+ if(outlinePass){
+  if(!aoScenePass&&toon<0.5)return;
+  if(aoScenePass&&!sceneMaskAllowed(color,material))return;
+  gl.disable(gl.BLEND);gl.depthMask(true);
+ }
+ if(shadowPass){
+  if((shadowCasterMode==='environment-only'&&toon>0.5)||(shadowCasterMode==='vehicle-details'&&toon>0.5&&!vehicleShadowCaster)||(shadowCasterMode==='vehicle-solar-details'&&toon>0.5&&!vehicleSolarShadowCaster)||(shadowCasterMode==='vehicle-self-only'&&(toon<0.5||!vehicleSolarShadowCaster))||!shadowCasterAllowed(color,material)||!shadowBoundsVisible(shape,model))return;
+  gl.disable(gl.BLEND);gl.depthMask(true);
+ }
+ gl.uniformMatrix4fv(loc.model,false,new Float32Array(model));
+ if(wireframeMode&&toon>0.5&&!outlinePass&&!shadowPass){
+  gl.uniform4fv(loc.color,[.20,.92,1,1]);gl.uniform1f(loc.toon,0);gl.uniform1f(loc.materialMode,0);
+  gl.bindBuffer(gl.ARRAY_BUFFER,shape.eb);gl.enableVertexAttribArray(loc.p);gl.vertexAttribPointer(loc.p,3,gl.FLOAT,false,0,0);
+  gl.drawArrays(gl.LINES,0,shape.en);
+ }else{
+  gl.uniformMatrix3fv(loc.normalMatrix,false,normalMatrix3(model));
+  gl.uniform4fv(loc.color,color);gl.uniform1f(loc.toon,toon);gl.uniform1f(loc.materialMode,material);
+  gl.bindBuffer(gl.ARRAY_BUFFER,shape.b);gl.enableVertexAttribArray(loc.p);gl.vertexAttribPointer(loc.p,3,gl.FLOAT,false,0,0);
+  gl.bindBuffer(gl.ARRAY_BUFFER,shape.nb);gl.enableVertexAttribArray(loc.normal);gl.vertexAttribPointer(loc.normal,3,gl.FLOAT,false,0,0);
+  gl.drawArrays(gl.TRIANGLES,0,shape.n);
+ }
+ drawCalls++;
+}
+function draw(shape,x,y,z,sx,sy,sz,color,yaw=0,roll=0,material=0){
+  const model=matMul(translate(x,y,z),matMul(rotateY(yaw),matMul(rotateZ(roll),scale(sx,sy,sz))));
+  bindMesh(shape,model,color,0,material);
+ }
+ function drawCarPart(cx,cz,x,y,z,sx,sy,sz,color,yaw=0,shape=cube,material=1,spin=0,steering=0,steeringPivotX=null,vehicleShadowCaster=false,vehicleSolarShadowCaster=true){
+ const isWheel=shape===wheel||shape===wheelFace||shape===wheelTread;
+ const localPosition=steeringPivotX===null?translate(x,y,z):matMul(translate(steeringPivotX,y,z),matMul(rotateY(steering),translate(x-steeringPivotX,0,0)));
+ const localRotation=isWheel?matMul(rotateZ(Math.PI/2),rotateY(spin)):matIdentity();
+ const model=matMul(translate(cx,0,cz),matMul(rotateY(yaw),matMul(rotateZ(bodyRoll),matMul(localPosition,matMul(localRotation,scale(sx,sy,sz))))));
+ bindMesh(shape,model,color,1,material,vehicleShadowCaster,vehicleSolarShadowCaster);
+}
+function drawCarMesh(shape,cx,cz,color,yaw=0,material=1,vehicleShadowCaster=false,vehicleSolarShadowCaster=true){
+ const model=matMul(translate(cx,0,cz),matMul(rotateY(yaw),matMul(rotateZ(bodyRoll),matIdentity())));
+ bindMesh(shape,model,color,1,material,vehicleShadowCaster,vehicleSolarShadowCaster);
+}
+function drawCarHingedMesh(shape,cx,cz,color,yaw=0,material=1,vehicleShadowCaster=false,vehicleSolarShadowCaster=true){
+ const deploy=clamp(headlightDeploy,0,1),ease=deploy*deploy*(3-2*deploy),angle=Math.PI*.25*(1-ease);
+ // Every part shares one rigid transform; no scaling, vertex updates or independent deformation.
+ const hinge=matMul(translate(0,POP_HINGE_Y,POP_HINGE_Z),matMul(rotateX(angle),translate(0,-POP_HINGE_Y,-POP_HINGE_Z)));
+ const model=matMul(translate(cx,0,cz),matMul(rotateY(yaw),matMul(rotateZ(bodyRoll),hinge)));
+ bindMesh(shape,model,color,1,material,vehicleShadowCaster,vehicleSolarShadowCaster);
+}
+
+function drawCountachWheelPart(shape,cx,cz,x,y,z,color,yaw,spin,steering=0,material=2){
+ const local=matMul(translate(x,y,z),matMul(rotateY(steering),rotateX(spin)));
+ const model=matMul(translate(cx,0,cz),matMul(rotateY(yaw),matMul(rotateZ(bodyRoll),local)));
+ bindMesh(shape,model,color,1,material,false,false);
+}
+
+function countachHeadlightAngle(){
+ const d=clamp(headlightDeploy,0,1),ease=d*d*(3-2*d);
+ return Math.PI*.25*(1-ease);
+}
+function countachHeadlightHinge(){
+ return matMul(
+  translate(0,COUNTACH_HEADLIGHT_HINGE_Y,COUNTACH_HEADLIGHT_HINGE_Z),
+  matMul(rotateX(countachHeadlightAngle()),translate(0,-COUNTACH_HEADLIGHT_HINGE_Y,-COUNTACH_HEADLIGHT_HINGE_Z))
+ );
+}
+function countachLegacyHeadlampMount(side){
+ // The legacy optical face is built at 45° in its stowed coordinate system.
+ // Counter-rotate it by 45° so the current Countach hinge (45° closed -> 0° open) remains authoritative.
+ // The mapped projector centre is fitted to the source Countach lamp datum; scale only the pod footprint.
+ return matMul(
+  translate(side*COUNTACH_LAMP_MOUNT_OFFSET_X,COUNTACH_HEADLIGHT_HINGE_Y+COUNTACH_LAMP_MOUNT_OFFSET_Y,COUNTACH_HEADLIGHT_HINGE_Z),
+  matMul(
+   scale(COUNTACH_LAMP_MOUNT_SCALE_X,1,COUNTACH_LAMP_MOUNT_SCALE_Z),
+   matMul(rotateX(-Math.PI*.25),translate(0,-POP_HINGE_Y,-POP_HINGE_Z))
+  )
+ );
+}
+function drawCountachLegacyHeadlampAssembly(side,cx,cz,color,yaw=0){
+ // Restore the original seven-part lamp assembly; every part uses this exact same rigid mount and hinge.
+ const hinge=countachHeadlightHinge(),mount=countachLegacyHeadlampMount(side);
+ const model=matMul(translate(cx,0,cz),matMul(rotateY(yaw),matMul(rotateZ(bodyRoll),matMul(hinge,mount))));
+ const housing=side<0?popLampHousingL:popLampHousingR;
+ const front=side<0?popLampFrontL:popLampFrontR;
+ const bezel=side<0?popLampBezelL:popLampBezelR;
+ const lens=side<0?popLampLensL:popLampLensR;
+ const rings=side<0?popLampRingsL:popLampRingsR;
+ const core=side<0?popLampCoreL:popLampCoreR;
+ const cap=side<0?countachModel.movingLampCapL:countachModel.movingLampCapR;
+ const capInverse=side<0?countachOpenHeadlampInverseL:countachOpenHeadlampInverseR;
+ bindMesh(housing,model,[.035,.043,.055,1],1,1,true,true);
+ bindMesh(front,model,[.012,.022,.038,1],1,1,false,true);
+ bindMesh(bezel,model,[.52,.56,.66,1],1,2,false,true);
+ bindMesh(lens,model,[.045,.115,.17,1],1,3,false,true);
+ bindMesh(rings,model,[.70,.78,.90,1],1,2,false,true);
+ bindMesh(core,model,color,1,8,false,true);
+ // Source caps are in the open-pose body frame. Rebase them on the open module transform:
+ // at full deployment they return to their authored pose; with lamps closed, the shared 45° hinge lowers them.
+ bindMesh(cap,matMul(model,capInverse),C.bodyLight,1,PAINT_MATERIAL,true,true);
+}
+
+function matIdentity(){return [1,0,0,0,0,1,0,0,0,0,1,0,0,0,0,1];}
+function matMul(a,b){let o=new Array(16);for(let c=0;c<4;c++)for(let r=0;r<4;r++)o[c*4+r]=a[r]*b[c*4]+a[4+r]*b[c*4+1]+a[8+r]*b[c*4+2]+a[12+r]*b[c*4+3];return o;}
+function translate(x,y,z){let m=matIdentity();m[12]=x;m[13]=y;m[14]=z;return m;}
+function scale(x,y,z){let m=matIdentity();m[0]=x;m[5]=y;m[10]=z;return m;}
+function rotateY(a){let c=Math.cos(a),s=Math.sin(a);return [c,0,-s,0,0,1,0,0,s,0,c,0,0,0,0,1];}
+function rotateX(a){let c=Math.cos(a),s=Math.sin(a);return [1,0,0,0,0,c,s,0,0,-s,c,0,0,0,0,1];}
+function rotateZ(a){let c=Math.cos(a),s=Math.sin(a);return [c,s,0,0,-s,c,0,0,0,0,1,0,0,0,0,1];}
+// Left-handed +Z-forward camera. Screen-right is explicitly world +X.
+function perspective(f,asp,n,far){
+ const t=1/Math.tan(f/2),a=(far+n)/(far-n),b=(-2*far*n)/(far-n);
+ return [t/asp,0,0,0,0,t,0,0,0,0,a,1,0,0,b,0];
+}
+function orthographic(l,r,b,t,n,f){return [2/(r-l),0,0,0,0,2/(t-b),0,0,0,0,2/(f-n),0,-(r+l)/(r-l),-(t+b)/(t-b),-(f+n)/(f-n),1];}
+function lookAt(ex,ey,ez,cx,cy,cz){
+ let fx=cx-ex,fy=cy-ey,fz=cz-ez,l=Math.hypot(fx,fy,fz);fx/=l;fy/=l;fz/=l;
+ // right = up × forward, so world +X always appears on the right side of the screen.
+ let rx=fz,ry=0,rz=-fx;l=Math.hypot(rx,ry,rz);rx/=l;ry/=l;rz/=l;
+ let ux=fy*rz-fz*ry,uy=fz*rx-fx*rz,uz=fx*ry-fy*rx;
+ return [rx,ux,fx,0,ry,uy,fy,0,rz,uz,fz,0,
+  -(rx*ex+ry*ey+rz*ez),-(ux*ex+uy*ey+uz*ez),-(fx*ex+fy*ey+fz*ez),1];
+}
+function cameraFor(carX,carZ){
+ if(garageMode){const orbit=garageZoom*Math.cos(garageTilt),gx=Math.sin(garageAngle)*orbit,gz=Math.cos(garageAngle)*orbit;return{x:carX+gx,y:.82+garageZoom*Math.sin(garageTilt),z:carZ+gz,tx:carX,ty:.68,tz:carZ,fov:43};}
+ const fx=Math.sin(carYaw),fz=Math.cos(carYaw);
+ const modes=[
+  {x:carX+fx*1.28,y:1.38,z:carZ+fz*1.28,tx:carX+fx*48,ty:1.08,tz:carZ+fz*48,fov:76},
+  {x:carX-fx*7.2,y:2.45,z:carZ-fz*7.2,tx:carX+fx*19,ty:.72,tz:carZ+fz*19,fov:68},
+  {x:carX-fx*14,y:4.25,z:carZ-fz*14,tx:carX+fx*24,ty:.72,tz:carZ+fz*24,fov:66},
+  {x:carX-fx*11,y:1.72,z:carZ-fz*11,tx:carX+fx*22,ty:.65,tz:carZ+fz*22,fov:70}
+ ];
+ const base=modes[cameraMode];
+ if(!mouseLookActive&&!mouseLookReturning)return base;
+ const cy=Math.cos(mouseLookYaw),sy=Math.sin(mouseLookYaw),cp=Math.cos(mouseLookPitch),sp=Math.sin(mouseLookPitch);
+ const rotateOffset=(x,y,z)=>{const rx=x*cy+z*sy,rz=-x*sy+z*cy;return[rx,y*cp-rz*sp,y*sp+rz*cp];};
+ const p=rotateOffset(base.x-carX,base.y,base.z-carZ),t=rotateOffset(base.tx-carX,base.ty,base.tz-carZ);
+ return{x:carX+p[0],y:p[1],z:carZ+p[2],tx:carX+t[0],ty:t[1],tz:carZ+t[2],fov:base.fov};
+}
+function drawWorld(){
+ drawCalls=0;
+ const carZ=garageMode?0:distance,trackCenter=garageMode?0:roadX(carZ),carX=garageMode?0:trackCenter+playerX;
+ const cam=cameraFor(carX,carZ);
+ const vp=shadowPass&&shadowVP?shadowVP:matMul(perspective(cam.fov*Math.PI/180,W/H,.1,650),lookAt(cam.x,cam.y,cam.z,cam.tx,cam.ty,cam.tz));
+ if(!shadowPass)outlineCabinEdge=projectCabinRoofFrontSeam(vp,carX,carZ,garageMode?0:carYaw,cam);
+ gl.uniformMatrix4fv(loc.vp,false,new Float32Array(vp));
+ if(shadowVP)gl.uniformMatrix4fv(loc.shadowVP,false,new Float32Array(shadowVP));
+ gl.uniform3fv(loc.keyLightDir,new Float32Array(SUN_LIGHT.direction));gl.uniform3fv(loc.nonShadowFillDir,new Float32Array(NON_SHADOW_FILL_DIRECTION));gl.uniform3f(loc.viewPos,cam.x,cam.y,cam.z);gl.uniform1f(loc.showroom,garageMode?1:0);gl.uniform1f(loc.time,performance.now()*.001);gl.uniform1f(loc.shadowEnabled,FX.worldShadows?1:0);gl.uniform1f(loc.vehicleShadowEnabled,FX.vehicleShadows?1:0);gl.uniform1f(loc.glassReflectionEnabled,FX.glassReflections?1:0);gl.uniform1f(loc.paintHighlightsEnabled,FX.paintHighlights?1:0);gl.uniform1f(loc.lampEmissionEnabled,FX.lampEmission?1:0);
+ uploadLocalLights(garageMode&&FX.garageSpotlights?GARAGE_LOCAL_LIGHTS:[]);
+ gl.enable(gl.DEPTH_TEST);gl.disable(gl.BLEND);gl.clearColor(shadowPass?1:0,0,0,shadowPass?1:0);gl.clear(gl.COLOR_BUFFER_BIT|gl.DEPTH_BUFFER_BIT);
+ 
+ if((!outlinePass||aoScenePass)&&!(shadowPass&&shadowCasterMode==='vehicle-self-only')){
+ if(garageMode){
+  // Dark showroom floor with a raised circular display stage.
+  draw(cube,0,-.55,0,32,.24,32,[.025,.035,.075,1]);
+  draw(cylinder,0,-.43,0,8.2,.18,8.2,[.055,.065,.12,1]);
+  draw(cylinder,0,-.30,0,7.7,.12,7.7,[.10,.12,.21,1]);
+  draw(cylinder,0,-.215,0,7.42,.045,7.42,[.22,.045,.20,1]);
+  draw(cylinder,0,-.17,0,7.25,.035,7.25,[.035,.12,.22,1]);
+  draw(cylinder,0,-.12,0,7.08,.035,7.08,[.12,.15,.25,1]);
+  draw(cube,0,-.08,0,6.9,.018,6.9,[.055,.065,.11,1]);
+  // Neon perimeter strips and soft reflected pools.
+  draw(cube,-7.48,-.19,0,.035,.026,14.8,[.06,.80,1,1]);draw(cube,7.48,-.19,0,.035,.026,14.8,[1,.08,.62,1]);
+  draw(cylinder,-3.8,-.08,0,1.55,.018,1.55,[.05,.32,.72,.38]);draw(cylinder,3.8,-.08,0,1.55,.018,1.55,[.62,.08,.35,.38]);
+  // Suspended LED spot fixtures: opaque housings and small emissive lens faces.
+  // The actual light is evaluated by the shared cone-light shader; no fake transparent shafts or floor patches.
+  draw(cube,0,5.12,.75,4.65,.075,.13,[.035,.043,.068,1]);
+  for(const side of [-1,1]){
+   const sx=side*3.8,fixtureYaw=side<0?.12:-.12;
+   draw(cube,sx,4.88,.75,.075,.20,.075,[.055,.065,.095,1]);
+   draw(cube,sx,4.68,.75,.30,.13,.40,[.035,.045,.072,1],fixtureYaw);
+   draw(cube,sx,4.535,.75,.245,.025,.335,[.24,.30,.40,1],fixtureYaw);
+   draw(cube,sx,4.505,.75,.19,.012,.27,side<0?[.78,.90,1,1]:[1,.84,.92,1],fixtureYaw,0,8);
+  }
+ }else{
+ // Continuous dark ground plane: it follows the world, not a snapped scrolling tile.
+ draw(cube,0,-.56,distance+115,150,.30,185,C.ground);
+ // Classic synthwave grid, with every line at a fixed world coordinate.
+ const xOrigin=Math.floor(-150/10),xEnd=Math.ceil(150/10);
+ for(let xi=xOrigin;xi<=xEnd;xi++)draw(cube,xi*10,-.245,distance+105,.012,.012,145,(xi%2===0)?C.grid:C.grid2);
+ const zStart=Math.floor((distance-35)/10),zEnd=Math.ceil((distance+245)/10);
+ for(let zi=zStart;zi<=zEnd;zi++)draw(cube,0,-.245,zi*10,150,.012,.012,(zi%2===0)?C.grid:C.grid2);
+ // Asphalt is also fixed in world space; no phase-based repositioning or snapping.
+ const rStart=Math.floor((distance-40)/10),rEnd=Math.ceil((distance+230)/10);
+ for(let i=rStart;i<=rEnd;i++){
+  const z=i*10,cx=roadX(z);
+  draw(cube,cx,-.105,z,9.4,.11,5,C.road);
+  draw(cube,cx-9.15,.015,z,.075,.10,5,C.pink);
+  draw(cube,cx+9.15,.015,z,.075,.10,5,C.cyan);
+  if(i%2===0){
+   draw(cube,cx-2.55,.018,z, .045,.018,1.55,C.white);
+   draw(cube,cx+2.55,.018,z, .045,.018,1.55,C.white);
+  }
+  if(i%3===0){draw(cube,cx-9,.42,z,.075,.45,.075,C.pink);draw(cube,cx+9,.42,z,.075,.45,.075,C.cyan);}
+ }
+ // Cross-fading procedural biomes; no fixed roadside house/tree props.
+ const bw=biomeWeights(distance);
+ gl.enable(gl.BLEND);gl.blendFunc(gl.SRC_ALPHA,gl.ONE_MINUS_SRC_ALPHA);gl.depthMask(false);
+ drawBiome(distance,bw[0],0);drawBiome(distance,bw[1],1);drawBiome(distance,bw[2],2);
+ gl.depthMask(true);gl.disable(gl.BLEND);
+ }
+ }
+ // DRIVELLA GTS — original angular GT, now with a squared rear and real light mounting planes.
+ const yaw=garageMode?0:carYaw,brakeLampLevel=clamp(brakeLight,0,1);
+ // 3DFX / PASS 01 — four independent soft tyre contact shadows, anchored to the wheel centres.
+ const shadowY=garageMode?-.052:.018;
+ if(FX.tireContact){
+  gl.enable(gl.BLEND);gl.blendFunc(gl.SRC_ALPHA,gl.ONE_MINUS_SRC_ALPHA);gl.depthMask(false);
+  for(const side of [-1,1])for(const wz of [-1.6375,1.6375]){const tx=carX+side*COUNTACH_WHEEL_X*Math.cos(yaw)+wz*Math.sin(yaw),tz=carZ-side*COUNTACH_WHEEL_X*Math.sin(yaw)+wz*Math.cos(yaw);draw(underglowDisk,tx,shadowY-.003,tz,.235,.001,.385,[.006,.004,.012,.24],yaw,0,7);draw(underglowDisk,tx,shadowY-.0015,tz,.155,.001,.275,[.004,.003,.009,.36],yaw,0,7);}
+  gl.depthMask(true);gl.disable(gl.BLEND);
+ }
+ if(FX.underglow){
+  gl.enable(gl.BLEND);gl.blendFuncSeparate(gl.SRC_ALPHA,gl.ONE,gl.ONE,gl.ONE_MINUS_SRC_ALPHA);gl.depthMask(false);
+  draw(underglowDisk,carX,shadowY,carZ,2.02,.003,3.28,[.95,.002,.018,.22],yaw,0,5);
+  draw(underglowDisk,carX,shadowY+.001,carZ,1.68,.0025,3.02,[.98,.006,.035,.28],yaw,0,5);
+  draw(underglowDisk,carX,shadowY+.002,carZ,1.18,.002,2.62,[1.0,.020,.085,.30],yaw,0,5);
+  for(const side of [-1,1])draw(underglowDisk,carX+side*.86,shadowY+.004,carZ,.34,.002,2.90,[1.0,.018,.060,.72],yaw,0,6);
+  for(const end of [-1,1])draw(underglowDisk,carX,shadowY+.003,carZ+end*2.48,.88,.0015,.42,[1.0,.010,.042,.22],yaw,0,5);
+  gl.depthMask(true);gl.disable(gl.BLEND);
+ }
+ // Restore the solid opaque draw state even when both neon overlays are disabled.
+ gl.depthMask(true);gl.disable(gl.BLEND);
+ if(countachModelReady){
+  const m=countachModel;
+  // Imported Countach body, split by the source model's original materials.
+  drawCarMesh(m.bodyPaint,carX,carZ,C.body,yaw,PAINT_MATERIAL,false,false);
+  drawCarMesh(m.bodyPlastic,carX,carZ,[.026,.033,.047,1],yaw,0,false,false);
+  drawCarMesh(m.bodyBlack,carX,carZ,[.008,.012,.020,1],yaw,0,false,false);
+  drawCarMesh(m.frontLowerPaint,carX,carZ,C.body,yaw,PAINT_MATERIAL,false,false);
+  drawCarMesh(m.bodyMetal,carX,carZ,[.38,.43,.51,1],yaw,2,false,false);
+  const rearLampColor=[.56+.38*brakeLampLevel,.006+.012*brakeLampLevel,.018+.020*brakeLampLevel,1];
+  drawCarMesh(m.bodyTail,carX,carZ,rearLampColor,yaw,8,false,false);
+  drawCarMesh(m.frontDetail_detailRed,carX,carZ,C.body,yaw,PAINT_MATERIAL,false,false);
+  drawCarMesh(m.frontDetail_bodyPlastic,carX,carZ,[.025,.032,.045,1],yaw,0,false,false);
+  drawCarMesh(m.sideMirror_bodyPlastic,carX,carZ,[.055,.062,.078,1],yaw,2,false,false);
+  drawCarMesh(m.sideMirror_bodyPlasticLeft,carX,carZ,[.055,.062,.078,1],yaw,2,false,false);
+  drawCarMesh(m.exhaustA_chrome,carX,carZ,[.62,.68,.76,1],yaw,2,false,false);
+  drawCarMesh(m.exhaustB_chrome,carX,carZ,[.62,.68,.76,1],yaw,2,false,false);
+
+  // Four complete source wheels: tyres, rims and inner wheel faces rotate as one assembly.
+  const centers=m.wheelCenters;
+  for(const side of [-1,1])for(const axle of ['front','rear']){
+   const front=axle==='front',center=centers[axle],wheelKey=(front?'f':'r')+(side<0?'l':'r');
+   const spin=garageMode?0:(side<0?1:-1)*wheelTravel[wheelKey]/COUNTACH_WHEEL_RADIUS;
+   const steering=front&&!garageMode?getFrontWheelSteerAngle(side):0;
+   const suffix=side<0?'Left':'';
+   const wheelX=side*center[0],wheelY=center[1],wheelZ=center[2];
+   const drawWheelPart=(part,color,material)=>drawCountachWheelPart(m[axle+'_'+part+suffix],carX,carZ,wheelX,wheelY,wheelZ,color,yaw,spin,steering,material);
+   drawWheelPart('tyre',C.tire,0);
+   drawWheelPart('rims',[.58,.64,.73,1],2);
+   if(front)drawWheelPart('extra_NoMaterial',[.055,.065,.080,1],2);
+  }
+
+  // Original DRIVELLA dual-projector pop-up lamps, fitted to the Countach datums and current rigid hinge.
+  const lampDeployPower=clamp((headlightDeploy-.12)/.88,0,1);
+  const lampPower=lampDeployPower*(headlightLightingEnabled?1:.10);
+  const lampColor=[.48+1.0*lampPower,.58+1.0*lampPower,.72+1.0*lampPower,1];
+  drawCountachLegacyHeadlampAssembly(-1,carX,carZ,lampColor,yaw);
+  drawCountachLegacyHeadlampAssembly(1,carX,carZ,lampColor,yaw);
+ }else{
+ // Continuous hull with broad painted planes and shader-driven clear-coat highlights.
+ drawCarMesh(bodyMesh,carX,carZ,C.body,yaw,PAINT_MATERIAL,false,false);
+ // Clean flanks without floating diagonal graphics.
+ // Bonnet remains a single continuous angular surface; no floating triangular overlays.
+ // The old body roof and upper side skins are cut out; this roof and the following glass are the only cabin shell.
+ drawCarMesh(roofMesh,carX,carZ,C.body,yaw,PAINT_MATERIAL,true);
+ // Fit all four glass planes directly to the outer roof/body corner lines.
+ drawCarMesh(windshield,carX,carZ,C.glassLight,yaw,3);
+ drawCarMesh(rearGlass,carX,carZ,[.025,.095,.16,1],yaw,3);
+ for(const pane of [sideGlassL,sideGlassR])drawCarMesh(pane,carX,carZ,[.025,.10,.17,1],yaw,3);
+ // Outer rails and A/B/C pillars sit just proud of the glazing, not behind it.
+ for(const rail of [sideRoofRailL,sideRoofRailR])drawCarMesh(rail,carX,carZ,C.body,yaw,PAINT_MATERIAL,false,false);
+ for(const pillar of [sideAPillarL,sideAPillarR,sideBPillarL,sideBPillarR,sideCPillarL,sideCPillarR])drawCarMesh(pillar,carX,carZ,C.body,yaw,PAINT_MATERIAL,false,false);
+  for(const side of [-1,1]){
+  drawCarPart(carX,carZ,side*.82,1.015,.60,.105,.065,.030,C.trim,yaw,side<0?mirrorArmL:mirrorArmR,0);
+  drawCarPart(carX,carZ,side*.925,1.10,.60,.095,.065,.12,C.bodyLight,yaw,side<0?mirrorShellL:mirrorShellR,PAINT_MATERIAL);
+  drawCarPart(carX,carZ,side*.925,1.10,.60,.097,.047,.091,[.025,.095,.15,1],yaw,side<0?mirrorFaceL:mirrorFaceR,3);
+  drawCarMesh(side<0?sideVentL:sideVentR,carX,carZ,C.trim,yaw,0,false,false);
+  drawCarMesh(side<0?sideVentSlat1L:sideVentSlat1R,carX,carZ,PAINT_RED,yaw,PAINT_MATERIAL,false,false);
+  drawCarMesh(side<0?sideVentSlat2L:sideVentSlat2R,carX,carZ,[.30,.34,.42,1],yaw,0,false,false);
+ }
+ drawCarMesh(doorSeamL,carX,carZ,[.025,.006,.018,1],yaw,0,false,false);
+ drawCarMesh(doorSeamR,carX,carZ,[.025,.006,.018,1],yaw,0,false,false);
+ // Raised wheel-arch overlays removed to leave the tyres unobstructed.
+ // Four low-profile tyres with machined five-spoke alloy faces. Spin follows world travel.
+ for(const side of [-1,1])for(const wz of [-1.6375,1.6375]){
+  const wx=1.105,wy=WHEEL_CENTER_Y,tyreR=WHEEL_RADIUS,isFront=wz>0,wheelKey=(isFront?'f':'r')+(side<0?'l':'r');
+  const wheelSpin=garageMode?0:-wheelTravel[wheelKey]/WHEEL_RADIUS;
+  const frontSteer=isFront&&!garageMode?getFrontWheelSteerAngle(side):0,steerPivotX=isFront?side*wx:null;
+  drawCarPart(carX,carZ,side*wx,wy,wz,tyreR,.145,tyreR,C.tire,yaw,wheel,1,wheelSpin,frontSteer,steerPivotX);
+  drawCarPart(carX,carZ,side*wx,wy,wz,tyreR,.145,tyreR,[.035,.038,.046,1],yaw,wheelTread,1,wheelSpin,frontSteer,steerPivotX);
+  // Brake calipers stay fixed to the suspension while the tyre, rotor and alloy spin.
+  drawCarPart(carX,carZ,side*(wx+.105),wy+.012,wz+.115,.045,.16,.12,[.52,.025,.045,1],yaw,cube,1,0,frontSteer,steerPivotX);
+  drawCarPart(carX,carZ,side*(wx+.128),wy,wz,.328,.020,.328,C.brake,yaw,wheelFace,1,wheelSpin,frontSteer,steerPivotX);
+  drawCarPart(carX,carZ,side*(wx+.148),wy,wz,.318,.018,.318,C.hub,yaw,wheelFace,1,wheelSpin,frontSteer,steerPivotX);
+  drawCarPart(carX,carZ,side*(wx+.163),wy,wz,.092,.020,.092,C.bodyLight,yaw,wheelFace,PAINT_MATERIAL,wheelSpin,frontSteer,steerPivotX);
+ }
+ // Rigid triangular side-wall housings with rectangular forward-facing optics.
+ for(const housing of [popLampHousingL,popLampHousingR])drawCarHingedMesh(housing,carX,carZ,[.035,.043,.055,1],yaw,1,true);
+ for(const front of [popLampFrontL,popLampFrontR])drawCarHingedMesh(front,carX,carZ,[.012,.022,.038,1],yaw,1);
+ for(const bezel of [popLampBezelL,popLampBezelR])drawCarHingedMesh(bezel,carX,carZ,[.52,.56,.66,1],yaw,2);
+ for(const lens of [popLampLensL,popLampLensR])drawCarHingedMesh(lens,carX,carZ,[.045,.115,.17,1],yaw,3);
+ for(const rings of [popLampRingsL,popLampRingsR])drawCarHingedMesh(rings,carX,carZ,[.70,.78,.90,1],yaw,2);
+ const lampPower=clamp((headlightDeploy-.12)/.88,0,1);
+ const lampColor=[.48+1.0*lampPower,.58+1.0*lampPower,.72+1.0*lampPower,1];
+ for(const core of [popLampCoreL,popLampCoreR])drawCarHingedMesh(core,carX,carZ,lampColor,yaw,8);
+ // Red upper lids stay attached to the same rigid hinge.
+ drawCarHingedMesh(popLampCapL,carX,carZ,C.bodyLight,yaw,PAINT_MATERIAL,true);
+ drawCarHingedMesh(popLampCapR,carX,carZ,C.bodyLight,yaw,PAINT_MATERIAL,true);
+ drawCarMesh(frontBumperCrease,carX,carZ,C.body,yaw,PAINT_MATERIAL,true);
+ drawCarMesh(frontGrilleFrame,carX,carZ,C.trim,yaw,0);
+ drawCarMesh(frontIntake,carX,carZ,[.018,.025,.040,1],yaw,0);
+ drawCarMesh(frontGrilleSlats,carX,carZ,[.28,.34,.44,1],yaw,0);
+ drawCarMesh(frontSplitter,carX,carZ,[.012,.016,.026,1],yaw,0,true);
+ // Front and rear indicators share one blink phase and the same steering-side selection.
+ const signalOn=Math.sin(performance.now()*.012)>-.15,steerNow=readSteeringInput();
+ drawCarMesh(frontTurnSignalL,carX,carZ,steerNow<0&&signalOn?[1.55,.48,.055,1]:[.16,.052,.008,1],yaw,steerNow<0&&signalOn?8:0);
+ drawCarMesh(frontTurnSignalR,carX,carZ,steerNow>0&&signalOn?[1.55,.48,.055,1]:[.16,.052,.008,1],yaw,steerNow>0&&signalOn?8:0);
+ // Four lower rectangular driving lamps, in matched left/right pairs.
+ for(const frame of [frontFogFrameL1,frontFogFrameL2,frontFogFrameR1,frontFogFrameR2])drawCarMesh(frame,carX,carZ,C.trim,yaw,0);
+ for(const lamp of [frontFogLensL1,frontFogLensL2,frontFogLensR1,frontFogLensR2])drawCarMesh(lamp,carX,carZ,[.88,1.02,1.12,1],yaw,8);
+ // Rear: a genuinely flat full-width fascia. Every light now sits OUTSIDE the body cap.
+ drawCarMesh(rearFascia,carX,carZ,C.body,yaw,PAINT_MATERIAL,false,false);
+ gl.enable(gl.BLEND);gl.blendFunc(gl.SRC_ALPHA,gl.ONE);gl.depthMask(false);
+ const rearGlowColor=[.56+.38*brakeLampLevel,.006+.012*brakeLampLevel,.018+.020*brakeLampLevel,.22+.14*brakeLampLevel];
+ drawCarMesh(rearLampGlowL,carX,carZ,rearGlowColor,yaw,8);drawCarMesh(rearLampGlowR,carX,carZ,rearGlowColor,yaw,8);
+ gl.depthMask(true);gl.disable(gl.BLEND);
+ drawCarMesh(rearLampFrameL,carX,carZ,C.trim,yaw,0);drawCarMesh(rearLampFrameR,carX,carZ,C.trim,yaw,0);
+ const rearLampColor=[.54+.43*brakeLampLevel,.006+.012*brakeLampLevel,.020+.022*brakeLampLevel,1];
+ drawCarMesh(rearLampL,carX,carZ,rearLampColor,yaw,8);drawCarMesh(rearLampR,carX,carZ,rearLampColor,yaw,8);
+ const ledColor=[.46+.50*brakeLampLevel,.012+.024*brakeLampLevel,.035+.030*brakeLampLevel,1];
+ for(const led of [rearLedL1,rearLedL2,rearLedL3])drawCarMesh(led,carX,carZ,ledColor,yaw,8);
+ for(const led of [rearLedR1,rearLedR2,rearLedR3])drawCarMesh(led,carX,carZ,ledColor,yaw,8);
+ drawCarMesh(rearSignalL,carX,carZ,steerNow<0&&signalOn?[1.55,.48,.055,1]:[.16,.052,.008,1],yaw,steerNow<0&&signalOn?8:0);
+ drawCarMesh(rearSignalR,carX,carZ,steerNow>0&&signalOn?[1.55,.48,.055,1]:[.16,.052,.008,1],yaw,steerNow>0&&signalOn?8:0);
+ drawCarMesh(rearVent,carX,carZ,C.trim,yaw,0);
+ for(let i=0;i<6;i++)drawCarPart(carX,carZ,0,.405+i*.075,-2.955,.63,.012,.012,[.17,.20,.28,1],yaw);
+ drawCarMesh(rearDiffuser,carX,carZ,[.018,.022,.038,1],yaw,0);
+ for(const side of [-1,1]){
+  drawCarPart(carX,carZ,side*.61,.255,-2.94,1,1,1,[.58,.62,.72,1],yaw,exhaustTip,0);
+  drawCarPart(carX,carZ,side*.61,.255,-2.94,1,1,1,[.004,.005,.009,1],yaw,exhaustCore,0);
+  drawCarPart(carX,carZ,side*.84,1.115,-2.53,.060,.145,.065,C.body,yaw,cube,PAINT_MATERIAL);
+ }
+ // Straight, level, body-colour rear wing.
+ drawCarMesh(spoilerBlade,carX,carZ,C.body,yaw,PAINT_MATERIAL,true,true);
+ drawCarMesh(spoilerTopGlint,carX,carZ,C.bodyLight,yaw,PAINT_MATERIAL,true,false);
+ if(boost>.05){drawCarPart(carX,carZ,-.42,.18,-2.99,.06,.055,.62,[.04,.58,1,boost],yaw);drawCarPart(carX,carZ,.42,.18,-2.99,.06,.055,.62,[.04,.58,1,boost],yaw);}
+ }
+}
+function drawSunCanvasFallback(){
+ sctx.clearRect(0,0,W,H);
+ if(FX.sunDisc){
+ // Rebuilt from the proven Cyber Tetris sun: clean circular disc, real clipped
+ // horizontal slices, warm sunset gradient and restrained neon halo.
+ const roadHeading=Math.atan((roadX(distance+90)-roadX(distance-30))/120);
+ const viewYaw=garageMode?0:carYaw+roadHeading;
+ const x=W*.5-viewYaw*W*.48;
+ const y=H*(cameraMode===0?.405:cameraMode===3?.445:.425);
+ const r=Math.min(W*.415,H*.305,232);
+ const breathe=1+Math.sin(performance.now()*.00092)*.035+Math.sin(performance.now()*.00046+1.2)*.012;
+ const glowPulse=.88+Math.sin(performance.now()*.00092-.35)*.075;
+ const halo=sctx.createRadialGradient(x,y,r*.25,x,y,r*2.55);
+ halo.addColorStop(0,'rgba(255,72,42,'+(.28*glowPulse)+')');
+ halo.addColorStop(.38,'rgba(255,48,67,'+(.15*glowPulse)+')');
+ halo.addColorStop(.72,'rgba(204,34,105,'+(.055*glowPulse)+')');
+ halo.addColorStop(1,'rgba(170,24,100,0)');
+ sctx.fillStyle=halo;sctx.fillRect(x-r*2.6,y-r*2.6,r*5.2,r*5.2);
+ sctx.save();
+ sctx.translate(x,y);sctx.scale(breathe,breathe);sctx.translate(-x,-y);
+ sctx.shadowBlur=42*glowPulse;sctx.shadowColor='#ff4938';
+ const sunGrad=sctx.createLinearGradient(0,y-r,0,y+r);
+ sunGrad.addColorStop(0,'#ff9554');
+ sunGrad.addColorStop(.30,'#ff573b');
+ sunGrad.addColorStop(.66,'#f02d65');
+ sunGrad.addColorStop(1,'#a92c79');
+ sctx.fillStyle=sunGrad;sctx.beginPath();sctx.arc(x,y,r,0,Math.PI*2);sctx.fill();
+ sctx.shadowBlur=0;
+ // Exact slice geometry from Cyber Tetris, clipped to the circular disc.
+ sctx.save();sctx.beginPath();sctx.arc(x,y,r,0,Math.PI*2);sctx.clip();
+ const slices=[[-.64,.025],[-.49,.027],[-.34,.032],[-.19,.040],[-.035,.052],[.13,.065],[.31,.082],[.53,.105],[.78,.13]];
+ slices.forEach(([offset,thickness],i)=>{
+  const yy=y+r*offset,h=r*thickness;
+  sctx.fillStyle=i<3?'rgba(91,18,67,.48)':'rgba(55,13,60,.62)';
+  sctx.fillRect(x-r-2,yy,r*2+4,h);
+ });
+ // Fine luminous slits, matching the original polished synthwave treatment.
+ sctx.fillStyle='rgba(255,194,144,.22)';
+ sctx.fillRect(x-r*.84,y+r*.04,r*1.68,Math.max(1.2,r*.008));
+ sctx.fillRect(x-r*.68,y+r*.48,r*1.36,Math.max(1.2,r*.008));
+ // Small travelling highlight is subtle and stays inside the sun.
+ const scanPhase=(performance.now()*.000055)%1,scanY=y-r+scanPhase*r*2;
+ const scan=sctx.createLinearGradient(0,scanY-7,0,scanY+7);
+ scan.addColorStop(0,'rgba(255,224,184,0)');scan.addColorStop(.5,'rgba(255,205,160,'+(.16*glowPulse)+')');scan.addColorStop(1,'rgba(255,224,184,0)');
+ sctx.fillStyle=scan;sctx.fillRect(x-r,scanY-7,r*2,14);
+ sctx.restore();
+ sctx.strokeStyle='rgba(255,174,133,'+(.32*glowPulse)+')';sctx.lineWidth=1.3;
+ sctx.beginPath();sctx.arc(x,y,r-.8,0,Math.PI*2);sctx.stroke();
+ sctx.restore();
+ }
+}
+function drawSun(){
+ if(gpuSunReady&&FX.sunGpu)sctx.clearRect(0,0,W,H);else drawSunCanvasFallback();
+ if(FX.lensFlares)drawVehicleLensFlares();else fctx.clearRect(0,0,W,H);
+
+}
+function drawVehicleLensFlares(){
+ fctx.clearRect(0,0,W,H);if(!FX.lensFlares)return;
+ const carZ=garageMode?0:distance,carX=garageMode?0:roadX(carZ)+playerX,yaw=garageMode?0:carYaw,roll=bodyRoll;
+ const cam=cameraFor(carX,carZ),vp=matMul(perspective(cam.fov*Math.PI/180,W/H,.1,650),lookAt(cam.x,cam.y,cam.z,cam.tx,cam.ty,cam.tz));
+ const bodyWorld=matMul(translate(carX,0,carZ),matMul(rotateY(yaw),rotateZ(roll)));
+
+ const point=(m,p)=>[m[0]*p[0]+m[4]*p[1]+m[8]*p[2]+m[12],m[1]*p[0]+m[5]*p[1]+m[9]*p[2]+m[13],m[2]*p[0]+m[6]*p[1]+m[10]*p[2]+m[14]];
+ const direction=(m,d)=>{const v=[m[0]*d[0]+m[4]*d[1]+m[8]*d[2],m[1]*d[0]+m[5]*d[1]+m[9]*d[2],m[2]*d[0]+m[6]*d[1]+m[10]*d[2]],l=Math.hypot(v[0],v[1],v[2])||1;return v.map(x=>x/l);};
+ const project=p=>{const x=vp[0]*p[0]+vp[4]*p[1]+vp[8]*p[2]+vp[12],y=vp[1]*p[0]+vp[5]*p[1]+vp[9]*p[2]+vp[13],z=vp[2]*p[0]+vp[6]*p[1]+vp[10]*p[2]+vp[14],w=vp[3]*p[0]+vp[7]*p[1]+vp[11]*p[2]+vp[15];if(w<=.05||z/w< -1||z/w>1)return null;const nx=x/w,ny=y/w;if(nx< -1.2||nx>1.2||ny< -1.2||ny>1.2)return null;return{x:(nx*.5+.5)*W,y:(.5-ny*.5)*H};};
+ const sources=[];
+ // Upper pop-up headlamps use the same lightweight optical profile as the indicators.
+ const lampEase=clamp(headlightDeploy,0,1),lampSmooth=lampEase*lampEase*(3-2*lampEase),lampAngle=countachModelReady?countachHeadlightAngle():-Math.PI*.25*lampSmooth;
+ const hinge=countachModelReady?countachHeadlightHinge():matMul(translate(0,POP_HINGE_Y,POP_HINGE_Z),matMul(rotateX(lampAngle),translate(0,-POP_HINGE_Y,-POP_HINGE_Z)));
+ const lampWorld=matMul(bodyWorld,hinge),lampRotation=matMul(rotateY(yaw),matMul(rotateZ(roll),rotateX(lampAngle)));
+ const lampPower=clamp((headlightDeploy-.12)/.88,0,1)*(headlightLightingEnabled?1:0);
+ if(lampPower>.02){
+  if(countachModelReady){
+   // BUILD 122 effect: one soft optical bloom per headlamp, now anchored to each current twin-projector pod.
+   for(const side of [-1,1]){
+    const moduleWorld=matMul(lampWorld,countachLegacyHeadlampMount(side));
+    const lampNormal=direction(moduleWorld,[0,-POP_LAMP_DIAG,POP_LAMP_DIAG]);
+    const bulb=lampFrontPoint(side*.67,POP_LAMP_FACE_H*.5,.018);
+    sources.push({kind:'signal',p:point(moduleWorld,bulb),n:lampNormal,c:[.91,.97,1],power:1.50*lampPower});
+   }
+  }else{
+   // Keep the same original BUILD 122 two-source glow in the procedural fallback.
+   const lampNormal=direction(lampRotation,[0,-POP_LAMP_DIAG,POP_LAMP_DIAG]);
+   const lampLocalL=lampFrontPoint(-.67,POP_LAMP_FACE_H*.5,.018),lampLocalR=lampFrontPoint(.67,POP_LAMP_FACE_H*.5,.018);
+   sources.push({kind:'signal',p:point(lampWorld,lampLocalL),n:lampNormal,c:[.91,.97,1],power:1.50*lampPower});
+   sources.push({kind:'signal',p:point(lampWorld,lampLocalR),n:lampNormal,c:[.91,.97,1],power:1.50*lampPower});
+  }
+ }
+ const frontNormal=direction(bodyWorld,[0,0,1]),rearNormal=direction(bodyWorld,[0,0,-1]);
+ for(const x of [-.805,-.605,.605,.805])sources.push({kind:'fog',p:point(bodyWorld,[x,.315,2.986]),n:frontNormal,c:[.78,.92,1],power:.48});
+ const blink=Math.sin(performance.now()*.012)>-.15,signalSide=readSteeringInput();
+ sources.push({kind:'signal',p:point(bodyWorld,[-.795,.47,2.974]),n:frontNormal,c:[1,.48,.10],power:signalSide<0&&blink?1.22:0});
+ sources.push({kind:'signal',p:point(bodyWorld,[.795,.47,2.974]),n:frontNormal,c:[1,.48,.10],power:signalSide>0&&blink?1.22:0});
+ sources.push({kind:'tail',p:point(bodyWorld,[-.93,.665,-2.982]),n:rearNormal,c:[1,.045,.085],power:.92+.28*brakeLight});
+ sources.push({kind:'tail',p:point(bodyWorld,[.93,.665,-2.982]),n:rearNormal,c:[1,.045,.085],power:.92+.28*brakeLight});
+ if(blink&&signalSide<0)sources.push({kind:'signal',p:point(bodyWorld,[-1.085,.67,-2.982]),n:rearNormal,c:[1,.56,.16],power:1.26});
+ if(blink&&signalSide>0)sources.push({kind:'signal',p:point(bodyWorld,[1.085,.67,-2.982]),n:rearNormal,c:[1,.56,.16],power:1.26});
+ fctx.save();fctx.globalCompositeOperation='lighter';
+ for(const src of sources){
+  if(src.power<=0)continue;
+  const screen=project(src.p);if(!screen)continue;
+  const dx=cam.x-src.p[0],dy=cam.y-src.p[1],dz=cam.z-src.p[2],distance=Math.hypot(dx,dy,dz)||1;
+  const facing=clamp(src.n[0]*dx/distance+src.n[1]*dy/distance+src.n[2]*dz/distance,0,1);
+  if(facing<.045)continue;
+  const facingGain=Math.pow(facing,src.kind==='headlight'?.62:.88);
+  const distanceGain=clamp(19/distance,.58,1.75);
+  const intensity=clamp(src.power*facingGain*distanceGain*(src.kind==='headlight'?1:.76),0,src.kind==='headlight'?2.05:2.35);
+  if(intensity<.035)continue;
+  const main=src.kind==='headlight',radius=clamp(Math.min(W,H)*(main?.028:src.kind==='tail'?.027:.023)*clamp(17/distance,.58,1.6),main?9:7,main?32:36)*(0.82+intensity*.34);
+  const [cr,cg,cb]=src.c,rgba=alpha=>'rgba('+Math.round(cr*255)+','+Math.round(cg*255)+','+Math.round(cb*255)+','+clamp(alpha,0,1)+')';
+  // Broad luminous veil: a visible bloom-like glare around the real projected lamp.
+  const haze=fctx.createRadialGradient(screen.x,screen.y,0,screen.x,screen.y,radius*(main?2.6:3.4));
+  haze.addColorStop(0,rgba((main?.46:.42)*intensity));
+  haze.addColorStop(.12,rgba((main?.30:.25)*intensity));
+  haze.addColorStop(.34,rgba((main?.13:.10)*intensity));
+  haze.addColorStop(.68,rgba((main?.045:.045)*intensity));
+  haze.addColorStop(1,rgba(0));
+  fctx.fillStyle=haze;fctx.fillRect(screen.x-radius*3,screen.y-radius*3,radius*6,radius*6);
+  if(main)continue;
+  // Long anamorphic streak with a hot white centre and a coloured outer line.
+  const streakLength=radius*(main?14:8),streakHeight=radius*(main?.44:.28);
+  const streak=fctx.createLinearGradient(screen.x-streakLength,screen.y,screen.x+streakLength,screen.y);
+  streak.addColorStop(0,rgba(0));streak.addColorStop(.34,rgba((main?.04:.032)*intensity));streak.addColorStop(.46,rgba((main?.23:.19)*intensity));streak.addColorStop(.5,rgba((main?.68:.38)*intensity));streak.addColorStop(.54,rgba((main?.23:.19)*intensity));streak.addColorStop(.66,rgba((main?.04:.032)*intensity));streak.addColorStop(1,rgba(0));
+  fctx.fillStyle=streak;fctx.fillRect(screen.x-streakLength,screen.y-streakHeight*.5,streakLength*2,streakHeight);
+  if(main){
+   const hot=fctx.createLinearGradient(screen.x-radius*3.5,screen.y,screen.x+radius*3.5,screen.y);
+   hot.addColorStop(0,'rgba(255,255,255,0)');hot.addColorStop(.42,'rgba(220,244,255,'+clamp(.22*intensity,0,.8)+')');hot.addColorStop(.5,'rgba(255,255,255,'+clamp(.68*intensity,0,1)+')');hot.addColorStop(.58,'rgba(220,244,255,'+clamp(.22*intensity,0,.8)+')');hot.addColorStop(1,'rgba(255,255,255,0)');
+   fctx.fillStyle=hot;fctx.fillRect(screen.x-radius*3.5,screen.y-radius*.07,radius*7,radius*.14);
+  }
+  // Cross-star diffraction, brighter at the centre and tapered at the ends.
+  const rays=main?[[1,0,3.3,.105],[0,1,1.7,.068],[.707,.707,1.05,.04],[-.707,.707,1.05,.04]]:[[1,0,2.1,.06],[0,1,1.0,.038]];
+  for(const [vx,vy,lengthFactor,widthFactor] of rays){
+   const len=radius*lengthFactor,half=radius*widthFactor,grad=fctx.createLinearGradient(screen.x-vx*len,screen.y-vy*len,screen.x+vx*len,screen.y+vy*len);
+   grad.addColorStop(0,rgba(0));grad.addColorStop(.5,rgba((main?.40:.24)*intensity));grad.addColorStop(1,rgba(0));
+   fctx.strokeStyle=grad;fctx.lineWidth=Math.max(1,half*2);fctx.beginPath();fctx.moveTo(screen.x-vx*len,screen.y-vy*len);fctx.lineTo(screen.x+vx*len,screen.y+vy*len);fctx.stroke();
+  }
+  // Bright optical core and fine inner halo.
+  const core=fctx.createRadialGradient(screen.x,screen.y,0,screen.x,screen.y,radius*(main?1.2:.88));
+  core.addColorStop(0,'rgba(255,255,255,'+clamp((main?.88:.62)*intensity,0,1)+')');
+  core.addColorStop(.11,rgba((main?.88:.70)*intensity));
+  core.addColorStop(.31,rgba((main?.55:.34)*intensity));
+  core.addColorStop(.66,rgba((main?.13:.10)*intensity));
+  core.addColorStop(1,rgba(0));
+  fctx.fillStyle=core;fctx.beginPath();fctx.arc(screen.x,screen.y,radius*(main?1.2:.88),0,Math.PI*2);fctx.fill();
+  // Subtle concentric diffraction rings add a camera-glass / photographic character.
+  if(main){
+   fctx.save();fctx.filter='blur('+Math.max(1,radius*.075)+'px)';
+   for(const [ring,opacity] of [[1.72,.055],[2.18,.035]]){
+    fctx.strokeStyle=rgba(opacity*intensity);fctx.lineWidth=Math.max(1,radius*.05);fctx.beginPath();fctx.arc(screen.x,screen.y,radius*ring,0,Math.PI*2);fctx.stroke();
+   }
+   fctx.restore();
+  }
+  // Chromatic lens ghosts are distributed along the optical axis through frame centre.
+  const centerX=W*.5,centerY=H*.5;
+  const ghosts=main?[
+   [.24,.34,[.55,.78,1],.48],[.52,.23,[1,.48,.72],.34],[.82,.16,[.50,.83,1],.28],[1.12,.105,[1,.68,.38],.20]
+  ]:[[.34,.22,[.72,.83,1],.15],[.72,.13,[1,.62,.42],.09]];
+  for(const [factor,size,tint,alpha] of ghosts){
+   const gx=screen.x+(centerX-screen.x)*factor,gy=screen.y+(centerY-screen.y)*factor,gr=radius*size;
+   const ghost=fctx.createRadialGradient(gx,gy,0,gx,gy,gr*3.2);
+   const ghostRgba=a=>'rgba('+Math.round(tint[0]*255)+','+Math.round(tint[1]*255)+','+Math.round(tint[2]*255)+','+clamp(a*intensity,0,.85)+')';
+   ghost.addColorStop(0,ghostRgba(alpha));ghost.addColorStop(.28,ghostRgba(alpha*.52));ghost.addColorStop(1,ghostRgba(0));
+   fctx.fillStyle=ghost;fctx.beginPath();fctx.arc(gx,gy,gr*3.2,0,Math.PI*2);fctx.fill();
+   if(main){
+    fctx.save();fctx.filter='blur('+Math.max(1,gr*.12)+'px)';
+    fctx.strokeStyle=ghostRgba(alpha*.18);fctx.lineWidth=Math.max(1,gr*.06);fctx.beginPath();fctx.arc(gx,gy,gr*1.7,0,Math.PI*2);fctx.stroke();
+    fctx.restore();
+   }
+  }
+ }
+ fctx.restore();
+}
+function steerNowForFlare(){return readSteeringInput();}
+function updateDebug(dt){
+ pollGpuPassTimes();
+ fpsFrames++;const fpsNow=performance.now(),fpsElapsed=(fpsNow-fpsTime)/1000;
+ if(fpsElapsed>=.5){fps=fpsFrames/fpsElapsed;fpsFrames=0;fpsTime=fpsNow;const meter=$('fps-counter');if(meter){meter.textContent='FPS '+Math.round(fps);meter.style.color=fps>=55?'#8fffff':fps>=35?'#ffdf82':'#ff8d9d';}}
+ if(debugVisible&&performance.now()-debugTime>160){
+  debugTime=performance.now();
+  $('debug-data').innerHTML=
+   '<strong>VERSION</strong> '+VERSION+' / BUILD '+BUILD+'<br>'+
+   '<strong>MUSIC FILES</strong> '+foundTracks.length+' FOUND · '+(musicPending?'WAITING':'READY')+'<br>'+
+   '<strong>FPS</strong> '+fps.toFixed(1)+'<br>'+
+   '<strong>CPU FRAME / SHADOW / WORLD / POST</strong> '+cpuPassMs.frame.toFixed(2)+' / '+cpuPassMs.shadow.toFixed(2)+' / '+cpuPassMs.world.toFixed(2)+' / '+cpuPassMs.post.toFixed(2)+' ms<br>'+
+   '<strong>GPU SHADOW / WORLD / POST</strong> '+(gpuTimerExt?['shadow','world','post'].map(k=>gpuPassMs[k]===null?'--':gpuPassMs[k].toFixed(2)).join(' / ')+' ms':'TIMER UNSUPPORTED')+'<br>'+
+   '<strong>SCENE</strong> '+(garageMode?'GARAGE':'ROAD')+'<br>'+
+   '<strong>HEADLIGHT LENS GLOW (H)</strong> '+(headlightLightingEnabled?'ON':'OFF')+'<br>'+
+   '<strong>MOUSE LOOK</strong> '+(mouseLookActive?'ACTIVE':'AUTO')+' · '+mouseLookYaw.toFixed(2)+' / '+mouseLookPitch.toFixed(2)+'<br>'+
+   '<strong>POP-UP DEPLOY</strong> '+Math.round(headlightDeploy*100)+'%<br>'+
+   '<strong>DRAW CALLS</strong> '+drawCalls+'<br>'+ 
+   '<strong>CAMERA</strong> '+(cameraMode+1)+' / 4 — '+CAMERA_NAMES[cameraMode]+'<br>'+
+   '<strong>SPEED</strong> '+getVehicleSpeed().toFixed(1)+' km/h<br>'+
+    '<strong>DRIFT STATE / SLIP / YAW</strong> '+['GRIP','INIT','DRIFT','RECOVERY'][driftState]+' / '+(Math.atan2(lateralVelocity,Math.max(2,Math.abs(speed)/3.6))*180/Math.PI).toFixed(1)+'° / '+(yawRate*180/Math.PI).toFixed(0)+'°/s<br>'+
+    '<strong>VELOCITY LONG / LAT</strong> '+(speed/3.6).toFixed(1)+' / '+lateralVelocity.toFixed(1)+' m/s<br>'+
+   '<strong>WORLD Z</strong> '+distance.toFixed(2)+'<br>'+
+   '<strong>STEER / X / ROLL</strong> '+steer.toFixed(2)+' / '+playerX.toFixed(2)+' / '+bodyRoll.toFixed(3)+'<br>'+
+   '<strong>WEBGL</strong> '+(gl.getParameter(gl.VERSION)||'OK')+'<br>'+
+   '<strong>RESOLUTION</strong> '+canvas.width+' × '+canvas.height;
+ }
+}
+function frame(now){
+ const frameCpuStart=performance.now();
+ const dt=Math.min(.033,(now-last)/1000);last=now;
+ if(mouseLookReturning&&!mouseLookActive){const settle=Math.exp(-dt*17);mouseLookYaw*=settle;mouseLookPitch*=settle;if(Math.abs(mouseLookYaw)<.004&&Math.abs(mouseLookPitch)<.004){mouseLookYaw=0;mouseLookPitch=0;mouseLookReturning=false;}}
+ const lampTarget=headlightsUp?1:0;
+ headlightDeploy+=(lampTarget-headlightDeploy)*Math.min(1,dt*7.0);
+ const up=keys.w||keys.arrowup,down=keys.s||keys.arrowdown,handbrake=!!keys[' '];
+ if(started&&!paused){
+  const steerInput=readSteeringInput(),steerDir=Math.sign(steerInput);
+  const handbrakePressed=handbrake&&!previousHandbrake;
+  previousHandbrake=handbrake;
+  if(handbrakePressed&&Math.abs(speed/3.6)>8)handbrakePulse=.16;
+  else handbrakePulse=Math.max(0,handbrakePulse-dt);
+  handbrakeActive=handbrakePulse>0&&Math.abs(speed/3.6)>5;
+  const brakeTarget=down||handbrakeActive?1:0;
+  brakeLight+=(brakeTarget-brakeLight)*Math.min(1,dt*(brakeTarget?18:8));
+  driftCooldown=Math.max(0,driftCooldown-dt);
+  // Body-frame velocity: speed is longitudinal, lateralVelocity is the side-slip component.
+  let vLong=speed/3.6;
+  steer=steerInput===0?0:steer+(steerInput-steer)*Math.min(1,dt*9.5);
+  const totalSpeed=Math.hypot(vLong,lateralVelocity);
+  const steerAngle=getSteeringAngle();
+  // The front axle retains grip; braking shifts load forward and increases its bite.
+  const frontLoad=down&&totalSpeed>12?1.12:1;
+  const frontLateralAccel=clamp(vLong*Math.abs(vLong)*Math.tan(steerAngle)*frontLoad/VEHICLE_WHEELBASE,-10.5,10.5);
+  const steerYaw=frontLateralAccel/Math.max(2,Math.abs(vLong));
+  const slipAngle=Math.atan2(lateralVelocity,Math.max(2,Math.abs(vLong)));
+  const slipAbs=Math.abs(slipAngle);
+  const lateralDemand=Math.abs(frontLateralAccel);
+  const handbrakeInitiation=handbrakePressed&&steerDir!==0&&totalSpeed>8;
+  const sharpSteerInitiation=steerDir!==0&&totalSpeed>17&&lateralDemand>9.5&&(steerInput!==previousSteerInput||Math.abs(steer)>.82);
+  const brakeInitiation=down&&steerDir!==0&&totalSpeed>12&&lateralDemand>4.5;
+  if(driftState===DRIFT_STATE.GRIP&&driftCooldown<=0&&totalSpeed>12&&(handbrakeInitiation||sharpSteerInitiation||brakeInitiation)){
+   driftState=DRIFT_STATE.INITIATION;
+   driftDirection=steerDir||Math.sign(yawRate||1);
+   driftTimer=0;driftPeakSlip=slipAbs;countersteerTime=0;
+   // A brief rear-axle breakaway impulse initiates yaw; it is not a permanent rotation override.
+   yawRate+=driftDirection*(handbrakeInitiation ? 1.15 : brakeInitiation ? .72 : .58);
+  }
+  if(handbrakePressed&&driftState===DRIFT_STATE.DRIFT&&steerDir===0){
+   // A no-steer handbrake tap moves the vehicle laterally without forcing a new nose angle.
+   lateralVelocity-=driftDirection*Math.min(2.6,totalSpeed*.08);
+  }else if(handbrakePressed&&driftState===DRIFT_STATE.DRIFT&&steerDir!==0){
+   yawRate+=steerDir*.28;
+  }
+  const countersteering=driftState===DRIFT_STATE.DRIFT&&steerDir!==0&&steerDir*driftDirection<0;
+  countersteerTime=countersteering?countersteerTime+dt:0;
+  let rearGrip=9.0;
+  let yawTarget=clamp(steerYaw,-.82,.82);
+  if(driftState===DRIFT_STATE.INITIATION){
+   rearGrip=.12;
+   yawTarget+=driftDirection*.80;
+   driftTimer+=dt;
+   driftPeakSlip=Math.max(driftPeakSlip,slipAbs);
+  }else if(driftState===DRIFT_STATE.DRIFT){
+   rearGrip=.24;
+   // The front axle controls the nose; reduced rear grip lets the tail swing outward.
+   const alignFactor=countersteering ? .82 : steerDir===0 ? .85 : .30;
+   yawTarget+=slipAngle*alignFactor;
+   if(steerDir===driftDirection)yawTarget+=driftDirection*.68;
+   else if(countersteering)yawTarget-=driftDirection*.35;
+   const spinGuard=clamp((Math.PI/3-slipAbs)/(Math.PI/18),0,1);
+   yawTarget=clamp(yawTarget*spinGuard,-1.6,1.6);
+   driftTimer+=dt;
+   driftPeakSlip=Math.max(driftPeakSlip,slipAbs);
+  }else if(driftState===DRIFT_STATE.RECOVERY){
+   rearGrip=.24+(10-.24)*clamp(driftTimer/.38,0,1);
+   yawTarget=clamp(yawTarget+slipAngle*1.5,-1.3,1.3);
+   driftTimer+=dt;
+  }
+  // The handbrake pulse lasts 160 ms, then normal drift physics takes over.
+  if(handbrakeActive)rearGrip=.02;
+  if(down&&steerDir!==0&&totalSpeed>12)yawTarget=clamp(yawTarget+steerDir*.20,-1.6,1.6);
+  const yawResponse=driftState===DRIFT_STATE.GRIP?5.0:driftState===DRIFT_STATE.INITIATION?3.2:driftState===DRIFT_STATE.DRIFT?2.7:6.0;
+  yawRate+=(yawTarget-yawRate)*Math.min(1,dt*yawResponse);
+  yawRate=clamp(yawRate,-2.0,2.0);
+  if(driftState===DRIFT_STATE.DRIFT&&slipAbs>Math.PI*50/180)yawRate*=Math.exp(-dt*1.5);
+  // Front tyre force follows steering, rear axle damping varies by grip/drift/recovery state.
+  const lateralAccel=frontLateralAccel-yawRate*vLong-lateralVelocity*rearGrip;
+  lateralVelocity+=lateralAccel*dt;
+  const maxLateralSpeed=Math.abs(vLong)*Math.tan(78*Math.PI/180);
+  lateralVelocity=clamp(lateralVelocity,-maxLateralSpeed,maxLateralSpeed);
+  carYaw+=yawRate*dt;
+  const updatedSlip=Math.atan2(lateralVelocity,Math.max(2,Math.abs(vLong)));
+  const updatedSlipAbs=Math.abs(updatedSlip);
+  if(driftState===DRIFT_STATE.INITIATION&&driftTimer>.22){
+   if(updatedSlipAbs>7*Math.PI/180){driftState=DRIFT_STATE.DRIFT;driftTimer=0;driftPeakSlip=updatedSlipAbs;}
+   else if(driftTimer>.36){driftState=DRIFT_STATE.GRIP;driftDirection=0;driftTimer=0;driftPeakSlip=0;driftCooldown=.35;}
+  }else if(driftState===DRIFT_STATE.DRIFT){
+   driftPeakSlip=Math.max(driftPeakSlip,updatedSlipAbs);
+   // Holding countersteer through neutral slip automatically initiates the opposite drift.
+   if(countersteering&&countersteerTime>.18&&updatedSlip*driftDirection>2*Math.PI/180){
+    driftState=DRIFT_STATE.INITIATION;driftDirection=steerDir;driftTimer=0;driftPeakSlip=updatedSlipAbs;countersteerTime=0;yawRate+=driftDirection*.65;
+   }else if(driftPeakSlip>15*Math.PI/180&&updatedSlipAbs<11*Math.PI/180&&!countersteering){
+    driftState=DRIFT_STATE.RECOVERY;driftTimer=0;
+   }else if(updatedSlipAbs>76*Math.PI/180||totalSpeed<10.5){
+    driftState=DRIFT_STATE.RECOVERY;driftTimer=0;
+   }
+  }else if(driftState===DRIFT_STATE.RECOVERY){
+   if(updatedSlipAbs<10*Math.PI/180&&Math.abs(yawRate)<.28){
+    driftState=DRIFT_STATE.GRIP;driftDirection=0;driftTimer=0;driftPeakSlip=0;countersteerTime=0;driftCooldown=.45;
+    lateralVelocity*=.20;yawRate*=.55;
+   }else if(driftTimer>1.2){
+    driftState=DRIFT_STATE.GRIP;driftDirection=0;driftTimer=0;driftPeakSlip=0;countersteerTime=0;driftCooldown=.45;
+    lateralVelocity*=.25;yawRate*=.45;
+   }
+  }
+  // Rear-wheel drive force acts along the nose, not along the road's old +Z direction.
+  let longitudinalAccel;
+  if(up)longitudinalAccel=8.5;
+  else longitudinalAccel=-Math.sign(vLong||1)*(.35+Math.abs(vLong)*.012);
+  if(down)longitudinalAccel=vLong>.2?-18:vLong<-.2?-8:0;
+  if(handbrakeActive)longitudinalAccel-=Math.sign(vLong||1)*1.0;
+  if(driftState===DRIFT_STATE.DRIFT)longitudinalAccel-=Math.sign(vLong||1)*(1.0+3.0*clamp(updatedSlipAbs/(55*Math.PI/180),0,1));
+  vLong=clamp(vLong+longitudinalAccel*dt,-20.8,86);
+  const velocityMagnitude=Math.hypot(vLong,lateralVelocity);
+  if(velocityMagnitude>86){const velocityScale=86/velocityMagnitude;vLong*=velocityScale;lateralVelocity*=velocityScale;}
+  speed=vLong*3.6;
+  // Integrate one world-space velocity vector on X and Z. A 360° turn now follows its real arc.
+  const forwardX=Math.sin(carYaw),forwardZ=Math.cos(carYaw),rightX=Math.cos(carYaw),rightZ=-Math.sin(carYaw);
+  const worldVelocityX=vLong*forwardX+lateralVelocity*rightX;
+  const worldVelocityZ=vLong*forwardZ+lateralVelocity*rightZ;
+  const oldRoadX=roadX(distance);
+  distance+=worldVelocityZ*dt*WORLD_MOTION_SCALE;
+  travelDistance+=Math.hypot(worldVelocityX,worldVelocityZ)*dt*WORLD_MOTION_SCALE;
+  playerX=clamp(playerX+worldVelocityX*dt*WORLD_MOTION_SCALE-(roadX(distance)-oldRoadX),-10.5,10.5);
+  const wheelRoll=(side,front)=>{
+   const axleZ=front?COUNTACH_FRONT_WHEEL_Z:COUNTACH_REAR_WHEEL_Z,localX=side*COUNTACH_WHEEL_X;
+   const localForward=vLong-yawRate*localX,localSide=lateralVelocity+yawRate*axleZ;
+   const wheelAngle=front?getFrontWheelSteerAngle(side):0;
+   return localForward*Math.cos(wheelAngle)+localSide*Math.sin(wheelAngle);
+  };
+  wheelTravel.fl+=wheelRoll(-1,true)*dt*WORLD_MOTION_SCALE;
+  wheelTravel.fr+=wheelRoll(1,true)*dt*WORLD_MOTION_SCALE;
+  wheelTravel.rl+=wheelRoll(-1,false)*dt*WORLD_MOTION_SCALE;
+  wheelTravel.rr+=wheelRoll(1,false)*dt*WORLD_MOTION_SCALE;
+  driftIntensity=clamp((updatedSlipAbs-.055)/.72,0,1);
+  const lateralLoad=clamp(-lateralAccel/24,-1,1);
+  const rollTarget=clamp(-lateralLoad*.10-steer*.012,-.12,.12);
+  bodyRoll+=(rollTarget-bodyRoll)*Math.min(1,dt*5.5);
+  previousSteerInput=steerInput;
+ }else if(!paused){
+  handbrakeActive=false;handbrakePulse=0;previousHandbrake=false;
+  yawRate*=Math.pow(.88,dt*60);
+  lateralVelocity*=Math.pow(.90,dt*60);
+  driftIntensity*=.88;
+  bodyRoll*=Math.pow(.88,dt*60);
+ }else{
+  handbrakeActive=false;handbrakePulse=0;previousHandbrake=false;
+  brakeLight*=Math.pow(.88,dt*60);
+ }
+
+ let passCpuStart=performance.now();beginGpuPass('shadow');renderShadowMap();endGpuPass();cpuPassMs.shadow=performance.now()-passCpuStart;
+ passCpuStart=performance.now();beginGpuPass('world');drawWorld();endGpuPass();cpuPassMs.world=performance.now()-passCpuStart;
+ passCpuStart=performance.now();beginGpuPass('post');renderCarOutlines();endGpuPass();cpuPassMs.post=performance.now()-passCpuStart;
+ drawSun();updateDebug(dt);
+ updateCarAudio();
+ $('speed').innerHTML=String(Math.round(getVehicleSpeed())).padStart(3,'0')+' <span>KM/H</span>';
+ $('direction').textContent=speed< -1?'◀ REVERSE':driftState===DRIFT_STATE.DRIFT?'✦ DRIFT':driftState===DRIFT_STATE.INITIATION?'✦ INITIATION':driftState===DRIFT_STATE.RECOVERY?'↗ RECOVERY':driftIntensity>.18?'✦ SLIDE':'▶ FORWARD';$('direction').style.color=speed< -1?'#ffb56f':driftState!==DRIFT_STATE.GRIP||driftIntensity>.18?'#ff70dc':'#ff8de9';
+ $('distance').textContent=travelDistance.toFixed(1).padStart(5,'0')+' KM';
+ cpuPassMs.frame=performance.now()-frameCpuStart;
+ requestAnimationFrame(frame);
+}
+resize();setCamera(1);loadCountachModel();requestAnimationFrame(frame);
+const bootSteps=[[20,'BUILDING THE 3D WORLD'],[42,'ASSEMBLING DRIVELLA GTS'],[68,'CALIBRATING THE ROAD GRID'],[88,'TUNING THE CAMERA SYSTEM'],[100,'THE ROAD IS YOURS']];
+let bootStart=performance.now();
+function bootFrame(now){
+ let t=clamp((now-bootStart)/2600,0,1),p=Math.round((1-Math.pow(1-t,2))*100),step=bootSteps[0];
+ for(const s of bootSteps)if(p>=s[0])step=s;
+ $('boot-progress').style.width=p+'%';$('boot-percent').textContent=String(p).padStart(2,'0')+'%';$('boot-status').textContent=step[1];
+ if(t<1)requestAnimationFrame(bootFrame);else{bootDone=true;$('boot-screen').classList.add('done');showMenu();}
+}
+requestAnimationFrame(bootFrame);
+scanMusic();
+})();
+</script>
+</body>
+</html>
