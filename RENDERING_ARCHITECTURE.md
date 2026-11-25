@@ -579,3 +579,8 @@ After Countach decoding, retain the filtered `bodyPaint` source triangles as a t
 In the imported `bodyBlack` part, split only the eight verified lower lamp-pad triangles (four on either side; all vertices within X ±0.62…1.07, Y 0.57…0.68 and Z 2.47…2.71). Store them as `frontLowerPaint` and draw with `C.body` plus `PAINT_MATERIAL`. Do not recolour the remaining `bodyBlack` geometry or the central intake/radiator assembly.
 
 The two current lamp pods now emit one BUILD 122-style white-blue Canvas2D glow each, centred at the paired-projector datum and transformed through `countachLegacyHeadlampMount(side)`. The existing facing, distance, anamorphic bloom and flare compositor are reused; no dynamic fragment spotlight or shadow work returns. BUILD 144 keeps the imported Countach draw branch, wheel rig, pop-up hinge and existing body geometry filters.
+
+
+### BUILD 145 — Revert unsafe hood-surface cap sampler
+
+Removed the BUILD 144 `countachBodyPaintSurfaceYAt()` query and post-import cap reconstruction. The fallback selected an unrelated lower `bodyPaint` edge around Y≈0.3435 where the hood sample was unavailable (the cap's expected world height was around Y≈0.72). This broke the cap's local vertex fit. Restore the exact BUILD 143 moving-cap mesh construction using the pre-existing `hoodSurfaceY()` profile and shared Countach hinge/mount. Retain `frontLowerPaint` extraction/draw (8 lower pad triangles) and the BUILD 122 one-source-per-headlamp Canvas2D glow. The upper hood seam remains pending a targeted visual fit; do not alter the complete cap surface again without checking the actual in-game gap.
