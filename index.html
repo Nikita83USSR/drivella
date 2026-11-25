@@ -1392,27 +1392,22 @@ function pushCountachHeadlampTriangle(out,a,b,c,side=1,reverse=false){
 }
 function makeCountachHeadlampHousing(side){
  const rearZ=COUNTACH_HEADLIGHT_HINGE_Z,frontZ=2.4510;
- const front= [
-  [.615,.644,frontZ],[1.085,.644,frontZ],[1.085,.878,frontZ],[.615,.878,frontZ]
+ const outline=(x0,x1,y0,y1,z,cut)=>[
+  [x0+cut,y0,z],[x1-cut,y0,z],[x1,y0+cut,z],[x1,y1-cut,z],
+  [x1-cut,y1,z],[x0+cut,y1,z],[x0,y1-cut,z],[x0,y0+cut,z]
  ];
- const rear=[
-  [.646,.695,rearZ],[1.054,.695,rearZ],[1.054,.825,rearZ],[.646,.825,rearZ]
- ];
+ const front=outline(.615,1.085,.644,.878,frontZ,.018).map(p=>[p[0]*side,p[1],p[2]]);
+ const rear=outline(.646,1.054,.695,.825,rearZ,.012).map(p=>[p[0]*side,p[1],p[2]]);
  const out=[],center=pts=>pts.reduce((p,v)=>[p[0]+v[0]/pts.length,p[1]+v[1]/pts.length,p[2]+v[2]/pts.length],[0,0,0]);
- const F=front.map(p=>[p[0]*side,p[1],p[2]]),R=rear.map(p=>[p[0]*side,p[1],p[2]]);
- const fc=center(F),rc=center(R);
- for(let i=0;i<4;i++){
-  const j=(i+1)%4;
-  pushCountachHeadlampTriangle(out,fc,F[i],F[j],side,false);
-  pushCountachHeadlampTriangle(out,rc,R[j],R[i],side,false);
-  pushCountachHeadlampTriangle(out,R[i],R[j],F[j],side,false);
-  pushCountachHeadlampTriangle(out,R[i],F[j],F[i],side,false);
+ const fc=center(front),rc=center(rear);
+ for(let i=0;i<front.length;i++){
+  const j=(i+1)%front.length;
+  // Chamfered optical face, rear closing plate and tapered perimeter walls.
+  pushCountachHeadlampTriangle(out,fc,front[i],front[j],side,false);
+  pushCountachHeadlampTriangle(out,rc,rear[j],rear[i],side,false);
+  pushCountachHeadlampTriangle(out,rear[i],rear[j],front[j],side,false);
+  pushCountachHeadlampTriangle(out,rear[i],front[j],front[i],side,false);
  }
- // Four broad walls close the box from hinge edge to the optical face.
- // The front/rear bevel is deliberately tapered, like the Countach pop-up pod.
- const frontBL=F[0],frontBR=F[1],frontTR=F[2],frontTL=F[3];
- const rearBL=R[0],rearBR=R[1],rearTR=R[2],rearTL=R[3];
- // Top and bottom surfaces are included in the perimeter wall loop above.
  return mesh(out);
 }
 function makeCountachHeadlampBezels(side){
@@ -1430,8 +1425,8 @@ function makeCountachHeadlampBezels(side){
    pushCountachHeadlampTriangle(out,oa,ib,ia,side,false);
    pushCountachHeadlampTriangle(out,OBA,OBB,ob,side,false);
    pushCountachHeadlampTriangle(out,OBA,ob,oa,side,false);
-   pushCountachHeadlampTriangle(out,IBA,ib,IBB,side,true);
-   pushCountachHeadlampTriangle(out,IBA,ia,ib,side,true);
+   pushCountachHeadlampTriangle(out,IBA,ib,IBB,side,false);
+   pushCountachHeadlampTriangle(out,IBA,ia,ib,side,false);
   }
  }
  return mesh(out);
