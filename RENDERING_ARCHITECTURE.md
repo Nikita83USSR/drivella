@@ -512,3 +512,20 @@ The imported mesh transform, world spotlight origins/direction and lens-flare so
 ### Source attribution
 
 Original model: [Low Poly Lamborghini Countach](https://sketchfab.com/3d-models/low-poly-lamborghini-countach-c9b28a4ad5c74649a09afa613dd3fae1), by 3DShinobi, Sketchfab, CC BY. The in-game HUD displays this attribution and links to the source. The model geometry, materials, mirroring and rig integration are modified for DRIVELLA.
+
+
+### BUILD 136 — volumetric imported pop-up headlamps
+
+The imported source's `headlampL` and `headlampR` parts are shallow convex optical surfaces containing two round lamps per side; they are not the full-depth lift-up pods. BUILD 136 preserves those source meshes and adds a tapered, chamfered 3D housing behind each pair, plus separate extruded metal collars around the four lens rims. The pod extends rearward to the transverse hinge line at local `Y=0.76`, `Z=2.30`; its broad front face remains behind the imported lens surfaces so the original convex geometry is still visible.
+
+The imported Countach pose convention is:
+
+- Stowed: **+45° about local X**. The optical face tips down and the pod folds rearward beneath the bonnet line.
+- Deployed: **0° about local X**. The twin lenses face forward along local +Z.
+- Motion: smoothstep interpolation from `headlightDeploy`.
+
+Use `countachHeadlightAngle()` and `countachHeadlightHinge()` as the shared transform source for the visible pod shell, metal collars, imported lenses and world-space headlight system. Do not reintroduce the BUILD 135 negative-angle geometry transform: that made the pod lift farther upward when the user pressed `L`. The older procedural fallback uses a separate legacy hinge convention and must not be changed to match the imported mesh.
+
+The four screen-space lens-flare origins use the decoded local centres of the four source optical discs. The current WebGL shader keeps one broad local spotlight origin per paired pod (two spot origins total) for bounded per-pixel cost; those origins sit at the pair centres, and use the same shared hinge and forward direction. If increasing to four real shader spotlights in a later build, update the GLSL uniforms, mesh-culling bounds and diagnostics together, and profile the GPU cost before keeping the change.
+
+A backup of the complete BUILD 135 page is stored at `backups/index_BUILD135_before_countach_headlight_rig_BUILD136.html`. BUILD 136 passed JavaScript syntax validation, but in-browser visual alignment, full hide/raise travel and beam projection remain runtime checks.
