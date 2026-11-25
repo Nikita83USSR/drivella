@@ -71,10 +71,18 @@ try {
     gamePage.on('console', message => { if(message.type()==='error')gameConsoleErrors.push(message.text()); });
     await gamePage.addInitScript(value => {
       Math.random = () => value;
+      const nativeRequestAnimationFrame=window.requestAnimationFrame.bind(window);
+      let allowFrames=false,pendingFrames=[];
+      window.requestAnimationFrame=callback=>{
+        if(!allowFrames){pendingFrames.push(callback);return pendingFrames.length;}
+        return nativeRequestAnimationFrame(callback);
+      };
       document.addEventListener('DOMContentLoaded',() => {
         document.querySelectorAll('input[data-fx]').forEach(input => {
           if(input.checked){input.checked=false;input.dispatchEvent(new Event('change',{bubbles:true}));}
         });
+        allowFrames=true;
+        for(const callback of pendingFrames.splice(0))nativeRequestAnimationFrame(callback);
       },{once:true});
     }, randomValue);
     await gamePage.goto(baseUrl + '/', { waitUntil: 'load', timeout: 30000 });
