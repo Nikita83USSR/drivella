@@ -2,7 +2,7 @@
 
 A browser-based synthwave drift-racing prototype with a custom low-poly 3D car, a procedural neon environment, and a hand-built WebGL renderer.
 
-> **Status:** Playable prototype under active development. Current renderer reference: **v0.18.85 / BUILD 151**.
+> **Status:** Playable prototype under active development. Current renderer reference: **v0.18.86 / BUILD 152**.
 > **Release identification:** every published game change increments the visible BUILD number in the HUD and startup screen; README and rendering architecture are updated in the same release.
 
 ## Current game
@@ -82,7 +82,7 @@ Core implementation completed: adaptive directional shadows, PCSS-style filterin
 - [x] Build a reusable four-slot local-light shader and use it for the two coloured garage spotlights.
 - [x] Bind outdoor shadows to the actual sun source and garage spot shadows to each fixture's own position, direction and cone; isolate vehicle self-shadow receivers from the main car shell.
 - [x] Make environment reflections clearly visible on the windshield, rear glass and side glazing.
-- [~] **Stage 2 / item 1: GPU synthwave sun, corona and occlusion-aware aura wrap (BUILD 149–151).** The striped gradient disc, pulse and scan line render in the main WebGL pass. BUILD 151 expands the radial halo to about twice its previous reach and slightly strengthens it; the occluder rim now follows silhouettes across a wider area. F4 allows GPU/Canvas2D comparison and an independent aura-wrap toggle. Check edge quality and FPS in the running game before moving to depth-aware GPU god rays.
+- [~] **Stage 2 / item 1: GPU synthwave sun, corona and disc-localized light wrap (BUILD 149–152).** The striped gradient disc, pulse and corona render in WebGL behind opaque scene geometry. BUILD 152 confines the bright light-wrap to silhouettes that actually cross the solar disc, with a luminous warm core and a softer orange/magenta spill. It uses the existing half-resolution scene mask and premultiplied compositing. F4 keeps GPU/Canvas2D comparison and independent wrap control. Visual quality and FPS still need in-game confirmation before depth-aware GPU god rays.
 - [ ] **Depth-aware mini-RTX god rays.** Generate sun shafts from a low-resolution scene-occlusion mask so buildings, mountains and palms interrupt the rays; use bounded radial scattering at quarter resolution.
 - [ ] **GPU bloom and lens optics.** Add controlled thresholded bloom, anamorphic streaks, diffraction spikes, optical rings and chromatic ghosts; migrate current Canvas 2D vehicle flare profiles without restoring oversized headlight glare.
 - [ ] **Atmospheric scattering and final grading.** Add depth-aware horizon haze and atmospheric light integration while preserving road/car readability and the synthwave palette.
@@ -218,3 +218,7 @@ Save BUILD 149 as `backups/index_BUILD149_before_sun_aura_wrap_BUILD150.html`. E
 ### BUILD 151 — Wider GPU sun aura and stronger silhouette wrap
 
 Save BUILD 150 as `backups/index_BUILD150_before_sun_aura_scale_BUILD151.html`. Expand the bounded GPU sun quad and its normalized shader coordinates from 2.6 to 5.2 sun radii. Widen the broad radial falloff to approximately twice its previous reach and raise its peak contribution modestly; extend the corona fade with the expanded aura. The existing screen-space occluder-wrap composite now evaluates out to 5.2 sun radii and uses a slightly stronger contour response. The shader still uses the existing WebGL context, one sun draw call and the existing half-resolution AO scene mask; no new framebuffer or scene-capture pass is added. Because the quad covers more pixels, compare F3 GPU world/post timing and FPS in-game. The disc, stripes, pulse, projected position, vehicle flares and obstruction-mask capture are otherwise unchanged. Version `v0.18.85` / BUILD 151.
+
+### BUILD 152 — Disc-localized luminous sun wrap
+
+Save BUILD 151 as `backups/index_BUILD151_before_sun_disc_light_wrap_BUILD152.html`. Replace the broad 5.2-radius silhouette tint with a wrap that evaluates only within 1.24 solar-disc radii and fades at the disc edge (0.96–1.22 radii). The existing half-resolution scene mask is sampled at a sharp near radius and a wider spill radius to estimate the visible occluder edge; a source-facing term and slow pulse shape the result. Use a bright warm-white/gold core fading toward orange/magenta, then composite it as a premultiplied luminous overlay with `ONE / ONE_MINUS_SRC_ALPHA` so the rim adds light rather than darkening the scene. The normal SSAO/ink contribution is preserved in the same composite. No additional scene capture, framebuffer, texture, or full-screen pass is introduced. The sun disc itself remains behind opaque geometry; only its actual overlap with a foreground silhouette receives the wrap. Version `v0.18.86` / BUILD 152. Validate the rendered edge, shader compilation and FPS in the target browser.
