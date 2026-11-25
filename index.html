@@ -1414,10 +1414,9 @@ function makeCountachHeadlampBezels(side){
  const out=[],segments=32,outer=.087,inner=.0795,zBack=2.452,zFront=2.459;
  const centers=[[.7424,.7617],[.9571,.7607]];
  for(const [sourceX,cy] of centers){
-  const cx=sourceX*side;
   for(let i=0;i<segments;i++){
    const a=i*Math.PI*2/segments,b=(i+1)*Math.PI*2/segments;
-   const pt=(r,t,z)=>[cx+Math.cos(t)*r,cy+Math.sin(t)*r,z];
+   const pt=(r,t,z)=>[side*(sourceX+Math.cos(t)*r),cy+Math.sin(t)*r,z];
    const oa=pt(outer,a,zFront),ob=pt(outer,b,zFront),ib=pt(inner,b,zFront),ia=pt(inner,a,zFront);
    const OBA=pt(outer,a,zBack),OBB=pt(outer,b,zBack),IBA=pt(inner,a,zBack),IBB=pt(inner,b,zBack);
    // Front annulus, outer wall, and inner wall create a real metal collar around each lens.
