@@ -180,7 +180,7 @@
 <script>
 (()=>{
 'use strict';
-const VERSION='v0.19.28',BUILD='194';
+const VERSION='v0.19.29',BUILD='195';
 const canvas=document.getElementById('scene'),gl=canvas.getContext('webgl',{antialias:true,alpha:true}),sun=document.getElementById('sun'),sctx=sun.getContext('2d');
 const $=id=>document.getElementById(id);
 let countachModel=null,countachModelReady=false;
@@ -1981,10 +1981,10 @@ function drawGarageHouse(x,z,scale,wallColor,roofColor,windowColor){
  draw(cube,x+w*.5+.025*scale,h*.52,z,.04*scale,.31*scale,.56*scale,windowColor,0,0,8);
  draw(cube,x,h+.04*scale,front+.035*scale,w*.82,.035*scale,.04*scale,windowColor,0,0,8);
 }
-function drawGaragePalm(x,z,height,leafShape,leafColor,ringColor){
- draw(cylinder,x,height*.49,z,.145,height*.5,.145,[.30,.135,.065,1]);
- draw(cylinder,x,height*.36,z,.168,.045,.168,ringColor,0,0,8);
- draw(leafShape,x,height,z,1.12,1.12,1.12,leafColor);
+function queueGaragePalm(trunks,rings,leaves,x,z,height,variant,leafColor,ringColor){
+  queueBiomeInstance(trunks,x,height*.49,z,.145,height*.5,.145,[.30,.135,.065,1]);
+  queueBiomeInstance(rings,x,height*.36,z,.168,.045,.168,ringColor,0,8);
+  queueBiomeInstance(leaves[variant],x,height,z,1.12,1.12,1.12,leafColor);
 }
 function drawGarageReplica(cx,cz,yaw,bodyColor){
  if(!countachModelReady)return;
@@ -2025,7 +2025,7 @@ function drawGarageReplica(cx,cz,yaw,bodyColor){
  }
 }
 let roadInstanceBuffer=null,lastRoadBatchCount=0,lastRoadInstanceCount=0,lastRoadInstancingMode='FALLBACK';
-let lastBiomeBatchCount=0,lastBiomeInstanceCount=0;
+let lastBiomeBatchCount=0,lastBiomeInstanceCount=0,lastGarageBatchCount=0,lastGarageInstanceCount=0;
 function queueRoadCube(instances,x,y,z,sx,sy,sz,color,yaw=0){instances.push({x,y,z,sx,sy,sz,color,yaw,material:0});}
 function queueBiomeInstance(instances,x,y,z,sx,sy,sz,color,yaw=0,material=0){instances.push({x,y,z,sx,sy,sz,color,yaw,material});}
 function drawInstancedMesh(shape,instances,batchKind='biome'){
@@ -2045,7 +2045,8 @@ function drawInstancedMesh(shape,instances,batchKind='biome'){
   for(const entry of active){const q=entry.item;draw(shape,q.x,q.y,q.z,q.sx,q.sy,q.sz,q.color,q.yaw,0,q.material);}
   if(!shadowPass&&!outlinePass){
    if(batchKind==='road'){lastRoadBatchCount=active.length;lastRoadInstanceCount=active.length;lastRoadInstancingMode='FALLBACK';}
-   else{lastBiomeBatchCount++;lastBiomeInstanceCount+=active.length;}
+   else if(batchKind==='garage'){lastGarageBatchCount++;lastGarageInstanceCount+=active.length;}
+    else{lastBiomeBatchCount++;lastBiomeInstanceCount+=active.length;}
   }
   return;
  }
@@ -2088,14 +2089,15 @@ function drawInstancedMesh(shape,instances,batchKind='biome'){
  drawCalls++;
  if(!shadowPass&&!outlinePass){
   if(batchKind==='road'){lastRoadBatchCount=1;lastRoadInstanceCount=count;lastRoadInstancingMode='ANGLE_INSTANCED';}
-  else{lastBiomeBatchCount++;lastBiomeInstanceCount+=count;}
+  else if(batchKind==='garage'){lastGarageBatchCount++;lastGarageInstanceCount+=count;}
+   else{lastBiomeBatchCount++;lastBiomeInstanceCount+=count;}
  }
 }
 function drawRoadCubeInstances(instances){drawInstancedMesh(cube,instances,'road');}
 function drawBiomeInstances(shape,instances){drawInstancedMesh(shape,instances,'biome');}
 function drawWorld(){
  drawCalls=0;
- if(!shadowPass&&!outlinePass){lastRoadBatchCount=0;lastRoadInstanceCount=0;lastRoadInstancingMode=instancingExt?'ANGLE_INSTANCED':'FALLBACK';lastBiomeBatchCount=0;lastBiomeInstanceCount=0;}
+ if(!shadowPass&&!outlinePass){lastRoadBatchCount=0;lastRoadInstanceCount=0;lastRoadInstancingMode=instancingExt?'ANGLE_INSTANCED':'FALLBACK';lastBiomeBatchCount=0;lastBiomeInstanceCount=0;lastGarageBatchCount=0;lastGarageInstanceCount=0;}
  const carZ=garageMode?0:distance,trackCenter=garageMode?0:roadX(carZ),carX=garageMode?0:trackCenter+playerX;
  const cam=cameraFor(carX,carZ);
  const vp=shadowPass&&shadowVP?shadowVP:matMul(perspective(cam.fov*Math.PI/180,W/H,.1,650),lookAt(cam.x,cam.y,cam.z,cam.tx,cam.ty,cam.tz));
@@ -2142,13 +2144,16 @@ function drawWorld(){
   // Suspended LED spot fixtures: opaque housings and small emissive lens faces.
   // The actual light is evaluated by the shared cone-light shader; no fake transparent shafts or floor patches.
   draw(cube,0,5.12,.75,4.65,.075,.13,[.035,.043,.068,1]);
-  for(const side of [-1,1]){
-   const sx=side*3.8,fixtureYaw=side<0?.12:-.12;
-   draw(cube,sx,4.88,.75,.075,.20,.075,[.055,.065,.095,1]);
-   draw(cube,sx,4.68,.75,.30,.13,.40,[.035,.045,.072,1],fixtureYaw);
-   draw(cube,sx,4.535,.75,.245,.025,.335,[.24,.30,.40,1],fixtureYaw);
-   draw(cube,sx,4.505,.75,.19,.012,.27,side<0?[.78,.90,1,1]:[1,.84,.92,1],fixtureYaw,0,8);
-  }
+  const garageSpotOpaque=[],garageSpotEmitters=[];
+   for(const side of [-1,1]){
+    const sx=side*3.8,fixtureYaw=side<0?.12:-.12;
+    queueBiomeInstance(garageSpotOpaque,sx,4.88,.75,.075,.20,.075,[.055,.065,.095,1]);
+    queueBiomeInstance(garageSpotOpaque,sx,4.68,.75,.30,.13,.40,[.035,.045,.072,1],fixtureYaw);
+    queueBiomeInstance(garageSpotOpaque,sx,4.535,.75,.245,.025,.335,[.24,.30,.40,1],fixtureYaw);
+    queueBiomeInstance(garageSpotEmitters,sx,4.505,.75,.19,.012,.27,side<0?[.78,.90,1,1]:[1,.84,.92,1],fixtureYaw,8);
+   }
+   drawInstancedMesh(cube,garageSpotOpaque,'garage');
+   drawInstancedMesh(cube,garageSpotEmitters,'garage');
   // Two additional plinths turn the garage into a three-car materials and lighting bay.
   for(const pad of [{x:-10.2,edge:[.035,.72,1,1],top:[.035,.075,.16,1]},{x:10.2,edge:[1,.055,.60,1],top:[.14,.035,.105,1]}]){
    draw(cylinder,pad.x,-.43,0,3.88,.18,3.88,[.045,.055,.105,1]);
@@ -2162,16 +2167,22 @@ function drawWorld(){
   drawGarageHouse(-19.8,-18,1.10,[.045,.040,.105,1],[.22,.045,.22,1],[.10,.62,.94,1]);
   drawGarageHouse(0,-22.5,.88,[.035,.065,.105,1],[.055,.25,.34,1],[.98,.24,.60,1]);
   drawGarageHouse(19.8,-18,1.10,[.075,.032,.095,1],[.31,.045,.19,1],[.12,.76,.96,1]);
-  // Palm silhouettes create a real foreground/background profile around the showroom.
-  drawGaragePalm(-14.4,-9.8,5.8,palmLeafA,[.018,.38,.13,1],[.06,.72,.95,1]);
-  drawGaragePalm(14.4,-9.8,6.1,palmLeafB,[.025,.48,.16,1],[1,.16,.55,1]);
-  drawGaragePalm(-25.0,-7.4,6.6,palmLeafC,[.018,.34,.13,1],[.12,.64,1,1]);
-  drawGaragePalm(25.0,-7.4,6.3,palmLeafA,[.018,.40,.14,1],[1,.12,.52,1]);
-  drawGaragePalm(-23.0,-24.0,5.4,palmLeafB,[.025,.40,.15,1],[.10,.65,.95,1]);
-  drawGaragePalm(23.0,-24.0,5.5,palmLeafC,[.025,.40,.15,1],[1,.18,.58,1]);
-  // Neon perimeter rails make the scene scale and horizon easier to read while orbiting.
-  draw(cube,-31.0,-.16,0,.035,.03,29,[.035,.55,.86,1],0,0,8);
-  draw(cube,31.0,-.16,0,.035,.03,29,[.92,.035,.48,1],0,0,8);
+  // Palm silhouettes retain their six original placements, scales, colours and three mesh variants.
+   const garagePalmTrunks=[],garagePalmRings=[],garagePalmLeaves=[[],[],[]],leafShapes=[palmLeafA,palmLeafB,palmLeafC];
+   queueGaragePalm(garagePalmTrunks,garagePalmRings,garagePalmLeaves,-14.4,-9.8,5.8,0,[.018,.38,.13,1],[.06,.72,.95,1]);
+   queueGaragePalm(garagePalmTrunks,garagePalmRings,garagePalmLeaves,14.4,-9.8,6.1,1,[.025,.48,.16,1],[1,.16,.55,1]);
+   queueGaragePalm(garagePalmTrunks,garagePalmRings,garagePalmLeaves,-25.0,-7.4,6.6,2,[.018,.34,.13,1],[.12,.64,1,1]);
+   queueGaragePalm(garagePalmTrunks,garagePalmRings,garagePalmLeaves,25.0,-7.4,6.3,0,[.018,.40,.14,1],[1,.12,.52,1]);
+   queueGaragePalm(garagePalmTrunks,garagePalmRings,garagePalmLeaves,-23.0,-24.0,5.4,1,[.025,.40,.15,1],[.10,.65,.95,1]);
+   queueGaragePalm(garagePalmTrunks,garagePalmRings,garagePalmLeaves,23.0,-24.0,5.5,2,[.025,.40,.15,1],[1,.18,.58,1]);
+   drawInstancedMesh(cylinder,garagePalmTrunks,'garage');
+   drawInstancedMesh(cylinder,garagePalmRings,'garage');
+   for(let variant=0;variant<3;variant++)drawInstancedMesh(leafShapes[variant],garagePalmLeaves[variant],'garage');
+   // Two neon perimeter rails retain their independent colours and emissive material.
+   const garageNeonRails=[];
+   queueBiomeInstance(garageNeonRails,-31.0,-.16,0,.035,.03,29,[.035,.55,.86,1],0,8);
+   queueBiomeInstance(garageNeonRails,31.0,-.16,0,.035,.03,29,[.92,.035,.48,1],0,8);
+   drawInstancedMesh(cube,garageNeonRails,'garage');
  }else{
  // Repeated road geometry is submitted as one ordered instance batch.
  const roadInstances=[];
@@ -2556,7 +2567,8 @@ function updateDebug(dt){
    '<strong>POP-UP DEPLOY</strong> '+Math.round(headlightDeploy*100)+'%<br>'+
    '<strong>DRAW CALLS</strong> '+drawCalls+'<br>'+
    '<strong>ROAD GPU BATCH</strong> '+lastRoadBatchCount+' BATCH / '+lastRoadInstanceCount+' INSTANCES · '+lastRoadInstancingMode+'<br>'+
-   '<strong>BIOME GPU BATCH</strong> '+lastBiomeBatchCount+' BATCHES / '+lastBiomeInstanceCount+' INSTANCES<br>'+ 
+   '<strong>BIOME GPU BATCH</strong> '+lastBiomeBatchCount+' BATCHES / '+lastBiomeInstanceCount+' INSTANCES<br>'+
+    '<strong>SHOWROOM GPU BATCH</strong> '+lastGarageBatchCount+' BATCHES / '+lastGarageInstanceCount+' INSTANCES<br>'+ 
    '<strong>CAMERA</strong> '+(cameraMode+1)+' / 4 — '+CAMERA_NAMES[cameraMode]+'<br>'+
    '<strong>SPEED</strong> '+getVehicleSpeed().toFixed(1)+' km/h<br>'+
     '<strong>DRIFT STATE / SLIP / YAW</strong> '+['GRIP','INIT','DRIFT','RECOVERY'][driftState]+' / '+(Math.atan2(lateralVelocity,Math.max(2,Math.abs(speed)/3.6))*180/Math.PI).toFixed(1)+'° / '+(yawRate*180/Math.PI).toFixed(0)+'°/s<br>'+
