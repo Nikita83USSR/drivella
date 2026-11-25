@@ -6,6 +6,7 @@ on:
       - 'index.html'
       - 'assets/**'
       - 'tools/aura-regression.html'
+      - 'tools/game-shader-compile.html'
       - 'tools/run-aura-regression.mjs'
       - '.github/workflows/aura-regression.yml'
   workflow_dispatch:
@@ -25,7 +26,7 @@ jobs:
         run: npm install --no-save playwright
       - name: Install Chromium
         run: npx playwright install --with-deps chromium
-      - name: Run synthetic and live-game WebGL checks
+      - name: Run synthetic bloom and production shader checks
         run: node tools/run-aura-regression.mjs
       - name: Upload test screenshots
         if: always()
