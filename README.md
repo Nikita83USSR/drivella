@@ -2,7 +2,7 @@
 
 A browser-based synthwave drift-racing prototype with a custom low-poly 3D car, a procedural neon environment, and a hand-built WebGL renderer.
 
-> **Status:** Playable prototype under active development. Current renderer reference: **v0.19.17 / BUILD 183**.
+> **Status:** Playable prototype under active development. Current renderer reference: **v0.19.18 / BUILD 184**.
 > **Release identification:** every published game change increments the visible BUILD number in the HUD and startup screen; README and rendering architecture are updated in the same release.
 
 ## Current game
@@ -12,6 +12,7 @@ A browser-based synthwave drift-racing prototype with a custom low-poly 3D car, 
 - **BUILD 117:** add an interactive **F4 Visual Effects** panel with independent toggles for car ink outlines, SSAO, wireframe, solar/world shadows, vehicle self-shadows, glass reflections, paint highlights, lamp emission, pop-up headlights, headlight illumination, garage spotlights and their shadows, the sunset disc, vehicle lens flares, underglow and tyre-contact shadows. Settings apply immediately; existing `K`, `L` and `H` shortcuts stay synchronized with the panel.
 - **BUILD 118:** reduce the vehicle self-shadow receiver map from 2048² to 1024² and render it from vehicle detail casters only; the road grid, biome and environment meshes are skipped during this secondary pass. The F4 self-shadow checkbox now truly skips receiver-map allocation/rendering when off. This removes the redundant full-scene 2048² pass that had become a major frame-time cost. The main 2048² world-shadow map remains unchanged.
 - **BUILD 119:** add F3 pass profiling. CPU timings are recorded for shadow generation, main world rendering, post-processing (SSAO/ink outlines), and total JavaScript frame work. When the browser exposes `EXT_disjoint_timer_query`, asynchronous GPU timings for the same three render passes are shown; unavailable GPU timer support is reported rather than blocking the frame.
+- **BUILD 184:** add a restrained four-ray cross flare to each deployed Countach pop-up headlight. The rays are projected from the same hinge- and side-mount-transformed projector centres as the headlight glow, so the cross follows the lamp as it opens. The larger upper-headlight anamorphic streak, broad diffraction and lens ghosts remain disabled.
 - **BUILD 183:** reposition the Countach rear lamp optical effects to the imported `bodyTail` lens bars. The red source lenses retain brake-responsive brightness; the outer rear bar on each side receives a separate amber turn-signal overlay. Move front turn indicators to the two existing outboard lower-bumper lamp pads; the inner pair remains white auxiliary lamps. The Canvas 2D flare sources use the same measured lamp centres. No body, bumper or source-model geometry is edited.
 - Custom WebGL 1 renderer for the 3D vehicle, road, garage, and procedural environments.
 - All four wheels animate as a single rolling assembly: tyre, brake disc, alloy spokes, and hub share one spin phase, with the rotation direction matched to forward travel.
@@ -338,3 +339,10 @@ The front turn indicators now occupy the two outboard lenses in the existing fou
 The imported `bodyTail` contains three vertical red lens bars on each side, on `z=-2.6039`. The middle bar remains the red running/brake light and keeps its existing brake-responsive material. The outermost bar on each side is reused as the amber turn indicator via a thin duplicate of its two source triangles, offset 0.004 world units rearward. No new rear panel or body modification is introduced.
 
 Vehicle lens-flare points are moved onto the same lower front lamps and rear lens bars. The regression decodes the original compressed Countach model, checks the front bumper-pad fit and rear source triangles, parses the complete production inline JavaScript, compiles the production WebGL 1 shaders and loads the actual game page to confirm both rear indicator meshes are created. The automated test does not replace visual inspection in the browser on the target GPU. BUILD 182 is preserved at `backups/index_BUILD182_before_vehicle_lamp_repositioning_BUILD183.html`. Version `v0.19.17` / BUILD 183.
+
+
+### BUILD 184 — Compact cross flare for the Countach pop-up headlights
+
+Each of the two upper pop-up headlight projectors now receives a compact four-ray cross: a horizontal ray, a shorter vertical ray and two restrained diagonals. The flare uses the existing camera projection, the same per-projector world position and the same facing/distance/intensity gates as the soft headlight glow, so it follows the mechanical hinge through deployment instead of remaining at a fixed point.
+
+Only the cross strokes are added. The existing upper-headlight broad halo remains unchanged, and the larger anamorphic streak, long diffraction treatment and chromatic ghost layers remain bypassed to avoid restoring the old expensive glare profile. The regression checks the four ray axes/lengths/widths and verifies the feature remains in the headlight-only branch before the existing `continue` that skips the larger optical treatment. Version `v0.19.18` / BUILD 184. BUILD 183 is preserved at `backups/index_BUILD183_before_pop_up_headlight_cross_flare_BUILD184.html`.
