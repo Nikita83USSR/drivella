@@ -118,9 +118,9 @@
 <body>
 <canvas id="scene"></canvas><canvas id="sun"></canvas><canvas id="flare"></canvas>
 <div id="hud">
- <div class="top"><div class="logo">DRIVELLA<small>3D SYNTHWAVE DRIFT RACING</small></div><div class="version-label" id="version-label">v0.19.16 · BUILD 182</div><div class="stat">DISTANCE<b id="distance">000.0 KM</b></div><div class="stat">LOCATION<b>VIOLET COAST</b></div></div>
+ <div class="top"><div class="logo">DRIVELLA<small>3D SYNTHWAVE DRIFT RACING</small></div><div class="version-label" id="version-label">v0.19.17 · BUILD 183</div><div class="stat">DISTANCE<b id="distance">000.0 KM</b></div><div class="stat">LOCATION<b>VIOLET COAST</b></div></div>
  <div class="right"><div id="speed">000 <span>KM/H</span></div><div id="direction">▶ FORWARD</div><div id="music">♫ MUSIC SCANNING…</div></div>
- <div class="bottom"><div class="hint"><strong>W / ↑</strong> ACCELERATE　<strong>S / ↓</strong> BRAKE / REVERSE<br><strong>A / ←　D / →</strong> STEER　<strong>SPACE</strong> HANDBRAKE　<strong>C</strong> CAMERA　<strong>HOLD + DRAG LMB</strong> LOOK　<strong>L</strong> LIGHTS　<strong>K</strong> WIREFRAME</div><div class="build-credit"><span>3D NEON HIGHWAY // BUILD 181</span><a class="asset-credit" href="https://sketchfab.com/3d-models/low-poly-lamborghini-countach-c9b28a4ad5c74649a09afa613dd3fae1" target="_blank" rel="noopener noreferrer">Original model: 3DShinobi · Sketchfab · CC BY · modified for DRIVELLA</a></div></div>
+ <div class="bottom"><div class="hint"><strong>W / ↑</strong> ACCELERATE　<strong>S / ↓</strong> BRAKE / REVERSE<br><strong>A / ←　D / →</strong> STEER　<strong>SPACE</strong> HANDBRAKE　<strong>C</strong> CAMERA　<strong>HOLD + DRAG LMB</strong> LOOK　<strong>L</strong> LIGHTS　<strong>K</strong> WIREFRAME</div><div class="build-credit"><span>3D NEON HIGHWAY // BUILD 183</span><a class="asset-credit" href="https://sketchfab.com/3d-models/low-poly-lamborghini-countach-c9b28a4ad5c74649a09afa613dd3fae1" target="_blank" rel="noopener noreferrer">Original model: 3DShinobi · Sketchfab · CC BY · modified for DRIVELLA</a></div></div>
 </div>
 <div id="fps-counter" aria-live="off">FPS --</div>
 <div id="effects-menu" aria-hidden="true">
@@ -159,7 +159,7 @@
 </div>
 <div id="tools-ui"><button id="cam-prev" aria-label="Previous camera">◀</button><span id="cam-label">CAM 2 · CLOSE</span><button id="cam-next" aria-label="Next camera">▶</button><button id="debug-toggle">DEBUG</button></div>
 <div id="debug-panel"><div class="debug-title">DRIVELLA DIAGNOSTICS</div><div id="debug-data">Initializing…</div></div>
-<div id="boot-screen"><div class="boot-content"><div class="boot-kicker">NIGHT DRIVE SYSTEMS // INITIALIZING</div><div class="boot-logo">DRIVELLA</div><div class="boot-subtitle">3D SYNTHWAVE DRIFT RACING</div><div class="boot-mark"></div><div class="boot-status" id="boot-status">BUILDING THE 3D WORLD</div><div class="boot-track"><div class="boot-progress" id="boot-progress"></div></div><div class="boot-meta"><span>3D ENGINE ONLINE</span><span id="boot-percent">00%</span></div><div class="boot-footer">ENGINE STARTUP // v0.19.16 · BUILD 182</div></div></div>
+<div id="boot-screen"><div class="boot-content"><div class="boot-kicker">NIGHT DRIVE SYSTEMS // INITIALIZING</div><div class="boot-logo">DRIVELLA</div><div class="boot-subtitle">3D SYNTHWAVE DRIFT RACING</div><div class="boot-mark"></div><div class="boot-status" id="boot-status">BUILDING THE 3D WORLD</div><div class="boot-track"><div class="boot-progress" id="boot-progress"></div></div><div class="boot-meta"><span>3D ENGINE ONLINE</span><span id="boot-percent">00%</span></div><div class="boot-footer">ENGINE STARTUP // v0.19.17 · BUILD 183</div></div></div>
 <div id="main-menu"><div class="menu-content"><div class="menu-brand">DRIVELLA GTS</div><div class="menu-sub">RIDE THE RETRO FUTURE</div><div class="menu-actions"><button class="menu-btn" id="menu-start">СТАРТ</button><button class="menu-btn" id="menu-garage">ГАРАЖ</button><button class="menu-btn" id="menu-options">НАСТРОЙКИ</button></div></div><div class="menu-footer">РАЗРАБОТЧИК — <b>НИКИТА МАРКИН</b></div></div>
 <div id="garage-screen"><div class="garage-head">ГАРАЖ // DRIVELLA GTS</div><div class="garage-copy">ТЕКУЩИЙ АВТОМОБИЛЬ<br>DRIVELLA GTS · RETRO GT COUPE<br>ПОКАЖИ ЕЁ СО ВСЕХ СТОРОН</div><div class="garage-controls"><button id="garage-back">← НАЗАД В МЕНЮ</button></div><div class="garage-tip">ЗАЖМИ И ТЯНИ — ВРАЩЕНИЕ<br>КОЛЁСИКО — ПРИБЛИЗИТЬ / ОТДАЛИТЬ</div></div>
 <div id="options-screen"><div class="options-head">ОПЦИИ</div><div class="options-card"><div class="option-row"><span>МУЗЫКА</span><button id="option-music">ВКЛЮЧЕНА</button></div><div class="option-row"><span>ГРОМКОСТЬ</span><input id="option-volume" type="range" min="0" max="100" value="52"></div><div class="option-row"><span>ЗВУК ДВИГАТЕЛЯ</span><button id="option-sfx">ВКЛЮЧЁН</button></div><div class="option-row"><span>КАМЕРА</span><span>КЛАВИШИ 1–4</span></div><button id="options-back" style="width:100%;margin-top:18px">← НАЗАД В МЕНЮ</button></div></div>
@@ -178,7 +178,7 @@
 <script>
 (()=>{
 'use strict';
-const VERSION='v0.19.16',BUILD='182';
+const VERSION='v0.19.17',BUILD='183';
 const canvas=document.getElementById('scene'),gl=canvas.getContext('webgl',{antialias:true,alpha:true}),sun=document.getElementById('sun'),sctx=sun.getContext('2d'),flare=document.getElementById('flare'),fctx=flare.getContext('2d');
 const $=id=>document.getElementById(id);
 let countachModel=null,countachModelReady=false;
@@ -694,7 +694,7 @@ async function loadCountachModel(){
   const stream=new Blob([packed]).stream().pipeThrough(new DecompressionStream('deflate'));
   const raw=new Uint8Array(await new Response(stream).arrayBuffer());
   if(raw.byteLength!==meta.rawBytes)throw new Error('Нарушена целостность геометрии Countach');
-  const view=new DataView(raw.buffer,raw.byteOffset,raw.byteLength),model={wheelCenters:meta.wheelCenters},extractedHeadlampCaps={left:[],right:[]};
+  const view=new DataView(raw.buffer,raw.byteOffset,raw.byteLength),model={wheelCenters:meta.wheelCenters},extractedHeadlampCaps={left:[],right:[]},rearSignalGeometry={left:[],right:[]};
   const mirrorX=data=>{
    const mirrored=new Float32Array(data.length);
    for(let i=0;i<data.length;i+=9){
@@ -720,6 +720,13 @@ async function loadCountachModel(){
       view.getInt16(v+2,true)/meta.unitsPerGameUnit,
       view.getInt16(v+4,true)/meta.unitsPerGameUnit
      ]);
+    }
+    if(part.name==='bodyTail'){
+     const centerX=(triangle[0][0]+triangle[1][0]+triangle[2][0])/3;
+     if(Math.abs(centerX)>.935){
+      const signalBuffer=centerX<0?rearSignalGeometry.left:rearSignalGeometry.right;
+      for(const p of triangle)signalBuffer.push(p[0],p[1],p[2]-.004);
+     }
     }
     // Remove only the two disconnected painted Countach hood-cap shells (29 triangles each).
     // The DRIVELLA pop-up lamp assemblies are separate meshes and are deliberately untouched.
@@ -756,6 +763,12 @@ async function loadCountachModel(){
    }
    if(part.name==='bodyPlastic')window.DRIVELLA_OLD_FRONT_HEADLAMP_OVERLAYS_REMOVED=removedOldFrontOverlays;
    model[part.name]=mesh(geometry);
+   if(part.name==='bodyTail'){
+    if(rearSignalGeometry.left.length!==18||rearSignalGeometry.right.length!==18)throw new Error('Не удалось выделить наружные секции задних поворотников Countach');
+    model.bodyTailSignalLeft=mesh(new Float32Array(rearSignalGeometry.left));
+    model.bodyTailSignalRight=mesh(new Float32Array(rearSignalGeometry.right));
+    window.DRIVELLA_REAR_SIGNAL_TRIANGLES={left:2,right:2};
+   }
    if(part.name==='bodyBlack'){
     model.frontLowerPaint=mesh(new Float32Array(frontLowerBodyColorData));
     window.DRIVELLA_LOWER_HEADLAMP_BLACK_PANELS_RECOLORED=removedLowerBlackPanels;
@@ -1246,7 +1259,11 @@ function lampFrontPoint(x,t,offset=0){
 function lampRearPoint(x){return [x,hoodSurfaceY(x,POP_LAMP_Z_REAR)-.037,POP_LAMP_Z_REAR];}
 function pushLampQuad(out,a,b,c,d){out.push(...a,...b,...c,...a,...c,...d);}
 const COUNTACH_FOG_LAMP_CENTERS=[[-0.944,0.621,2.588],[-0.739,0.623,2.588],[0.739,0.623,2.588],[0.944,0.621,2.588]];
+const COUNTACH_FRONT_TURN_SIGNAL_INDICES=[0,3],COUNTACH_FRONT_FOG_LAMP_INDICES=[1,2];
 const COUNTACH_FOG_LAMP_NORMAL=[0,.925,.38];
+// Optical anchors follow the source Countach's three rear lens bars per side.
+const COUNTACH_REAR_LAMP_FLARE_POINTS=[[-.843,.815,-2.610],[.843,.815,-2.610]];
+const COUNTACH_REAR_SIGNAL_FLARE_POINTS=[[-1.011,.815,-2.610],[1.011,.815,-2.610]];
 function makeCountachFogLampQuad(center,halfWidth,halfHeight,normalOffset){
  const out=[],[cx,cy,cz]=center,upY=.38,upZ=-.925,nY=.925,nZ=.38;
  const p=(sx,sy)=>[cx+sx*halfWidth,cy+sy*halfHeight*upY+normalOffset*nY,cz+sy*halfHeight*upZ+normalOffset*nZ];
@@ -1839,7 +1856,7 @@ function drawWorld(){
  }
  }
  // DRIVELLA GTS — original angular GT, now with a squared rear and real light mounting planes.
- const yaw=garageMode?0:carYaw,brakeLampLevel=clamp(brakeLight,0,1);
+ const yaw=garageMode?0:carYaw,brakeLampLevel=clamp(brakeLight,0,1),signalOn=Math.sin(performance.now()*.012)>-.15,steerNow=readSteeringInput();
  // 3DFX / PASS 01 — four independent soft tyre contact shadows, anchored to the wheel centres.
  const shadowY=garageMode?-.052:.018;
  if(FX.tireContact){
@@ -1868,6 +1885,9 @@ function drawWorld(){
   drawCarMesh(m.bodyMetal,carX,carZ,[.38,.43,.51,1],yaw,2,false,true);
   const rearLampColor=[.56+.38*brakeLampLevel,.006+.012*brakeLampLevel,.018+.020*brakeLampLevel,1];
   drawCarMesh(m.bodyTail,carX,carZ,rearLampColor,yaw,8,false,false);
+  const rearSignalOffColor=[.065,.020,.004,1],rearSignalOnColor=[1.55,.48,.045,1];
+  drawCarMesh(m.bodyTailSignalLeft,carX,carZ,signalOn&&steerNow<0?rearSignalOnColor:rearSignalOffColor,yaw,signalOn&&steerNow<0?8:0,false,false);
+  drawCarMesh(m.bodyTailSignalRight,carX,carZ,signalOn&&steerNow>0?rearSignalOnColor:rearSignalOffColor,yaw,signalOn&&steerNow>0?8:0,false,false);
   drawCarMesh(m.frontDetail_detailRed,carX,carZ,C.body,yaw,PAINT_MATERIAL,false,true);
   drawCarMesh(m.frontDetail_bodyPlastic,carX,carZ,[.025,.032,.045,1],yaw,0,false,true);
   drawCarMesh(m.sideMirror_bodyPlastic,carX,carZ,[.055,.062,.078,1],yaw,2,false,true);
@@ -1896,7 +1916,11 @@ function drawWorld(){
   drawCountachLegacyHeadlampAssembly(-1,carX,carZ,lampColor,yaw);
   drawCountachLegacyHeadlampAssembly(1,carX,carZ,lampColor,yaw);
   for(const frame of COUNTACH_FOG_LAMP_FRAMES)drawCarMesh(frame,carX,carZ,C.trim,yaw,0,false,true);
-  for(const lens of COUNTACH_FOG_LAMP_LENSES)drawCarMesh(lens,carX,carZ,[.82,.96,1.12,1],yaw,8,false,false);
+  for(let i=0;i<COUNTACH_FOG_LAMP_LENSES.length;i++){
+   const isSignal=COUNTACH_FRONT_TURN_SIGNAL_INDICES.includes(i),signalActive=isSignal&&((i===0&&steerNow<0)||(i===3&&steerNow>0))&&signalOn;
+   const lensColor=isSignal?(signalActive?[1.55,.48,.055,1]:[.16,.052,.008,1]):[.82,.96,1.12,1];
+   drawCarMesh(COUNTACH_FOG_LAMP_LENSES[i],carX,carZ,lensColor,yaw,isSignal?(signalActive?8:0):8,false,false);
+  }
  }else{
  // Continuous hull with broad painted planes and shader-driven clear-coat highlights.
  drawCarMesh(bodyMesh,carX,carZ,C.body,yaw,PAINT_MATERIAL,false,false);
@@ -1952,13 +1976,13 @@ function drawWorld(){
  drawCarMesh(frontIntake,carX,carZ,[.018,.025,.040,1],yaw,0);
  drawCarMesh(frontGrilleSlats,carX,carZ,[.28,.34,.44,1],yaw,0);
  drawCarMesh(frontSplitter,carX,carZ,[.012,.016,.026,1],yaw,0,true);
- // Front and rear indicators share one blink phase and the same steering-side selection.
- const signalOn=Math.sin(performance.now()*.012)>-.15,steerNow=readSteeringInput();
- drawCarMesh(frontTurnSignalL,carX,carZ,steerNow<0&&signalOn?[1.55,.48,.055,1]:[.16,.052,.008,1],yaw,steerNow<0&&signalOn?8:0);
- drawCarMesh(frontTurnSignalR,carX,carZ,steerNow>0&&signalOn?[1.55,.48,.055,1]:[.16,.052,.008,1],yaw,steerNow>0&&signalOn?8:0);
- // Four lower rectangular driving lamps, in matched left/right pairs.
+ // Front and rear indicators share the same blink phase and steering-side selection.
+ // The outboard lower bumper lenses are amber indicators; the inboard pair stays white.
  for(const frame of [frontFogFrameL1,frontFogFrameL2,frontFogFrameR1,frontFogFrameR2])drawCarMesh(frame,carX,carZ,C.trim,yaw,0);
- for(const lamp of [frontFogLensL1,frontFogLensL2,frontFogLensR1,frontFogLensR2])drawCarMesh(lamp,carX,carZ,[.88,1.02,1.12,1],yaw,8);
+ drawCarMesh(frontFogLensL1,carX,carZ,steerNow<0&&signalOn?[1.45,.43,.045,1]:[.16,.052,.008,1],yaw,steerNow<0&&signalOn?8:0);
+ drawCarMesh(frontFogLensR1,carX,carZ,steerNow>0&&signalOn?[1.45,.43,.045,1]:[.16,.052,.008,1],yaw,steerNow>0&&signalOn?8:0);
+ drawCarMesh(frontFogLensL2,carX,carZ,[.88,1.02,1.12,1],yaw,8);
+ drawCarMesh(frontFogLensR2,carX,carZ,[.88,1.02,1.12,1],yaw,8);
  // Rear: a genuinely flat full-width fascia. Every light now sits OUTSIDE the body cap.
  drawCarMesh(rearFascia,carX,carZ,C.body,yaw,PAINT_MATERIAL,false,false);
  gl.enable(gl.BLEND);gl.blendFunc(gl.SRC_ALPHA,gl.ONE);gl.depthMask(false);
@@ -2075,20 +2099,26 @@ function drawVehicleLensFlares(){
    sources.push({kind:'headlight',p:point(lampWorld,lampLocalR),n:lampNormal,c:[.92,.98,1],power:1.82*lampPower});
   }
  }
- const frontNormal=direction(bodyWorld,[0,0,1]),rearNormal=direction(bodyWorld,[0,0,-1]);
+ const frontNormal=direction(bodyWorld,[0,0,1]),rearNormal=direction(bodyWorld,[0,0,-1]),blink=Math.sin(performance.now()*.012)>-.15,signalSide=readSteeringInput();
  if(countachModelReady){
   const fogNormal=direction(bodyWorld,COUNTACH_FOG_LAMP_NORMAL);
-  for(const [x,y,z] of COUNTACH_FOG_LAMP_CENTERS)sources.push({kind:'fog',p:point(bodyWorld,[x,y+COUNTACH_FOG_LAMP_NORMAL[1]*.027,z+COUNTACH_FOG_LAMP_NORMAL[2]*.027]),n:fogNormal,c:[.82,.93,1],power:.72});
+  for(const index of COUNTACH_FRONT_FOG_LAMP_INDICES){const [x,y,z]=COUNTACH_FOG_LAMP_CENTERS[index];sources.push({kind:'fog',p:point(bodyWorld,[x,y+COUNTACH_FOG_LAMP_NORMAL[1]*.027,z+COUNTACH_FOG_LAMP_NORMAL[2]*.027]),n:fogNormal,c:[.82,.93,1],power:.72});}
+  for(const index of COUNTACH_FRONT_TURN_SIGNAL_INDICES){const [x,y,z]=COUNTACH_FOG_LAMP_CENTERS[index],side=index===0?-1:1,active=signalSide===side&&blink;sources.push({kind:'signal',p:point(bodyWorld,[x,y+COUNTACH_FOG_LAMP_NORMAL[1]*.027,z+COUNTACH_FOG_LAMP_NORMAL[2]*.027]),n:fogNormal,c:[1,.48,.10],power:active?1.22:0});}
  }else{
-  for(const x of [-.805,-.605,.605,.805])sources.push({kind:'fog',p:point(bodyWorld,[x,.315,2.986]),n:frontNormal,c:[.78,.92,1],power:.48});
+  for(const x of [-.605,.605])sources.push({kind:'fog',p:point(bodyWorld,[x,.315,2.986]),n:frontNormal,c:[.78,.92,1],power:.48});
  }
- const blink=Math.sin(performance.now()*.012)>-.15,signalSide=readSteeringInput();
- sources.push({kind:'signal',p:point(bodyWorld,[-.795,.47,2.974]),n:frontNormal,c:[1,.48,.10],power:signalSide<0&&blink?1.22:0});
- sources.push({kind:'signal',p:point(bodyWorld,[.795,.47,2.974]),n:frontNormal,c:[1,.48,.10],power:signalSide>0&&blink?1.22:0});
- sources.push({kind:'tail',p:point(bodyWorld,[-.93,.665,-2.982]),n:rearNormal,c:[1,.045,.085],power:.92+.28*brakeLight});
- sources.push({kind:'tail',p:point(bodyWorld,[.93,.665,-2.982]),n:rearNormal,c:[1,.045,.085],power:.92+.28*brakeLight});
- if(blink&&signalSide<0)sources.push({kind:'signal',p:point(bodyWorld,[-1.085,.67,-2.982]),n:rearNormal,c:[1,.56,.16],power:1.26});
- if(blink&&signalSide>0)sources.push({kind:'signal',p:point(bodyWorld,[1.085,.67,-2.982]),n:rearNormal,c:[1,.56,.16],power:1.26});
+ if(countachModelReady){
+  for(const p of COUNTACH_REAR_LAMP_FLARE_POINTS)sources.push({kind:'tail',p:point(bodyWorld,p),n:rearNormal,c:[1,.045,.085],power:.92+.28*brakeLight});
+  if(blink&&signalSide<0)sources.push({kind:'signal',p:point(bodyWorld,COUNTACH_REAR_SIGNAL_FLARE_POINTS[0]),n:rearNormal,c:[1,.56,.16],power:1.26});
+  if(blink&&signalSide>0)sources.push({kind:'signal',p:point(bodyWorld,COUNTACH_REAR_SIGNAL_FLARE_POINTS[1]),n:rearNormal,c:[1,.56,.16],power:1.26});
+ }else{
+  sources.push({kind:'signal',p:point(bodyWorld,[-.805,.315,2.986]),n:frontNormal,c:[1,.48,.10],power:signalSide<0&&blink?1.22:0});
+  sources.push({kind:'signal',p:point(bodyWorld,[.805,.315,2.986]),n:frontNormal,c:[1,.48,.10],power:signalSide>0&&blink?1.22:0});
+  sources.push({kind:'tail',p:point(bodyWorld,[-.93,.665,-2.982]),n:rearNormal,c:[1,.045,.085],power:.92+.28*brakeLight});
+  sources.push({kind:'tail',p:point(bodyWorld,[.93,.665,-2.982]),n:rearNormal,c:[1,.045,.085],power:.92+.28*brakeLight});
+  if(blink&&signalSide<0)sources.push({kind:'signal',p:point(bodyWorld,[-1.085,.67,-2.982]),n:rearNormal,c:[1,.56,.16],power:1.26});
+  if(blink&&signalSide>0)sources.push({kind:'signal',p:point(bodyWorld,[1.085,.67,-2.982]),n:rearNormal,c:[1,.56,.16],power:1.26});
+ }
  fctx.save();fctx.globalCompositeOperation='lighter';
  for(const src of sources){
   if(src.power<=0)continue;
