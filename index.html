@@ -118,9 +118,9 @@
 <body>
 <canvas id="scene"></canvas><canvas id="sun"></canvas><canvas id="flare"></canvas>
 <div id="hud">
- <div class="top"><div class="logo">DRIVELLA<small>3D SYNTHWAVE DRIFT RACING</small></div><div class="version-label" id="version-label">v0.18.73 · BUILD 139</div><div class="stat">DISTANCE<b id="distance">000.0 KM</b></div><div class="stat">LOCATION<b>VIOLET COAST</b></div></div>
+ <div class="top"><div class="logo">DRIVELLA<small>3D SYNTHWAVE DRIFT RACING</small></div><div class="version-label" id="version-label">v0.18.74 · BUILD 140</div><div class="stat">DISTANCE<b id="distance">000.0 KM</b></div><div class="stat">LOCATION<b>VIOLET COAST</b></div></div>
  <div class="right"><div id="speed">000 <span>KM/H</span></div><div id="direction">▶ FORWARD</div><div id="music">♫ MUSIC SCANNING…</div></div>
- <div class="bottom"><div class="hint"><strong>W / ↑</strong> ACCELERATE　<strong>S / ↓</strong> BRAKE / REVERSE<br><strong>A / ←　D / →</strong> STEER　<strong>SPACE</strong> HANDBRAKE　<strong>C</strong> CAMERA　<strong>HOLD + DRAG LMB</strong> LOOK　<strong>L</strong> LIGHTS　<strong>K</strong> WIREFRAME</div><div class="build-credit"><span>3D NEON HIGHWAY // BUILD 139</span><a class="asset-credit" href="https://sketchfab.com/3d-models/low-poly-lamborghini-countach-c9b28a4ad5c74649a09afa613dd3fae1" target="_blank" rel="noopener noreferrer">Original model: 3DShinobi · Sketchfab · CC BY · modified for DRIVELLA</a></div></div>
+ <div class="bottom"><div class="hint"><strong>W / ↑</strong> ACCELERATE　<strong>S / ↓</strong> BRAKE / REVERSE<br><strong>A / ←　D / →</strong> STEER　<strong>SPACE</strong> HANDBRAKE　<strong>C</strong> CAMERA　<strong>HOLD + DRAG LMB</strong> LOOK　<strong>L</strong> LIGHTS　<strong>K</strong> WIREFRAME</div><div class="build-credit"><span>3D NEON HIGHWAY // BUILD 140</span><a class="asset-credit" href="https://sketchfab.com/3d-models/low-poly-lamborghini-countach-c9b28a4ad5c74649a09afa613dd3fae1" target="_blank" rel="noopener noreferrer">Original model: 3DShinobi · Sketchfab · CC BY · modified for DRIVELLA</a></div></div>
 </div>
 <div id="fps-counter" aria-live="off">FPS --</div>
 <div id="effects-menu" aria-hidden="true">
@@ -173,7 +173,7 @@
 <script>
 (()=>{
 'use strict';
-const VERSION='v0.18.73',BUILD='139';
+const VERSION='v0.18.74',BUILD='140';
 const canvas=document.getElementById('scene'),gl=canvas.getContext('webgl',{antialias:true,alpha:true}),sun=document.getElementById('sun'),sctx=sun.getContext('2d'),flare=document.getElementById('flare'),fctx=flare.getContext('2d');
 const $=id=>document.getElementById(id);
 let countachModel=null,countachModelReady=false;
@@ -534,6 +534,9 @@ async function loadCountachModel(){
    return mirrored;
   };
   for(const part of meta.parts){
+   // The imported Countach's original fixed headlamp optics are intentionally omitted;
+   // the restored DRIVELLA dual-projector pop-up pods are the only visible upper lamps.
+   if(part.name==='headlampR'||part.name==='headlampL')continue;
    const data=new Float32Array(part.indexCount*3);
    for(let i=0;i<part.indexCount;i++){
     const vertex=view.getUint16(part.indexOffset+i*2,true),v=part.vertexOffset+vertex*6,at=i*3;
@@ -1376,7 +1379,7 @@ function countachLegacyHeadlampMount(side){
  // The legacy optical face is built at 45° in its stowed coordinate system.
  // Counter-rotate it by 45° so the current Countach hinge (45° closed -> 0° open) remains authoritative.
  // The mapped projector centre is fitted to the source Countach lamp datum; scale only the pod footprint.
- const mountScaleX=.9215686274509803,mountScaleZ=.5687,mountOffsetX=.23230,mountOffsetY=-.0054;
+ const mountScaleX=.9215686274509803,mountScaleZ=.5687,mountOffsetX=.23230,mountOffsetY=-.0260;
  return matMul(
   translate(side*mountOffsetX,COUNTACH_HEADLIGHT_HINGE_Y+mountOffsetY,COUNTACH_HEADLIGHT_HINGE_Z),
   matMul(
