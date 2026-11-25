@@ -63,12 +63,19 @@ try {
   assert(pageErrors.length === 0, 'Browser page errors: ' + pageErrors.join('\\n'));
   console.log('ALL BIOME/ROAD INSTANCING, ATMOSPHERE, GPU LENS OPTICS, SCENE BLOOM, GOD RAYS, SHADER AND VEHICLE CHECKS PASSED');
 
-  // Run the complete game twice with deterministic biome order so both new instanced paths execute.
+  // Run the complete game twice with deterministic biome order so both new instanced paths execute. Disable post effects through the normal F4 handlers before the first diagnostic frame; this isolates scene batching from slow software post-processing.
   async function smokeGameBiome(label, randomValue) {
-    const gamePage = await browser.newPage({ viewport: { width: 1280, height: 800 }, deviceScaleFactor: 1 });
+    const gamePage = await browser.newPage({ viewport: { width: 640, height: 400 }, deviceScaleFactor: 1 });
     const gameErrors = [];
     gamePage.on('pageerror', error => gameErrors.push(error.stack || error.message));
-    await gamePage.addInitScript(value => { Math.random = () => value; }, randomValue);
+    await gamePage.addInitScript(value => {
+      Math.random = () => value;
+      document.addEventListener('DOMContentLoaded',() => {
+        document.querySelectorAll('input[data-fx]').forEach(input => {
+          if(input.checked){input.checked=false;input.dispatchEvent(new Event('change',{bubbles:true}));}
+        });
+      },{once:true});
+    }, randomValue);
     await gamePage.goto(baseUrl + '/', { waitUntil: 'load', timeout: 30000 });
     await gamePage.waitForFunction(
       () => Boolean(document.getElementById('boot-screen')?.classList.contains('done')),
