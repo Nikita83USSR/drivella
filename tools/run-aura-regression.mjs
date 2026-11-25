@@ -57,11 +57,22 @@ try {
   await page.goto(baseUrl + '/tools/game-shader-compile.html', { waitUntil: 'load', timeout: 20000 });
   await page.waitForFunction(() => Boolean(window.__GAME_SHADER_RESULT__), null, { timeout: 20000 });
   const result = await page.evaluate(() => window.__GAME_SHADER_RESULT__);
-  await page.screenshot({ path: 'artifacts/vehicle-lighting-build182.png', fullPage: true });
+  await page.screenshot({ path: 'artifacts/vehicle-lighting-build183.png', fullPage: true });
   console.log('PRODUCTION SHADER + VEHICLE LIGHTING REGRESSION\n' + JSON.stringify(result, null, 2));
   assert(result.pass, 'Production shader regression failed: ' + JSON.stringify(result));
   assert(pageErrors.length === 0, 'Browser page errors: ' + pageErrors.join('\n'));
   console.log('ALL SHADER AND VEHICLE LIGHTING CHECKS PASSED');
+  const gamePage=await browser.newPage({viewport:{width:1280,height:900},deviceScaleFactor:1});
+  const gameErrors=[];
+  gamePage.on('pageerror',error=>gameErrors.push(error.stack||error.message));
+  await gamePage.goto(baseUrl+'/index.html',{waitUntil:'load',timeout:20000});
+  await gamePage.waitForFunction(()=>Boolean(window.DRIVELLA_REAR_SIGNAL_TRIANGLES),null,{timeout:20000});
+  const runtimeLampCheck=await gamePage.evaluate(()=>({build:document.querySelector('.version-label')?.textContent||'',rearSignals:window.DRIVELLA_REAR_SIGNAL_TRIANGLES||null}));
+  assert(runtimeLampCheck.build.includes('v0.19.17')&&runtimeLampCheck.build.includes('BUILD 183'),'Production game did not load BUILD 183: '+JSON.stringify(runtimeLampCheck));
+  assert(runtimeLampCheck.rearSignals?.left===2&&runtimeLampCheck.rearSignals?.right===2,'Runtime failed to create both rear signal meshes: '+JSON.stringify(runtimeLampCheck));
+  assert(gameErrors.length===0,'Production game runtime errors: '+gameErrors.join('\\n'));
+  await gamePage.screenshot({path:'artifacts/vehicle-lamps-build183.png',fullPage:true});
+  console.log('PRODUCTION GAME RUNTIME // '+JSON.stringify(runtimeLampCheck));
   const metaScript = await readFile('assets/countach_model_0.js', 'utf8');
   const metaMatch = metaScript.match(/window\.DRIVELLA_COUNTACH_META=(\{[\s\S]*?\});/);
   assert(metaMatch, 'Countach metadata JSON was not found');
@@ -79,6 +90,7 @@ try {
   const modelView = new DataView(rawModel.buffer, rawModel.byteOffset, rawModel.byteLength);
   const partBounds = {};
   const lowerLampPads = [];
+  const rearSignalBars = { left:[], right:[] };
   for (const part of modelMeta.parts) {
     const bounds = { min:[Infinity,Infinity,Infinity], max:[-Infinity,-Infinity,-Infinity], triangles:0 };
     for (let offset=0; offset<part.indexCount; offset+=3) {
@@ -97,6 +109,10 @@ try {
         bounds.max[axis]=Math.max(bounds.max[axis],point[axis]);
       }
       bounds.triangles++;
+      if(part.name==='bodyTail'){
+        const centerX=triangle.reduce((sum,p)=>sum+p[0],0)/3;
+        if(Math.abs(centerX)>.935)rearSignalBars[centerX<0?'left':'right'].push(triangle);
+      }
       if(part.name==='bodyBlack' && triangle.every(p=>Math.abs(p[0])>=.62&&Math.abs(p[0])<=1.07&&p[1]>=.57&&p[1]<=.68&&p[2]>=2.47&&p[2]<=2.71)) {
         lowerLampPads.push({ center:triangle[0].map((_,axis)=>triangle.reduce((sum,p)=>sum+p[axis],0)/3), vertices:triangle });
       }
@@ -107,9 +123,28 @@ try {
   const centresMatch = productionIndex.match(/const COUNTACH_FOG_LAMP_CENTERS=(\[[^;]+\]);/);
   assert(centresMatch, 'Countach lower lamp source positions are missing');
   const centres = JSON.parse(centresMatch[1]);
+  const signalIndicesMatch = productionIndex.match(/const COUNTACH_FRONT_TURN_SIGNAL_INDICES=(\[[^;]+\]),COUNTACH_FRONT_FOG_LAMP_INDICES=(\[[^;]+\]);/);
+  assert(signalIndicesMatch, 'Front turn/fog lamp roles are missing');
+  const turnIndices=JSON.parse(signalIndicesMatch[1]),fogIndices=JSON.parse(signalIndicesMatch[2]);
+  assert(JSON.stringify(turnIndices)==='[0,3]'&&JSON.stringify(fogIndices)==='[1,2]','Front lamps must use outer lenses for amber signals and inner lenses for white fog lamps');
   assert(centres.length===4 && lowerLampPads.length===8, 'Expected four lower lamps fitted over eight source bumper triangles');
   for(const [x,y,z] of centres)assert(Math.abs(x)>=.62&&Math.abs(x)<=1.07&&y>=.57&&y<=.68&&z>=2.47&&z<=2.71,'Lower lamp is outside the imported Countach bumper pad: '+JSON.stringify([x,y,z]));
-  console.log('COUNTACH LOWER LIGHTS // PLACEMENT CHECK\\n'+JSON.stringify({centres,sourcePads:lowerLampPads.map(p=>p.center),bodyBounds:partBounds.bodyPaint,blackBounds:partBounds.bodyBlack},null,2));
+  assert(partBounds.bodyTail.triangles===12,'Expected the original 12-triangle rear tail-light element');
+  assert(rearSignalBars.left.length===2&&rearSignalBars.right.length===2,'Expected two source triangles per outer rear indicator bar');
+  assert(rearSignalBars.left.concat(rearSignalBars.right).every(tri=>tri.every(p=>Math.abs(p[2]+2.6039)<.0002)),'Rear indicator overlays are not fitted to the source tail-light plane');
+  assert(productionIndex.includes('for(const p of triangle)signalBuffer.push(p[0],p[1],p[2]-.004);'),'Rear indicator overlay must be offset only 4 mm behind the source lens, not replace body geometry');
+  assert(productionIndex.includes('rearSignalGeometry.left.length!==18||rearSignalGeometry.right.length!==18'),'Runtime must validate the two-triangle rear signal submeshes');
+  const rearLampPointsMatch=productionIndex.match(/const COUNTACH_REAR_LAMP_FLARE_POINTS=(\[[^;]+\]);/);
+  const rearSignalPointsMatch=productionIndex.match(/const COUNTACH_REAR_SIGNAL_FLARE_POINTS=(\[[^;]+\]);/);
+  assert(rearLampPointsMatch&&rearSignalPointsMatch,'Rear lamp optical flare anchors are missing');
+  const rearLampPoints=JSON.parse(rearLampPointsMatch[1]),rearSignalPoints=JSON.parse(rearSignalPointsMatch[1]);
+  assert(rearLampPoints.length===2&&rearSignalPoints.length===2,'Expected left/right rear flare anchors');
+  for(const [x,y,z] of rearLampPoints)assert(Math.abs(x)>=.74&&Math.abs(x)<=.95&&y>=partBounds.bodyTail.min[1]&&y<=partBounds.bodyTail.max[1]&&z<partBounds.bodyTail.min[2]&&z>=partBounds.bodyTail.min[2]-.01,'Rear brake/tail flare is not attached to the source centre lens bar: '+JSON.stringify([x,y,z]));
+  for(const [x,y,z] of rearSignalPoints)assert(Math.abs(x)>=.94&&Math.abs(x)<=partBounds.bodyTail.max[0]&&y>=partBounds.bodyTail.min[1]&&y<=partBounds.bodyTail.max[1]&&z<partBounds.bodyTail.min[2]&&z>=partBounds.bodyTail.min[2]-.01,'Rear indicator flare is not attached to the source outer lens bar: '+JSON.stringify([x,y,z]));
+  const inlineScripts=[...productionIndex.matchAll(/<script\\b([^>]*)>([\\s\\S]*?)<\\/script>/gi)].filter(m=>!/\\bsrc\\s*=/.test(m[1])).map(m=>m[2]).filter(code=>code.trim());
+  assert(inlineScripts.length>0,'Production inline JavaScript was not found');
+  for(const code of inlineScripts)new Function(code);
+  console.log('COUNTACH LAMP GEOMETRY // PLACEMENT CHECK\\n'+JSON.stringify({centres,turnIndices,fogIndices,rearSignalTriangles:{left:rearSignalBars.left.length,right:rearSignalBars.right.length},rearLampPoints,rearSignalPoints,sourceTailBounds:partBounds.bodyTail,sourcePads:lowerLampPads.map(p=>p.center),bumperBodyBlackBounds:partBounds.bodyBlack},null,2));
 } catch (error) {
   console.error('VEHICLE LIGHTING REGRESSION FAILED\n' + (error.stack || error));
   console.error(serverOutput.join(''));
