@@ -1,6 +1,6 @@
 # DRIVELLA — Rendering Architecture
 
-Current reference: **v0.18.91 / BUILD 157**  
+Current reference: **v0.18.92 / BUILD 158**  
 Main renderer: `index.html` — custom WebGL 1 renderer, no external rendering engine.
 
 **Release marker policy:** every published renderer/game change increments `BUILD` in `index.html` and updates the visible HUD, boot screen, README, and this document in the same release. Increment the patch version with the build when appropriate. Never publish a renderer change while leaving the visible build number unchanged.
@@ -646,3 +646,10 @@ The previous four-axis scene-mask gradient created a cross/square-like edge resp
 BUILD 156 is preserved at `backups/index_BUILD156_before_soft_solar_bloom_BUILD157.html`. Strengthen the GPU sun's three radial exponential layers and broaden the outer fade while retaining the single bounded draw call, existing alpha compositing, disc geometry and depth order. Foreground opaque geometry continues to cover the disc and aura naturally. The Canvas2D path remains the complete fallback.
 
 Replace the 12-sample ring contrast with a two-scale, 16-direction-per-scale circular blur field over `aoTarget`. Each filtered ring returns both mean scene coverage and a directional coverage vector. The absolute difference between centre coverage and the blurred values creates the soft edge band on both sides of the silhouette; the directional vector selects the rim facing the solar source. The output remains restricted to the disc footprint and reuses the existing scene mask and post composite. It is a screen-space approximation; the additional 32 texture samples per affected output pixel should be profiled. JavaScript source parsing and invariants passed; WebGL compilation, in-game light-wrap smoothness and FPS remain unverified in the target browser. Version `v0.18.91` / BUILD 157.
+
+
+### BUILD 158 — Unified solar palette and surface-only soft light-wrap
+
+BUILD 157 is preserved at `backups/index_BUILD157_before_surface_only_sun_wrap_BUILD158.html`. The sun fragment shader uses a compact three-layer radial corona with a shorter outer fade. Its solar colour ramp is factored into `solarAuraColor(t)`: orange at the hot inner edge, coral through the middle and magenta at the soft outer falloff.
+
+The outline/AO composite defines the same `solarAuraColor(t)` and uses it for the foreground light-wrap, keeping both effects in one visual palette. Replace sparse ring taps with a weighted 5×5 Gaussian convolution (`[1,4,6,4,1]` separable weights) over the existing linearly filtered half-resolution scene mask. A positive centre-minus-blurred-coverage term, multiplied by centre coverage, confines the wrap to the interior edge of visible geometry instead of outlining both sides of the silhouette. A smooth mask gradient chooses the source-facing side. The existing AO target and one post composite are reused; no framebuffer or render pass is added. The 25 Gaussian mask samples execute only within the existing solar source gate. JavaScript parsing/source invariants pass; target-browser GLSL compilation, actual visual smoothness and FPS remain unverified. Version `v0.18.92` / BUILD 158.
