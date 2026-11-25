@@ -398,11 +398,11 @@ const garageGodRaysSource=garageRaysStart>=0&&garageRaysEnd>garageRaysStart?html
 
  // Reuse the exact production atmosphere function in a dedicated GPU pixel fixture.
  const atmosphereStart=sources.mainFragment.indexOf('vec3 applyAtmosphere(vec3 sourceColor){');
- const atmosphereEnd=sources.mainFragment.indexOf('\\nfloat calcHeadlightEnergy()',atmosphereStart);
+ const atmosphereEnd=sources.mainFragment.indexOf('\nfloat calcHeadlightEnergy()',atmosphereStart);
  must(atmosphereStart>=0&&atmosphereEnd>atmosphereStart,'Production atmosphere helper was not found in the main material shader');
  const atmosphereFunction=sources.mainFragment.slice(atmosphereStart,atmosphereEnd);
  const atmosphereVsSource='attribute vec2 aPosition;uniform vec3 uWorldPos;varying vec3 vWorldPos;void main(){vWorldPos=uWorldPos;gl_Position=vec4(aPosition,0.0,1.0);}';
- const atmosphereFsSource='precision mediump float;varying vec3 vWorldPos;uniform vec3 viewPos;uniform float atmosphereEnabled;uniform float showroom;'+atmosphereFunction+'\\nvoid main(){gl_FragColor=vec4(applyAtmosphere(vec3(0.52,0.20,0.08)),1.0);}';
+ const atmosphereFsSource='precision mediump float;varying vec3 vWorldPos;uniform vec3 viewPos;uniform float atmosphereEnabled;uniform float showroom;'+atmosphereFunction+'\nvoid main(){gl_FragColor=vec4(applyAtmosphere(vec3(0.52,0.20,0.08)),1.0);}';
  const atmosphereV=compile(gl.VERTEX_SHADER,atmosphereVsSource,'Depth-aware atmosphere fixture vertex');
  const atmosphereF=compile(gl.FRAGMENT_SHADER,atmosphereFsSource,'Depth-aware atmosphere fixture fragment');
  const atmosphereProgram=link(atmosphereV,atmosphereF,'Depth-aware atmosphere fixture program');
