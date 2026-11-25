@@ -153,3 +153,8 @@ Removed an accidental closing brace after the fragment-shader varying declaratio
 ### BUILD 139 — Legacy pop-up headlamp assembly restored
 
 The original seven-part dual-projector pop-up lamp assembly (wedge housing, front plate, bezel, lens, projector rings, emissive cores and painted cap) replaces the imported Countach optic render path. A fixed per-side mounting transform aligns the legacy module to the Countach lamp footprint and compensates for the legacy 45° optical-face orientation. The existing Countach hinge axis, eased `headlightDeploy` animation, `L` toggle and low-cost emissive/2D flare behavior remain shared; imported Countach headlamp meshes are no longer drawn, preventing stacked optics. No dynamic per-fragment headlight illumination was reintroduced.
+
+
+### BUILD 140 — Countach lamp seating and source-optic suppression
+
+Lower the complete restored seven-part headlamp module by 0.0206 game units (about 2 cm) so the closed painted cap sits closer to the imported bonnet. The same mount matrix continues to drive the housing, front plate, bezel, lens, projector rings, cores, cap and flare positions; the hinge axis and easing are unchanged. The importer now explicitly skips the source model's `headlampR` and `headlampL` meshes so the old fixed optics cannot be reintroduced above the replacement module. Version `v0.18.74` / `BUILD 140`. Source-level JavaScript syntax validation passed; visual seating still needs an in-game check.
