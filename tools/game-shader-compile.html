@@ -27,7 +27,7 @@ const response=await fetch('../index.html',{cache:'no-store'});
 must(response.ok,'Cannot fetch production index.html: HTTP '+response.status);
 const html=await response.text();
 const version=html.match(/const VERSION='([^']+)',BUILD='([^']+)'/);
-must(version&&version[1]==='v0.19.25'&&version[2]==='191','Unexpected production version marker: '+JSON.stringify(version));
+must(version&&version[1]==='v0.19.26'&&version[2]==='192','Unexpected production version marker: '+JSON.stringify(version));
 function expression(name,endMarker){
  const marker='const '+name+'=';
  const start=html.indexOf(marker);
@@ -395,7 +395,54 @@ const garageGodRaysSource=garageRaysStart>=0&&garageRaysEnd>garageRaysStart?html
  gl.disable(gl.BLEND);gl.depthMask(true);gl.enable(gl.DEPTH_TEST);gl.bindFramebuffer(gl.FRAMEBUFFER,null);gl.viewport(0,0,W,H);
  const lensOpticsPixelFixturePass=lensCentrePixel[0]>60&&lensCentrePixel[1]>20&&lensCentrePixel[3]>60&&lensOutsidePixel[3]===0;
 
+
+ // Reuse the exact production atmosphere function in a dedicated GPU pixel fixture.
+ const atmosphereStart=sources.mainFragment.indexOf('vec3 applyAtmosphere(vec3 sourceColor){');
+ const atmosphereEnd=sources.mainFragment.indexOf('\\nfloat calcHeadlightEnergy()',atmosphereStart);
+ must(atmosphereStart>=0&&atmosphereEnd>atmosphereStart,'Production atmosphere helper was not found in the main material shader');
+ const atmosphereFunction=sources.mainFragment.slice(atmosphereStart,atmosphereEnd);
+ const atmosphereVsSource='attribute vec2 aPosition;uniform vec3 uWorldPos;varying vec3 vWorldPos;void main(){vWorldPos=uWorldPos;gl_Position=vec4(aPosition,0.0,1.0);}';
+ const atmosphereFsSource='precision mediump float;varying vec3 vWorldPos;uniform vec3 viewPos;uniform float atmosphereEnabled;uniform float showroom;'+atmosphereFunction+'\\nvoid main(){gl_FragColor=vec4(applyAtmosphere(vec3(0.52,0.20,0.08)),1.0);}';
+ const atmosphereV=compile(gl.VERTEX_SHADER,atmosphereVsSource,'Depth-aware atmosphere fixture vertex');
+ const atmosphereF=compile(gl.FRAGMENT_SHADER,atmosphereFsSource,'Depth-aware atmosphere fixture fragment');
+ const atmosphereProgram=link(atmosphereV,atmosphereF,'Depth-aware atmosphere fixture program');
+ const atmosphereTexture=texture(8,8,gl.NEAREST),atmosphereFramebuffer=gl.createFramebuffer();
+ gl.bindFramebuffer(gl.FRAMEBUFFER,atmosphereFramebuffer);gl.framebufferTexture2D(gl.FRAMEBUFFER,gl.COLOR_ATTACHMENT0,gl.TEXTURE_2D,atmosphereTexture,0);
+ const atmosphereFramebufferStatus=gl.checkFramebufferStatus(gl.FRAMEBUFFER);
+ must(atmosphereFramebufferStatus===gl.FRAMEBUFFER_COMPLETE,'Atmosphere fixture framebuffer incomplete: '+atmosphereFramebufferStatus);
+ const atmosphereVerticesBuffer=gl.createBuffer();gl.bindBuffer(gl.ARRAY_BUFFER,atmosphereVerticesBuffer);gl.bufferData(gl.ARRAY_BUFFER,fullscreenVertices,gl.STATIC_DRAW);
+ const atmospherePosition=gl.getAttribLocation(atmosphereProgram.program,'aPosition');
+ const atmosphereWorld=location(atmosphereProgram.program,'uWorldPos'),atmosphereView=location(atmosphereProgram.program,'viewPos'),atmosphereEnabled=location(atmosphereProgram.program,'atmosphereEnabled'),atmosphereShowroom=location(atmosphereProgram.program,'showroom');
+ must(atmospherePosition>=0,'Atmosphere fixture position attribute missing');
+ gl.viewport(0,0,8,8);gl.disable(gl.DEPTH_TEST);gl.disable(gl.BLEND);gl.depthMask(false);
+ gl.useProgram(atmosphereProgram.program);gl.enableVertexAttribArray(atmospherePosition);gl.vertexAttribPointer(atmospherePosition,2,gl.FLOAT,false,0,0);
+ gl.uniform3f(atmosphereView,0,0,0);
+ function atmosphereProbe(world,room,enabled){
+  gl.clearColor(0,0,0,0);gl.clear(gl.COLOR_BUFFER_BIT);
+  gl.uniform3f(atmosphereWorld,world[0],world[1],world[2]);
+  gl.uniform1f(atmosphereShowroom,room);gl.uniform1f(atmosphereEnabled,enabled);
+  gl.drawArrays(gl.TRIANGLES,0,6);gl.finish();
+  const pixel=new Uint8Array(4);gl.readPixels(4,4,1,1,gl.RGBA,gl.UNSIGNED_BYTE,pixel);return Array.from(pixel);
+ }
+ const atmosphereNear=atmosphereProbe([0,0,10],0,1);
+ const atmosphereFar=atmosphereProbe([0,0,240],0,1);
+ const atmosphereAboveHorizon=atmosphereProbe([0,190,150],0,1);
+ const atmosphereGarageFar=atmosphereProbe([0,0,240],1,1);
+ const atmosphereDisabled=atmosphereProbe([0,0,240],0,0);
+ gl.disableVertexAttribArray(atmospherePosition);gl.depthMask(true);gl.enable(gl.DEPTH_TEST);
+ gl.bindFramebuffer(gl.FRAMEBUFFER,null);gl.viewport(0,0,W,H);
+ const atmospherePixelFixturePass=atmosphereNear[0]>atmosphereFar[0]+35&&atmosphereFar[2]>atmosphereNear[2]+18&&atmosphereAboveHorizon[0]>atmosphereFar[0]+15&&atmosphereAboveHorizon[2]<atmosphereFar[2]&&Math.abs(atmosphereGarageFar[0]-atmosphereNear[0])<=2&&Math.abs(atmosphereGarageFar[2]-atmosphereNear[2])<=2&&Math.abs(atmosphereDisabled[0]-133)<=2&&Math.abs(atmosphereDisabled[1]-51)<=2&&Math.abs(atmosphereDisabled[2]-20)<=2;
+
 const checks={
+ atmosphereVertexShaderCompiled:!!atmosphereV.shader,
+ atmosphereFragmentShaderCompiled:!!atmosphereF.shader,
+ atmosphereFixtureProgramLinked:!!atmosphereProgram.program&&atmosphereFramebufferStatus===gl.FRAMEBUFFER_COMPLETE,
+ atmospherePixelFixtureSeparatesNearAndFar:atmospherePixelFixturePass,
+ atmosphereUsesDepthAndHorizonDirection:sources.mainFragment.includes('smoothstep(78.0,265.0,viewDistance)')&&sources.mainFragment.includes('smoothstep(0.10,0.48,abs(viewRay.y))'),
+ atmosphereSkipsGarageFog:sources.mainFragment.includes('if(showroom>0.5)return max(graded,vec3(0.0))'),
+ atmosphereF4TogglePresent:html.includes('data-fx="atmosphere" checked')&&html.includes('atmosphere:true'),
+ atmosphereGradesOpaqueMaterialFamilies:['applyAtmosphere(worldLit)','applyAtmosphere(glassTint)','applyAtmosphere(paintColor)','applyAtmosphere(lit)'].every(term=>sources.mainFragment.includes(term)),
+ atmospherePreservesEmissiveAndNeonBranches:html.includes('if(materialMode>7.5){gl_FragColor=vec4(color.rgb*(lampEmissionEnabled>0.5?1.55:0.18),color.a);')&&html.includes('if(materialMode>5.5){'),
  lensOpticsVertexShaderCompiled:!!lensOpticsV.shader,
  lensOpticsFragmentShaderCompiled:!!lensOpticsF.shader,
  lensOpticsProgramLinked:!!lensOpticsP.program,
