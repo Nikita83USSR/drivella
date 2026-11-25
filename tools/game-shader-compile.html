@@ -518,7 +518,7 @@ const checks={
   showroomInstancingBatchesPalmTrunks:html.includes("drawInstancedMesh(cylinder,garagePalmTrunks,'garage')")&&html.includes('queueGaragePalm(garagePalmTrunks,garagePalmRings,garagePalmLeaves'),
   showroomInstancingBatchesPalmRings:html.includes("drawInstancedMesh(cylinder,garagePalmRings,'garage')")&&html.includes('queueBiomeInstance(rings,x,height*.36,z,.168,.045,.168,ringColor,0,8)'),
   showroomInstancingBatchesThreeCanopyVariants:html.includes('garagePalmLeaves=[[],[],[]]')&&html.includes('for(let variant=0;variant<3;variant++)drawInstancedMesh(leafShapes[variant],garagePalmLeaves[variant]'),
-  showroomInstancingKeepsSixPalmPlacements:(html.match(/queueGaragePalm\\(garagePalmTrunks/g)||[]).length===6,
+  showroomInstancingKeepsSixPalmPlacements:(html.split('queueGaragePalm(garagePalmTrunks').length-1)===6,
   showroomInstancingBatchesNeonRails:html.includes("drawInstancedMesh(cube,garageNeonRails,'garage')")&&html.includes('queueBiomeInstance(garageNeonRails,31.0,-.16,0'),
   showroomInstancingPreservesShadowAOCullingAndFallback:html.includes('shadowBoundsVisible(shape,model)')&&html.includes('shadowCasterAllowed(item.color,item.material)')&&html.includes('sceneMaskAllowed(item.color,item.material)')&&html.includes('if(!useInstancing)'),
   showroomInstancingKeepsActualGarageSpotlightSources:html.includes('uploadLocalLights(garageMode&&FX.garageSpotlights?GARAGE_LOCAL_LIGHTS:[])')&&html.includes('GARAGE_LOCAL_LIGHTS'),
