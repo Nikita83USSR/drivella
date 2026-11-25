@@ -2,7 +2,7 @@
 
 A browser-based synthwave drift-racing prototype with a custom low-poly 3D car, a procedural neon environment, and a hand-built WebGL renderer.
 
-> **Status:** Playable prototype under active development. Current renderer reference: **v0.18.83 / BUILD 149**.
+> **Status:** Playable prototype under active development. Current renderer reference: **v0.18.84 / BUILD 150**.
 > **Release identification:** every published game change increments the visible BUILD number in the HUD and startup screen; README and rendering architecture are updated in the same release.
 
 ## Current game
@@ -82,7 +82,7 @@ Core implementation completed: adaptive directional shadows, PCSS-style filterin
 - [x] Build a reusable four-slot local-light shader and use it for the two coloured garage spotlights.
 - [x] Bind outdoor shadows to the actual sun source and garage spot shadows to each fixture's own position, direction and cone; isolate vehicle self-shadow receivers from the main car shell.
 - [x] Make environment reflections clearly visible on the windshield, rear glass and side glazing.
-- [~] **Stage 2 / item 1: GPU synthwave sun and initial corona (BUILD 149).** The striped gradient disc, pulse, scan line, halo and first animated corona are now rendered in a compact shader inside the main WebGL scene pass. F4 offers GPU/Canvas2D A/B comparison; visual quality and FPS still need confirmation in the running game. Next: depth-aware GPU god rays.
+- [~] **Stage 2 / item 1: GPU synthwave sun, corona and occlusion-aware aura wrap (BUILD 149–150).** The striped gradient disc, pulse, scan line and wider halo render in the main WebGL pass. A half-resolution visible-scene mask now lets the aura add a soft, sun-facing rim along occluder silhouettes, visually bending the glow around them. F4 allows GPU/Canvas2D comparison and an independent aura-wrap toggle. Visual quality and FPS still need confirmation in the running game. Next: depth-aware GPU god rays.
 - [ ] **Depth-aware mini-RTX god rays.** Generate sun shafts from a low-resolution scene-occlusion mask so buildings, mountains and palms interrupt the rays; use bounded radial scattering at quarter resolution.
 - [ ] **GPU bloom and lens optics.** Add controlled thresholded bloom, anamorphic streaks, diffraction spikes, optical rings and chromatic ghosts; migrate current Canvas 2D vehicle flare profiles without restoring oversized headlight glare.
 - [ ] **Atmospheric scattering and final grading.** Add depth-aware horizon haze and atmospheric light integration while preserving road/car readability and the synthwave palette.
@@ -209,3 +209,8 @@ Save BUILD 147 as `backups/index_BUILD147_before_headlamp_cap_open_pose_alignmen
 ### BUILD 149 — WebGL synthwave sun and initial corona
 
 Save BUILD 148 as `backups/index_BUILD148_before_gpu_sun_BUILD149.html`. Add a compact procedural WebGL sun shader to the existing renderer/context. The shader draws only a bounded quad around the projected disc at the beginning of the main `drawWorld()` pass, before opaque scene geometry, so the car and environment naturally occlude the sun. Preserve the orange/red/magenta gradient, clipped horizontal bands, breathing pulse, moving scan line and thin disc rim; add a restrained animated corona with an inner ring, irregular filaments and radial spikes. No second WebGL context, full-screen render pass, new dependency or change to vehicle lens flares is introduced. F4 now includes a GPU-sun checkbox: enabled uses WebGL; disabled runs the preserved original Canvas2D sun for A/B comparison. The Canvas2D path also remains the automatic fallback if the shader cannot initialize. JavaScript syntax compilation passed; final visual quality and FPS comparison still require inspection in the running game. Version `v0.18.83` / BUILD 149.
+
+
+### BUILD 150 — Occlusion-aware sun aura wrap
+
+Save BUILD 149 as `backups/index_BUILD149_before_sun_aura_wrap_BUILD150.html`. Extend the GPU sun halo with a wider, low-intensity falloff and add a screen-space silhouette-wrap term to the existing outline/AO composite shader. The term samples the already-rendered half-resolution full-scene normal/depth mask, estimates the visible geometry edge direction, and adds a subtle animated orange-to-magenta rim around nearby silhouettes, stronger on the side facing the sun. The solar disc itself remains behind opaque geometry; the rim is a restrained screen-space light-wrap approximation, not true volumetric scattering. Add the F4 `Обтекание ауры объектами` toggle, enabled by default. Reuse the current AO scene mask and fullscreen composite; when both SSAO and ink outlines are off, render only the half-resolution scene mask needed for the aura and skip the full-resolution car-outline mask. JavaScript syntax validation passed; browser shader compilation, in-game appearance and FPS still require target-browser inspection. Version `v0.18.84` / BUILD 150.
