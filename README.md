@@ -163,3 +163,10 @@ Lower the complete restored seven-part headlamp module by 0.0206 game units (abo
 ### BUILD 141 — Remove legacy triangular hood lamp covers
 
 Removed only the two disconnected triangular painted hood-cap shells from the imported Countach `bodyPaint` mesh. The loader filters triangles by their verified vertex-space bounds; the two shells contain 29 triangles each (58 total). The independent black/plastic hood meshes, Countach body shell, restored DRIVELLA seven-part pop-up headlamp assemblies, shared hinge, and lens flares are not modified. Version `v0.18.75` / `BUILD 141`.
+
+
+### BUILD 142 — Remove old front headlamp overlays and fit the closed lamp caps
+
+Removed only the two approved front-facing Countach lamp overlays from `bodyPlastic`: 48 triangles on the left and 48 on the right (96 total). The import loader records the removal count as `window.DRIVELLA_OLD_FRONT_HEADLAMP_OVERLAYS_REMOVED`. The independent DRIVELLA replacement assembly remains intact.
+
+Refitted each moving painted cap against the exact closed Countach hinge + lamp-mount transform. The cap's upper skin is solved against `hoodSurfaceY` and overlaps the bonnet by 3 mm; its 40 mm return closes the perimeter. This makes the cap cover the old overlay opening and sit against the hood while remaining part of the animated lamp pod. The shared mount constants are used by both the fitted cap and visible lamp assembly. Version `v0.18.76` / `BUILD 142`.
