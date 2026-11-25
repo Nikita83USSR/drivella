@@ -27,7 +27,7 @@ const response=await fetch('../index.html',{cache:'no-store'});
 must(response.ok,'Cannot fetch production index.html: HTTP '+response.status);
 const html=await response.text();
 const version=html.match(/const VERSION='([^']+)',BUILD='([^']+)'/);
-must(version&&version[1]==='v0.19.24'&&version[2]==='190','Unexpected production version marker: '+JSON.stringify(version));
+must(version&&version[1]==='v0.19.25'&&version[2]==='191','Unexpected production version marker: '+JSON.stringify(version));
 function expression(name,endMarker){
  const marker='const '+name+'=';
  const start=html.indexOf(marker);
@@ -54,7 +54,9 @@ const sources={
  sceneBloomExtractFragment:new Function('return ('+expression('sceneBloomExtractFs',';\nconst sceneBloomExtractProgram=')+');')(),
  sceneBloomCompositeFragment:new Function('return ('+expression('sceneBloomCompositeFs',';\nconst sceneBloomCompositeProgram=')+');')(),
  sceneCopyFragment:new Function('return ('+expression('sceneCopyFs',';\nconst sceneCopyProgram=')+');')(),
- godRaysFragment:new Function('return ('+expression('godRaysFs',';\n const godRaysProgram=')+');')()
+ godRaysFragment:new Function('return ('+expression('godRaysFs',';\n const godRaysProgram=')+');')(),
+ lensOpticsVertex:new Function('return ('+expression('lensOpticsVs',';\n const lensOpticsFs=')+');')(),
+ lensOpticsFragment:new Function('return ('+expression('lensOpticsFs',';\n lensOpticsProgram=')+');')()
 };
 function compile(type,source,label){
  const shader=gl.createShader(type);
@@ -97,6 +99,9 @@ const sceneCopyF=compile(gl.FRAGMENT_SHADER,sources.sceneCopyFragment,'Scene col
 const sceneCopyP=link(outlineV,sceneCopyF,'Scene colour fallback program');
  const godRaysF=compile(gl.FRAGMENT_SHADER,sources.godRaysFragment,'Depth-aware God Rays fragment');
  const godRaysP=link(outlineV,godRaysF,'Depth-aware God Rays program');
+const lensOpticsV=compile(gl.VERTEX_SHADER,sources.lensOpticsVertex,'GPU lens optics vertex');
+const lensOpticsF=compile(gl.FRAGMENT_SHADER,sources.lensOpticsFragment,'GPU lens optics fragment');
+const lensOpticsP=link(lensOpticsV,lensOpticsF,'GPU lens optics program');
 
 // Use the real production sun and bloom shaders in a synthetic scene with a semi-transparent occluder.
 const W=canvas.width,H=canvas.height,maskW=W>>1,maskH=H>>1,aspect=W/H,sunRadius=0.28;
@@ -356,7 +361,51 @@ const sceneBloomStart=html.indexOf('function renderThresholdedSceneBloom(){'),sc
 const sceneBloomSource=sceneBloomStart>=0&&sceneBloomEnd>sceneBloomStart?html.slice(sceneBloomStart,sceneBloomEnd):'';
 const garageRaysStart=html.indexOf('function renderGodRays(maskTexture){'),garageRaysEnd=html.indexOf('\nfunction renderGpuSunBackground',garageRaysStart);
 const garageGodRaysSource=garageRaysStart>=0&&garageRaysEnd>garageRaysStart?html.slice(garageRaysStart,garageRaysEnd):'';
+
+ // Render one production GPU lens-orb primitive into an isolated target and sample centre/falloff pixels.
+ const lensFixtureTexture=texture(W,H,gl.NEAREST),lensFixtureFramebuffer=gl.createFramebuffer();
+ gl.bindFramebuffer(gl.FRAMEBUFFER,lensFixtureFramebuffer);
+ gl.framebufferTexture2D(gl.FRAMEBUFFER,gl.COLOR_ATTACHMENT0,gl.TEXTURE_2D,lensFixtureTexture,0);
+ const lensFixtureStatus=gl.checkFramebufferStatus(gl.FRAMEBUFFER);
+ must(lensFixtureStatus===gl.FRAMEBUFFER_COMPLETE,'GPU lens optics fixture framebuffer incomplete: '+lensFixtureStatus);
+ gl.viewport(0,0,W,H);gl.clearColor(0,0,0,0);gl.clear(gl.COLOR_BUFFER_BIT);
+ const lensFixtureVertices=new Float32Array([
+  430,220,-1,-1,1,.5,.25,1,0,0,
+  530,220, 1,-1,1,.5,.25,1,0,0,
+  430,320,-1, 1,1,.5,.25,1,0,0,
+  430,320,-1, 1,1,.5,.25,1,0,0,
+  530,220, 1,-1,1,.5,.25,1,0,0,
+  530,320, 1, 1,1,.5,.25,1,0,0
+ ]);
+ const lensFixtureBuffer=gl.createBuffer();gl.bindBuffer(gl.ARRAY_BUFFER,lensFixtureBuffer);gl.bufferData(gl.ARRAY_BUFFER,lensFixtureVertices,gl.STATIC_DRAW);
+ const lensStride=10*4;
+ gl.useProgram(lensOpticsP.program);gl.uniform2f(location(lensOpticsP.program,'uViewport'),W,H);
+ const lensPosition=gl.getAttribLocation(lensOpticsP.program,'aPosition'),lensLocal=gl.getAttribLocation(lensOpticsP.program,'aLocal'),lensColor=gl.getAttribLocation(lensOpticsP.program,'aColor'),lensParams=gl.getAttribLocation(lensOpticsP.program,'aParams');
+ must([lensPosition,lensLocal,lensColor,lensParams].every(v=>v>=0),'GPU lens optics attributes are incomplete');
+ gl.enableVertexAttribArray(lensPosition);gl.vertexAttribPointer(lensPosition,2,gl.FLOAT,false,lensStride,0);
+ gl.enableVertexAttribArray(lensLocal);gl.vertexAttribPointer(lensLocal,2,gl.FLOAT,false,lensStride,8);
+ gl.enableVertexAttribArray(lensColor);gl.vertexAttribPointer(lensColor,4,gl.FLOAT,false,lensStride,16);
+ gl.enableVertexAttribArray(lensParams);gl.vertexAttribPointer(lensParams,2,gl.FLOAT,false,lensStride,32);
+ gl.disable(gl.DEPTH_TEST);gl.depthMask(false);gl.enable(gl.BLEND);gl.blendFunc(gl.ONE,gl.ONE);
+ gl.drawArrays(gl.TRIANGLES,0,6);gl.finish();
+ const lensCentrePixel=new Uint8Array(4),lensOutsidePixel=new Uint8Array(4);
+ gl.readPixels(480,H-1-270,1,1,gl.RGBA,gl.UNSIGNED_BYTE,lensCentrePixel);
+ gl.readPixels(20,H-1-20,1,1,gl.RGBA,gl.UNSIGNED_BYTE,lensOutsidePixel);
+ gl.disableVertexAttribArray(lensPosition);gl.disableVertexAttribArray(lensLocal);gl.disableVertexAttribArray(lensColor);gl.disableVertexAttribArray(lensParams);
+ gl.disable(gl.BLEND);gl.depthMask(true);gl.enable(gl.DEPTH_TEST);gl.bindFramebuffer(gl.FRAMEBUFFER,null);gl.viewport(0,0,W,H);
+ const lensOpticsPixelFixturePass=lensCentrePixel[0]>60&&lensCentrePixel[1]>20&&lensCentrePixel[3]>60&&lensOutsidePixel[3]===0;
+
 const checks={
+ lensOpticsVertexShaderCompiled:!!lensOpticsV.shader,
+ lensOpticsFragmentShaderCompiled:!!lensOpticsF.shader,
+ lensOpticsProgramLinked:!!lensOpticsP.program,
+ lensOpticsPixelFixtureDrawsSoftLight:lensFixtureStatus===gl.FRAMEBUFFER_COMPLETE&&lensOpticsPixelFixturePass,
+ lensOpticsUsesMainWebGLContext:html.includes('function renderVehicleLensFlaresGPU()')&&html.includes('gl.useProgram(lensOpticsProgram)')&&html.includes('renderVehicleLensFlaresGPU();'),
+ lensOpticsUsesOneBatchedDraw:html.includes('gl.drawArrays(gl.TRIANGLES,0,data.length/10)')&&html.includes('gl.bufferData(gl.ARRAY_BUFFER,data,gl.DYNAMIC_DRAW)'),
+ lensOpticsHasNoCanvas2dOverlay:!html.includes('id="flare"')&&!html.includes("getElementById('flare')")&&!html.includes('fctx')&&!html.includes('drawVehicleLensFlares'),
+ lensOpticsF4ToggleRetained:html.includes('data-fx="lensFlares" checked')&&html.includes('lensFlares:true'),
+ lensOpticsKeepsMeasuredCountachAnchors:html.includes('COUNTACH_FOG_LAMP_CENTERS[index]')&&html.includes('COUNTACH_REAR_LAMP_FLARE_POINTS')&&html.includes('countachLegacyHeadlampMount(side)'),
+ bloomNowTwentyPercentBelowBuild189:html.includes('sceneBloomCompositeLoc.tightGain,.976')&&html.includes('sceneBloomCompositeLoc.wideGain,.576'),
  sceneBloomSceneFramebufferComplete:sceneBloomSceneFramebufferStatus===gl.FRAMEBUFFER_COMPLETE,
  sceneBloomQuarterResolutionTargetsComplete:sceneBloomQuarterTargets.length===5&&sceneBloomQuarterTargets.every(target=>target.status===gl.FRAMEBUFFER_COMPLETE&&target.width===Math.max(1,W>>2)&&target.height===Math.max(1,H>>2)),
  sceneBloomF4TogglePresent:html.includes('data-fx="sceneBloom" checked')&&html.includes('sceneBloom:true'),
