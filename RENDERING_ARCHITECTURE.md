@@ -385,7 +385,7 @@ BUILD 130 changes the `roofOpening` argument to `[CABIN_GLASS_REAR_BOTTOM_Z, CAB
 
 ## Driving physics — full rotation and persistent arcade drift (BUILD 131)
 
-The vehicle heading `carYaw` is an accumulated angle, not a steering-angle clamp. Do not clamp it to a small range: `drawWorld()`, the vehicle transforms, shadow focus and lamp transforms all consume the same heading, and the rotation matrices handle angles beyond (2\pi). The yaw-rate ceiling is `±2.4 rad/s`; ordinary steering still uses `getSteeringAngle()` and its speed-sensitive response. SPACE with a steering direction adds a short yaw impulse, allowing a deliberate 360° spin while the player holds the turn.
+The vehicle heading `carYaw` is an accumulated angle, not a steering-angle clamp. Do not clamp it to a small range: `drawWorld()`, the vehicle transforms, shadow focus and lamp transforms all consume the same heading, and the rotation matrices handle angles beyond (2\pi). The yaw-rate ceiling is `±2.4 rad/s`; ordinary steering still uses `getSteeringAngle()` and retains the previous `±0.82 rad/s` yaw-target limit. The `1.45×` yaw-target boost is applied only after drift lock engages, so normal steering does not become more sensitive. SPACE with a steering direction adds a short yaw impulse, allowing a deliberate 360° spin while the player holds the turn.
 
 Drift handling has its own persistent state:
 - `driftLocked` becomes active when SPACE and steering are applied above roughly 29 km/h, or when a high-speed slide exceeds the natural-drift threshold.
