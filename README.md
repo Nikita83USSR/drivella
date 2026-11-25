@@ -2,7 +2,7 @@
 
 A browser-based synthwave drift-racing prototype with a custom low-poly 3D car, a procedural neon environment, and a hand-built WebGL renderer.
 
-> **Status:** Playable prototype under active development. Current renderer reference: **v0.19.16 / BUILD 182**.
+> **Status:** Playable prototype under active development. Current renderer reference: **v0.19.17 / BUILD 183**.
 > **Release identification:** every published game change increments the visible BUILD number in the HUD and startup screen; README and rendering architecture are updated in the same release.
 
 ## Current game
@@ -12,6 +12,7 @@ A browser-based synthwave drift-racing prototype with a custom low-poly 3D car, 
 - **BUILD 117:** add an interactive **F4 Visual Effects** panel with independent toggles for car ink outlines, SSAO, wireframe, solar/world shadows, vehicle self-shadows, glass reflections, paint highlights, lamp emission, pop-up headlights, headlight illumination, garage spotlights and their shadows, the sunset disc, vehicle lens flares, underglow and tyre-contact shadows. Settings apply immediately; existing `K`, `L` and `H` shortcuts stay synchronized with the panel.
 - **BUILD 118:** reduce the vehicle self-shadow receiver map from 2048² to 1024² and render it from vehicle detail casters only; the road grid, biome and environment meshes are skipped during this secondary pass. The F4 self-shadow checkbox now truly skips receiver-map allocation/rendering when off. This removes the redundant full-scene 2048² pass that had become a major frame-time cost. The main 2048² world-shadow map remains unchanged.
 - **BUILD 119:** add F3 pass profiling. CPU timings are recorded for shadow generation, main world rendering, post-processing (SSAO/ink outlines), and total JavaScript frame work. When the browser exposes `EXT_disjoint_timer_query`, asynchronous GPU timings for the same three render passes are shown; unavailable GPU timer support is reported rather than blocking the frame.
+- **BUILD 183:** reposition the Countach rear lamp optical effects to the imported `bodyTail` lens bars. The red source lenses retain brake-responsive brightness; the outer rear bar on each side receives a separate amber turn-signal overlay. Move front turn indicators to the two existing outboard lower-bumper lamp pads; the inner pair remains white auxiliary lamps. The Canvas 2D flare sources use the same measured lamp centres. No body, bumper or source-model geometry is edited.
 - Custom WebGL 1 renderer for the 3D vehicle, road, garage, and procedural environments.
 - All four wheels animate as a single rolling assembly: tyre, brake disc, alloy spokes, and hub share one spin phase, with the rotation direction matched to forward travel.
 - Windshield, rear and side glazing now show stronger view-dependent synthwave environment reflections: a blue sky gradient, magenta horizon, cyan neon bands, and garage-light specular response. This is a procedural reflection approximation, not ray-traced or screen-space reflection.
@@ -328,3 +329,12 @@ Add a live **Качество Sun Bloom** selector to the F4 effects panel. **Pe
 The post composite accepts up to four scale textures and applies profile-specific gains. Unused middle/atmosphere samplers bind the tight layer with zero gain, so Performance keeps its original two-layer contribution. All modes continue to use the depth-tested visible-sun source, progressive sun-facing ray field, object coverage gate and inward-only composite. F3 reports the selected profile.
 
 The regression compiles the production WebGL 1 shaders, renders the existing Performance pixel fixture, executes the nine- and thirteen-sample Gaussian branches, checks all three resolution profiles and their F4 wiring, and retains Countach/headlight and solar Bloom geometry/pixel checks. These tests validate shader and source behaviour but do not establish a measured frame-time budget on a GTX 1650/1660. Version `v0.19.16` / BUILD 182.
+
+
+### BUILD 183 — Countach rear lamps and lower-bumper turn indicators
+
+The front turn indicators now occupy the two outboard lenses in the existing four-lamp lower bumper row: `[-0.944,0.621,2.588]` and `[0.944,0.621,2.588]`. The two inboard lenses at `x=±0.739` stay white as auxiliary/fog lamps. The dark frames and lens quads are fitted to the measured sloped bumper-pad normal; the bumper mesh and the source Countach asset are unchanged.
+
+The imported `bodyTail` contains three vertical red lens bars on each side, on `z=-2.6039`. The middle bar remains the red running/brake light and keeps its existing brake-responsive material. The outermost bar on each side is reused as the amber turn indicator via a thin duplicate of its two source triangles, offset 0.004 world units rearward. No new rear panel or body modification is introduced.
+
+Vehicle lens-flare points are moved onto the same lower front lamps and rear lens bars. The regression decodes the original compressed Countach model, checks the front bumper-pad fit and rear source triangles, parses the complete production inline JavaScript, compiles the production WebGL 1 shaders and loads the actual game page to confirm both rear indicator meshes are created. The automated test does not replace visual inspection in the browser on the target GPU. BUILD 182 is preserved at `backups/index_BUILD182_before_vehicle_lamp_repositioning_BUILD183.html`. Version `v0.19.17` / BUILD 183.
