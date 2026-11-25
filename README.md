@@ -99,8 +99,6 @@ Core implementation completed: adaptive directional shadows, PCSS-style filterin
 - [ ] **Atmospheric integration and final grading.** Add depth-aware distance/horizon scattering and a restrained final colour grade while preserving readable road/car contrast and the synthwave palette.
 
 ### Rendering and performance work
- Add controlled thresholded bloom, anamorphic streaks, diffraction spikes, optical rings and chromatic ghosts; migrate current Canvas 2D vehicle flare profiles without restoring oversized headlight glare.
-- [ ] **Atmospheric scattering and final grading.** Add depth-aware horizon haze and atmospheric light integration while preserving road/car readability and the synthwave palette.
 - [ ] Add selected local lights to track and environment props, using the shared four-slot source format.
 - [ ] Improve painted-body and road reflections beyond the procedural glass environment.
 - [ ] Add instanced rendering for repeated road markings, lamps, vegetation and environment props to reduce CPU draw-call overhead across normal, shadow and AO passes.
