@@ -146,7 +146,7 @@ gl.uniform1f(location(sunProgram,'uOcclusionEnabled'),1.0);
 gl.disable(gl.DEPTH_TEST);gl.depthMask(false);gl.blendFunc(gl.ONE,gl.ONE_MINUS_SRC_ALPHA);
 gl.drawArrays(gl.TRIANGLES,0,6);gl.disableVertexAttribArray(sunPosition);
 
-// Run the actual production outlineFs as a post-process; F4 debug paints the measured bloom field.
+// Run the actual production outlineFs into an isolated transparent target, so only object bloom is measured.
 const normalMask=texture(1,1,gl.NEAREST);
 gl.activeTexture(gl.TEXTURE0);gl.bindTexture(gl.TEXTURE_2D,normalMask);
 gl.texImage2D(gl.TEXTURE_2D,0,gl.RGBA,1,1,0,gl.RGBA,gl.UNSIGNED_BYTE,new Uint8Array([128,128,128,0]));
@@ -167,30 +167,56 @@ gl.uniform2f(location(outlineProgram,'uSunCenter'),.5,.5);
 gl.uniform1f(location(outlineProgram,'uSunRadius'),sunRadius);
 gl.uniform1f(location(outlineProgram,'uSunAspect'),aspect);
 gl.uniform1f(location(outlineProgram,'uSunTime'),1.0);
-gl.activeTexture(gl.TEXTURE0);
-gl.disable(gl.DEPTH_TEST);gl.enable(gl.BLEND);gl.depthMask(false);gl.blendFunc(gl.ONE,gl.ONE_MINUS_SRC_ALPHA);
+const bloomTexture=texture(W,H,gl.NEAREST);
+const bloomFbo=gl.createFramebuffer();gl.bindFramebuffer(gl.FRAMEBUFFER,bloomFbo);
+gl.framebufferTexture2D(gl.FRAMEBUFFER,gl.COLOR_ATTACHMENT0,gl.TEXTURE_2D,bloomTexture,0);
+const bloomFramebufferStatus=gl.checkFramebufferStatus(gl.FRAMEBUFFER);
+must(bloomFramebufferStatus===gl.FRAMEBUFFER_COMPLETE,'Isolated object-bloom framebuffer incomplete: '+bloomFramebufferStatus);
+gl.viewport(0,0,W,H);gl.clearColor(0,0,0,0);gl.clear(gl.COLOR_BUFFER_BIT);
+gl.disable(gl.DEPTH_TEST);gl.disable(gl.BLEND);gl.depthMask(false);
+drawGeometry(outlineProgram,'aPosition',fullscreenVertices,gl.TRIANGLES);
+gl.finish();
+const bloomPixels=new Uint8Array(W*H*4);gl.readPixels(0,0,W,H,gl.RGBA,gl.UNSIGNED_BYTE,bloomPixels);
+function sampleBloom(x,y){const offset=((H-1-y)*W+x)*4;return Array.from(bloomPixels.slice(offset,offset+4));}
+const bloomProbes={
+ deepInterior:sampleBloom(430,270),
+ innerMid:sampleBloom(450,270),
+ sunwardInnerEdge:sampleBloom(462,270),
+ justOutside:sampleBloom(470,270),
+ oppositeInnerEdge:sampleBloom(282,270),
+ farBackground:sampleBloom(850,450)
+};
+const bloomStrength=value=>value[0]+value[1]+value[2];
+
+// Return to the visible scene and composite the same production bloom for a visual artifact.
+gl.bindFramebuffer(gl.FRAMEBUFFER,null);gl.viewport(0,0,W,H);
+gl.enable(gl.BLEND);gl.blendFunc(gl.ONE,gl.ONE_MINUS_SRC_ALPHA);gl.depthMask(false);
 drawGeometry(outlineProgram,'aPosition',fullscreenVertices,gl.TRIANGLES);
 gl.disable(gl.BLEND);gl.depthMask(true);gl.finish();
-
-const pixels=new Uint8Array(W*H*4);gl.readPixels(0,0,W,H,gl.RGBA,gl.UNSIGNED_BYTE,pixels);
-function samplePixel(x,y){const offset=((H-1-y)*W+x)*4;return Array.from(pixels.slice(offset,offset+3));}
+const scenePixels=new Uint8Array(W*H*4);gl.readPixels(0,0,W,H,gl.RGBA,gl.UNSIGNED_BYTE,scenePixels);
+function sampleScene(x,y){const offset=((H-1-y)*W+x)*4;return Array.from(scenePixels.slice(offset,offset+3));}
 const probes={
- blockedSun:samplePixel(420,270),
- edgeBloom:samplePixel(462,270),
- visibleSun:samplePixel(520,270),
- farBackground:samplePixel(850,450),
- maskCenter:Array.from(maskSample)
+ blockedSun:sampleScene(420,270),
+ visibleSun:sampleScene(520,270),
+ maskCenter:Array.from(maskSample),
+ ...bloomProbes
 };
 const brightness=value=>value[0]+value[1]+value[2];
+const edgeStrength=bloomStrength(probes.sunwardInnerEdge);
+const midStrength=bloomStrength(probes.innerMid);
+const deepStrength=bloomStrength(probes.deepInterior);
 const pixelTests={
  crossfadeObjectInDepthMask:probes.maskCenter[3]>100,
  sunHiddenBehindOccluder:brightness(probes.blockedSun)<brightness(probes.visibleSun)*0.28,
  sunVisibleBesideOccluder:probes.visibleSun[0]>130,
- productionBloomVisibleAtSunwardEdge:probes.edgeBloom[0]>probes.blockedSun[0]+22,
- productionBloomRemainsLocal:brightness(probes.farBackground)<brightness(probes.edgeBloom)*0.55,
+ bloomExistsInsideSunwardSilhouette:edgeStrength>45,
+ bloomFadesSmoothlyIntoObject:edgeStrength>midStrength&&midStrength>deepStrength,
+ noAuraOutsideSilhouette:probes.justOutside[3]<8,
+ noAuraOnUnlitOppositeEdge:probes.oppositeInnerEdge[3]<probes.sunwardInnerEdge[3]*0.20,
+ bloomRemainsLocal:bloomStrength(probes.farBackground)<8,
  webglStateClean:gl.getError()===gl.NO_ERROR
 };
-must(Object.values(pixelTests).every(Boolean),'Production shader pixel regression failed: '+JSON.stringify({pixelTests,probes}));
+must(Object.values(pixelTests).every(Boolean),'Production inner-surface pixel regression failed: '+JSON.stringify({pixelTests,probes,brightness:{edge:edgeStrength,mid:midStrength,deep:deepStrength}}));
 const inlineScripts=[...html.matchAll(/<script>([\s\S]*?)<\/script>/g)].map(m=>m[1]).filter(x=>x.trim());
 must(inlineScripts.length>0,'No inline game script found');
 for(let i=0;i<inlineScripts.length;i++)new Function(inlineScripts[i]);
@@ -200,22 +226,25 @@ const checks={
  sunOcclusionShaderCompiled:true,
  allThreeProgramsLinked:true,
  sceneMaskFramebufferComplete:framebufferStatus===gl.FRAMEBUFFER_COMPLETE,
+ bloomMeasurementFramebufferComplete:bloomFramebufferStatus===gl.FRAMEBUFFER_COMPLETE,
  gameInlineJavaScriptParses:true,
  bloomTogglePresent:html.includes('data-fx="sunAuraWrap"'),
  bloomDebugTogglePresent:html.includes('data-fx="sunAuraDebug"'),
  f4HandlerPresent:html.includes("e.code==='F4'"),
  sunUsesVisibleMask:html.includes('uOcclusionMask')&&html.includes('renderGpuSunBackground(aoTarget.texture)'),
  sunDrawMovedAfterSceneMask:!html.includes('if(!shadowPass&&!outlinePass)renderGpuSunBackground();'),
- productionEdgeBloomPresent:html.includes('outerBloom=(1.0-centerCoverage)*wideCoverage'),
+ productionInnerBloomPresent:html.includes('centerCoverage*surfaceFalloff*sourceEnergy*sunFacing'),
+ noSquareGaussianKernel:!html.includes('sceneGaussian5'),
+ noExteriorBloomTerm:!html.includes('outerBloom'),
  ...pixelTests
 };
-must(Object.values(checks).every(Boolean),'One or more production checks failed');
+must(Object.values(checks).every(Boolean),'One or more production inner-surface checks failed');
 const glError=gl.getError();must(glError===gl.NO_ERROR,'WebGL error after production shader pixel test: '+glError);
-const result={pass:true,version:version[1],build:version[2],checks,probes,brightness:{blocked:brightness(probes.blockedSun),edge:brightness(probes.edgeBloom),visibleSun:brightness(probes.visibleSun),far:brightness(probes.farBackground)},glVersion:gl.getParameter(gl.VERSION),renderer:gl.getParameter(gl.RENDERER),glError};
+const result={pass:true,version:version[1],build:version[2],checks,probes,brightness:{edge:edgeStrength,mid:midStrength,deep:deepStrength,blockedSun:brightness(probes.blockedSun),visibleSun:brightness(probes.visibleSun)},glVersion:gl.getParameter(gl.VERSION),renderer:gl.getParameter(gl.RENDERER),glError};
 window.__GAME_SHADER_RESULT__=result;
 report.className='pass';
 report.textContent='PASS\\n'+JSON.stringify(result,null,2);
-document.title='PASS DRIVELLA production shader regression';
+document.title='PASS DRIVELLA inner-surface bloom regression';
 })().catch(error=>{
  const report=document.getElementById('report');
  report.className='fail';
