@@ -1,6 +1,6 @@
 # DRIVELLA — Rendering Architecture
 
-Current reference: **v0.19.23 / BUILD 189**  
+Current reference: **v0.19.24 / BUILD 190**  
 Main renderer: `index.html` — custom WebGL 1 renderer, no external rendering engine.
 
 **Release marker policy:** every published renderer/game change increments `BUILD` in `index.html` and updates the visible HUD, boot screen, README, and this document in the same release. Increment the patch version with the build when appropriate. Never publish a renderer change while leaving the visible build number unchanged.
@@ -66,6 +66,10 @@ The general-purpose scene Bloom is independent of the sun-specific inner-surface
 - F3 reports the scene Bloom capture/target state, and its GPU post timing includes the threshold/blur/composite work. The full-resolution colour/depth capture costs additional GPU memory; final visual tuning and GTX 1650 frame-time validation remain open.
 
 This is a display-space screen effect over the renderer's RGBA8 output, not a floating-point HDR pipeline. It extracts bright portions of the already shaded scene, including emissive vehicle lamps, neon geometry and the sun where it intersects the 3D scene colour; the separate procedural GPU sun and its Sun Bloom/God Rays remain on their existing paths.
+
+### BUILD 190 — restrained scene Bloom intensity
+
+Reduce only the two final composite gains by 10%: the tight glow changes from **1.22** to **1.098**, and the wide glow from **0.72** to **0.648**. The bright-pass threshold (**0.72**), soft knee (**0.20**), quarter-resolution extraction/blur targets, Gaussian radii (**2.2 / 8.0**), capture path, fallback handling, Sun Bloom and God Rays are unchanged. This lowers the energy of the low-resolution glow without altering its sampling or blur footprint. In-game visual confirmation and GTX 1650 frame-time validation remain pending.
 
 ## Frame profiler — BUILD 119
 
