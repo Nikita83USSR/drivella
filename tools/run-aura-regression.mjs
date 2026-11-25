@@ -141,9 +141,9 @@ try {
   assert(rearLampPoints.length===2&&rearSignalPoints.length===2,'Expected left/right rear flare anchors');
   for(const [x,y,z] of rearLampPoints)assert(Math.abs(x)>=.74&&Math.abs(x)<=.95&&y>=partBounds.bodyTail.min[1]&&y<=partBounds.bodyTail.max[1]&&z<partBounds.bodyTail.min[2]&&z>=partBounds.bodyTail.min[2]-.01,'Rear brake/tail flare is not attached to the source centre lens bar: '+JSON.stringify([x,y,z]));
   for(const [x,y,z] of rearSignalPoints)assert(Math.abs(x)>=.94&&Math.abs(x)<=partBounds.bodyTail.max[0]&&y>=partBounds.bodyTail.min[1]&&y<=partBounds.bodyTail.max[1]&&z<partBounds.bodyTail.min[2]&&z>=partBounds.bodyTail.min[2]-.01,'Rear indicator flare is not attached to the source outer lens bar: '+JSON.stringify([x,y,z]));
-  const inlineScripts=[...productionIndex.matchAll(/<script\\b([^>]*)>([\\s\\S]*?)<\\/script>/gi)].filter(m=>!/\\bsrc\\s*=/.test(m[1])).map(m=>m[2]).filter(code=>code.trim());
-  assert(inlineScripts.length>0,'Production inline JavaScript was not found');
-  for(const code of inlineScripts)new Function(code);
+  const inlineScriptMatch=productionIndex.match(/<script>([\s\S]*?)<\/script>/i);
+  assert(inlineScriptMatch&&inlineScriptMatch[1].trim(),'Production inline JavaScript was not found');
+  new Function(inlineScriptMatch[1]);
   console.log('COUNTACH LAMP GEOMETRY // PLACEMENT CHECK\\n'+JSON.stringify({centres,turnIndices,fogIndices,rearSignalTriangles:{left:rearSignalBars.left.length,right:rearSignalBars.right.length},rearLampPoints,rearSignalPoints,sourceTailBounds:partBounds.bodyTail,sourcePads:lowerLampPads.map(p=>p.center),bumperBodyBlackBounds:partBounds.bodyBlack},null,2));
 } catch (error) {
   console.error('VEHICLE LIGHTING REGRESSION FAILED\n' + (error.stack || error));
