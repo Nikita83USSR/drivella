@@ -287,3 +287,8 @@ BUILD 161 is preserved at `backups/index_BUILD161_before_sun_aura_debug_overlay_
 ### BUILD 165 — Object-surface aura diagnostics
 
 Correct the BUILD 162 diagnostic so it no longer draws guide rings, radial arrows or a source label around the solar disc. The F4 test is now restricted to the scene geometry: a bright warm contact edge marks the sun-facing side of an occluding object, inward chevrons show the direction of propagation into its silhouette, and contour bands shift from warm to cyan as the aura fades across the surface. The diagnostic remains in the existing fullscreen post composite after the 3D world; no extra canvas, mask, framebuffer or render pass is introduced. The test remains off by default. JavaScript parsing and source invariants pass; WebGL shader compilation and in-game appearance still require target-browser validation. Version `v0.18.99` / BUILD 165.
+
+
+### BUILD 166 — Direct solar light wrap
+
+The object aura no longer uses the half-resolution AO mask or a post-process edge reconstruction. It is computed directly for each visible environment fragment using the same projected sun centre/radius as the disc, with view-grazing emphasis at silhouettes. F4's object test paints visible fragments in the solar zone magenta through the same direct shader path. JavaScript syntax and source wiring are checked; WebGL runtime compilation and in-browser appearance still need confirmation. Version `v0.19.00` / BUILD 166.
