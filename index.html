@@ -205,7 +205,7 @@ gl.useProgram(prog);
 
 let gpuSunReady=false,gpuSunProgram=null,gpuSunBuffer=null,gpuSunLoc=null;
 try{
- const sunVs='precision mediump float;attribute vec2 aPosition;uniform vec2 uViewport;uniform vec2 uCenter;uniform float uExtent;varying vec2 vSun;void main(){vec2 offset=vec2(aPosition.x,-aPosition.y);vec2 pixel=uCenter+offset*uExtent;vec2 clip=vec2(pixel.x/uViewport.x*2.0-1.0,1.0-pixel.y/uViewport.y*2.0);gl_Position=vec4(clip,0.0,1.0);vSun=offset*5.2;}';
+ const sunVs='precision mediump float;attribute vec2 aPosition;uniform vec2 uViewport;uniform vec2 uCenter;uniform float uExtent;varying vec2 vSun;void main(){vec2 offset=vec2(aPosition.x,-aPosition.y);vec2 pixel=uCenter+offset*uExtent;vec2 clip=vec2(pixel.x/uViewport.x*2.0-1.0,1.0-pixel.y/uViewport.y*2.0);gl_Position=vec4(clip,0.0,1.0);vSun=offset*3.8;}';
  const sunFs=`precision mediump float;
 varying vec2 vSun;
 uniform float uTime;
@@ -216,7 +216,7 @@ float band(float y,float center,float halfWidth){return 1.0-smoothstep(halfWidth
 
 void main(){
  float d=length(vSun)/uBreathe;
- if(d>5.02){gl_FragColor=vec4(0.0);return;}
+ if(d>3.72){gl_FragColor=vec4(0.0);return;}
  float y=vSun.y/uBreathe;
  float angle=atan(vSun.y,vSun.x);
  float flowA=0.5+0.5*sin(angle*7.0-uTime*0.27+0.48*sin(angle*17.0+uTime*0.19));
@@ -227,8 +227,8 @@ void main(){
  float secondaryRadius=1.175+0.042*sin(angle*5.0-uTime*0.16)+0.020*sin(angle*13.0+uTime*0.21);
  float plasmaArc=exp(-pow((d-secondaryRadius)*10.5,2.0))*(0.28+0.72*(1.0-flowA));
  float hotHalo=exp(-pow(max(d-0.985,0.0)*2.45,2.0))*0.48*(1.0-smoothstep(1.72,2.35,d));
- float wideHalo=exp(-pow(max(d-1.0,0.0)*0.82,2.0))*0.30*(1.0-smoothstep(3.20,4.25,d));
- float outerHaze=exp(-pow(max(d-1.08,0.0)*0.56,2.0))*0.16*(1.0-smoothstep(4.0,5.0,d));
+ float wideHalo=exp(-pow(max(d-1.0,0.0)*0.82,2.0))*0.30*(1.0-smoothstep(2.72,3.25,d));
+ float outerHaze=exp(-pow(max(d-1.08,0.0)*0.56,2.0))*0.16*(1.0-smoothstep(3.0,3.7,d));
  float rayShapeA=pow(max(cos(angle*17.0+uTime*0.035),0.0),32.0);
  float rayShapeB=pow(max(cos(angle*9.0-uTime*0.026+0.35*sin(angle*13.0)),0.0),19.0);
  float rayEnvelope=smoothstep(1.025,1.18,d)*(1.0-smoothstep(2.05,3.10,d));
@@ -295,7 +295,7 @@ function renderGpuSunBackground(){
  const breathe=1+Math.sin(now*0.00092)*0.035+Math.sin(now*0.00046+1.2)*0.012,glowPulse=0.88+Math.sin(now*0.00092-0.35)*0.075;
  gl.viewport(0,0,canvas.width,canvas.height);gl.useProgram(gpuSunProgram);gl.bindBuffer(gl.ARRAY_BUFFER,gpuSunBuffer);
  gl.enableVertexAttribArray(gpuSunLoc.position);gl.vertexAttribPointer(gpuSunLoc.position,2,gl.FLOAT,false,0,0);
- gl.uniform2f(gpuSunLoc.viewport,W,H);gl.uniform2f(gpuSunLoc.center,x,y);gl.uniform1f(gpuSunLoc.extent,r*5.2);gl.uniform1f(gpuSunLoc.time,now*0.001);
+ gl.uniform2f(gpuSunLoc.viewport,W,H);gl.uniform2f(gpuSunLoc.center,x,y);gl.uniform1f(gpuSunLoc.extent,r*3.8);gl.uniform1f(gpuSunLoc.time,now*0.001);
  gl.uniform1f(gpuSunLoc.radius,r);gl.uniform1f(gpuSunLoc.breathe,breathe);gl.uniform1f(gpuSunLoc.glowPulse,glowPulse);
  gl.disable(gl.DEPTH_TEST);gl.depthMask(false);gl.enable(gl.BLEND);gl.blendFunc(gl.ONE,gl.ONE_MINUS_SRC_ALPHA);
  gl.drawArrays(gl.TRIANGLES,0,6);
