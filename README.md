@@ -143,3 +143,8 @@ No license has been added yet. All rights reserved by the repository owner unles
 
 
 - **BUILD 137 — unified Countach pop-up modules and lightweight lights:** preserve BUILD 136 as `backups/index_BUILD136_before_unified_headlamp_and_lighting_simplification_BUILD137.html`. Each side is now drawn through `drawCountachHeadlampAssembly()` with one shared rigid matrix for the deep housing, body-colour upper skin, metal collars and the original two-lens source mesh. The upper skin follows the imported bonnet rise from the rear hinge to the front of the pod; it masks the optics while stowed, while the same assembly raises to expose the four forward-facing lamps. H now controls only lens emission and a compact Canvas2D halo. Remove the expensive GLSL `calcHeadlightEnergy()` path, headlight position/direction uniforms, per-mesh cone culling and Stage 2 shader spotlight uploads. No per-fragment or per-object real-time headlight illumination is performed; the visible lamp effect uses emissive lens surfaces plus four screen-space 2D glows, slightly larger than the indicator effect. This deliberately restores the lightweight BUILD 102/103-style approach to prevent headlight-on FPS loss. Version `v0.18.71` / `BUILD 137`.
+
+
+### BUILD 138 — GLSL startup fix
+
+Removed an accidental closing brace after the fragment-shader varying declarations. The brace had been left behind when the previous build removed the per-fragment headlight-lighting function, causing WebGL to abort fragment-shader compilation at startup. No rendering or vehicle behavior was intentionally changed in this fix.
