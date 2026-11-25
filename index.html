@@ -196,7 +196,7 @@ function reportStartupError(message){
 window.addEventListener('error',e=>reportStartupError(e.message||'JavaScript error'));
 window.addEventListener('unhandledrejection',e=>reportStartupError(e.reason&&e.reason.message||e.reason||'Promise rejected'));
 
-let W=innerWidth,H=innerHeight,DPR=1,outlinePass=false,shadowPass=false,shadowCasterMode='all',aoScenePass=false,outlineTarget=null,aoTarget=null,sceneColorTarget=null,sceneBloomTargets=null,sunBloomTargets=null,godRaysTarget=null,shadowTarget=null,vehicleShadowTarget=null,localShadowTargets=[null,null],localShadowVPs=[null,null],localShadowSignatures=['',''],shadowVP=null,sunShadowVP=null,shadowSceneRevision=1,outlineCabinEdge=null,vehicleReflectionTarget=null;
+let W=innerWidth,H=innerHeight,DPR=1,outlinePass=false,shadowPass=false,shadowCasterMode='all',aoScenePass=false,outlineTarget=null,aoTarget=null,sceneColorTarget=null,sceneBloomTargets=null,sunBloomTargets=null,godRaysTarget=null,shadowTarget=null,vehicleShadowTarget=null,localShadowTargets=[null,null],localShadowVPs=[null,null],localShadowSignatures=['',''],shadowVP=null,sunShadowVP=null,shadowSceneRevision=1,outlineCabinEdge=null,vehicleReflectionTarget=null,vehicleReflectionReady=false;
 function resize(){
  DPR=Math.min(devicePixelRatio||1,2);W=innerWidth;H=innerHeight;
  for(const c of [canvas,sun]){c.width=Math.round(W*DPR);c.height=Math.round(H*DPR);c.style.width=W+'px';c.style.height=H+'px';}
@@ -1921,14 +1921,15 @@ function headlightAffectsMesh(shape,model){
  return false;
 }
 const vehicleRoadReflectionShapes=[],vehicleRoadReflectionModels=[],vehicleRoadReflectionColors=[],vehicleRoadReflectionMaterials=[];
-let vehicleRoadReflectionCount=0,vehicleRoadReflectionCapture=false,vehicleRoadReflectionMatrix=matIdentity(),lastVehicleRoadReflectionMeshCount=0;
+let vehicleRoadReflectionCount=0,vehicleRoadReflectionCapture=false,lastVehicleRoadReflectionMeshCount=0;
 function buildVehicleRoadMirrorMatrix(planeY=.005){
  return [1,0,0,0,0,-1,0,0,0,0,1,0,0,2*planeY,0,1];
 }
 function renderVehicleReflectionCapture(vp){
  const count=vehicleRoadReflectionCount;
  lastVehicleRoadReflectionMeshCount=count;
- if(!FX.vehicleReflections||!count||!ensureVehicleReflectionTarget())return false;
+ vehicleReflectionReady=false;
+ if(!FX.vehicleReflections||wireframeMode||!count||!ensureVehicleReflectionTarget())return false;
  const previousFramebuffer=gl.getParameter(gl.FRAMEBUFFER_BINDING),previousViewport=gl.getParameter(gl.VIEWPORT);
  gl.activeTexture(gl.TEXTURE7);gl.bindTexture(gl.TEXTURE_2D,null);gl.activeTexture(gl.TEXTURE0);
  gl.bindFramebuffer(gl.FRAMEBUFFER,vehicleReflectionTarget.framebuffer);gl.viewport(0,0,vehicleReflectionTarget.width,vehicleReflectionTarget.height);
@@ -1953,6 +1954,7 @@ function renderVehicleReflectionCapture(vp){
  gl.uniformMatrix4fv(loc.vp,false,new Float32Array(vp));
  gl.uniformMatrix4fv(loc.vehicleReflectionVP,false,new Float32Array(vp));
  gl.uniform2f(loc.vehicleReflectionTexel,1/vehicleReflectionTarget.width,1/vehicleReflectionTarget.height);
+ vehicleReflectionReady=true;
  gl.uniform1f(loc.vehicleReflectionEnabled,1.0);
  gl.activeTexture(gl.TEXTURE7);gl.bindTexture(gl.TEXTURE_2D,vehicleReflectionTarget.texture);gl.uniform1i(loc.vehicleReflectionTexture,7);
  gl.activeTexture(gl.TEXTURE0);
@@ -2238,7 +2240,7 @@ function drawWorld(){
  if(!shadowPass)outlineCabinEdge=projectCabinRoofFrontSeam(vp,carX,carZ,garageMode?0:carYaw,cam);
  gl.uniformMatrix4fv(loc.vp,false,new Float32Array(vp));
  if(shadowVP)gl.uniformMatrix4fv(loc.shadowVP,false,new Float32Array(shadowVP));
- gl.uniform3fv(loc.keyLightDir,new Float32Array(SUN_LIGHT.direction));gl.uniform3fv(loc.nonShadowFillDir,new Float32Array(NON_SHADOW_FILL_DIRECTION));gl.uniform3f(loc.viewPos,cam.x,cam.y,cam.z);gl.uniform1f(loc.showroom,garageMode?1:0);gl.uniform1f(loc.time,performance.now()*.001);gl.uniform1f(loc.shadowEnabled,FX.worldShadows?1:0);gl.uniform1f(loc.vehicleShadowEnabled,FX.vehicleShadows?1:0);gl.uniform1f(loc.glassReflectionEnabled,FX.glassReflections?1:0);gl.uniform1f(loc.paintReflectionEnabled,FX.paintReflections?1:0);gl.uniform1f(loc.roadReflectionEnabled,FX.roadReflections?1:0);gl.uniform1f(loc.vehicleReflectionEnabled,FX.vehicleReflections&&vehicleReflectionTarget?1:0);gl.uniform1f(loc.vehicleReflectionPass,0.0);gl.uniform1f(loc.paintHighlightsEnabled,FX.paintHighlights?1:0);gl.uniform1f(loc.lampEmissionEnabled,FX.lampEmission?1:0);gl.uniform1f(loc.atmosphereEnabled,FX.atmosphere?1:0);
+ gl.uniform3fv(loc.keyLightDir,new Float32Array(SUN_LIGHT.direction));gl.uniform3fv(loc.nonShadowFillDir,new Float32Array(NON_SHADOW_FILL_DIRECTION));gl.uniform3f(loc.viewPos,cam.x,cam.y,cam.z);gl.uniform1f(loc.showroom,garageMode?1:0);gl.uniform1f(loc.time,performance.now()*.001);gl.uniform1f(loc.shadowEnabled,FX.worldShadows?1:0);gl.uniform1f(loc.vehicleShadowEnabled,FX.vehicleShadows?1:0);gl.uniform1f(loc.glassReflectionEnabled,FX.glassReflections?1:0);gl.uniform1f(loc.paintReflectionEnabled,FX.paintReflections?1:0);gl.uniform1f(loc.roadReflectionEnabled,FX.roadReflections?1:0);gl.uniform1f(loc.vehicleReflectionEnabled,FX.vehicleReflections&&vehicleReflectionReady?1:0);gl.uniform1f(loc.vehicleReflectionPass,0.0);gl.uniform1f(loc.paintHighlightsEnabled,FX.paintHighlights?1:0);gl.uniform1f(loc.lampEmissionEnabled,FX.lampEmission?1:0);gl.uniform1f(loc.atmosphereEnabled,FX.atmosphere?1:0);
  uploadLocalLights(garageMode?(FX.garageSpotlights?GARAGE_LOCAL_LIGHTS:[]):(!shadowPass&&FX.trackLights?updateTrackLocalLights():[]));
  const heading=garageMode?0:carYaw,roll=garageMode?0:bodyRoll,vehicleFrame=matMul(translate(carX,0,carZ),matMul(rotateY(heading),rotateZ(roll)));
  const normalVector=(m,d)=>{const n=normalMatrix3(m),v=[n[0]*d[0]+n[3]*d[1]+n[6]*d[2],n[1]*d[0]+n[4]*d[1]+n[7]*d[2],n[2]*d[0]+n[5]*d[1]+n[8]*d[2]],length=Math.hypot(v[0],v[1],v[2])||1;return v.map(q=>q/length);};
@@ -2372,7 +2374,6 @@ function drawWorld(){
  gl.depthMask(true);gl.disable(gl.BLEND);
  vehicleRoadReflectionCount=0;
  vehicleRoadReflectionCapture=!garageMode&&!shadowPass&&!outlinePass&&!aoScenePass&&!wireframeMode&&FX.vehicleReflections;
- vehicleRoadReflectionMatrix=vehicleRoadReflectionCapture?buildVehicleRoadReflectionMatrix(cam):matIdentity();
  if(countachModelReady){
   const m=countachModel;
   // Imported Countach body, split by the source model's original materials.
