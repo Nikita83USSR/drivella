@@ -14,7 +14,7 @@ canvas{display:block;width:100%;height:auto;border:1px solid #58eaff55;margin:14
 </style>
 </head>
 <body><main>
-<h1>DRIVELLA // BUILD 196 TRACK LOCAL LIGHTING + SHOWROOM INSTANCING + PRODUCTION GLSL</h1>
+<h1>DRIVELLA // BUILD 197 TRACK LOCAL LIGHTING + SHOWROOM INSTANCING + PRODUCTION GLSL</h1>
 <canvas id="gl" width="960" height="540"></canvas>
 <pre id="report">Extracting production shaders…</pre>
 </main>
@@ -27,7 +27,7 @@ const response=await fetch('../index.html',{cache:'no-store'});
 must(response.ok,'Cannot fetch production index.html: HTTP '+response.status);
 const html=await response.text();
 const version=html.match(/const VERSION='([^']+)',BUILD='([^']+)'/);
-must(version&&version[1]==='v0.19.30'&&version[2]==='196','Unexpected production version marker: '+JSON.stringify(version));
+must(version&&version[1]==='v0.19.31'&&version[2]==='196','Unexpected production version marker: '+JSON.stringify(version));
 function expression(name,endMarker){
  const marker='const '+name+'=';
  const start=html.indexOf(marker);
@@ -155,6 +155,23 @@ function makeTarget(width,height){
  const status=gl.checkFramebufferStatus(gl.FRAMEBUFFER);
  return{texture:targetTexture,framebuffer:targetFramebuffer,status,width,height};
 }
+// Execute the exact production reflection-environment function at two roughness values.
+const surfaceReflectionFunctionStart=sources.mainFragment.indexOf('vec3 evalSynthwaveEnvironment(');
+const surfaceReflectionFunctionEnd=sources.mainFragment.indexOf('\nvec3 applyAtmosphere(',surfaceReflectionFunctionStart);
+must(surfaceReflectionFunctionStart>=0&&surfaceReflectionFunctionEnd>surfaceReflectionFunctionStart,'Production synthwave reflection environment was not found');
+const surfaceReflectionFunction=sources.mainFragment.slice(surfaceReflectionFunctionStart,surfaceReflectionFunctionEnd);
+const surfaceReflectionVs='attribute vec2 aPosition;void main(){gl_Position=vec4(aPosition,0.0,1.0);}';
+const surfaceReflectionFs='precision mediump float;uniform float time;uniform vec3 keyLightDir;'+surfaceReflectionFunction+'\nvoid main(){float roughness=gl_FragCoord.x<1.0?0.24:0.82;vec3 reflected=evalSynthwaveEnvironment(vec3(0.0,0.07,1.0),roughness);gl_FragColor=vec4(reflected,1.0);}';
+const surfaceReflectionProgram=makeProgram(surfaceReflectionVs,surfaceReflectionFs,'Production synthwave surface-reflection pixel fixture');
+const surfaceReflectionTarget=makeTarget(2,1);
+must(surfaceReflectionTarget.status===gl.FRAMEBUFFER_COMPLETE,'Surface-reflection pixel fixture framebuffer incomplete');
+gl.bindFramebuffer(gl.FRAMEBUFFER,surfaceReflectionTarget.framebuffer);gl.viewport(0,0,2,1);gl.disable(gl.DEPTH_TEST);gl.disable(gl.BLEND);gl.depthMask(false);gl.clearColor(0,0,0,0);gl.clear(gl.COLOR_BUFFER_BIT);
+gl.useProgram(surfaceReflectionProgram);gl.uniform1f(location(surfaceReflectionProgram,'time'),1.25);gl.uniform3f(location(surfaceReflectionProgram,'keyLightDir'),0,0.75,0.6614378);drawGeometry(surfaceReflectionProgram,'aPosition',fullscreenVertices,gl.TRIANGLES);gl.finish();
+const surfaceReflectionPixels=new Uint8Array(8);gl.readPixels(0,0,2,1,gl.RGBA,gl.UNSIGNED_BYTE,surfaceReflectionPixels);
+const surfaceReflectionSharpPixel=Array.from(surfaceReflectionPixels.slice(0,4)),surfaceReflectionRoughPixel=Array.from(surfaceReflectionPixels.slice(4,8));
+const surfaceReflectionRoughnessDelta=surfaceReflectionSharpPixel.slice(0,3).reduce((sum,value,index)=>sum+Math.abs(value-surfaceReflectionRoughPixel[index]),0);
+const surfaceReflectionPixelFixturePass=surfaceReflectionSharpPixel[3]>250&&surfaceReflectionRoughPixel[3]>250&&surfaceReflectionRoughnessDelta>8;
+gl.bindFramebuffer(gl.FRAMEBUFFER,null);gl.viewport(0,0,W,H);gl.depthMask(true);gl.enable(gl.DEPTH_TEST);
 // Production bright-pass pixel fixture: a dim pixel must be rejected, a mid highlight
 // must pass softly, and a near-white emitter must yield a stronger extraction.
 const sceneBloomSceneTexture=texture(W,H,gl.LINEAR),sceneBloomSceneDepth=gl.createRenderbuffer(),sceneBloomSceneFramebuffer=gl.createFramebuffer();
@@ -514,7 +531,16 @@ const trackLightPixelSamples=[Array.from(trackLightPixels.slice(0,4)),Array.from
 const trackLocalLightPixelFixturePass=trackLightPixelSamples[1][0]>18&&trackLightPixelSamples[1][2]>8&&trackLightPixelSamples[0][0]<3&&trackLightPixelSamples[2][0]<3;
 gl.bindFramebuffer(gl.FRAMEBUFFER,null);gl.viewport(0,0,W,H);gl.depthMask(true);gl.enable(gl.DEPTH_TEST);
 const checks={
-  productionVersionVisibleEverywhere:html.includes('id="version-label">v0.19.30 · BUILD 196</div>')&&html.includes('3D NEON HIGHWAY // BUILD 196')&&html.includes('ENGINE STARTUP // v0.19.30 · BUILD 196'),
+  surfaceReflectionEnvironmentFramebufferComplete:surfaceReflectionTarget.status===gl.FRAMEBUFFER_COMPLETE,
+  surfaceReflectionEnvironmentUsesProductionFunction:sources.mainFragment.includes('vec3 evalSynthwaveEnvironment(')&&!!surfaceReflectionProgram,
+  surfaceReflectionRoughnessChangesPixelOutput:surfaceReflectionPixelFixturePass,
+  surfaceReflectionPaintUsesFresnelAndIndependentToggle:sources.mainFragment.includes('paintReflected=evalSynthwaveEnvironment(reflect(-paintV,paintN),0.28)')&&sources.mainFragment.includes('paintReflectionEnabled>0.5')&&html.includes('data-fx="paintReflections"'),
+  surfaceReflectionRoadUsesDedicatedRoughMaterial:sources.mainFragment.includes('roadReflected=evalSynthwaveEnvironment(reflect(-roadV,roadN),0.82)')&&html.includes('C.road,0,9')&&html.includes('resolvedMaterialMode>8.5&&resolvedMaterialMode<9.5'),
+  surfaceReflectionRoadPreservesShadowAndLighting:sources.mainFragment.includes('(resolvedMaterialMode<4.5||(resolvedMaterialMode>8.5&&resolvedMaterialMode<9.5))')&&sources.mainFragment.includes('calcLocalLighting(roadN,roadV,roadColor,14.0)')&&html.includes('(material<4.5||(material>8.5&&material<9.5))'),
+  surfaceReflectionHasIndependentF4Toggles:html.includes('data-fx="paintReflections" checked')&&html.includes('data-fx="roadReflections" checked')&&html.includes('paintReflections:true,roadReflections:true'),
+  surfaceReflectionF3ReportsBothMaterials:html.includes('PAINT / ROAD REFLECTIONS')&&html.includes('FX.paintReflections')&&html.includes('FX.roadReflections'),
+  surfaceReflectionDoesNotCaptureEmissiveMaterialEight:sources.mainFragment.includes('resolvedMaterialMode>7.5&&resolvedMaterialMode<8.5')&&html.includes('fixtureYaw,8'),
+  productionVersionVisibleEverywhere:html.includes('id="version-label">v0.19.31 · BUILD 197</div>')&&html.includes('3D NEON HIGHWAY // BUILD 197')&&html.includes('ENGINE STARTUP // v0.19.31 · BUILD 197'),
  roadInstancingProductionVertexCompiled:!!roadProbeV.shader,
  roadInstancingProbeProgramLinked:!!roadProbeP.program,
  roadInstancingAttributesArePresent:['attribute vec3 instancePosition;','attribute vec3 instanceScale;','attribute vec2 instanceYaw;','attribute vec4 instanceColor;','attribute float instanceHeadlight;','attribute float instanceMaterial;'].every(token=>sources.mainVertex.includes(token)),
@@ -526,7 +552,7 @@ const checks={
  roadInstancingPixelFixture:!roadInstancingExt||roadProbeFramebufferStatus===gl.FRAMEBUFFER_COMPLETE&&roadInstancingPixelFixturePass,
  roadInstancingReducesRoadToOneBatch:roadGridAtStart===192&&html.includes("lastRoadBatchCount=1;lastRoadInstanceCount=count;lastRoadInstancingMode='ANGLE_INSTANCED'"),
  environmentInstancingResolvesPerInstanceMaterial:sources.mainVertex.includes('vInstanceMaterial=instanceMaterial')&&sources.mainFragment.includes('resolvedMaterialMode=mix(materialMode,vInstanceMaterial,step(0.5,vInstanceMode))'),
- environmentInstancingPreservesMaterialEight:sources.mainFragment.includes('if(resolvedMaterialMode>7.5)')&&html.includes('queueBiomeInstance(cityCubes,cx-side*(w+.035),wy,wz,.045,.48,.38,tint,0,8)'),
+ environmentInstancingPreservesMaterialEight:sources.mainFragment.includes('if(resolvedMaterialMode>7.5&&resolvedMaterialMode<8.5)')&&html.includes('queueBiomeInstance(cityCubes,cx-side*(w+.035),wy,wz,.045,.48,.38,tint,0,8)'),
  environmentInstancingBatchesCityBlocks:html.includes('const cityCubes=[]')&&html.includes('drawBiomeInstances(cube,cityCubes);'),
  environmentInstancingBatchesCoastline:html.includes('const shorelineCubes=[]')&&html.includes('drawBiomeInstances(cube,shorelineCubes);'),
  environmentInstancingBatchesPalmTrunks:html.includes('drawBiomeInstances(cylinder,trunkOuter);')&&html.includes('drawBiomeInstances(cylinder,trunkInner);'),
@@ -644,11 +670,11 @@ const checks={
 };
 must(Object.values(checks).every(Boolean),'One or more production checks failed: '+JSON.stringify(Object.entries(checks).filter(([,ok])=>!ok).map(([name])=>name)));
 const glError=gl.getError();must(glError===gl.NO_ERROR,'WebGL error after production shader pixel test: '+glError);
-const result={pass:true,version:version[1],build:version[2],checks,probes:{...probes,roadInstancing:{extensionAvailable:!!roadInstancingExt,framebufferStatus:roadProbeFramebufferStatus,pixels:roadProbePixels,fixturePass:roadInstancingPixelFixturePass}},brightness:{edge:edgeStrength,shoulder:shoulderStrength,mid:midStrength,deep:deepStrength,blockedSun:brightness(probes.blockedSun),visibleSun:brightness(probes.visibleSun)},glVersion:gl.getParameter(gl.VERSION),renderer:gl.getParameter(gl.RENDERER),glError};
+const result={pass:true,version:version[1],build:version[2],checks,surfaceReflectionPixels:{sharp:surfaceReflectionSharpPixel,rough:surfaceReflectionRoughPixel,roughnessDelta:surfaceReflectionRoughnessDelta,fixturePass:surfaceReflectionPixelFixturePass},probes:{...probes,roadInstancing:{extensionAvailable:!!roadInstancingExt,framebufferStatus:roadProbeFramebufferStatus,pixels:roadProbePixels,fixturePass:roadInstancingPixelFixturePass}},brightness:{edge:edgeStrength,shoulder:shoulderStrength,mid:midStrength,deep:deepStrength,blockedSun:brightness(probes.blockedSun),visibleSun:brightness(probes.visibleSun)},glVersion:gl.getParameter(gl.VERSION),renderer:gl.getParameter(gl.RENDERER),glError};
 window.__GAME_SHADER_RESULT__=result;
 report.className='pass';
 report.textContent='PASS\\n'+JSON.stringify(result,null,2);
-document.title='PASS DRIVELLA BUILD 196 track local lighting + showroom + biome + road regression';
+document.title='PASS DRIVELLA BUILD 197 surface reflections + track lighting + showroom + road regression';
 })().catch(error=>{
  const report=document.getElementById('report');
  report.className='fail';
