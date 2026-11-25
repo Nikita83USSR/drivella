@@ -926,8 +926,8 @@ function ensureRoadSurfaceMesh(){
  roadSurfaceMesh={b,nb,eb,n:0,en:0,boundsRadius:Math.hypot(ROAD_SURFACE_LENGTH*.5,ROAD_SURFACE_WIDTH)};
  return roadSurfaceMesh;
 }
-function updateRoadSurfaceMesh(centerZ){
- const shape=ensureRoadSurfaceMesh(),data=new Float32Array(ROAD_SURFACE_SEGMENTS*6*9),normals=new Float32Array(data.length);
+function buildRoadSurfaceGeometry(centerZ){
+ const data=new Float32Array(ROAD_SURFACE_SEGMENTS*6*9),normals=new Float32Array(data.length);
  const surfaceCenterZ=centerZ+ROAD_SURFACE_CENTER_OFFSET,centerX=roadX(surfaceCenterZ),step=ROAD_SURFACE_LENGTH/ROAD_SURFACE_SEGMENTS;
  let o=0;
  for(let i=0;i<ROAD_SURFACE_SEGMENTS;i++){
@@ -937,10 +937,14 @@ function updateRoadSurfaceMesh(centerZ){
   const left1=[x1-ROAD_SURFACE_WIDTH,ROAD_SURFACE_TOP,z1],right1=[x1+ROAD_SURFACE_WIDTH,ROAD_SURFACE_TOP,z1];
   for(const v of [left0,right0,right1,left0,right1,left1]){data[o]=v[0];data[o+1]=v[1];data[o+2]=v[2];normals[o+1]=1;o+=3;}
  }
- gl.bindBuffer(gl.ARRAY_BUFFER,shape.b);gl.bufferData(gl.ARRAY_BUFFER,data,gl.DYNAMIC_DRAW);
- gl.bindBuffer(gl.ARRAY_BUFFER,shape.nb);gl.bufferData(gl.ARRAY_BUFFER,normals,gl.DYNAMIC_DRAW);
- shape.n=data.length/3;shape.boundsRadius=Math.hypot(ROAD_SURFACE_LENGTH*.5,ROAD_SURFACE_WIDTH);
- return {shape,model:translate(centerX,0,surfaceCenterZ)};
+ return {data,normals,centerX,surfaceCenterZ};
+}
+function updateRoadSurfaceMesh(centerZ){
+ const shape=ensureRoadSurfaceMesh(),geometry=buildRoadSurfaceGeometry(centerZ);
+ gl.bindBuffer(gl.ARRAY_BUFFER,shape.b);gl.bufferData(gl.ARRAY_BUFFER,geometry.data,gl.DYNAMIC_DRAW);
+ gl.bindBuffer(gl.ARRAY_BUFFER,shape.nb);gl.bufferData(gl.ARRAY_BUFFER,geometry.normals,gl.DYNAMIC_DRAW);
+ shape.n=geometry.data.length/3;shape.boundsRadius=Math.hypot(ROAD_SURFACE_LENGTH*.5,ROAD_SURFACE_WIDTH);
+ return {shape,model:translate(geometry.centerX,0,geometry.surfaceCenterZ)};
 }
 function makeGlowDisk(){
  const out=[],segments=64;
