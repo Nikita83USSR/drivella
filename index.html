@@ -1141,7 +1141,6 @@ const VEHICLE_WHEELBASE=3.2824,WORLD_MOTION_SCALE=.432;
 const COUNTACH_WHEEL_X=.9274237,COUNTACH_FRONT_WHEEL_Z=1.6402421,COUNTACH_REAR_WHEEL_Z=-1.6421916;
 const COUNTACH_FRONT_WHEEL_Y=.3761337,COUNTACH_REAR_WHEEL_Y=.3871776;
 const COUNTACH_HEADLIGHT_HINGE_Y=.76,COUNTACH_HEADLIGHT_HINGE_Z=2.30;
-const COUNTACH_HEADLIGHT_X=.84975,COUNTACH_HEADLIGHT_Y=.76120,COUNTACH_HEADLIGHT_Z=2.48800;
 function getVehicleSpeed(){return Math.hypot(speed/3.6,lateralVelocity)*3.6;}
 function readSteeringInput(){return (keys.d||keys.arrowright?STEER_AXIS.right:0)+(keys.a||keys.arrowleft?STEER_AXIS.left:0);}
 function getSteeringAngle(){return steer*.32/(1+getVehicleSpeed()/115);}
@@ -1723,7 +1722,7 @@ function drawVehicleLensFlares(){
    // Four projector flares are transformed by the same legacy mount matrix as the visible optical cores.
    for(const side of [-1,1]){
     const moduleWorld=matMul(lampWorld,countachLegacyHeadlampMount(side));
-    const lampNormal=direction(moduleWorld,[0,0,1]),[x0,x1]=lampXBounds(side);
+    const lampNormal=direction(moduleWorld,[0,-POP_LAMP_DIAG,POP_LAMP_DIAG]),[x0,x1]=lampXBounds(side);
     const centers=[x0+(x1-x0)*.34,x0+(x1-x0)*.66];
     for(const cx of centers){
      const bulb=lampFrontPoint(cx,POP_LAMP_FACE_H*.5,.013);
