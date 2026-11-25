@@ -1,6 +1,6 @@
 # DRIVELLA — Rendering Architecture
 
-Current reference: **v0.18.92 / BUILD 158**  
+Current reference: **v0.18.93 / BUILD 159**  
 Main renderer: `index.html` — custom WebGL 1 renderer, no external rendering engine.
 
 **Release marker policy:** every published renderer/game change increments `BUILD` in `index.html` and updates the visible HUD, boot screen, README, and this document in the same release. Increment the patch version with the build when appropriate. Never publish a renderer change while leaving the visible build number unchanged.
@@ -653,3 +653,10 @@ Replace the 12-sample ring contrast with a two-scale, 16-direction-per-scale cir
 BUILD 157 is preserved at `backups/index_BUILD157_before_surface_only_sun_wrap_BUILD158.html`. The sun fragment shader uses a compact three-layer radial corona with a shorter outer fade. Its solar colour ramp is factored into `solarAuraColor(t)`: orange at the hot inner edge, coral through the middle and magenta at the soft outer falloff.
 
 The outline/AO composite defines the same `solarAuraColor(t)` and uses it for the foreground light-wrap, keeping both effects in one visual palette. Replace sparse ring taps with a weighted 5×5 Gaussian convolution (`[1,4,6,4,1]` separable weights) over the existing linearly filtered half-resolution scene mask. A positive centre-minus-blurred-coverage term, multiplied by centre coverage, confines the wrap to the interior edge of visible geometry instead of outlining both sides of the silhouette. A smooth mask gradient chooses the source-facing side. The existing AO target and one post composite are reused; no framebuffer or render pass is added. The 25 Gaussian mask samples execute only within the existing solar source gate. JavaScript parsing/source invariants pass; target-browser GLSL compilation, actual visual smoothness and FPS remain unverified. Version `v0.18.92` / BUILD 158.
+
+
+### BUILD 159 — Shared radial aura falloff for sun and occluders
+
+BUILD 158 is preserved at `backups/index_BUILD158_before_shared_solar_falloff_BUILD159.html`. The former object wrap used `max(centerCoverage - blurredCoverage, 0)` followed by a steep `smoothstep(0.012, 0.34, ...)`; that threshold concentrated the energy into a thin, almost uniform contour. Remove that edge-band threshold. Both shaders now define identical `solarAuraColor(t)`, `solarAuraEnergy(radialOffset)` and `solarAuraPulse(time)` functions. The three exponential components and outer fade used around the disc are therefore exactly the same as those used on foreground silhouettes.
+
+For the object path, sample the existing linearly filtered half-resolution scene mask once with the 5×5 Gaussian kernel at radius 4.2. Map the blurred interior coverage to a continuous screen-space distance estimate with `max(0, (-log(1 - coverage) - ln(2)) * 0.27)`, clamping coverage away from the logarithmic singularity. Feed this estimate into the same radial energy and colour functions; multiply by centre coverage, a smooth source-facing mask-gradient term, the existing sun-distance gate and the same slow pulse. This produces a broad, graded glow on the source-facing interior of the occluder rather than a thresholded outline. The previous 25 Gaussian reads and four gradient reads remain; no additional texture, framebuffer, render pass or scene draw is introduced. JavaScript syntax/source invariants pass; browser GLSL compilation, visual edge quality and FPS still require in-game verification. Version `v0.18.93` / BUILD 159.

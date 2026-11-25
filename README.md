@@ -2,7 +2,7 @@
 
 A browser-based synthwave drift-racing prototype with a custom low-poly 3D car, a procedural neon environment, and a hand-built WebGL renderer.
 
-> **Status:** Playable prototype under active development. Current renderer reference: **v0.18.92 / BUILD 158**.
+> **Status:** Playable prototype under active development. Current renderer reference: **v0.18.93 / BUILD 159**.
 > **Release identification:** every published game change increments the visible BUILD number in the HUD and startup screen; README and rendering architecture are updated in the same release.
 
 ## Current game
@@ -258,3 +258,8 @@ Replace the prior 12-point ring-contrast detector with a two-scale circular blur
 BUILD 157 is preserved at `backups/index_BUILD157_before_surface_only_sun_wrap_BUILD158.html`. Reduce the sun corona radius and brightness so it remains a compact glow adjacent to the disc rather than a large fog bank. Define one shared solar colour ramp (hot orange → coral → magenta) and use it for both the disc aura and the foreground-object wrap.
 
 Replace the sparse circular ring detector with a weighted 5×5 Gaussian convolution of the existing linearly filtered half-resolution scene mask. Use only the positive centre-minus-blurred-coverage difference, multiplied by centre coverage, so the highlight is drawn on the inside surface of the silhouette and does not create a matching outside halo rectangle. Estimate source-facing direction from the smooth mask gradient. The existing AO target and post composite are reused; no new framebuffer or scene pass is added. The Gaussian kernel uses 25 mask samples in the solar source region; compare F3 post timing and FPS. JavaScript parsing and source invariants passed; GLSL runtime compilation and in-game visual quality remain to be verified. Version `v0.18.92` / BUILD 158.
+
+
+### BUILD 159 — Shared radial aura falloff for sun and occluders
+
+BUILD 158 is preserved at `backups/index_BUILD158_before_shared_solar_falloff_BUILD159.html`. Remove the narrow single-colour silhouette stripe by eliminating the centre-minus-blurred-coverage threshold. The sun disc aura and foreground-object wrap now use the same `solarAuraColor(t)`, `solarAuraEnergy(radialOffset)` and `solarAuraPulse(time)` functions: identical three-stage orange/coral/magenta falloff and slow pulse. For objects, one 5×5 Gaussian sample of the existing linearly filtered half-resolution scene mask (radius 4.2) estimates continuous interior distance from the silhouette using a logarithmic mapping of the blurred coverage. The same radial energy curve then fades smoothly inward across the object surface; a soft mask-gradient term retains source-facing bias and the existing solar-disc gate prevents unrelated geometry from glowing. The prior 25 Gaussian taps plus four gradient taps are retained; no new framebuffer or render pass is added. JavaScript parsing and source checks passed; GLSL runtime compilation, in-game appearance and FPS require target-browser verification. Version `v0.18.93` / BUILD 159.
