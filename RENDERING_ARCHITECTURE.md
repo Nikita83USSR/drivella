@@ -553,3 +553,8 @@ The original seven-part dual-projector pop-up lamp assembly (wedge housing, fron
 ### BUILD 140 — Countach headlamp seating cleanup
 
 The legacy pop-up assembly mount is lowered by an additional 0.0206 game units relative to BUILD 139. All seven visible pieces and the two-projector flare anchors continue to share the same per-side mount and animated Countach hinge. During Countach model loading, source meshes named `headlampR` and `headlampL` are skipped; this prevents the imported static optics from being available to later draw paths. No body, bumper, fog-lamp, wheel, steering or lighting-shader geometry is altered. JavaScript syntax validation passed. Validate the closed cap/bonnet seam and the full open/close animation in the garage.
+
+
+### BUILD 141 — Remove legacy triangular hood lamp covers
+
+At Countach import, skip only `bodyPaint` triangles whose three vertices fall inside the verified bounds of the two isolated old upper headlamp cover shells. This removes 29 triangles on each side (58 total) from the painted body mesh. Do not filter `bodyPlastic`, `bodyBlack`, or the restored DRIVELLA pop-up lamp assembly. Hinge transform, headlamp mount offset, projector cores, flare anchors and emission behavior remain exactly as in BUILD 140.
