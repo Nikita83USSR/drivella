@@ -107,7 +107,6 @@ const maskSample=new Uint8Array(4);gl.readPixels(Math.floor(420/2),Math.floor((H
 gl.bindFramebuffer(gl.FRAMEBUFFER,null);gl.viewport(0,0,W,H);gl.clearColor(0.008,0.010,0.026,1);gl.clear(gl.COLOR_BUFFER_BIT|gl.DEPTH_BUFFER_BIT);
 gl.enable(gl.BLEND);gl.blendFunc(gl.SRC_ALPHA,gl.ONE_MINUS_SRC_ALPHA);gl.depthMask(false);draw(objectColour,objectVertices,gl.TRIANGLE_FAN);
 gl.disable(gl.DEPTH_TEST);gl.depthMask(false);gl.blendFunc(gl.ONE,gl.ONE_MINUS_SRC_ALPHA);
-draw(quadVs?sunProgram:sunProgram,quadVertices,gl.TRIANGLES);
 function setMaskUniforms(program){
  gl.useProgram(program);gl.activeTexture(gl.TEXTURE0);gl.bindTexture(gl.TEXTURE_2D,maskTexture);gl.uniform1i(gl.getUniformLocation(program,'uOcclusionMask'),0);
  gl.uniform2f(gl.getUniformLocation(program,'uSunCenter'),0.5,0.5);gl.uniform1f(gl.getUniformLocation(program,'uSunRadius'),0.28);gl.uniform1f(gl.getUniformLocation(program,'uAspect'),ASPECT);
@@ -117,7 +116,7 @@ setMaskUniforms(bloomProgram);gl.uniform2f(gl.getUniformLocation(bloomProgram,'u
 gl.disable(gl.BLEND);gl.depthMask(true);gl.finish();
 const pixelBuffer=new Uint8Array(W*H*4);gl.readPixels(0,0,W,H,gl.RGBA,gl.UNSIGNED_BYTE,pixelBuffer);
 function pixel(x,y){const i=((H-1-y)*W+x)*4;return Array.from(pixelBuffer.slice(i,i+3));}
-const probes={blockedSun:pixel(420,270),edgeBloom:pixel(455,270),visibleSun:pixel(520,270),farBackground:pixel(850,450),maskCenter:Array.from(maskSample.slice(0,4))};
+const probes={blockedSun:pixel(420,270),edgeBloom:pixel(462,270),visibleSun:pixel(520,270),farBackground:pixel(850,450),maskCenter:Array.from(maskSample.slice(0,4))};
 const sum=v=>v[0]+v[1]+v[2];
 const tests={
  maskCapturesCrossfadeObject:probes.maskCenter[3]>100,
