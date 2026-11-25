@@ -118,9 +118,9 @@
 <body>
 <canvas id="scene"></canvas><canvas id="sun"></canvas><canvas id="flare"></canvas>
 <div id="hud">
- <div class="top"><div class="logo">DRIVELLA<small>3D SYNTHWAVE DRIFT RACING</small></div><div class="version-label" id="version-label">v0.19.22 · BUILD 188</div><div class="stat">DISTANCE<b id="distance">000.0 KM</b></div><div class="stat">LOCATION<b>VIOLET COAST</b></div></div>
+ <div class="top"><div class="logo">DRIVELLA<small>3D SYNTHWAVE DRIFT RACING</small></div><div class="version-label" id="version-label">v0.19.23 · BUILD 189</div><div class="stat">DISTANCE<b id="distance">000.0 KM</b></div><div class="stat">LOCATION<b>VIOLET COAST</b></div></div>
  <div class="right"><div id="speed">000 <span>KM/H</span></div><div id="direction">▶ FORWARD</div><div id="music">♫ MUSIC SCANNING…</div></div>
- <div class="bottom"><div class="hint"><strong>W / ↑</strong> ACCELERATE　<strong>S / ↓</strong> BRAKE / REVERSE<br><strong>A / ←　D / →</strong> STEER　<strong>SPACE</strong> HANDBRAKE　<strong>C</strong> CAMERA　<strong>HOLD + DRAG LMB</strong> LOOK　<strong>L</strong> LIGHTS　<strong>K</strong> WIREFRAME</div><div class="build-credit"><span>3D NEON HIGHWAY // BUILD 188</span><a class="asset-credit" href="https://sketchfab.com/3d-models/low-poly-lamborghini-countach-c9b28a4ad5c74649a09afa613dd3fae1" target="_blank" rel="noopener noreferrer">Original model: 3DShinobi · Sketchfab · CC BY · modified for DRIVELLA</a></div></div>
+ <div class="bottom"><div class="hint"><strong>W / ↑</strong> ACCELERATE　<strong>S / ↓</strong> BRAKE / REVERSE<br><strong>A / ←　D / →</strong> STEER　<strong>SPACE</strong> HANDBRAKE　<strong>C</strong> CAMERA　<strong>HOLD + DRAG LMB</strong> LOOK　<strong>L</strong> LIGHTS　<strong>K</strong> WIREFRAME</div><div class="build-credit"><span>3D NEON HIGHWAY // BUILD 189</span><a class="asset-credit" href="https://sketchfab.com/3d-models/low-poly-lamborghini-countach-c9b28a4ad5c74649a09afa613dd3fae1" target="_blank" rel="noopener noreferrer">Original model: 3DShinobi · Sketchfab · CC BY · modified for DRIVELLA</a></div></div>
 </div>
 <div id="fps-counter" aria-live="off">FPS --</div>
 <div id="effects-menu" aria-hidden="true">
@@ -143,6 +143,7 @@
    <label class="fx-row"><span><b>Тени прожекторов гаража</b><small>Отдельные карты теней двух светильников</small></span><input type="checkbox" data-fx="garageSpotShadows" checked></label>
   </div>
   <div class="fx-group"><div class="fx-group-title">НЕОН И ОПТИКА</div>
+   <label class="fx-row"><span><b>Общий GPU Bloom — яркие участки</b><small>Мягкий порог яркости · два масштаба · 25% разрешения</small></span><input type="checkbox" data-fx="sceneBloom" checked></label>
    <label class="fx-row"><span><b>Солнце и закатный диск</b><small>Визуальный synthwave-диск позади сцены</small></span><input type="checkbox" data-fx="sunDisc" checked></label>
    <label class="fx-row"><span><b>GPU-рендер солнца</b><small>WebGL shader · выключи для сравнения с Canvas2D</small></span><input type="checkbox" data-fx="sunGpu" checked></label>
    <label class="fx-row"><span><b>Старый контурный bloom</b><small>Предыдущий расчёт по маске объекта · оставлен для сравнения</small></span><input type="checkbox" data-fx="sunAuraWrap"></label>
@@ -160,7 +161,7 @@
 </div>
 <div id="tools-ui"><button id="cam-prev" aria-label="Previous camera">◀</button><span id="cam-label">CAM 2 · CLOSE</span><button id="cam-next" aria-label="Next camera">▶</button><button id="debug-toggle">DEBUG</button></div>
 <div id="debug-panel"><div class="debug-title">DRIVELLA DIAGNOSTICS</div><div id="debug-data">Initializing…</div></div>
-<div id="boot-screen"><div class="boot-content"><div class="boot-kicker">NIGHT DRIVE SYSTEMS // INITIALIZING</div><div class="boot-logo">DRIVELLA</div><div class="boot-subtitle">3D SYNTHWAVE DRIFT RACING</div><div class="boot-mark"></div><div class="boot-status" id="boot-status">BUILDING THE 3D WORLD</div><div class="boot-track"><div class="boot-progress" id="boot-progress"></div></div><div class="boot-meta"><span>3D ENGINE ONLINE</span><span id="boot-percent">00%</span></div><div class="boot-footer">ENGINE STARTUP // v0.19.22 · BUILD 188</div></div></div>
+<div id="boot-screen"><div class="boot-content"><div class="boot-kicker">NIGHT DRIVE SYSTEMS // INITIALIZING</div><div class="boot-logo">DRIVELLA</div><div class="boot-subtitle">3D SYNTHWAVE DRIFT RACING</div><div class="boot-mark"></div><div class="boot-status" id="boot-status">BUILDING THE 3D WORLD</div><div class="boot-track"><div class="boot-progress" id="boot-progress"></div></div><div class="boot-meta"><span>3D ENGINE ONLINE</span><span id="boot-percent">00%</span></div><div class="boot-footer">ENGINE STARTUP // v0.19.23 · BUILD 189</div></div></div>
 <div id="main-menu"><div class="menu-content"><div class="menu-brand">DRIVELLA GTS</div><div class="menu-sub">RIDE THE RETRO FUTURE</div><div class="menu-actions"><button class="menu-btn" id="menu-start">СТАРТ</button><button class="menu-btn" id="menu-garage">ГАРАЖ</button><button class="menu-btn" id="menu-options">НАСТРОЙКИ</button></div></div><div class="menu-footer">РАЗРАБОТЧИК — <b>НИКИТА МАРКИН</b></div></div>
 <div id="garage-screen"><div class="garage-head">ГАРАЖ // DRIVELLA GTS</div><div class="garage-copy">DRIVELLA GTS · SHOWROOM LAB<br>ТРИ COUNTACH ДЛЯ СРАВНЕНИЯ МАТЕРИАЛОВ И СВЕТА<br>ДОМА · ПАЛЬМЫ · SUN / BLOOM / GOD RAYS</div><div class="garage-controls"><button id="garage-back">← НАЗАД В МЕНЮ</button></div><div class="garage-tip">ЗАЖМИ И ТЯНИ — ВРАЩАЙ ВСЮ СЦЕНУ<br>КОЛЁСИКО — МАСШТАБ · F4 — ЭФФЕКТЫ · F3 — ДИАГНОСТИКА</div></div>
 <div id="options-screen"><div class="options-head">ОПЦИИ</div><div class="options-card"><div class="option-row"><span>МУЗЫКА</span><button id="option-music">ВКЛЮЧЕНА</button></div><div class="option-row"><span>ГРОМКОСТЬ</span><input id="option-volume" type="range" min="0" max="100" value="52"></div><div class="option-row"><span>ЗВУК ДВИГАТЕЛЯ</span><button id="option-sfx">ВКЛЮЧЁН</button></div><div class="option-row"><span>КАМЕРА</span><span>КЛАВИШИ 1–4</span></div><button id="options-back" style="width:100%;margin-top:18px">← НАЗАД В МЕНЮ</button></div></div>
@@ -179,7 +180,7 @@
 <script>
 (()=>{
 'use strict';
-const VERSION='v0.19.22',BUILD='188';
+const VERSION='v0.19.23',BUILD='189';
 const canvas=document.getElementById('scene'),gl=canvas.getContext('webgl',{antialias:true,alpha:true}),sun=document.getElementById('sun'),sctx=sun.getContext('2d'),flare=document.getElementById('flare'),fctx=flare.getContext('2d');
 const $=id=>document.getElementById(id);
 let countachModel=null,countachModelReady=false;
@@ -191,7 +192,7 @@ function reportStartupError(message){
 window.addEventListener('error',e=>reportStartupError(e.message||'JavaScript error'));
 window.addEventListener('unhandledrejection',e=>reportStartupError(e.reason&&e.reason.message||e.reason||'Promise rejected'));
 
-let W=innerWidth,H=innerHeight,DPR=1,outlinePass=false,shadowPass=false,shadowCasterMode='all',aoScenePass=false,outlineTarget=null,aoTarget=null,sunBloomTargets=null,godRaysTarget=null,shadowTarget=null,vehicleShadowTarget=null,localShadowTargets=[null,null],localShadowVPs=[null,null],localShadowSignatures=['',''],shadowVP=null,sunShadowVP=null,shadowSceneRevision=1,outlineCabinEdge=null;
+let W=innerWidth,H=innerHeight,DPR=1,outlinePass=false,shadowPass=false,shadowCasterMode='all',aoScenePass=false,outlineTarget=null,aoTarget=null,sceneColorTarget=null,sceneBloomTargets=null,sunBloomTargets=null,godRaysTarget=null,shadowTarget=null,vehicleShadowTarget=null,localShadowTargets=[null,null],localShadowVPs=[null,null],localShadowSignatures=['',''],shadowVP=null,sunShadowVP=null,shadowSceneRevision=1,outlineCabinEdge=null;
 function resize(){
  DPR=Math.min(devicePixelRatio||1,2);W=innerWidth;H=innerHeight;
  for(const c of [canvas,sun,flare]){c.width=Math.round(W*DPR);c.height=Math.round(H*DPR);c.style.width=W+'px';c.style.height=H+'px';}
@@ -291,6 +292,51 @@ function renderSunBloom(maskTexture){
  const gain=name=>{const layer=profile.layers.find(item=>item.name===name);return layer?layer.gain:0;};
  return{tight:layerTexture('tight'),mid:layerTexture('mid'),wide:layerTexture('wide'),atmos:layerTexture('atmos'),gains:{tight:gain('tight'),mid:gain('mid'),wide:gain('wide'),atmos:gain('atmos')}};
  }
+
+function renderThresholdedSceneBloom(){
+ if(!sceneColorTarget)return false;
+ if(!ensureSceneBloomTargets()){
+  gl.bindFramebuffer(gl.FRAMEBUFFER,null);gl.viewport(0,0,canvas.width,canvas.height);gl.disable(gl.DEPTH_TEST);gl.disable(gl.BLEND);gl.depthMask(false);
+  gl.useProgram(sceneCopyProgram);gl.bindBuffer(gl.ARRAY_BUFFER,outlineQuad);gl.enableVertexAttribArray(sceneCopyLoc.position);gl.vertexAttribPointer(sceneCopyLoc.position,2,gl.FLOAT,false,0,0);
+  gl.activeTexture(gl.TEXTURE0);gl.bindTexture(gl.TEXTURE_2D,sceneColorTarget.texture);gl.uniform1i(sceneCopyLoc.scene,0);gl.drawArrays(gl.TRIANGLES,0,6);gl.disableVertexAttribArray(sceneCopyLoc.position);
+  gl.bindTexture(gl.TEXTURE_2D,null);gl.depthMask(true);gl.enable(gl.DEPTH_TEST);gl.useProgram(prog);return false;
+ }
+ const targets=sceneBloomTargets;
+ gl.disable(gl.DEPTH_TEST);gl.disable(gl.BLEND);gl.depthMask(false);
+ // Bright-pass extraction uses the final opaque/translucent scene colour, not a hand-picked sun or lamp mesh.
+ gl.bindFramebuffer(gl.FRAMEBUFFER,targets.source.framebuffer);gl.viewport(0,0,targets.source.width,targets.source.height);
+ gl.useProgram(sceneBloomExtractProgram);gl.bindBuffer(gl.ARRAY_BUFFER,outlineQuad);
+ gl.enableVertexAttribArray(sceneBloomExtractLoc.position);gl.vertexAttribPointer(sceneBloomExtractLoc.position,2,gl.FLOAT,false,0,0);
+ gl.activeTexture(gl.TEXTURE0);gl.bindTexture(gl.TEXTURE_2D,sceneColorTarget.texture);gl.uniform1i(sceneBloomExtractLoc.source,0);
+ gl.uniform1f(sceneBloomExtractLoc.threshold,0.72);gl.uniform1f(sceneBloomExtractLoc.knee,0.20);
+ gl.drawArrays(gl.TRIANGLES,0,6);gl.disableVertexAttribArray(sceneBloomExtractLoc.position);gl.bindTexture(gl.TEXTURE_2D,null);
+ const blur=(source,target,direction,radius)=>{
+  gl.bindFramebuffer(gl.FRAMEBUFFER,target.framebuffer);gl.viewport(0,0,target.width,target.height);
+  gl.useProgram(sunBloomProgram);gl.bindBuffer(gl.ARRAY_BUFFER,outlineQuad);
+  gl.enableVertexAttribArray(sunBloomLoc.position);gl.vertexAttribPointer(sunBloomLoc.position,2,gl.FLOAT,false,0,0);
+  gl.activeTexture(gl.TEXTURE0);gl.bindTexture(gl.TEXTURE_2D,source.texture);gl.uniform1i(sunBloomLoc.source,0);
+  gl.uniform2f(sunBloomLoc.texel,1/source.width,1/source.height);gl.uniform2f(sunBloomLoc.direction,direction[0],direction[1]);
+  gl.uniform1f(sunBloomLoc.radius,radius);gl.uniform1f(sunBloomLoc.tapMode,0.0);
+  gl.drawArrays(gl.TRIANGLES,0,6);gl.disableVertexAttribArray(sunBloomLoc.position);gl.bindTexture(gl.TEXTURE_2D,null);
+ };
+ // Two radii: a compact highlight bloom and a broader, lower-energy neon halo.
+ blur(targets.source,targets.tightHorizontal,[1,0],2.2);
+ blur(targets.tightHorizontal,targets.tightVertical,[0,1],2.2);
+ blur(targets.source,targets.wideHorizontal,[1,0],8.0);
+ blur(targets.wideHorizontal,targets.wideVertical,[0,1],8.0);
+ // Copy the full-resolution scene while adding both blurred levels in one composite.
+ gl.bindFramebuffer(gl.FRAMEBUFFER,null);gl.viewport(0,0,canvas.width,canvas.height);
+ gl.useProgram(sceneBloomCompositeProgram);gl.bindBuffer(gl.ARRAY_BUFFER,outlineQuad);
+ gl.enableVertexAttribArray(sceneBloomCompositeLoc.position);gl.vertexAttribPointer(sceneBloomCompositeLoc.position,2,gl.FLOAT,false,0,0);
+ gl.activeTexture(gl.TEXTURE0);gl.bindTexture(gl.TEXTURE_2D,sceneColorTarget.texture);gl.uniform1i(sceneBloomCompositeLoc.scene,0);
+ gl.activeTexture(gl.TEXTURE1);gl.bindTexture(gl.TEXTURE_2D,targets.tightVertical.texture);gl.uniform1i(sceneBloomCompositeLoc.tight,1);
+ gl.activeTexture(gl.TEXTURE2);gl.bindTexture(gl.TEXTURE_2D,targets.wideVertical.texture);gl.uniform1i(sceneBloomCompositeLoc.wide,2);
+ gl.uniform1f(sceneBloomCompositeLoc.tightGain,1.22);gl.uniform1f(sceneBloomCompositeLoc.wideGain,.72);
+ gl.drawArrays(gl.TRIANGLES,0,6);gl.disableVertexAttribArray(sceneBloomCompositeLoc.position);
+ for(let unit=0;unit<3;unit++){gl.activeTexture(gl.TEXTURE0+unit);gl.bindTexture(gl.TEXTURE_2D,null);}
+ gl.activeTexture(gl.TEXTURE0);gl.depthMask(true);gl.enable(gl.DEPTH_TEST);gl.useProgram(prog);
+ return true;
+}
 function getSunScreenMetrics(){
  if(garageMode)return{x:W*.5,y:H*.285,r:Math.min(W*.27,H*.24,185)};
  const roadHeading=Math.atan((roadX(distance+90)-roadX(distance-30))/120),viewYaw=carYaw+roadHeading;
@@ -377,6 +423,32 @@ const sunBloomFs='precision mediump float;uniform sampler2D uSource;uniform vec2
  const sunBloomLoc={position:gl.getAttribLocation(sunBloomProgram,'aPosition'),source:gl.getUniformLocation(sunBloomProgram,'uSource'),texel:gl.getUniformLocation(sunBloomProgram,'uTexel'),direction:gl.getUniformLocation(sunBloomProgram,'uDirection'),radius:gl.getUniformLocation(sunBloomProgram,'uRadius'),tapMode:gl.getUniformLocation(sunBloomProgram,'uTapMode')};
  if(sunBloomLoc.position<0||[sunBloomLoc.source,sunBloomLoc.texel,sunBloomLoc.direction,sunBloomLoc.radius,sunBloomLoc.tapMode].some(v=>v===null))throw new Error('Sun Bloom shader uniforms are incomplete');
 
+const sceneBloomExtractFs='precision mediump float;uniform sampler2D uSource;uniform float uThreshold;uniform float uKnee;varying vec2 vUv;void main(){vec4 source=texture2D(uSource,vUv);vec3 colour=max(source.rgb,vec3(0.0));float peak=max(max(colour.r,colour.g),colour.b);float knee=max(uKnee,0.0001);float soft=clamp((peak-uThreshold+knee)/(2.0*knee),0.0,1.0);soft=soft*soft*knee;float contribution=clamp(max(peak-uThreshold,soft)/max(peak,0.0001),0.0,1.0);vec3 bright=colour*contribution;float alpha=clamp(max(max(bright.r,bright.g),bright.b)*0.42,0.0,0.42);gl_FragColor=vec4(bright,alpha);}';
+const sceneBloomExtractProgram=gl.createProgram();
+gl.attachShader(sceneBloomExtractProgram,shader(gl.VERTEX_SHADER,outlineVs));
+gl.attachShader(sceneBloomExtractProgram,shader(gl.FRAGMENT_SHADER,sceneBloomExtractFs));
+gl.linkProgram(sceneBloomExtractProgram);
+if(!gl.getProgramParameter(sceneBloomExtractProgram,gl.LINK_STATUS))throw new Error(gl.getProgramInfoLog(sceneBloomExtractProgram));
+const sceneBloomExtractLoc={position:gl.getAttribLocation(sceneBloomExtractProgram,'aPosition'),source:gl.getUniformLocation(sceneBloomExtractProgram,'uSource'),threshold:gl.getUniformLocation(sceneBloomExtractProgram,'uThreshold'),knee:gl.getUniformLocation(sceneBloomExtractProgram,'uKnee')};
+if(sceneBloomExtractLoc.position<0||[sceneBloomExtractLoc.source,sceneBloomExtractLoc.threshold,sceneBloomExtractLoc.knee].some(v=>v===null))throw new Error('Scene Bloom extraction shader uniforms are incomplete');
+const sceneBloomCompositeFs='precision mediump float;uniform sampler2D uSceneColor;uniform sampler2D uGlowTight;uniform sampler2D uGlowWide;uniform float uTightGain;uniform float uWideGain;varying vec2 vUv;void main(){vec4 scene=texture2D(uSceneColor,vUv);vec4 tight=texture2D(uGlowTight,vUv);vec4 wide=texture2D(uGlowWide,vUv);vec3 glow=tight.rgb*uTightGain+wide.rgb*uWideGain;float glowAlpha=clamp(tight.a*uTightGain+wide.a*uWideGain,0.0,0.72);gl_FragColor=vec4(scene.rgb+glow,clamp(scene.a+glowAlpha,0.0,1.0));}';
+const sceneBloomCompositeProgram=gl.createProgram();
+gl.attachShader(sceneBloomCompositeProgram,shader(gl.VERTEX_SHADER,outlineVs));
+gl.attachShader(sceneBloomCompositeProgram,shader(gl.FRAGMENT_SHADER,sceneBloomCompositeFs));
+gl.linkProgram(sceneBloomCompositeProgram);
+if(!gl.getProgramParameter(sceneBloomCompositeProgram,gl.LINK_STATUS))throw new Error(gl.getProgramInfoLog(sceneBloomCompositeProgram));
+const sceneBloomCompositeLoc={position:gl.getAttribLocation(sceneBloomCompositeProgram,'aPosition'),scene:gl.getUniformLocation(sceneBloomCompositeProgram,'uSceneColor'),tight:gl.getUniformLocation(sceneBloomCompositeProgram,'uGlowTight'),wide:gl.getUniformLocation(sceneBloomCompositeProgram,'uGlowWide'),tightGain:gl.getUniformLocation(sceneBloomCompositeProgram,'uTightGain'),wideGain:gl.getUniformLocation(sceneBloomCompositeProgram,'uWideGain')};
+if(sceneBloomCompositeLoc.position<0||[sceneBloomCompositeLoc.scene,sceneBloomCompositeLoc.tight,sceneBloomCompositeLoc.wide,sceneBloomCompositeLoc.tightGain,sceneBloomCompositeLoc.wideGain].some(v=>v===null))throw new Error('Scene Bloom composite shader uniforms are incomplete');
+const sceneCopyFs='precision mediump float;uniform sampler2D uSceneColor;varying vec2 vUv;void main(){gl_FragColor=texture2D(uSceneColor,vUv);}';
+const sceneCopyProgram=gl.createProgram();
+gl.attachShader(sceneCopyProgram,shader(gl.VERTEX_SHADER,outlineVs));
+gl.attachShader(sceneCopyProgram,shader(gl.FRAGMENT_SHADER,sceneCopyFs));
+gl.linkProgram(sceneCopyProgram);
+if(!gl.getProgramParameter(sceneCopyProgram,gl.LINK_STATUS))throw new Error(gl.getProgramInfoLog(sceneCopyProgram));
+const sceneCopyLoc={position:gl.getAttribLocation(sceneCopyProgram,'aPosition'),scene:gl.getUniformLocation(sceneCopyProgram,'uSceneColor')};
+if(sceneCopyLoc.position<0||sceneCopyLoc.scene===null)throw new Error('Scene colour fallback shader uniforms are incomplete');
+
+
  const godRaysFs='precision mediump float;uniform sampler2D uSceneMask;uniform vec2 uSunCenter;uniform vec2 uSceneTexel;uniform float uAspect;uniform float uSunRadius;uniform float uTime;uniform float uStrength;varying vec2 vUv;float sceneCoverage(vec2 uv){return smoothstep(0.025,0.24,texture2D(uSceneMask,clamp(uv,vec2(0.001),vec2(0.999))).a);}float openAir(vec2 uv){return 1.0-sceneCoverage(uv);}void main(){vec2 sunDelta=(uSunCenter-vUv)*vec2(uAspect,1.0);float sunDistance=length(sunDelta)/max(uSunRadius,0.001);float destinationAir=openAir(vUv);vec2 radialFromSun=(vUv-uSunCenter)*vec2(uAspect,1.0);vec2 radialDirection=radialFromSun/max(length(radialFromSun),0.0001);float sourceRadiusY=max(uSunRadius*0.78,uSceneTexel.y*2.0);vec2 sourceUv=uSunCenter+vec2(radialDirection.x*sourceRadiusY/max(uAspect,0.001),radialDirection.y*sourceRadiusY);float sourceVisible=openAir(sourceUv)*0.58+openAir(mix(sourceUv,uSunCenter,0.28))*0.27+openAir(mix(sourceUv,uSunCenter,0.56))*0.15;float accumulated=0.0,totalWeight=0.0;for(int i=0;i<24;i++){float t=(float(i)+0.5)/24.0;vec2 sampleUv=mix(vUv,sourceUv,t*0.985);float weight=1.0-t*0.36;accumulated+=openAir(sampleUv)*weight;totalWeight+=weight;}float rayVisibility=accumulated/max(totalWeight,0.001);float sourceGate=smoothstep(0.12,0.50,sourceVisible);float nearFade=smoothstep(0.80,1.25,sunDistance);float farFade=1.0-smoothstep(3.15,4.8,sunDistance);float radialEnergy=exp(-sunDistance*0.23)*nearFade*farFade;float angle=atan(sunDelta.y,sunDelta.x);float broadBeam=pow(max(cos(angle*10.0+sin(angle*3.0)*0.48),0.0),8.0);float fineBeam=pow(max(cos(angle*19.0-0.55),0.0),12.0);float beamPattern=0.52+0.32*broadBeam+0.16*fineBeam;float pulse=0.97+0.03*sin(uTime*0.21+sin(angle*2.0)*0.12);float energy=rayVisibility*sourceVisible*sourceGate*radialEnergy*beamPattern*pulse*destinationAir;float alpha=clamp(energy*uStrength,0.0,0.242);vec3 nearColor=vec3(1.0,0.47,0.24),farColor=vec3(1.0,0.22,0.43);vec3 rayColor=mix(nearColor,farColor,smoothstep(0.9,3.0,sunDistance));gl_FragColor=vec4(rayColor*alpha,alpha);}';
  const godRaysProgram=gl.createProgram();
  gl.attachShader(godRaysProgram,shader(gl.VERTEX_SHADER,outlineVs));
@@ -459,7 +531,52 @@ function createSunBloomTarget(width,height){
   sunBloomTargets=targets;
   return true;
  }
- function ensureAOTarget(){
+ 
+function disposeSceneColorTarget(){
+ if(!sceneColorTarget)return;
+ gl.deleteTexture(sceneColorTarget.texture);gl.deleteRenderbuffer(sceneColorTarget.depth);gl.deleteFramebuffer(sceneColorTarget.framebuffer);sceneColorTarget=null;
+}
+function ensureSceneColorTarget(){
+ const width=canvas.width,height=canvas.height;
+ if(!width||!height)return false;
+ if(sceneColorTarget&&sceneColorTarget.width===width&&sceneColorTarget.height===height)return true;
+ disposeSceneColorTarget();
+ const texture=gl.createTexture();gl.bindTexture(gl.TEXTURE_2D,texture);
+ gl.texParameteri(gl.TEXTURE_2D,gl.TEXTURE_MIN_FILTER,gl.LINEAR);gl.texParameteri(gl.TEXTURE_2D,gl.TEXTURE_MAG_FILTER,gl.LINEAR);
+ gl.texParameteri(gl.TEXTURE_2D,gl.TEXTURE_WRAP_S,gl.CLAMP_TO_EDGE);gl.texParameteri(gl.TEXTURE_2D,gl.TEXTURE_WRAP_T,gl.CLAMP_TO_EDGE);
+ gl.texImage2D(gl.TEXTURE_2D,0,gl.RGBA,width,height,0,gl.RGBA,gl.UNSIGNED_BYTE,null);
+ const depth=gl.createRenderbuffer();gl.bindRenderbuffer(gl.RENDERBUFFER,depth);gl.renderbufferStorage(gl.RENDERBUFFER,gl.DEPTH_COMPONENT16,width,height);
+ const framebuffer=gl.createFramebuffer();gl.bindFramebuffer(gl.FRAMEBUFFER,framebuffer);
+ gl.framebufferTexture2D(gl.FRAMEBUFFER,gl.COLOR_ATTACHMENT0,gl.TEXTURE_2D,texture,0);gl.framebufferRenderbuffer(gl.FRAMEBUFFER,gl.DEPTH_ATTACHMENT,gl.RENDERBUFFER,depth);
+ const complete=gl.checkFramebufferStatus(gl.FRAMEBUFFER)===gl.FRAMEBUFFER_COMPLETE;
+ gl.bindFramebuffer(gl.FRAMEBUFFER,null);gl.bindTexture(gl.TEXTURE_2D,null);gl.bindRenderbuffer(gl.RENDERBUFFER,null);
+ if(!complete){gl.deleteTexture(texture);gl.deleteRenderbuffer(depth);gl.deleteFramebuffer(framebuffer);return false;}
+ sceneColorTarget={texture,depth,framebuffer,width,height};return true;
+}
+function disposeSceneBloomTargets(){
+ if(!sceneBloomTargets)return;
+ for(const target of Object.values(sceneBloomTargets))if(target&&target.texture){gl.deleteTexture(target.texture);gl.deleteFramebuffer(target.framebuffer);}
+ sceneBloomTargets=null;
+}
+function ensureSceneBloomTargets(){
+ const width=Math.max(1,Math.round(canvas.width*.25)),height=Math.max(1,Math.round(canvas.height*.25));
+ if(!width||!height)return false;
+ if(sceneBloomTargets&&sceneBloomTargets.source.width===width&&sceneBloomTargets.source.height===height)return true;
+ disposeSceneBloomTargets();
+ const targets={
+  source:createSunBloomTarget(width,height),
+  tightHorizontal:createSunBloomTarget(width,height),
+  tightVertical:createSunBloomTarget(width,height),
+  wideHorizontal:createSunBloomTarget(width,height),
+  wideVertical:createSunBloomTarget(width,height)
+ };
+ if(Object.values(targets).some(target=>!target)){
+  for(const target of Object.values(targets))if(target){gl.deleteTexture(target.texture);gl.deleteFramebuffer(target.framebuffer);}
+  return false;
+ }
+ sceneBloomTargets=targets;return true;
+}
+function ensureAOTarget(){
  const width=Math.max(1,Math.round(canvas.width*.5)),height=Math.max(1,Math.round(canvas.height*.5));
  if(!width||!height)return false;
  if(aoTarget&&aoTarget.width===width&&aoTarget.height===height)return true;
@@ -1509,7 +1626,7 @@ function getFrontWheelSteerAngle(side){
 }
 let headlightBaseIntensity=0,headlightCullL=[0,0,0],headlightCullR=[0,0,0],headlightCullDir=[0,0,1];
  let cameraMode=1,debugVisible=false,drawCalls=0,fps=0,fpsFrames=0,fpsTime=performance.now(),debugTime=0,bootDone=false,garageMode=false,garageAngle=0,garageTilt=.24,garageZoom=22,garageDrag=false,garageLastX=0,garageLastY=0,musicVolume=.52,sfxEnabled=true,headlightLightingEnabled=true,mouseLookActive=false,mouseLookYaw=0,mouseLookPitch=0,mouseLookX=0,mouseLookY=0,mouseLookPointerId=null,mouseLookReturning=false;
-const FX_DEFAULTS={outlines:true,ssao:true,wireframe:false,worldShadows:true,vehicleShadows:false,glassReflections:true,paintHighlights:true,lampEmission:true,headlights:false,headlightLighting:true,garageSpotlights:true,garageSpotShadows:true,sunDisc:true,sunGpu:true,sunAuraWrap:false,sunAuraBloom:true,sunGodRays:true,sunAuraDebug:false,lensFlares:true,underglow:true,tireContact:true};
+const FX_DEFAULTS={outlines:true,ssao:true,wireframe:false,worldShadows:true,vehicleShadows:false,glassReflections:true,paintHighlights:true,lampEmission:true,headlights:false,headlightLighting:true,garageSpotlights:true,garageSpotShadows:true,sceneBloom:true,sunDisc:true,sunGpu:true,sunAuraWrap:false,sunAuraBloom:true,sunGodRays:true,sunAuraDebug:false,lensFlares:true,underglow:true,tireContact:true};
 const FX={...FX_DEFAULTS};if(!gpuSunReady)FX.sunGpu=false;
 const SUN_BLOOM_PROFILES={
  performance:{scale:.5,tapMode:0,layers:[{name:'tight',radius:3.4,gain:.90},{name:'wide',radius:12.0,gain:.46}]},
@@ -2354,6 +2471,7 @@ function updateDebug(dt){
    '<strong>GPU SHADOW / WORLD / POST</strong> '+(gpuTimerExt?['shadow','world','post'].map(k=>gpuPassMs[k]===null?'--':gpuPassMs[k].toFixed(2)).join(' / ')+' ms':'TIMER UNSUPPORTED')+'<br>'+
    '<strong>SCENE</strong> '+(garageMode?'GARAGE':'ROAD')+'<br>'+
    '<strong>SUN BLOOM QUALITY</strong> '+sunBloomQuality.toUpperCase()+'<br>'+
+   '<strong>SCENE BLOOM</strong> '+(FX.sceneBloom&&sceneColorTarget?'ON · 25% RES / 2 SCALES':'OFF')+'<br>'+
    '<strong>GOD RAYS</strong> '+(FX.sunGodRays&&gpuSunReady&&!garageMode?'ON · 25% RES':'OFF')+'<br>'+
    '<strong>HEADLIGHT LENS GLOW (H)</strong> '+(headlightLightingEnabled?'ON':'OFF')+'<br>'+
    '<strong>MOUSE LOOK</strong> '+(mouseLookActive?'ACTIVE':'AUTO')+' · '+mouseLookYaw.toFixed(2)+' / '+mouseLookPitch.toFixed(2)+'<br>'+
@@ -2522,8 +2640,13 @@ function frame(now){
  }
 
  let passCpuStart=performance.now();beginGpuPass('shadow');renderShadowMap();endGpuPass();cpuPassMs.shadow=performance.now()-passCpuStart;
+ const sceneBloomCapture=!!(FX.sceneBloom&&ensureSceneColorTarget());
+ if(sceneBloomCapture){gl.bindFramebuffer(gl.FRAMEBUFFER,sceneColorTarget.framebuffer);gl.viewport(0,0,canvas.width,canvas.height);}
+ else{gl.bindFramebuffer(gl.FRAMEBUFFER,null);gl.viewport(0,0,canvas.width,canvas.height);}
  passCpuStart=performance.now();beginGpuPass('world');drawWorld();endGpuPass();cpuPassMs.world=performance.now()-passCpuStart;
- passCpuStart=performance.now();beginGpuPass('post');renderCarOutlines();endGpuPass();cpuPassMs.post=performance.now()-passCpuStart;
+ passCpuStart=performance.now();beginGpuPass('post');
+ if(sceneBloomCapture)renderThresholdedSceneBloom();
+ renderCarOutlines();endGpuPass();cpuPassMs.post=performance.now()-passCpuStart;
  drawSun();updateDebug(dt);
  updateCarAudio();
  $('speed').innerHTML=String(Math.round(getVehicleSpeed())).padStart(3,'0')+' <span>KM/H</span>';
