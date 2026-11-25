@@ -1,6 +1,6 @@
 # DRIVELLA — Rendering Architecture
 
-Current reference: **v0.19.24 / BUILD 190**  
+Current reference: **v0.19.25 / BUILD 191**  
 Main renderer: `index.html` — custom WebGL 1 renderer, no external rendering engine.
 
 **Release marker policy:** every published renderer/game change increments `BUILD` in `index.html` and updates the visible HUD, boot screen, README, and this document in the same release. Increment the patch version with the build when appropriate. Never publish a renderer change while leaving the visible build number unchanged.
@@ -16,7 +16,8 @@ The render loop currently runs these passes in order:
 1. `renderShadowMap()` — render the full-scene solar map and garage spotlight maps into packed-depth textures. When `FX.vehicleShadows` is enabled, also render a 1024² packed-depth PCF receiver map using only selected vehicle detail casters; the normal/road/biome environment pass is skipped for this secondary map.
 2. `drawWorld()` — render the visible scene using the active driving or garage camera, sample the shadow map on receiving materials, and draw the striped GPU sun disc plus radial corona before opaque scene geometry on the main framebuffer.
 3. `renderCarOutlines()` — render the half-resolution full-scene normal/depth/visibility mask for SSAO, solar occlusion, quarter-resolution God Rays and/or GPU Sun Bloom. God Rays sample the mask along 24 bounded radial steps toward the projected sun and write a quarter-resolution shaft texture; the existing fullscreen composite adds the shafts only where the destination remains visible background. Sun Bloom still renders the visible sun through that mask into its selected source target, runs the chosen separable Gaussian layers, and composites the result onto the inward-facing, sunward portion of the occluder. The full-resolution car mask is rendered only when ink outlines are enabled. The scene mask remains active when SSAO and ink outlines are disabled if the sun is using occlusion, God Rays or Bloom.
-4. `drawSun()` — when GPU sun is disabled or unavailable, draw the complete Canvas2D disc + halo fallback. Vehicle lens flares remain on their separate Canvas2D overlay.
+4. `drawSun()` — when GPU sun is disabled or unavailable, draw the complete Canvas2D disc + halo fallback. This canvas is no longer used for vehicle-lamp optics.
+5. `renderVehicleLensFlaresGPU()` — project the existing Countach light-source anchors through the active camera, apply source-facing and distance attenuation, then send all visible optical elements through one dynamic vertex buffer and one additive WebGL draw on the main scene canvas. It runs after the world and outline composites so the optical overlay remains above the 3D scene.
 
 The scene is intentionally drawn through the same `drawWorld()` path in the normal, directional-shadow, and scene-AO passes. The shared-scene gate is `if (!outlinePass || aoScenePass)`: it includes opaque world geometry during the shadow pass and the full-scene AO capture, while the separate car-contour pass draws only car parts. `shadowCasterAllowed()` remains the single policy for excluding translucent and emissive materials. Do not build one-off shadow meshes or hard-code a shadow for every new prop.
 
@@ -35,7 +36,7 @@ The scene is intentionally drawn through the same `drawWorld()` path in the norm
 - **Lamp emission:** `FX.lampEmission` controls the material-mode-8 emissive output for vehicle lamps and the garage fixture lenses; disabling it leaves a dim authored lamp surface.
 - **Pop-up headlights and headlight illumination:** `FX.headlights` mirrors the existing `headlightsUp` deployment target (`L`); `FX.headlightLighting` mirrors `headlightLightingEnabled` (`H`). Mechanical deployment and diffuse beam illumination are separate switches.
 - **Garage spotlights / garage spotlight shadows:** `FX.garageSpotlights` controls whether the garage's two real local-light sources are uploaded; `FX.garageSpotShadows` independently enables their cached per-source shadow maps and receiver visibility.
-- **Sun disc / vehicle lens flares:** `FX.sunDisc` hides only the 2D synthwave sunset drawing; it does not remove `SUN_LIGHT`, its material illumination or cast shadows. `FX.lensFlares` independently gates the Canvas 2D vehicle-lamp optical overlay.
+- **Sun disc / vehicle lens flares:** `FX.sunDisc` hides only the 2D synthwave sunset drawing; it does not remove `SUN_LIGHT`, its material illumination or cast shadows. `FX.lensFlares` independently gates the batched GPU vehicle-lamp optical overlay.
 - **Underglow / tyre contact:** `FX.underglow` gates the red floor pool and side neon rails (material modes 5 and 6). `FX.tireContact` separately gates the four procedural tyre-contact ovals (material mode 7).
 
 The F4 panel exposes 22 effect checkboxes plus the separate Sun Bloom quality selector, and includes a reset-to-defaults action.
@@ -70,6 +71,18 @@ This is a display-space screen effect over the renderer's RGBA8 output, not a fl
 ### BUILD 190 — restrained scene Bloom intensity
 
 Reduce only the two final composite gains by 10%: the tight glow changes from **1.22** to **1.098**, and the wide glow from **0.72** to **0.648**. The bright-pass threshold (**0.72**), soft knee (**0.20**), quarter-resolution extraction/blur targets, Gaussian radii (**2.2 / 8.0**), capture path, fallback handling, Sun Bloom and God Rays are unchanged. This lowers the energy of the low-resolution glow without altering its sampling or blur footprint. In-game visual confirmation and GTX 1650 frame-time validation remain pending.
+
+### BUILD 191 — scene Bloom strength
+
+The two general-purpose scene Bloom gains are reduced to **0.976** (tight) and **0.576** (wide), which is 80% of their BUILD 189 baseline values (**1.22 / 0.72**) and therefore 20% lower overall. BUILD 190 first moved them to 90%; BUILD 191 applies the additional 10 percentage points of the original baseline. Threshold (**0.72**), knee (**0.20**), quarter-resolution target, Gaussian radii (**2.2 / 8.0**) and all Sun Bloom/God Rays paths are unchanged.
+
+## GPU Lens Optics — BUILD 191
+
+- The old #flare Canvas2D overlay has been removed. GPU lens optics use the existing main WebGL 1 context and render onto the scene canvas after drawSun() and the world/outline composites; no extra GL context or full-screen render target is allocated.
+- renderVehicleLensFlaresGPU() retains the current source generation and world projection for the Countach pop-up projectors, four measured lower front lamps, rear lamp bars and turn-signal points. Facing-angle and distance attenuation, brake-level response and steering-side signal blinking remain source-driven.
+- A per-frame CPU batch creates screen-space quads for haze, tapered diffraction rays, anamorphic streaks, optical cores and chromatic ghosts. The compact upper projector profile keeps the four-ray cross and uses only very faint concentric rings; it does not add the broad horizontal streak used by the lower/rear optical sources.
+- The dynamic vertex buffer uses one gl.bufferData(..., DYNAMIC_DRAW) update and one gl.drawArrays() for all visible optical elements. The F4 lensFlares toggle remains independent. F3 reports whether the GPU shader initialized and the active source/quad counts.
+- The Canvas2D #sun canvas remains only for the sunset disc fallback; it is not part of the vehicle lens-optics pass. Production GLSL compile/link and an isolated GPU pixel/falloff fixture are included in regression. Final visual tuning and GTX 1650 frame-time validation still require in-game confirmation.
 
 ## Frame profiler — BUILD 119
 
