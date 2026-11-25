@@ -1,6 +1,6 @@
 # DRIVELLA — Rendering Architecture
 
-Current reference: **v0.19.21 / BUILD 187**  
+Current reference: **v0.19.22 / BUILD 188**  
 Main renderer: `index.html` — custom WebGL 1 renderer, no external rendering engine.
 
 **Release marker policy:** every published renderer/game change increments `BUILD` in `index.html` and updates the visible HUD, boot screen, README, and this document in the same release. Increment the patch version with the build when appropriate. Never publish a renderer change while leaving the visible build number unchanged.
@@ -37,6 +37,19 @@ The scene is intentionally drawn through the same `drawWorld()` path in the norm
 - **Underglow / tyre contact:** `FX.underglow` gates the red floor pool and side neon rails (material modes 5 and 6). `FX.tireContact` separately gates the four procedural tyre-contact ovals (material mode 7).
 
 The F4 panel exposes 21 effect checkboxes plus the separate Sun Bloom quality selector, and includes a reset-to-defaults action.
+
+## Garage effects showroom — BUILD 188
+
+The garage is a three-car scene for visual-effects inspection, not a static menu backdrop.
+
+- The centre display uses the existing Countach; two additional cars reuse the same imported production body, wheel, mirror, lamp and tail-light meshes. They receive distinct paint tints so paint response and reflections can be compared side by side.
+- Separate neon plinths sit under the replica cars. Three low-poly gabled houses and six palms are real scene meshes built with the shared cube, cylinder, palm-leaf and house-roof geometry.
+- These objects are drawn through `drawWorld()`, so they take part in the normal material pass, the full-scene directional shadow map and the half-resolution scene visibility / AO mask. Their visible silhouettes can occlude the GPU sun, Sun Bloom and God Rays. They are not separate screen-space pictures or hand-painted shadows.
+- The garage keeps the F4 effect registry and F3 diagnostics. GPU Sun, Sun Bloom and depth-aware God Rays are enabled by the same post-processing path used on the road; the garage is no longer excluded from `sunOcclusionActive` or the God Rays pass.
+- The sun uses a garage-specific screen anchor and a smaller radius so it sits above the showroom skyline. The Canvas2D fallback uses the same placement if GPU Sun initialization is unavailable.
+- Dragging the garage canvas orbits the entire display around the centre car. The default orbit distance is wider to frame all three cars; the mouse wheel supports a broad zoom range for closer material and lamp inspection.
+
+The additional geometry is limited to the garage branch. The driving track, vehicle physics, road camera presets and outdoor sun placement remain unchanged. The two local garage spotlights still use their existing per-source shadow-map policy.
 
 ## Frame profiler — BUILD 119
 
