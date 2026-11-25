@@ -2,7 +2,7 @@
 
 A browser-based synthwave drift-racing prototype with a custom low-poly 3D car, a procedural neon environment, and a hand-built WebGL renderer.
 
-> **Status:** Playable prototype under active development. Current renderer reference: **v0.18.94 / BUILD 160**.
+> **Status:** Playable prototype under active development. Current renderer reference: **v0.18.95 / BUILD 161**.
 > **Release identification:** every published game change increments the visible BUILD number in the HUD and startup screen; README and rendering architecture are updated in the same release.
 
 ## Current game
@@ -270,3 +270,10 @@ BUILD 158 is preserved at `backups/index_BUILD158_before_shared_solar_falloff_BU
 BUILD 159 is preserved at `backups/index_BUILD159_before_outward_occluder_halo_BUILD160.html`. Correct the wrap direction and remove the condition that suppressed an exterior halo. In screen UV coordinates, the scene-mask coverage gradient points from empty pixels into the object; `-maskGradient` is therefore the silhouette's outward normal. The vector from the pixel to the sun is `toSun`, so the far-side outward direction is `-toSun`; `awayFacing` now weights the halo with `dot(outward, -toSun)` rather than the sun-facing normal. Build the halo outside the silhouette from `sceneGaussian5(vUv, 2.75) * (1.0 - centerCoverage)`, then map that soft outer coverage to the same radial distance, colour and energy functions used by the solar disc. This intentionally places the glow outside the object instead of multiplying by the object's own coverage. Expand the screen-space source gate to 2.50–4.25 solar radii so the far edges of large buildings are not discarded merely because they lie outside the disc. Reuse the existing half-resolution scene mask and composite shader; no new framebuffer or pass. JavaScript parsing and source invariants passed; GLSL runtime, actual visual quality and FPS still require target-browser testing. Version `v0.18.94` / BUILD 160.
 
 <!-- Pages redeploy trigger for BUILD160; no game assets changed. -->
+
+
+### BUILD 161 — Solar aura follows the contact line inside occluders
+
+BUILD 160 is preserved at `backups/index_BUILD160_before_inner_surface_solar_wrap_BUILD161.html`. Replace the exterior, away-facing halo with an interior surface light-wrap. The screen-space normal still comes from the negative scene-mask coverage gradient; the desired visible face points toward the sun, so use `dot(outward, toSun)`. Reuse the linearly filtered half-resolution scene mask and 5×5 Gaussian sample (radius 2.75) to estimate how far a pixel lies inside the silhouette: `inwardDistance = max(0, (-log(1 - blurredCoverage) - ln(2)) * 0.27)`. Multiply the centre coverage by `solarAuraEnergy(inwardDistance)` to confine a smooth gradient to the inside edge and fade it into the object's surface.
+
+The light's source direction is not reversed or remapped: evaluate `sourceRadialOffset = max(sourceDistance - 1, 0)` and pass this through the same `solarAuraEnergy`, `solarAuraColor` and `solarAuraPulse` used by the solar disc. Thus the hue and energy follow the same radial wavefront from the sun, while the inward edge falloff only deposits that light on the object's visible surface at the contact line. The active source region is limited to 1.98 sun radii, matching the sun shader's corona extent; no exterior halo or opposite-side glow is drawn. Reuse the existing mask and fullscreen composite; no new framebuffer, scene capture or render pass is added. JavaScript syntax and source invariants passed; GLSL runtime, in-game appearance and FPS require target-browser validation. Version `v0.18.95` / BUILD 161.
