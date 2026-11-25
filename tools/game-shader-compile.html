@@ -436,7 +436,7 @@ const garageGodRaysSource=garageRaysStart>=0&&garageRaysEnd>garageRaysStart?html
 
 // Compile the exact production vertex shader against a small instance-colour probe.
 const roadInstancingExt=gl.getExtension('ANGLE_instanced_arrays');
-const roadProbeFs='precision mediump float;varying vec4 vInstanceColor;varying float vInstanceMode;varying float vInstanceHeadlight;void main(){gl_FragColor=vec4(vInstanceColor.rgb,1.0);}';
+const roadProbeFs='precision mediump float;varying vec4 vInstanceColor;varying float vInstanceMode;varying float vInstanceHeadlight;void main(){gl_FragColor=vec4(vInstanceColor.rgb*(0.9+0.1*vInstanceHeadlight)+vec3(vInstanceMode*0.001),1.0);}';
 const roadProbeV=compile(gl.VERTEX_SHADER,sources.mainVertex,'Production road instancing vertex');
 const roadProbeF=compile(gl.FRAGMENT_SHADER,roadProbeFs,'Road instancing pixel probe fragment');
 const roadProbeP=link(roadProbeV,roadProbeF,'Production vertex instancing probe');
@@ -595,7 +595,7 @@ const checks={
 };
 must(Object.values(checks).every(Boolean),'One or more production checks failed: '+JSON.stringify(Object.entries(checks).filter(([,ok])=>!ok).map(([name])=>name)));
 const glError=gl.getError();must(glError===gl.NO_ERROR,'WebGL error after production shader pixel test: '+glError);
-const result={pass:true,version:version[1],build:version[2],checks,probes,brightness:{edge:edgeStrength,shoulder:shoulderStrength,mid:midStrength,deep:deepStrength,blockedSun:brightness(probes.blockedSun),visibleSun:brightness(probes.visibleSun)},glVersion:gl.getParameter(gl.VERSION),renderer:gl.getParameter(gl.RENDERER),glError};
+const result={pass:true,version:version[1],build:version[2],checks,probes:{...probes,roadInstancing:{extensionAvailable:!!roadInstancingExt,framebufferStatus:roadProbeFramebufferStatus,pixels:roadProbePixels,fixturePass:roadInstancingPixelFixturePass}},brightness:{edge:edgeStrength,shoulder:shoulderStrength,mid:midStrength,deep:deepStrength,blockedSun:brightness(probes.blockedSun),visibleSun:brightness(probes.visibleSun)},glVersion:gl.getParameter(gl.VERSION),renderer:gl.getParameter(gl.RENDERER),glError};
 window.__GAME_SHADER_RESULT__=result;
 report.className='pass';
 report.textContent='PASS\\n'+JSON.stringify(result,null,2);
