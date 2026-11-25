@@ -296,7 +296,7 @@ const checks={
  headlightShaderPresent:html.includes('calcHeadlightEnergy()')&&html.includes('uniform vec3 headlightPosL')&&html.includes('uniform vec3 headlightPosR')&&html.includes('uniform vec3 headlightDir')&&html.includes('headlightIntensity'),
  headlightUsesCountachPodTransforms:html.includes('countachLegacyHeadlampMount(side)')&&html.includes('lampFrontPoint(side*.67,POP_LAMP_FACE_H*.5,.018)')&&html.includes('headlightCullL=lampSources[0].position'),
  softBrightHeadlightBeam:html.includes('smoothstep(0.78,0.985,dot(headlightDir,-toL))')&&html.includes('smoothstep(38.0,57.0,distL)')&&html.includes('calcHeadlightEnergy()*1.38'),
- fourCountachLowerLamps:html.includes('COUNTACH_FOG_LAMP_CENTERS=[[-.944,.621,2.588],[-.739,.623,2.588],[.739,.623,2.588],[.944,.621,2.588]]')&&html.includes('COUNTACH_FOG_LAMP_FRAMES')&&html.includes('COUNTACH_FOG_LAMP_LENSES'),
+ fourCountachLowerLamps:html.includes('COUNTACH_FOG_LAMP_CENTERS=[[-0.944,0.621,2.588],[-0.739,0.623,2.588],[0.739,0.623,2.588],[0.944,0.621,2.588]]')&&html.includes('COUNTACH_FOG_LAMP_FRAMES')&&html.includes('COUNTACH_FOG_LAMP_LENSES'),
  lowerLampFlaresUseSameCoordinates:html.includes('for(const [x,y,z] of COUNTACH_FOG_LAMP_CENTERS)'),
  vehicleSelfShadowCastersRestored:html.includes('drawCarMesh(m.bodyPaint,carX,carZ,C.body,yaw,PAINT_MATERIAL,false,true)')&&html.includes('bindMesh(shape,model,color,1,material,false,true)'),
  selfShadowF4DescriptionFixed:!html.includes('ОТЛОЖЕНО: доработка контура и артефактов'),
