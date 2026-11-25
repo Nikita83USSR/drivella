@@ -503,6 +503,7 @@ async function loadCountachModel(){
  try{
   const meta=window.DRIVELLA_COUNTACH_META,encoded=window.DRIVELLA_COUNTACH_DATA;
   if(!meta||!encoded)throw new Error('Отсутствует assets/countach_model.js');
+  if(meta.version!==2)throw new Error('Неизвестная версия формата Countach');
   if(typeof DecompressionStream==='undefined')throw new Error('Браузер не поддерживает распаковку геометрии');
   const packedText=atob(encoded),packed=new Uint8Array(packedText.length);
   for(let i=0;i<packedText.length;i++)packed[i]=packedText.charCodeAt(i);
@@ -520,16 +521,16 @@ async function loadCountachModel(){
    return mirrored;
   };
   for(const part of meta.parts){
-   const data=new Float32Array(part.coordCount);
-   for(let i=0;i<part.coordCount;i++)data[i]=view.getInt16(part.byteOffset+i*2,true)/meta.unitsPerGameUnit;
+   const data=new Float32Array(part.indexCount*3);
+   for(let i=0;i<part.indexCount;i++){
+    const vertex=view.getUint16(part.indexOffset+i*2,true),v=part.vertexOffset+vertex*6,at=i*3;
+    data[at]=view.getInt16(v,true)/meta.unitsPerGameUnit;
+    data[at+1]=view.getInt16(v+2,true)/meta.unitsPerGameUnit;
+    data[at+2]=view.getInt16(v+4,true)/meta.unitsPerGameUnit;
+   }
    model[part.name]=mesh(data);
    if(['front_tyre','front_rims','front_extra_NoMaterial','rear_tyre','rear_rims'].includes(part.name))model[part.name+'Left']=mesh(mirrorX(data));
-  }
-  // The source contains one side mirror; reflect the complete part for the opposite side.
-  if(model.sideMirror_bodyPlastic){
-   const p=meta.parts.find(v=>v.name==='sideMirror_bodyPlastic'),data=new Float32Array(p.coordCount);
-   for(let i=0;i<p.coordCount;i++)data[i]=view.getInt16(p.byteOffset+i*2,true)/meta.unitsPerGameUnit;
-   model.sideMirror_bodyPlasticLeft=mesh(mirrorX(data));
+   if(part.name==='sideMirror_bodyPlastic')model.sideMirror_bodyPlasticLeft=mesh(mirrorX(data));
   }
   countachModel=model;countachModelReady=true;
   const status=$('boot-status');if(status)status.textContent='COUNTACH MODEL LOADED';
@@ -538,7 +539,6 @@ async function loadCountachModel(){
   reportStartupError('Модель Countach: '+(error&&error.message||error));
  }
 }
-
 const underglowDisk=makeGlowDisk();
 const cube=mesh([
 -1,-1,-1,1,-1,-1,1,1,-1,-1,-1,-1,1,1,-1,-1,1,-1,
