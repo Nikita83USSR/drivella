@@ -56,13 +56,13 @@ try {
   await page.goto(baseUrl + '/tools/game-shader-compile.html', { waitUntil: 'load', timeout: 20000 });
   await page.waitForFunction(() => Boolean(window.__GAME_SHADER_RESULT__), null, { timeout: 20000 });
   const result = await page.evaluate(() => window.__GAME_SHADER_RESULT__);
-  await page.screenshot({ path: 'artifacts/sun-bloom-build175.png', fullPage: true });
-  console.log('PRODUCTION FINAL-TUNED SUN BLOOM REGRESSION\n' + JSON.stringify(result, null, 2));
-  assert(result.pass, 'Production final-tuned Sun Bloom regression failed: ' + JSON.stringify(result));
+  await page.screenshot({ path: 'artifacts/sun-bloom-build176.png', fullPage: true });
+  console.log('PRODUCTION DIRECTIONAL-RAMP SUN BLOOM REGRESSION\n' + JSON.stringify(result, null, 2));
+  assert(result.pass, 'Production directional-ramp Sun Bloom regression failed: ' + JSON.stringify(result));
   assert(pageErrors.length === 0, 'Browser page errors: ' + pageErrors.join('\n'));
-  console.log('ALL FINAL-TUNED SUN BLOOM CHECKS PASSED');
+  console.log('ALL DIRECTIONAL-RAMP SUN BLOOM CHECKS PASSED');
 } catch (error) {
-  console.error('FINAL-TUNED SUN BLOOM REGRESSION FAILED\n' + (error.stack || error));
+  console.error('DIRECTIONAL-RAMP SUN BLOOM REGRESSION FAILED\n' + (error.stack || error));
   console.error(serverOutput.join(''));
   process.exitCode = 1;
 } finally {
