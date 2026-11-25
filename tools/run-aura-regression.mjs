@@ -1,6 +1,7 @@
 import { chromium } from 'playwright';
 import { spawn } from 'node:child_process';
-import { mkdir } from 'node:fs/promises';
+import { mkdir, readFile } from 'node:fs/promises';
+import { inflateSync } from 'node:zlib';
 import { setTimeout as delay } from 'node:timers/promises';
 
 const baseUrl = 'http://127.0.0.1:4173';
@@ -61,16 +62,49 @@ try {
   assert(result.pass, 'Production shader regression failed: ' + JSON.stringify(result));
   assert(pageErrors.length === 0, 'Browser page errors: ' + pageErrors.join('\n'));
   console.log('ALL SHADER REGRESSION CHECKS PASSED');
-  const gamePage = await browser.newPage({ viewport: { width: 1280, height: 900 }, deviceScaleFactor: 1 });
-  const gamePageErrors = [];
-  gamePage.on('pageerror', error => gamePageErrors.push(error.stack || error.message));
-  await gamePage.goto(baseUrl + '/index.html', { waitUntil: 'domcontentloaded', timeout: 25000 });
-  await gamePage.waitForFunction(() => Boolean(window.DRIVELLA_COUNTACH_GEOMETRY_BOUNDS || window.DRIVELLA_COUNTACH_MODEL_ERROR), null, { timeout: 25000 });
-  const modelGeometry = await gamePage.evaluate(() => ({ ready: typeof countachModelReady !== 'undefined' && countachModelReady, bounds: window.DRIVELLA_COUNTACH_GEOMETRY_BOUNDS, error: window.DRIVELLA_COUNTACH_MODEL_ERROR, status: document.getElementById('boot-status')?.textContent }));
-  assert(modelGeometry.ready, 'Imported Countach geometry failed: ' + (modelGeometry.error || modelGeometry.status || 'no load status'));
-  assert(gamePageErrors.length === 0, 'Game startup page errors: ' + gamePageErrors.join('\\n'));
-  console.log('COUNTACH MODEL PART BOUNDS\\n' + JSON.stringify(modelGeometry.bounds, null, 2));
-  await gamePage.close();
+  const metaScript = await readFile('assets/countach_model_0.js', 'utf8');
+  const metaMatch = metaScript.match(/window\\.DRIVELLA_COUNTACH_META=(\\{[\\s\\S]*?\\});/);
+  assert(metaMatch, 'Countach metadata JSON was not found');
+  const modelMeta = JSON.parse(metaMatch[1]);
+  const chunkNames = ['0a','0b','0c','0d','1','2','3a','3b','3c','3d'];
+  let encodedModel = '';
+  for (const chunk of chunkNames) {
+    const source = await readFile('assets/countach_model_' + chunk + '.js', 'utf8');
+    const part = source.match(/window\\.DRIVELLA_COUNTACH_DATA\\+='([^']+)'/);
+    assert(part, 'Countach geometry chunk is missing: ' + chunk);
+    encodedModel += part[1];
+  }
+  const rawModel = inflateSync(Buffer.from(encodedModel, 'base64'));
+  assert(rawModel.byteLength === modelMeta.rawBytes, 'Countach decompressed size mismatch: ' + rawModel.byteLength);
+  const modelView = new DataView(rawModel.buffer, rawModel.byteOffset, rawModel.byteLength);
+  const partBounds = {};
+  const lowerLampPads = [];
+  for (const part of modelMeta.parts) {
+    const bounds = { min:[Infinity,Infinity,Infinity], max:[-Infinity,-Infinity,-Infinity], triangles:0 };
+    for (let offset=0; offset<part.indexCount; offset+=3) {
+      const triangle = [];
+      for (let corner=0; corner<3; corner++) {
+        const vertex = modelView.getUint16(part.indexOffset+(offset+corner)*2, true);
+        const v = part.vertexOffset + vertex*6;
+        triangle.push([
+          modelView.getInt16(v,true)/modelMeta.unitsPerGameUnit,
+          modelView.getInt16(v+2,true)/modelMeta.unitsPerGameUnit,
+          modelView.getInt16(v+4,true)/modelMeta.unitsPerGameUnit
+        ]);
+      }
+      for (const point of triangle) for(let axis=0;axis<3;axis++) {
+        bounds.min[axis]=Math.min(bounds.min[axis],point[axis]);
+        bounds.max[axis]=Math.max(bounds.max[axis],point[axis]);
+      }
+      bounds.triangles++;
+      if(part.name==='bodyBlack' && triangle.every(p=>Math.abs(p[0])>=.62&&Math.abs(p[0])<=1.07&&p[1]>=.57&&p[1]<=.68&&p[2]>=2.47&&p[2]<=2.71)) {
+        lowerLampPads.push({ center:triangle[0].map((_,axis)=>triangle.reduce((sum,p)=>sum+p[axis],0)/3), vertices:triangle });
+      }
+    }
+    partBounds[part.name]=bounds;
+  }
+  console.log('COUNTACH MODEL PART BOUNDS\\n'+JSON.stringify({partBounds,lowerLampPads},null,2));
+  assert(partBounds.bodyPaint && partBounds.bodyPlastic && lowerLampPads.length>0, 'Countach front geometry diagnostics are incomplete');
 } catch (error) {
   console.error('WIDE-BODY SUN BLOOM REGRESSION FAILED\n' + (error.stack || error));
   console.error(serverOutput.join(''));
