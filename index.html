@@ -118,9 +118,9 @@
 <body>
 <canvas id="scene"></canvas><canvas id="sun"></canvas><canvas id="flare"></canvas>
 <div id="hud">
- <div class="top"><div class="logo">DRIVELLA<small>3D SYNTHWAVE DRIFT RACING</small></div><div class="version-label" id="version-label">v0.19.20 · BUILD 186</div><div class="stat">DISTANCE<b id="distance">000.0 KM</b></div><div class="stat">LOCATION<b>VIOLET COAST</b></div></div>
+ <div class="top"><div class="logo">DRIVELLA<small>3D SYNTHWAVE DRIFT RACING</small></div><div class="version-label" id="version-label">v0.19.22 · BUILD 188</div><div class="stat">DISTANCE<b id="distance">000.0 KM</b></div><div class="stat">LOCATION<b>VIOLET COAST</b></div></div>
  <div class="right"><div id="speed">000 <span>KM/H</span></div><div id="direction">▶ FORWARD</div><div id="music">♫ MUSIC SCANNING…</div></div>
- <div class="bottom"><div class="hint"><strong>W / ↑</strong> ACCELERATE　<strong>S / ↓</strong> BRAKE / REVERSE<br><strong>A / ←　D / →</strong> STEER　<strong>SPACE</strong> HANDBRAKE　<strong>C</strong> CAMERA　<strong>HOLD + DRAG LMB</strong> LOOK　<strong>L</strong> LIGHTS　<strong>K</strong> WIREFRAME</div><div class="build-credit"><span>3D NEON HIGHWAY // BUILD 186</span><a class="asset-credit" href="https://sketchfab.com/3d-models/low-poly-lamborghini-countach-c9b28a4ad5c74649a09afa613dd3fae1" target="_blank" rel="noopener noreferrer">Original model: 3DShinobi · Sketchfab · CC BY · modified for DRIVELLA</a></div></div>
+ <div class="bottom"><div class="hint"><strong>W / ↑</strong> ACCELERATE　<strong>S / ↓</strong> BRAKE / REVERSE<br><strong>A / ←　D / →</strong> STEER　<strong>SPACE</strong> HANDBRAKE　<strong>C</strong> CAMERA　<strong>HOLD + DRAG LMB</strong> LOOK　<strong>L</strong> LIGHTS　<strong>K</strong> WIREFRAME</div><div class="build-credit"><span>3D NEON HIGHWAY // BUILD 188</span><a class="asset-credit" href="https://sketchfab.com/3d-models/low-poly-lamborghini-countach-c9b28a4ad5c74649a09afa613dd3fae1" target="_blank" rel="noopener noreferrer">Original model: 3DShinobi · Sketchfab · CC BY · modified for DRIVELLA</a></div></div>
 </div>
 <div id="fps-counter" aria-live="off">FPS --</div>
 <div id="effects-menu" aria-hidden="true">
@@ -160,9 +160,9 @@
 </div>
 <div id="tools-ui"><button id="cam-prev" aria-label="Previous camera">◀</button><span id="cam-label">CAM 2 · CLOSE</span><button id="cam-next" aria-label="Next camera">▶</button><button id="debug-toggle">DEBUG</button></div>
 <div id="debug-panel"><div class="debug-title">DRIVELLA DIAGNOSTICS</div><div id="debug-data">Initializing…</div></div>
-<div id="boot-screen"><div class="boot-content"><div class="boot-kicker">NIGHT DRIVE SYSTEMS // INITIALIZING</div><div class="boot-logo">DRIVELLA</div><div class="boot-subtitle">3D SYNTHWAVE DRIFT RACING</div><div class="boot-mark"></div><div class="boot-status" id="boot-status">BUILDING THE 3D WORLD</div><div class="boot-track"><div class="boot-progress" id="boot-progress"></div></div><div class="boot-meta"><span>3D ENGINE ONLINE</span><span id="boot-percent">00%</span></div><div class="boot-footer">ENGINE STARTUP // v0.19.20 · BUILD 186</div></div></div>
+<div id="boot-screen"><div class="boot-content"><div class="boot-kicker">NIGHT DRIVE SYSTEMS // INITIALIZING</div><div class="boot-logo">DRIVELLA</div><div class="boot-subtitle">3D SYNTHWAVE DRIFT RACING</div><div class="boot-mark"></div><div class="boot-status" id="boot-status">BUILDING THE 3D WORLD</div><div class="boot-track"><div class="boot-progress" id="boot-progress"></div></div><div class="boot-meta"><span>3D ENGINE ONLINE</span><span id="boot-percent">00%</span></div><div class="boot-footer">ENGINE STARTUP // v0.19.22 · BUILD 188</div></div></div>
 <div id="main-menu"><div class="menu-content"><div class="menu-brand">DRIVELLA GTS</div><div class="menu-sub">RIDE THE RETRO FUTURE</div><div class="menu-actions"><button class="menu-btn" id="menu-start">СТАРТ</button><button class="menu-btn" id="menu-garage">ГАРАЖ</button><button class="menu-btn" id="menu-options">НАСТРОЙКИ</button></div></div><div class="menu-footer">РАЗРАБОТЧИК — <b>НИКИТА МАРКИН</b></div></div>
-<div id="garage-screen"><div class="garage-head">ГАРАЖ // DRIVELLA GTS</div><div class="garage-copy">ТЕКУЩИЙ АВТОМОБИЛЬ<br>DRIVELLA GTS · RETRO GT COUPE<br>ПОКАЖИ ЕЁ СО ВСЕХ СТОРОН</div><div class="garage-controls"><button id="garage-back">← НАЗАД В МЕНЮ</button></div><div class="garage-tip">ЗАЖМИ И ТЯНИ — ВРАЩЕНИЕ<br>КОЛЁСИКО — ПРИБЛИЗИТЬ / ОТДАЛИТЬ</div></div>
+<div id="garage-screen"><div class="garage-head">ГАРАЖ // DRIVELLA GTS</div><div class="garage-copy">DRIVELLA GTS · SHOWROOM LAB<br>ТРИ COUNTACH ДЛЯ СРАВНЕНИЯ МАТЕРИАЛОВ И СВЕТА<br>ДОМА · ПАЛЬМЫ · SUN / BLOOM / GOD RAYS</div><div class="garage-controls"><button id="garage-back">← НАЗАД В МЕНЮ</button></div><div class="garage-tip">ЗАЖМИ И ТЯНИ — ВРАЩАЙ ВСЮ СЦЕНУ<br>КОЛЁСИКО — МАСШТАБ · F4 — ЭФФЕКТЫ · F3 — ДИАГНОСТИКА</div></div>
 <div id="options-screen"><div class="options-head">ОПЦИИ</div><div class="options-card"><div class="option-row"><span>МУЗЫКА</span><button id="option-music">ВКЛЮЧЕНА</button></div><div class="option-row"><span>ГРОМКОСТЬ</span><input id="option-volume" type="range" min="0" max="100" value="52"></div><div class="option-row"><span>ЗВУК ДВИГАТЕЛЯ</span><button id="option-sfx">ВКЛЮЧЁН</button></div><div class="option-row"><span>КАМЕРА</span><span>КЛАВИШИ 1–4</span></div><button id="options-back" style="width:100%;margin-top:18px">← НАЗАД В МЕНЮ</button></div></div>
 <div id="overlay" class="hidden"><div class="panel"><h1>DRIVELLA</h1><p>VIOLET COAST // NIGHT DRIVE</p><p class="start">PRESS W / ↑ TO DRIVE</p><p>W FORWARD · S REVERSE · A/D STEER · SPACE HANDBRAKE</p></div></div>
 <script src="assets/countach_model_0.js"></script>
@@ -179,7 +179,7 @@
 <script>
 (()=>{
 'use strict';
-const VERSION='v0.19.21',BUILD='187';
+const VERSION='v0.19.22',BUILD='188';
 const canvas=document.getElementById('scene'),gl=canvas.getContext('webgl',{antialias:true,alpha:true}),sun=document.getElementById('sun'),sctx=sun.getContext('2d'),flare=document.getElementById('flare'),fctx=flare.getContext('2d');
 const $=id=>document.getElementById(id);
 let countachModel=null,countachModelReady=false;
@@ -292,11 +292,12 @@ function renderSunBloom(maskTexture){
  return{tight:layerTexture('tight'),mid:layerTexture('mid'),wide:layerTexture('wide'),atmos:layerTexture('atmos'),gains:{tight:gain('tight'),mid:gain('mid'),wide:gain('wide'),atmos:gain('atmos')}};
  }
 function getSunScreenMetrics(){
- const roadHeading=Math.atan((roadX(distance+90)-roadX(distance-30))/120),viewYaw=garageMode?0:carYaw+roadHeading;
+ if(garageMode)return{x:W*.5,y:H*.285,r:Math.min(W*.27,H*.24,185)};
+ const roadHeading=Math.atan((roadX(distance+90)-roadX(distance-30))/120),viewYaw=carYaw+roadHeading;
  return{x:W*.5-viewYaw*W*.48,y:H*(cameraMode===0?0.405:cameraMode===3?0.445:0.425),r:Math.min(W*.415,H*.305,232)};
 }
 function renderGodRays(maskTexture){
- if(!gpuSunReady||!FX.sunGpu||!FX.sunDisc||!FX.sunGodRays||garageMode||!maskTexture||!ensureGodRaysTarget())return null;
+ if(!gpuSunReady||!FX.sunGpu||!FX.sunDisc||!FX.sunGodRays||!maskTexture||!ensureGodRaysTarget())return null;
  const target=godRaysTarget,sunPosition=getSunScreenMetrics(),now=performance.now();
  gl.bindFramebuffer(gl.FRAMEBUFFER,target.framebuffer);gl.viewport(0,0,target.width,target.height);
  gl.clearColor(0,0,0,0);gl.clear(gl.COLOR_BUFFER_BIT);
@@ -616,7 +617,7 @@ function projectCabinRoofFrontSeam(vp,carX,carZ,yaw,cam){
 function renderCarOutlines(){
  const drawAO=!!FX.ssao;
  const drawCarOutline=!!(FX.outlines&&!wireframeMode&&ensureOutlineTarget());
- const sunOcclusionActive=!!(gpuSunReady&&FX.sunGpu&&FX.sunDisc&&!garageMode);
+ const sunOcclusionActive=!!(gpuSunReady&&FX.sunGpu&&FX.sunDisc);
  const sunWrapActive=!!(sunOcclusionActive&&FX.sunAuraWrap);
  const sunBloomActive=!!(sunOcclusionActive&&FX.sunAuraBloom);
  const sunAuraDebugActive=!!(sunOcclusionActive&&FX.sunAuraDebug);
@@ -901,6 +902,14 @@ function makePalmLeaves(seed,variant){
  return mesh(out);
 }
 const palmLeafA=makePalmLeaves(42,0),palmLeafB=makePalmLeaves(91,1),palmLeafC=makePalmLeaves(18,2);
+const garageHouseRoof=mesh([
+ -1,0,-1,0,1,-1,1,0,-1,
+ -1,0,1,1,0,1,0,1,1,
+ -1,0,-1,0,1,-1,0,1,1,
+ -1,0,-1,0,1,1,-1,0,1,
+ 0,1,-1,1,0,-1,1,0,1,
+ 0,1,-1,1,0,1,0,1,1
+]);
 function drawBiome(z,weight,type){
  if(weight<.012)return;const a=weight;
  if(type===2){
@@ -1499,7 +1508,7 @@ function getFrontWheelSteerAngle(side){
  return Math.sign(angle)*Math.atan(wheelbase/Math.max(.1,turnRadius+(inner?-halfTrack:halfTrack)));
 }
 let headlightBaseIntensity=0,headlightCullL=[0,0,0],headlightCullR=[0,0,0],headlightCullDir=[0,0,1];
- let cameraMode=1,debugVisible=false,drawCalls=0,fps=0,fpsFrames=0,fpsTime=performance.now(),debugTime=0,bootDone=false,garageMode=false,garageAngle=0,garageTilt=.24,garageZoom=11,garageDrag=false,garageLastX=0,garageLastY=0,musicVolume=.52,sfxEnabled=true,headlightLightingEnabled=true,mouseLookActive=false,mouseLookYaw=0,mouseLookPitch=0,mouseLookX=0,mouseLookY=0,mouseLookPointerId=null,mouseLookReturning=false;
+ let cameraMode=1,debugVisible=false,drawCalls=0,fps=0,fpsFrames=0,fpsTime=performance.now(),debugTime=0,bootDone=false,garageMode=false,garageAngle=0,garageTilt=.24,garageZoom=22,garageDrag=false,garageLastX=0,garageLastY=0,musicVolume=.52,sfxEnabled=true,headlightLightingEnabled=true,mouseLookActive=false,mouseLookYaw=0,mouseLookPitch=0,mouseLookX=0,mouseLookY=0,mouseLookPointerId=null,mouseLookReturning=false;
 const FX_DEFAULTS={outlines:true,ssao:true,wireframe:false,worldShadows:true,vehicleShadows:false,glassReflections:true,paintHighlights:true,lampEmission:true,headlights:false,headlightLighting:true,garageSpotlights:true,garageSpotShadows:true,sunDisc:true,sunGpu:true,sunAuraWrap:false,sunAuraBloom:true,sunGodRays:true,sunAuraDebug:false,lensFlares:true,underglow:true,tireContact:true};
 const FX={...FX_DEFAULTS};if(!gpuSunReady)FX.sunGpu=false;
 const SUN_BLOOM_PROFILES={
@@ -1565,7 +1574,7 @@ function showMenu(){
  endMouseLook();garageMode=false;$('fps-counter').style.display='none';document.body.classList.remove('playing','garage-mode');
  $('garage-screen').classList.remove('show');$('options-screen').classList.remove('show');$('main-menu').classList.add('show');
 }
-function showGarage(){endMouseLook();garageMode=true;$('fps-counter').style.display='block';garageAngle=0;garageTilt=.24;garageZoom=11;document.body.classList.remove('playing');document.body.classList.add('garage-mode');$('main-menu').classList.remove('show');$('options-screen').classList.remove('show');$('garage-screen').classList.add('show');}
+function showGarage(){endMouseLook();garageMode=true;$('fps-counter').style.display='block';garageAngle=0;garageTilt=.24;garageZoom=22;document.body.classList.remove('playing');document.body.classList.add('garage-mode');$('main-menu').classList.remove('show');$('options-screen').classList.remove('show');$('garage-screen').classList.add('show');}
 function showOptions(){$('fps-counter').style.display='none';document.body.classList.remove('playing');$('main-menu').classList.remove('show');$('garage-screen').classList.remove('show');$('options-screen').classList.add('show');}
 function pauseGame(){
  if(!started||paused)return;
@@ -1583,7 +1592,7 @@ $('option-sfx').addEventListener('click',()=>{sfxEnabled=!sfxEnabled;$('option-s
 $('garage-screen').addEventListener('pointerdown',e=>{if(e.target.closest('button'))return;garageDrag=true;garageLastX=e.clientX;garageLastY=e.clientY;$('garage-screen').classList.add('dragging');});
 addEventListener('pointermove',e=>{if(garageDrag){garageAngle+=(e.clientX-garageLastX)*.009;garageTilt=clamp(garageTilt+(e.clientY-garageLastY)*.006,-.04,1.28);garageLastX=e.clientX;garageLastY=e.clientY;}});
 addEventListener('pointerup',()=>{garageDrag=false;$('garage-screen').classList.remove('dragging');});
-$('garage-screen').addEventListener('wheel',e=>{if(!garageMode)return;e.preventDefault();garageZoom=clamp(garageZoom+Math.sign(e.deltaY)*.8,7,17);},{passive:false});
+$('garage-screen').addEventListener('wheel',e=>{if(!garageMode)return;e.preventDefault();garageZoom=clamp(garageZoom+Math.sign(e.deltaY)*.8,7,36);},{passive:false});
 const musicFiles=Array.from({length:20},(_,i)=>'assets/music/'+(i+1)+'.mp3');
 async function scanMusic(){
  const checks=await Promise.all(musicFiles.map(async url=>{
@@ -1816,6 +1825,62 @@ function cameraFor(carX,carZ){
  const p=rotateOffset(base.x-carX,base.y,base.z-carZ),t=rotateOffset(base.tx-carX,base.ty,base.tz-carZ);
  return{x:carX+p[0],y:p[1],z:carZ+p[2],tx:carX+t[0],ty:t[1],tz:carZ+t[2],fov:base.fov};
 }
+function drawGarageHouse(x,z,scale,wallColor,roofColor,windowColor){
+ const w=3.15*scale,h=2.85*scale,d=3.05*scale,front=z+d*.5;
+ draw(cube,x,h*.5,z,w*.5,h*.5,d*.5,wallColor);
+ draw(garageHouseRoof,x,h,z,w*.59,1.06*scale,d*.58,roofColor);
+ draw(cube,x,h*.018,front+.045*scale,w*.78,.035*scale,.045*scale,windowColor,0,0,8);
+ draw(cube,x,h*.39,front+.055*scale,.30*scale,.56*scale,.045*scale,[.010,.016,.033,1]);
+ for(const side of [-1,1]){
+  draw(cube,x+side*.82*scale,h*.66,front+.055*scale,.31*scale,.34*scale,.045*scale,windowColor,0,0,8);
+  draw(cube,x+side*.82*scale,h*.66,front+.078*scale,.35*scale,.38*scale,.018*scale,[.18,.56,.82,1],0,0,8);
+ }
+ draw(cube,x+w*.5+.025*scale,h*.52,z,.04*scale,.31*scale,.56*scale,windowColor,0,0,8);
+ draw(cube,x,h+.04*scale,front+.035*scale,w*.82,.035*scale,.04*scale,windowColor,0,0,8);
+}
+function drawGaragePalm(x,z,height,leafShape,leafColor,ringColor){
+ draw(cylinder,x,height*.49,z,.145,height*.5,.145,[.30,.135,.065,1]);
+ draw(cylinder,x,height*.36,z,.168,.045,.168,ringColor,0,0,8);
+ draw(leafShape,x,height,z,1.12,1.12,1.12,leafColor);
+}
+function drawGarageReplica(cx,cz,yaw,bodyColor){
+ if(!countachModelReady)return;
+ const m=countachModel;
+ drawCarMesh(m.bodyPaint,cx,cz,bodyColor,yaw,PAINT_MATERIAL,false,true);
+ drawCarMesh(m.bodyPlastic,cx,cz,[.026,.033,.047,1],yaw,0,false,true);
+ drawCarMesh(m.bodyBlack,cx,cz,[.008,.012,.020,1],yaw,0,false,true);
+ drawCarMesh(m.frontLowerPaint,cx,cz,bodyColor,yaw,PAINT_MATERIAL,false,true);
+ drawCarMesh(m.bodyMetal,cx,cz,[.38,.43,.51,1],yaw,2,false,true);
+ drawCarMesh(m.bodyTail,cx,cz,[.62,.008,.028,1],yaw,8,false,false);
+ drawCarMesh(m.bodyTailSignalLeft,cx,cz,[.12,.026,.006,1],yaw,0,false,false);
+ drawCarMesh(m.bodyTailSignalRight,cx,cz,[.12,.026,.006,1],yaw,0,false,false);
+ drawCarMesh(m.frontDetail_detailRed,cx,cz,bodyColor,yaw,PAINT_MATERIAL,false,true);
+ drawCarMesh(m.frontDetail_bodyPlastic,cx,cz,[.025,.032,.045,1],yaw,0,false,true);
+ drawCarMesh(m.sideMirror_bodyPlastic,cx,cz,[.055,.062,.078,1],yaw,2,false,true);
+ drawCarMesh(m.sideMirror_bodyPlasticLeft,cx,cz,[.055,.062,.078,1],yaw,2,false,true);
+ drawCarMesh(m.exhaustA_chrome,cx,cz,[.62,.68,.76,1],yaw,2,false,true);
+ drawCarMesh(m.exhaustB_chrome,cx,cz,[.62,.68,.76,1],yaw,2,false,true);
+ const centers=m.wheelCenters;
+ for(const side of [-1,1])for(const axle of ['front','rear']){
+  const front=axle==='front',center=centers[axle],suffix=side<0?'Left':'',wheelX=side*center[0],wheelY=center[1],wheelZ=center[2];
+  const drawWheelPart=(part,color,material)=>drawCountachWheelPart(m[axle+'_'+part+suffix],cx,cz,wheelX,wheelY,wheelZ,color,yaw,0,0,material);
+  drawWheelPart('tyre',[.035,.039,.050,1],0);
+  drawWheelPart('rims',[.58,.64,.73,1],2);
+  if(front)drawWheelPart('extra_NoMaterial',[.055,.065,.080,1],2);
+ }
+ const lampPower=clamp((headlightDeploy-.12)/.88,0,1);
+ const lampColor=[.48+1.0*lampPower,.58+1.0*lampPower,.72+1.0*lampPower,1];
+ drawCountachLegacyHeadlampAssembly(-1,cx,cz,lampColor,yaw);
+ drawCountachLegacyHeadlampAssembly(1,cx,cz,lampColor,yaw);
+ for(const frame of COUNTACH_FOG_LAMP_FRAMES)drawCarMesh(frame,cx,cz,[.44,.50,.62,1],yaw,0,false,true);
+ for(const lens of COUNTACH_FOG_LAMP_LENSES)drawCarMesh(lens,cx,cz,[.78,.91,1,1],yaw,8,false,false);
+ if(FX.underglow){
+  gl.enable(gl.BLEND);gl.blendFuncSeparate(gl.SRC_ALPHA,gl.ONE,gl.ONE,gl.ONE_MINUS_SRC_ALPHA);gl.depthMask(false);
+  draw(underglowDisk,cx,-.052,cz,1.92,.003,3.08,[.90,.015,.045,.23],yaw,0,5);
+  draw(underglowDisk,cx,-.050,cz,1.38,.002,2.72,[.06,.36,.95,.17],yaw,0,5);
+  gl.depthMask(true);gl.disable(gl.BLEND);
+ }
+}
 function drawWorld(){
  drawCalls=0;
  const carZ=garageMode?0:distance,trackCenter=garageMode?0:roadX(carZ),carX=garageMode?0:trackCenter+playerX;
@@ -1871,6 +1936,29 @@ function drawWorld(){
    draw(cube,sx,4.535,.75,.245,.025,.335,[.24,.30,.40,1],fixtureYaw);
    draw(cube,sx,4.505,.75,.19,.012,.27,side<0?[.78,.90,1,1]:[1,.84,.92,1],fixtureYaw,0,8);
   }
+  // Two additional plinths turn the garage into a three-car materials and lighting bay.
+  for(const pad of [{x:-10.2,edge:[.035,.72,1,1],top:[.035,.075,.16,1]},{x:10.2,edge:[1,.055,.60,1],top:[.14,.035,.105,1]}]){
+   draw(cylinder,pad.x,-.43,0,3.88,.18,3.88,[.045,.055,.105,1]);
+   draw(cylinder,pad.x,-.30,0,3.58,.12,3.58,[.08,.095,.17,1]);
+   draw(cylinder,pad.x,-.215,0,3.43,.045,3.43,pad.edge);
+   draw(cylinder,pad.x,-.17,0,3.30,.035,3.30,[.035,.055,.10,1]);
+   draw(cube,pad.x,-.08,0,3.16,.018,3.16,pad.top);
+   draw(cube,pad.x,-.047,0,2.92,.012,2.92,pad.edge,0,0,8);
+  }
+  // Small synthwave homes sit behind the cars; windows are emissive geometry, not a flat backdrop.
+  drawGarageHouse(-19.8,-18,1.10,[.045,.040,.105,1],[.22,.045,.22,1],[.10,.62,.94,1]);
+  drawGarageHouse(0,-22.5,.88,[.035,.065,.105,1],[.055,.25,.34,1],[.98,.24,.60,1]);
+  drawGarageHouse(19.8,-18,1.10,[.075,.032,.095,1],[.31,.045,.19,1],[.12,.76,.96,1]);
+  // Palm silhouettes create a real foreground/background profile around the showroom.
+  drawGaragePalm(-14.4,-9.8,5.8,palmLeafA,[.018,.38,.13,1],[.06,.72,.95,1]);
+  drawGaragePalm(14.4,-9.8,6.1,palmLeafB,[.025,.48,.16,1],[1,.16,.55,1]);
+  drawGaragePalm(-25.0,-7.4,6.6,palmLeafC,[.018,.34,.13,1],[.12,.64,1,1]);
+  drawGaragePalm(25.0,-7.4,6.3,palmLeafA,[.018,.40,.14,1],[1,.12,.52,1]);
+  drawGaragePalm(-23.0,-24.0,5.4,palmLeafB,[.025,.40,.15,1],[.10,.65,.95,1]);
+  drawGaragePalm(23.0,-24.0,5.5,palmLeafC,[.025,.40,.15,1],[1,.18,.58,1]);
+  // Neon perimeter rails make the scene scale and horizon easier to read while orbiting.
+  draw(cube,-31.0,-.16,0,.035,.03,29,[.035,.55,.86,1],0,0,8);
+  draw(cube,31.0,-.16,0,.035,.03,29,[.92,.035,.48,1],0,0,8);
  }else{
  // Continuous dark ground plane: it follows the world, not a snapped scrolling tile.
  draw(cube,0,-.56,distance+115,150,.30,185,C.ground);
@@ -2054,6 +2142,10 @@ function drawWorld(){
  drawCarMesh(spoilerTopGlint,carX,carZ,C.bodyLight,yaw,PAINT_MATERIAL,true,false);
  if(boost>.05){drawCarPart(carX,carZ,-.42,.18,-2.99,.06,.055,.62,[.04,.58,1,boost],yaw);drawCarPart(carX,carZ,.42,.18,-2.99,.06,.055,.62,[.04,.58,1,boost],yaw);}
  }
+ if(garageMode&&countachModelReady){
+  drawGarageReplica(-10.2,0,0,[.025,.48,.92,1]);
+  drawGarageReplica(10.2,0,Math.PI,[.78,.025,.38,1]);
+ }
 }
 function drawSunCanvasFallback(){
  sctx.clearRect(0,0,W,H);
@@ -2062,9 +2154,9 @@ function drawSunCanvasFallback(){
  // horizontal slices, warm sunset gradient and restrained neon halo.
  const roadHeading=Math.atan((roadX(distance+90)-roadX(distance-30))/120);
  const viewYaw=garageMode?0:carYaw+roadHeading;
- const x=W*.5-viewYaw*W*.48;
- const y=H*(cameraMode===0?.405:cameraMode===3?.445:.425);
- const r=Math.min(W*.415,H*.305,232);
+ const x=garageMode?W*.5:W*.5-viewYaw*W*.48;
+ const y=garageMode?H*.285:H*(cameraMode===0?.405:cameraMode===3?.445:.425);
+ const r=garageMode?Math.min(W*.27,H*.24,185):Math.min(W*.415,H*.305,232);
  const breathe=1+Math.sin(performance.now()*.00092)*.035+Math.sin(performance.now()*.00046+1.2)*.012;
  const glowPulse=.88+Math.sin(performance.now()*.00092-.35)*.075;
  const halo=sctx.createRadialGradient(x,y,r*.25,x,y,r*2.55);
