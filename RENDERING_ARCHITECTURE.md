@@ -1,6 +1,6 @@
 # DRIVELLA — Rendering Architecture
 
-Current reference: **v0.19.31 / BUILD 197**  
+Current reference: **v0.19.32 / BUILD 198**  
 Main renderer: `index.html` — custom WebGL 1 renderer, no external rendering engine.
 
 **Release marker policy:** every published renderer/game change increments `BUILD` in `index.html` and updates the visible HUD, boot screen, README, and this document in the same release. Increment the patch version with the build when appropriate. Never publish a renderer change while leaving the visible build number unchanged.
@@ -73,7 +73,7 @@ This is a draw-submission optimization, not a claim of a measured frame-rate inc
 - **Sun disc / vehicle lens flares:** `FX.sunDisc` hides only the 2D synthwave sunset drawing; it does not remove `SUN_LIGHT`, its material illumination or cast shadows. `FX.lensFlares` independently gates the batched GPU vehicle-lamp optical overlay.
 - **Underglow / tyre contact:** `FX.underglow` gates the red floor pool and side neon rails (material modes 5 and 6). `FX.tireContact` separately gates the four procedural tyre-contact ovals (material mode 7).
 
-The F4 panel exposes 23 effect checkboxes plus the separate Sun Bloom quality selector, and includes a reset-to-defaults action.
+The F4 panel exposes 24 effect checkboxes plus the separate Sun Bloom quality selector, and includes a reset-to-defaults action.
 
 ## Garage effects showroom — BUILD 188
 
@@ -901,3 +901,11 @@ Paint material mode 4 reflects the environment along the view-dependent surface 
 Material 9 is bounded separately from the emissive material-8 branch. The shadow caster and visible-scene mask policies explicitly admit the opaque asphalt mode, so it continues to cast/receive the ordinary world shadows and participate in the existing SSAO/solar-occlusion visibility capture. The road reflection branch also retains the current headlight and four-slot local-light contributions. No framebuffer, texture unit, full-screen pass, draw call or extra instance batch is added; the asphalt remains inside the existing ordered road batch.
 
 The BUILD 197 regression compiles and links the complete production material shader, extracts the exact production environment function and renders two roughness profiles into a 2×1 GPU framebuffer. It verifies measurable pixel differences, separate paint/road F4 toggles, F3 telemetry, dedicated asphalt routing, shadow/mask eligibility and isolation from emissive material 8. Chromium runs this fixture on SwiftShader; actual appearance and frame time still require inspection on the target GPU.
+
+## BUILD 198 — Projected Countach and headlight reflections on asphalt
+
+BUILD 198 adds a separate `vehicleReflections` toggle and captures the actual opaque, painted, glazed and emissive Countach meshes as they pass through the existing `bindMesh()` draw path. After the vehicle is drawn, those same source meshes are transformed by a camera-dependent planar projection: the vehicle is mirrored across the road plane, and each reflected vertex is projected from the active camera onto a plane just above the asphalt. This produces a perspective-dependent mesh reflection, rather than a flat sprite or manually painted silhouette. It is a planar mesh projection, not ray tracing or screen-space reflection; the reflected copy uses a single blended material path and does not allocate a reflection framebuffer or shadow map.
+
+The road material also evaluates a separate broad specular lobe against both existing pop-up headlight positions. It shares the authored headlight positions, forward cone, range attenuation and intensity, but responds to the camera/normal half-vector so the road gets two soft reflective highlights in addition to the existing diffuse beam lighting. The new path is enabled by default in F4, and F3 reports the number of captured vehicle meshes. The source vehicle geometry, animation, physics, road batch, shadow maps and existing lighting sources are unchanged. The projection adds one draw per captured vehicle mesh during the main driving pass; GPU time and visual balance therefore still need validation on the target GTX 1650.
+
+The BUILD 198 regression checks the production projection matrix against a representative vehicle vertex (the projected point must land on the road plane and move toward the camera), compiles the production two-headlight specular helper and checks near-beam response versus out-of-range output, and verifies mesh capture, material-8 lamp treatment, F4 default and F3 telemetry. Chromium CI still uses SwiftShader and cannot certify target-GPU frame time or final in-game composition.
