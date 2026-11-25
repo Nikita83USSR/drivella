@@ -118,9 +118,9 @@
 <body>
 <canvas id="scene"></canvas><canvas id="sun"></canvas><canvas id="flare"></canvas>
 <div id="hud">
- <div class="top"><div class="logo">DRIVELLA<small>3D SYNTHWAVE DRIFT RACING</small></div><div class="version-label" id="version-label">v0.18.79 · BUILD 145</div><div class="stat">DISTANCE<b id="distance">000.0 KM</b></div><div class="stat">LOCATION<b>VIOLET COAST</b></div></div>
+ <div class="top"><div class="logo">DRIVELLA<small>3D SYNTHWAVE DRIFT RACING</small></div><div class="version-label" id="version-label">v0.18.80 · BUILD 146</div><div class="stat">DISTANCE<b id="distance">000.0 KM</b></div><div class="stat">LOCATION<b>VIOLET COAST</b></div></div>
  <div class="right"><div id="speed">000 <span>KM/H</span></div><div id="direction">▶ FORWARD</div><div id="music">♫ MUSIC SCANNING…</div></div>
- <div class="bottom"><div class="hint"><strong>W / ↑</strong> ACCELERATE　<strong>S / ↓</strong> BRAKE / REVERSE<br><strong>A / ←　D / →</strong> STEER　<strong>SPACE</strong> HANDBRAKE　<strong>C</strong> CAMERA　<strong>HOLD + DRAG LMB</strong> LOOK　<strong>L</strong> LIGHTS　<strong>K</strong> WIREFRAME</div><div class="build-credit"><span>3D NEON HIGHWAY // BUILD 145</span><a class="asset-credit" href="https://sketchfab.com/3d-models/low-poly-lamborghini-countach-c9b28a4ad5c74649a09afa613dd3fae1" target="_blank" rel="noopener noreferrer">Original model: 3DShinobi · Sketchfab · CC BY · modified for DRIVELLA</a></div></div>
+ <div class="bottom"><div class="hint"><strong>W / ↑</strong> ACCELERATE　<strong>S / ↓</strong> BRAKE / REVERSE<br><strong>A / ←　D / →</strong> STEER　<strong>SPACE</strong> HANDBRAKE　<strong>C</strong> CAMERA　<strong>HOLD + DRAG LMB</strong> LOOK　<strong>L</strong> LIGHTS　<strong>K</strong> WIREFRAME</div><div class="build-credit"><span>3D NEON HIGHWAY // BUILD 146</span><a class="asset-credit" href="https://sketchfab.com/3d-models/low-poly-lamborghini-countach-c9b28a4ad5c74649a09afa613dd3fae1" target="_blank" rel="noopener noreferrer">Original model: 3DShinobi · Sketchfab · CC BY · modified for DRIVELLA</a></div></div>
 </div>
 <div id="fps-counter" aria-live="off">FPS --</div>
 <div id="effects-menu" aria-hidden="true">
@@ -173,7 +173,7 @@
 <script>
 (()=>{
 'use strict';
-const VERSION='v0.18.79',BUILD='145';
+const VERSION='v0.18.80',BUILD='146';
 const canvas=document.getElementById('scene'),gl=canvas.getContext('webgl',{antialias:true,alpha:true}),sun=document.getElementById('sun'),sctx=sun.getContext('2d'),flare=document.getElementById('flare'),fctx=flare.getContext('2d');
 const $=id=>document.getElementById(id);
 let countachModel=null,countachModelReady=false;
@@ -1056,8 +1056,11 @@ function makeLampTrianglePod(side){
  pushLampQuad(out,A0,A1,B1,B0);
  return mesh(out);
 }
+const POP_LAMP_CAP_REAR_EXTENSION=.060;
 function makeLampCap(side){
- const outline=[[side*.423,POP_LAMP_Z_REAR],[side*.877,POP_LAMP_Z_REAR],[side*.905,POP_LAMP_Z_REAR+.028],[side*.905,POP_LAMP_Z_FRONT-.028],[side*.877,POP_LAMP_Z_FRONT],[side*.423,POP_LAMP_Z_FRONT],[side*.395,POP_LAMP_Z_FRONT-.028],[side*.395,POP_LAMP_Z_REAR+.028]];
+ // Extend only the rear skin edge; it remains one mesh on the existing shared Countach hinge/mount.
+ const rearZ=POP_LAMP_Z_REAR-POP_LAMP_CAP_REAR_EXTENSION;
+ const outline=[[side*.423,rearZ],[side*.877,rearZ],[side*.905,rearZ+.028],[side*.905,POP_LAMP_Z_FRONT-.028],[side*.877,POP_LAMP_Z_FRONT],[side*.423,POP_LAMP_Z_FRONT],[side*.395,POP_LAMP_Z_FRONT-.028],[side*.395,rearZ+.028]];
  // Fit the cap against the real stowed transform, including the mount's X/Z scaling.
  const closedTransform=countachClosedHeadlampTransform(side);
  const fittedY=(x,z)=>{
