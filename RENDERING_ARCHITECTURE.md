@@ -404,7 +404,7 @@ The car is simulated in its own horizontal body frame. `speed / 3.6` is longitud
 
 `slipAngle = atan2(Vlat, max(2, abs(Vlong)))`
 
-The front-axle lateral demand is derived from the actual speed-sensitive steering angle and the 3.275 m wheelbase, capped at 10.5 m/s². It follows the steered front wheels. Rear-axle lateral damping is selected by a four-state controller:
+The front-axle lateral demand is derived from the actual speed-sensitive steering angle and the 3.275 m wheelbase, capped at 10.5 m/s². It follows the steered front wheels. The rendered front wheels also receive a small slip-angle countersteer overlay (`0.28×` in DRIFT and `0.42×` in RECOVERY), so the visible steering rack reflects the automatic correction without changing the physics yaw controller a second time. Rear-axle lateral damping is selected by a four-state controller:
 
 | State | Rear lateral damping | Behaviour |
 |---|---:|---|
