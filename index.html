@@ -269,7 +269,7 @@ function renderSunBloom(maskTexture){
  gl.disable(gl.DEPTH_TEST);gl.disable(gl.BLEND);gl.depthMask(false);gl.useProgram(gpuSunProgram);gl.bindBuffer(gl.ARRAY_BUFFER,gpuSunBuffer);
  gl.enableVertexAttribArray(gpuSunLoc.position);gl.vertexAttribPointer(gpuSunLoc.position,2,gl.FLOAT,false,0,0);
  gl.uniform2f(gpuSunLoc.viewport,W,H);gl.uniform2f(gpuSunLoc.center,x,y);gl.uniform1f(gpuSunLoc.extent,r*3.8);gl.uniform1f(gpuSunLoc.time,now*0.001);gl.uniform1f(gpuSunLoc.radius,r);gl.uniform1f(gpuSunLoc.breathe,breathe);gl.uniform1f(gpuSunLoc.glowPulse,glowPulse);
- gl.activeTexture(gl.TEXTURE2);gl.bindTexture(gl.TEXTURE_2D,maskTexture);gl.uniform1i(gpuSunLoc.occlusionMask,2);gl.uniform2f(gpuSunLoc.canvasSize,canvas.width,canvas.height);gl.uniform1f(gpuSunLoc.occlusionEnabled,1.0);
+ gl.activeTexture(gl.TEXTURE2);gl.bindTexture(gl.TEXTURE_2D,maskTexture);gl.uniform1i(gpuSunLoc.occlusionMask,2);gl.uniform2f(gpuSunLoc.canvasSize,targets.source.width,targets.source.height);gl.uniform1f(gpuSunLoc.occlusionEnabled,1.0);
  gl.drawArrays(gl.TRIANGLES,0,6);gl.disableVertexAttribArray(gpuSunLoc.position);
  const blurPass=(source,target,direction,radius)=>{
   gl.bindFramebuffer(gl.FRAMEBUFFER,target.framebuffer);gl.viewport(0,0,target.width,target.height);gl.useProgram(sunBloomProgram);gl.bindBuffer(gl.ARRAY_BUFFER,outlineQuad);
@@ -277,8 +277,9 @@ function renderSunBloom(maskTexture){
   gl.activeTexture(gl.TEXTURE0);gl.bindTexture(gl.TEXTURE_2D,source.texture);gl.uniform1i(sunBloomLoc.source,0);gl.uniform2f(sunBloomLoc.texel,1/source.width,1/source.height);gl.uniform2f(sunBloomLoc.direction,direction[0],direction[1]);gl.uniform1f(sunBloomLoc.radius,radius);
   gl.drawArrays(gl.TRIANGLES,0,6);gl.disableVertexAttribArray(sunBloomLoc.position);gl.bindTexture(gl.TEXTURE_2D,null);
  };
- blurPass(targets.source,targets.horizontal,[1,0],8.0);
- blurPass(targets.horizontal,targets.vertical,[0,1],4.0);
+ const blurRadius=4.0*DPR;
+ blurPass(targets.source,targets.horizontal,[1,0],blurRadius);
+ blurPass(targets.horizontal,targets.vertical,[0,1],blurRadius);
  gl.activeTexture(gl.TEXTURE2);gl.bindTexture(gl.TEXTURE_2D,null);gl.activeTexture(gl.TEXTURE0);gl.bindTexture(gl.TEXTURE_2D,null);
  gl.bindFramebuffer(gl.FRAMEBUFFER,null);gl.viewport(0,0,canvas.width,canvas.height);gl.depthMask(true);gl.enable(gl.DEPTH_TEST);gl.useProgram(prog);
  return targets.vertical.texture;
@@ -395,11 +396,11 @@ function createSunBloomTarget(width,height){
  }
  function disposeSunBloomTargets(){if(!sunBloomTargets)return;for(const target of Object.values(sunBloomTargets)){gl.deleteTexture(target.texture);gl.deleteFramebuffer(target.framebuffer);}sunBloomTargets=null;}
  function ensureSunBloomTargets(){
-  const width=canvas.width,height=canvas.height,halfWidth=Math.max(1,Math.round(width*.5)),halfHeight=Math.max(1,Math.round(height*.5));
+  const width=Math.max(1,Math.round(canvas.width*.5)),height=Math.max(1,Math.round(canvas.height*.5));
   if(!width||!height)return false;
-  if(sunBloomTargets&&sunBloomTargets.source.width===width&&sunBloomTargets.source.height===height&&sunBloomTargets.horizontal.width===halfWidth&&sunBloomTargets.horizontal.height===halfHeight)return true;
+  if(sunBloomTargets&&sunBloomTargets.source.width===width&&sunBloomTargets.source.height===height)return true;
   disposeSunBloomTargets();
-  const source=createSunBloomTarget(width,height),horizontal=createSunBloomTarget(halfWidth,halfHeight),vertical=createSunBloomTarget(halfWidth,halfHeight);
+  const source=createSunBloomTarget(width,height),horizontal=createSunBloomTarget(width,height),vertical=createSunBloomTarget(width,height);
   if(!source||!horizontal||!vertical){for(const target of [source,horizontal,vertical])if(target){gl.deleteTexture(target.texture);gl.deleteFramebuffer(target.framebuffer);}return false;}
   sunBloomTargets={source,horizontal,vertical};return true;
  }
