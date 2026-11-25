@@ -115,9 +115,9 @@
 <body>
 <canvas id="scene"></canvas><canvas id="sun"></canvas><canvas id="flare"></canvas>
 <div id="hud">
- <div class="top"><div class="logo">DRIVELLA<small>3D SYNTHWAVE DRIFT RACING</small></div><div class="version-label" id="version-label">v0.18.65 · BUILD 131</div><div class="stat">DISTANCE<b id="distance">000.0 KM</b></div><div class="stat">LOCATION<b>VIOLET COAST</b></div></div>
+ <div class="top"><div class="logo">DRIVELLA<small>3D SYNTHWAVE DRIFT RACING</small></div><div class="version-label" id="version-label">v0.18.66 · BUILD 132</div><div class="stat">DISTANCE<b id="distance">000.0 KM</b></div><div class="stat">LOCATION<b>VIOLET COAST</b></div></div>
  <div class="right"><div id="speed">000 <span>KM/H</span></div><div id="direction">▶ FORWARD</div><div id="music">♫ MUSIC SCANNING…</div></div>
- <div class="bottom"><div class="hint"><strong>W / ↑</strong> ACCELERATE　<strong>S / ↓</strong> BRAKE / REVERSE<br><strong>A / ←　D / →</strong> STEER　<strong>SPACE</strong> HANDBRAKE　<strong>C</strong> CAMERA　<strong>HOLD + DRAG LMB</strong> LOOK　<strong>L</strong> LIGHTS　<strong>K</strong> WIREFRAME</div><div>3D NEON HIGHWAY // BUILD 131</div></div>
+ <div class="bottom"><div class="hint"><strong>W / ↑</strong> ACCELERATE　<strong>S / ↓</strong> BRAKE / REVERSE<br><strong>A / ←　D / →</strong> STEER　<strong>SPACE</strong> HANDBRAKE　<strong>C</strong> CAMERA　<strong>HOLD + DRAG LMB</strong> LOOK　<strong>L</strong> LIGHTS　<strong>K</strong> WIREFRAME</div><div>3D NEON HIGHWAY // BUILD 132</div></div>
 </div>
 <div id="fps-counter" aria-live="off">FPS --</div>
 <div id="effects-menu" aria-hidden="true">
@@ -151,7 +151,7 @@
 </div>
 <div id="tools-ui"><button id="cam-prev" aria-label="Previous camera">◀</button><span id="cam-label">CAM 2 · CLOSE</span><button id="cam-next" aria-label="Next camera">▶</button><button id="debug-toggle">DEBUG</button></div>
 <div id="debug-panel"><div class="debug-title">DRIVELLA DIAGNOSTICS</div><div id="debug-data">Initializing…</div></div>
-<div id="boot-screen"><div class="boot-content"><div class="boot-kicker">NIGHT DRIVE SYSTEMS // INITIALIZING</div><div class="boot-logo">DRIVELLA</div><div class="boot-subtitle">3D SYNTHWAVE DRIFT RACING</div><div class="boot-mark"></div><div class="boot-status" id="boot-status">BUILDING THE 3D WORLD</div><div class="boot-track"><div class="boot-progress" id="boot-progress"></div></div><div class="boot-meta"><span>3D ENGINE ONLINE</span><span id="boot-percent">00%</span></div><div class="boot-footer">ENGINE STARTUP // v0.18.65 · BUILD 131</div></div></div>
+<div id="boot-screen"><div class="boot-content"><div class="boot-kicker">NIGHT DRIVE SYSTEMS // INITIALIZING</div><div class="boot-logo">DRIVELLA</div><div class="boot-subtitle">3D SYNTHWAVE DRIFT RACING</div><div class="boot-mark"></div><div class="boot-status" id="boot-status">BUILDING THE 3D WORLD</div><div class="boot-track"><div class="boot-progress" id="boot-progress"></div></div><div class="boot-meta"><span>3D ENGINE ONLINE</span><span id="boot-percent">00%</span></div><div class="boot-footer">ENGINE STARTUP // v0.18.66 · BUILD 132</div></div></div>
 <div id="main-menu"><div class="menu-content"><div class="menu-brand">DRIVELLA GTS</div><div class="menu-sub">RIDE THE RETRO FUTURE</div><div class="menu-actions"><button class="menu-btn" id="menu-start">СТАРТ</button><button class="menu-btn" id="menu-garage">ГАРАЖ</button><button class="menu-btn" id="menu-options">НАСТРОЙКИ</button></div></div><div class="menu-footer">РАЗРАБОТЧИК — <b>НИКИТА МАРКИН</b></div></div>
 <div id="garage-screen"><div class="garage-head">ГАРАЖ // DRIVELLA GTS</div><div class="garage-copy">ТЕКУЩИЙ АВТОМОБИЛЬ<br>DRIVELLA GTS · RETRO GT COUPE<br>ПОКАЖИ ЕЁ СО ВСЕХ СТОРОН</div><div class="garage-controls"><button id="garage-back">← НАЗАД В МЕНЮ</button></div><div class="garage-tip">ЗАЖМИ И ТЯНИ — ВРАЩЕНИЕ<br>КОЛЁСИКО — ПРИБЛИЗИТЬ / ОТДАЛИТЬ</div></div>
 <div id="options-screen"><div class="options-head">ОПЦИИ</div><div class="options-card"><div class="option-row"><span>МУЗЫКА</span><button id="option-music">ВКЛЮЧЕНА</button></div><div class="option-row"><span>ГРОМКОСТЬ</span><input id="option-volume" type="range" min="0" max="100" value="52"></div><div class="option-row"><span>ЗВУК ДВИГАТЕЛЯ</span><button id="option-sfx">ВКЛЮЧЁН</button></div><div class="option-row"><span>КАМЕРА</span><span>КЛАВИШИ 1–4</span></div><button id="options-back" style="width:100%;margin-top:18px">← НАЗАД В МЕНЮ</button></div></div>
@@ -159,7 +159,7 @@
 <script>
 (()=>{
 'use strict';
-const VERSION='v0.18.65',BUILD='131';
+const VERSION='v0.18.66',BUILD='132';
 const canvas=document.getElementById('scene'),gl=canvas.getContext('webgl',{antialias:true,alpha:true}),sun=document.getElementById('sun'),sctx=sun.getContext('2d'),flare=document.getElementById('flare'),fctx=flare.getContext('2d');
 const $=id=>document.getElementById(id);
 const clamp=(v,a,b)=>Math.max(a,Math.min(b,v));
@@ -1048,11 +1048,14 @@ const C={
  glass:[.012,.035,.075,1],glassLight:[.055,.17,.28,1],trim:[.012,.016,.026,1],
  tire:[.012,.014,.019,1],hub:[.55,.52,.68,1],brake:[.20,.20,.28,1],city:[.085,.045,.12,1],mount:[.08,.045,.14,1]
 };
-let keys={},headlightsUp=false,headlightDeploy=0,wireframeMode=false,started=false,paused=true,speed=0,playerX=0,steer=0,bodyRoll=0,distance=0,boost=0,carYaw=0,yawRate=0,lateralVelocity=0,driftIntensity=0,handbrakeActive=false,driftLocked=false,driftDirection=0,driftRecovery=0,driftCooldown=0,brakeLight=0,last=performance.now(),musicOn=true,track=0,trackOrder=[],trackPos=0,audio=null,musicPending=true,foundTracks=[],audioCtx=null,engineOsc=null,engineOsc2=null,engineGain=null,engineFilter=null,skidGain=null,skidFilter=null,roadGain=null,roadFilter=null,audioNoise=null;
+let keys={},headlightsUp=false,headlightDeploy=0,wireframeMode=false,started=false,paused=true,speed=0,playerX=0,steer=0,bodyRoll=0,distance=0,boost=0,carYaw=0,yawRate=0,lateralVelocity=0,driftIntensity=0,driftState=0,driftDirection=0,driftTimer=0,driftPeakSlip=0,countersteerTime=0,driftCooldown=0,handbrakePulse=0,previousHandbrake=false,previousSteerInput=0,wheelTravel=0,handbrakeActive=false,brakeLight=0,last=performance.now(),musicOn=true,track=0,trackOrder=[],trackPos=0,audio=null,musicPending=true,foundTracks=[],audioCtx=null,engineOsc=null,engineOsc2=null,engineGain=null,engineFilter=null,skidGain=null,skidFilter=null,roadGain=null,roadFilter=null,audioNoise=null;
 // One axis convention shared by controls, car movement, body lean and indicators.
 const STEER_AXIS=Object.freeze({left:-1,right:1,screenRight:1,bodyLean:-1});
+const DRIFT_STATE=Object.freeze({GRIP:0,INITIATION:1,DRIFT:2,RECOVERY:3});
+const VEHICLE_WHEELBASE=3.275,WORLD_MOTION_SCALE=.432;
+function getVehicleSpeed(){return Math.hypot(speed/3.6,lateralVelocity)*3.6;}
 function readSteeringInput(){return (keys.d||keys.arrowright?STEER_AXIS.right:0)+(keys.a||keys.arrowleft?STEER_AXIS.left:0);}
-function getSteeringAngle(){return steer*.32/(1+Math.abs(speed/3.6)/115);}
+function getSteeringAngle(){return steer*.32/(1+getVehicleSpeed()/115);}
 function getFrontWheelSteerAngle(side){
  const angle=getSteeringAngle(),magnitude=Math.abs(angle);
  if(magnitude<.0001)return 0;
@@ -1179,7 +1182,7 @@ function initAudio(){
 }
 function updateCarAudio(){
  if(!audioCtx)return;
- const now=audioCtx.currentTime,spd=Math.abs(speed),drift=started&&!paused&&spd>32&&driftIntensity>.12;
+ const now=audioCtx.currentTime,spd=getVehicleSpeed(),drift=started&&!paused&&spd>32&&driftIntensity>.12;
  const rpm=48+spd*.92+boost*38;
  engineOsc.frequency.setTargetAtTime(rpm,now,.07);engineOsc2.frequency.setTargetAtTime(rpm*.48,now,.09);
  engineFilter.frequency.setTargetAtTime(130+spd*3.3,now,.12);
@@ -1437,7 +1440,7 @@ function drawWorld(){
  drawCarMesh(doorSeamR,carX,carZ,[.025,.006,.018,1],yaw,0,false,false);
  // Raised wheel-arch overlays removed to leave the tyres unobstructed.
  // Four low-profile tyres with machined five-spoke alloy faces. Spin follows world travel.
- const wheelSpin=garageMode?0:-distance/WHEEL_RADIUS;
+ const wheelSpin=garageMode?0:-wheelTravel/WHEEL_RADIUS;
  for(const side of [-1,1])for(const wz of [-1.6375,1.6375]){
   const wx=1.105,wy=WHEEL_CENTER_Y,tyreR=WHEEL_RADIUS,isFront=wz>0;
   const frontSteer=isFront&&!garageMode?getFrontWheelSteerAngle(side):0,steerPivotX=isFront?side*wx:null;
@@ -1671,8 +1674,8 @@ function updateDebug(dt){
    '<strong>POP-UP DEPLOY</strong> '+Math.round(headlightDeploy*100)+'%<br>'+
    '<strong>DRAW CALLS</strong> '+drawCalls+'<br>'+'<strong>HEADLIGHT MESHES</strong> '+headlightMeshTests+' TESTED · '+headlightMeshCulled+' CULLED<br>'+ 
    '<strong>CAMERA</strong> '+(cameraMode+1)+' / 4 — '+CAMERA_NAMES[cameraMode]+'<br>'+
-   '<strong>SPEED</strong> '+speed.toFixed(1)+' km/h<br>'+
-    '<strong>DRIFT LOCK / SLIP / YAW</strong> '+(driftLocked?'ON':'OFF')+' / '+(Math.atan2(lateralVelocity,Math.max(2,Math.abs(speed)/3.6))*180/Math.PI).toFixed(1)+'° / '+(yawRate*180/Math.PI).toFixed(0)+'°/s<br>'+
+   '<strong>SPEED</strong> '+getVehicleSpeed().toFixed(1)+' km/h<br>'+
+    '<strong>DRIFT STATE / SLIP / YAW</strong> '+['GRIP','INIT','DRIFT','RECOVERY'][driftState]+' / '+(Math.atan2(lateralVelocity,Math.max(2,Math.abs(speed)/3.6))*180/Math.PI).toFixed(1)+'° / '+(yawRate*180/Math.PI).toFixed(0)+'°/s<br>'+
    '<strong>WORLD Z</strong> '+distance.toFixed(2)+'<br>'+
    '<strong>STEER / X / ROLL</strong> '+steer.toFixed(2)+' / '+playerX.toFixed(2)+' / '+bodyRoll.toFixed(3)+'<br>'+
    '<strong>WEBGL</strong> '+(gl.getParameter(gl.VERSION)||'OK')+'<br>'+
@@ -1686,78 +1689,136 @@ function frame(now){
  const lampTarget=headlightsUp?1:0;
  headlightDeploy+=(lampTarget-headlightDeploy)*Math.min(1,dt*7.0);
  const up=keys.w||keys.arrowup,down=keys.s||keys.arrowdown,handbrake=!!keys[' '];
- const brakeTarget=(down&&speed>.5)||handbrake?1:0;
- brakeLight+=(brakeTarget-brakeLight)*Math.min(1,dt*(brakeTarget?18:8));
  if(started&&!paused){
-  // Smooth throttle/brake response with a little drivetrain inertia.
-  if(up)speed+=72*dt;else if(down)speed+=speed>0?-112*dt:82*dt;else speed*=Math.pow(.994,dt*60);
-  handbrakeActive=handbrake&&speed>28;
-  if(handbrakeActive)speed=Math.max(0,speed-10*dt);
-  speed=clamp(speed,-75,310);
-
-  // Arcade drift: SPACE + steering breaks rear grip; the drift lock survives handbrake release.
-  const steerInput=readSteeringInput();
-  // Keep ordinary steering light and immediate; drift handling is layered on top.
-  steer=steerInput===0?0:steer+(steerInput-steer)*Math.min(1,dt*9.5);
-  const v=Math.abs(speed)/3.6;
-  const reverseSign=speed< -1?-1:1;
-  const slipAngle=Math.atan2(lateralVelocity,Math.max(2,v));
-  const slipAbs=Math.abs(slipAngle);
-  const steerDir=Math.sign(steerInput);
+  const steerInput=readSteeringInput(),steerDir=Math.sign(steerInput);
+  const handbrakePressed=handbrake&&!previousHandbrake;
+  previousHandbrake=handbrake;
+  if(handbrakePressed&&Math.abs(speed/3.6)>8)handbrakePulse=.16;
+  else handbrakePulse=Math.max(0,handbrakePulse-dt);
+  handbrakeActive=handbrakePulse>0&&Math.abs(speed/3.6)>5;
   driftCooldown=Math.max(0,driftCooldown-dt);
-  const handbrakeKick=handbrakeActive&&v>8&&steerDir!==0;
-  const naturalDrift=!driftLocked&&driftCooldown<=0&&v>15&&slipAbs>.24&&Math.abs(yawRate)>.48;
-  if(!driftLocked&&(handbrakeKick||naturalDrift)){
-   driftLocked=true;
-   driftDirection=handbrakeKick?steerDir:Math.sign(yawRate||-lateralVelocity||steerDir);
-   driftRecovery=0;
-  }
-  // Steering against the drift's original turn direction is an explicit recovery input.
-  const countersteering=driftLocked&&steerDir!==0&&steerDir*driftDirection<0;
+  // Body-frame velocity: speed is longitudinal, lateralVelocity is the side-slip component.
+  let vLong=speed/3.6;
+  steer=steerInput===0?0:steer+(steerInput-steer)*Math.min(1,dt*9.5);
+  const totalSpeed=Math.hypot(vLong,lateralVelocity);
   const steerAngle=getSteeringAngle();
-  let yawTarget=clamp((v/3.35)*Math.tan(steerAngle)*reverseSign,-.82,.82);
-  // The handbrake adds a controllable yaw impulse instead of merely slowing the car.
-  if(handbrakeActive&&steerDir!==0)yawTarget+=steerDir*Math.min(.88,v*.022);
-  if(driftLocked&&!countersteering&&steerDir!==0)yawTarget*=1.45;
-  if(countersteering)yawTarget*=.42*clamp(slipAbs/.42,0,1);
-  yawTarget=clamp(yawTarget,-2.1,2.1);
-  const yawResponse=countersteering?4.5:handbrakeActive?4.1:driftLocked?3.6:5.2;
+  // The front axle retains grip; braking shifts load forward and increases its bite.
+  const frontLoad=down&&totalSpeed>12?1.12:1;
+  const frontLateralAccel=clamp(vLong*Math.abs(vLong)*Math.tan(steerAngle)*frontLoad/VEHICLE_WHEELBASE,-10.5,10.5);
+  const steerYaw=frontLateralAccel/Math.max(2,Math.abs(vLong));
+  const slipAngle=Math.atan2(lateralVelocity,Math.max(2,Math.abs(vLong)));
+  const slipAbs=Math.abs(slipAngle);
+  const lateralDemand=Math.abs(frontLateralAccel);
+  const handbrakeInitiation=handbrakePressed&&steerDir!==0&&totalSpeed>8;
+  const sharpSteerInitiation=steerDir!==0&&steerInput!==previousSteerInput&&totalSpeed>17&&lateralDemand>9.5;
+  const brakeInitiation=down&&steerDir!==0&&totalSpeed>12&&lateralDemand>4.5;
+  if(driftState===DRIFT_STATE.GRIP&&driftCooldown<=0&&totalSpeed>12&&(handbrakeInitiation||sharpSteerInitiation||brakeInitiation)){
+   driftState=DRIFT_STATE.INITIATION;
+   driftDirection=steerDir||Math.sign(yawRate||1);
+   driftTimer=0;driftPeakSlip=slipAbs;countersteerTime=0;
+   // A brief rear-axle breakaway impulse initiates yaw; it is not a permanent rotation override.
+   yawRate+=driftDirection*(handbrakeInitiation ? 1.15 : brakeInitiation ? .72 : .58);
+  }
+  if(handbrakePressed&&driftState===DRIFT_STATE.DRIFT&&steerDir===0){
+   // A no-steer handbrake tap moves the vehicle laterally without forcing a new nose angle.
+   lateralVelocity-=driftDirection*Math.min(2.6,totalSpeed*.08);
+  }else if(handbrakePressed&&driftState===DRIFT_STATE.DRIFT&&steerDir!==0){
+   yawRate+=steerDir*.28;
+  }
+  const countersteering=driftState===DRIFT_STATE.DRIFT&&steerDir!==0&&steerDir*driftDirection<0;
+  countersteerTime=countersteering?countersteerTime+dt:0;
+  let rearGrip=9.0;
+  let yawTarget=clamp(steerYaw,-.82,.82);
+  if(driftState===DRIFT_STATE.INITIATION){
+   rearGrip=.12;
+   yawTarget+=driftDirection*.80;
+   driftTimer+=dt;
+   driftPeakSlip=Math.max(driftPeakSlip,slipAbs);
+  }else if(driftState===DRIFT_STATE.DRIFT){
+   rearGrip=.24;
+   // The front axle controls the nose; reduced rear grip lets the tail swing outward.
+   const alignFactor=countersteering ? .82 : steerDir===0 ? .85 : .30;
+   yawTarget+=slipAngle*alignFactor;
+   if(steerDir===driftDirection)yawTarget+=driftDirection*.68;
+   else if(countersteering)yawTarget-=driftDirection*.35;
+   const spinGuard=clamp((Math.PI/3-slipAbs)/(Math.PI/18),0,1);
+   yawTarget=clamp(yawTarget*spinGuard,-1.6,1.6);
+   driftTimer+=dt;
+   driftPeakSlip=Math.max(driftPeakSlip,slipAbs);
+  }else if(driftState===DRIFT_STATE.RECOVERY){
+   rearGrip=.24+(10-.24)*clamp(driftTimer/.38,0,1);
+   yawTarget=clamp(yawTarget+slipAngle*1.5,-1.3,1.3);
+   driftTimer+=dt;
+  }
+  // The handbrake pulse lasts 160 ms, then normal drift physics takes over.
+  if(handbrakeActive)rearGrip=.02;
+  if(down&&steerDir!==0&&totalSpeed>12)yawTarget=clamp(yawTarget+steerDir*.20,-1.6,1.6);
+  const yawResponse=driftState===DRIFT_STATE.GRIP?5.0:driftState===DRIFT_STATE.INITIATION?3.2:driftState===DRIFT_STATE.DRIFT?2.7:6.0;
   yawRate+=(yawTarget-yawRate)*Math.min(1,dt*yawResponse);
-  yawRate=clamp(yawRate,-2.4,2.4);
-  // Rear grip stays low while locked; deliberate countersteer restores it progressively.
-  const lateralGrip=countersteering?5.2:handbrakeActive ? .78 : driftLocked ? .36 : slipAbs>.16?4.6:7.2;
-  const lateralAccel=-yawRate*(speed/3.6)-lateralVelocity*lateralGrip;
+  yawRate=clamp(yawRate,-2.0,2.0);
+  if(driftState===DRIFT_STATE.DRIFT&&slipAbs>Math.PI*50/180)yawRate*=Math.exp(-dt*1.5);
+  // Front tyre force follows steering, rear axle damping varies by grip/drift/recovery state.
+  const lateralAccel=frontLateralAccel-yawRate*vLong-lateralVelocity*rearGrip;
   lateralVelocity+=lateralAccel*dt;
-  lateralVelocity=clamp(lateralVelocity,-v*.60,v*.60);
-  // Do not clamp carYaw: a sustained turn can now pass 180° and complete a full 360°.
+  const maxLateralSpeed=Math.abs(vLong)*Math.tan(78*Math.PI/180);
+  lateralVelocity=clamp(lateralVelocity,-maxLateralSpeed,maxLateralSpeed);
   carYaw+=yawRate*dt;
-  if(driftLocked){
-   const recoveredSlip=Math.abs(Math.atan2(lateralVelocity,Math.max(2,v)));
-   const crossedCenter=countersteering&&recoveredSlip<.12&&lateralVelocity*driftDirection>0;
-   const centered=countersteering&&recoveredSlip<.075;
-   if(crossedCenter||centered)driftRecovery+=dt;else driftRecovery=0;
-   if(driftRecovery>.12||v<5.5){
-    driftLocked=false;driftDirection=0;driftRecovery=0;driftCooldown=.75;
+  const updatedSlip=Math.atan2(lateralVelocity,Math.max(2,Math.abs(vLong)));
+  const updatedSlipAbs=Math.abs(updatedSlip);
+  if(driftState===DRIFT_STATE.INITIATION&&driftTimer>.22){
+   if(updatedSlipAbs>7*Math.PI/180){driftState=DRIFT_STATE.DRIFT;driftTimer=0;driftPeakSlip=updatedSlipAbs;}
+   else if(driftTimer>.36){driftState=DRIFT_STATE.GRIP;driftDirection=0;driftTimer=0;driftCooldown=.35;}
+  }else if(driftState===DRIFT_STATE.DRIFT){
+   driftPeakSlip=Math.max(driftPeakSlip,updatedSlipAbs);
+   // Holding countersteer through neutral slip automatically initiates the opposite drift.
+   if(countersteering&&countersteerTime>.18&&updatedSlip*driftDirection>2*Math.PI/180){
+    driftState=DRIFT_STATE.INITIATION;driftDirection=steerDir;driftTimer=0;driftPeakSlip=updatedSlipAbs;countersteerTime=0;yawRate+=driftDirection*.65;
+   }else if(driftPeakSlip>15*Math.PI/180&&updatedSlipAbs<11*Math.PI/180&&!countersteering){
+    driftState=DRIFT_STATE.RECOVERY;driftTimer=0;
+   }else if(updatedSlipAbs>76*Math.PI/180||totalSpeed<10.5){
+    driftState=DRIFT_STATE.RECOVERY;driftTimer=0;
+   }
+  }else if(driftState===DRIFT_STATE.RECOVERY){
+   if(updatedSlipAbs<10*Math.PI/180&&Math.abs(yawRate)<.28){
+    driftState=DRIFT_STATE.GRIP;driftDirection=0;driftTimer=0;driftPeakSlip=0;countersteerTime=0;driftCooldown=.45;
+    lateralVelocity*=.20;yawRate*=.55;
+   }else if(driftTimer>1.2){
+    driftState=DRIFT_STATE.GRIP;driftDirection=0;driftTimer=0;driftPeakSlip=0;countersteerTime=0;driftCooldown=.45;
+    lateralVelocity*=.25;yawRate*=.45;
    }
   }
+  // Rear-wheel drive force acts along the nose, not along the road's old +Z direction.
+  let longitudinalAccel;
+  if(up)longitudinalAccel=8.5;
+  else longitudinalAccel=-Math.sign(vLong||1)*(.35+Math.abs(vLong)*.012);
+  if(down)longitudinalAccel=vLong>.2?-18:vLong<-.2?-8:0;
+  if(handbrakeActive)longitudinalAccel-=Math.sign(vLong||1)*1.0;
+  if(driftState===DRIFT_STATE.DRIFT)longitudinalAccel-=Math.sign(vLong||1)*(1.0+3.0*clamp(updatedSlipAbs/(55*Math.PI/180),0,1));
+  vLong=clamp(vLong+longitudinalAccel*dt,-20.8,86);
+  const velocityMagnitude=Math.hypot(vLong,lateralVelocity);
+  if(velocityMagnitude>86){const velocityScale=86/velocityMagnitude;vLong*=velocityScale;lateralVelocity*=velocityScale;}
+  speed=vLong*3.6;
+  // Integrate one world-space velocity vector on X and Z. A 360° turn now follows its real arc.
+  const forwardX=Math.sin(carYaw),forwardZ=Math.cos(carYaw),rightX=Math.cos(carYaw),rightZ=-Math.sin(carYaw);
+  const worldVelocityX=vLong*forwardX+lateralVelocity*rightX;
+  const worldVelocityZ=vLong*forwardZ+lateralVelocity*rightZ;
   const oldRoadX=roadX(distance);
-  const worldLateral=(speed/3.6)*Math.sin(carYaw)+lateralVelocity*Math.cos(carYaw);
-  distance+=speed*dt*.12;
-  // playerX is measured from the road centre, so compensate for the road's
-  // own curvature instead of letting a bend throw the car to the screen edge.
-  playerX=clamp(playerX+worldLateral*dt-(roadX(distance)-oldRoadX),-10.5,10.5);
-  driftIntensity=clamp((slipAbs-.055)/.42,0,1);
+  distance+=worldVelocityZ*dt*WORLD_MOTION_SCALE;
+  playerX=clamp(playerX+worldVelocityX*dt*WORLD_MOTION_SCALE-(roadX(distance)-oldRoadX),-10.5,10.5);
+  wheelTravel+=vLong*dt*WORLD_MOTION_SCALE;
+  driftIntensity=clamp((updatedSlipAbs-.055)/.72,0,1);
   const lateralLoad=clamp(-lateralAccel/24,-1,1);
   const rollTarget=clamp(-lateralLoad*.10-steer*.012,-.12,.12);
   bodyRoll+=(rollTarget-bodyRoll)*Math.min(1,dt*5.5);
-  // Keep the road scrolling speed tied to the actual longitudinal velocity.
-
+  previousSteerInput=steerInput;
  }else if(!paused){
-  handbrakeActive=false;
+  handbrakeActive=false;handbrakePulse=0;previousHandbrake=false;
   yawRate*=Math.pow(.88,dt*60);
   lateralVelocity*=Math.pow(.90,dt*60);
   driftIntensity*=.88;
   bodyRoll*=Math.pow(.88,dt*60);
+ }else{
+  previousHandbrake=false;
  }
 
  let passCpuStart=performance.now();beginGpuPass('shadow');renderShadowMap();endGpuPass();cpuPassMs.shadow=performance.now()-passCpuStart;
@@ -1765,8 +1826,8 @@ function frame(now){
  passCpuStart=performance.now();beginGpuPass('post');renderCarOutlines();endGpuPass();cpuPassMs.post=performance.now()-passCpuStart;
  drawSun();updateDebug(dt);
  updateCarAudio();
- $('speed').innerHTML=String(Math.round(Math.abs(speed))).padStart(3,'0')+' <span>KM/H</span>';
- $('direction').textContent=speed< -1?'◀ REVERSE':driftLocked?'✦ DRIFT':driftIntensity>.18?'✦ SLIDE':'▶ FORWARD';$('direction').style.color=speed< -1?'#ffb56f':driftLocked||driftIntensity>.18?'#ff70dc':'#ff8de9';
+ $('speed').innerHTML=String(Math.round(getVehicleSpeed())).padStart(3,'0')+' <span>KM/H</span>';
+ $('direction').textContent=speed< -1?'◀ REVERSE':driftState===DRIFT_STATE.DRIFT?'✦ DRIFT':driftState===DRIFT_STATE.INITIATION?'✦ INITIATION':driftState===DRIFT_STATE.RECOVERY?'↗ RECOVERY':driftIntensity>.18?'✦ SLIDE':'▶ FORWARD';$('direction').style.color=speed< -1?'#ffb56f':driftState!==DRIFT_STATE.GRIP||driftIntensity>.18?'#ff70dc':'#ff8de9';
  $('distance').textContent=Math.max(0,distance).toFixed(1).padStart(5,'0')+' KM';
  cpuPassMs.frame=performance.now()-frameCpuStart;
  requestAnimationFrame(frame);
