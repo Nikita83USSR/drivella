@@ -118,9 +118,9 @@
 <body>
 <canvas id="scene"></canvas><canvas id="sun"></canvas><canvas id="flare"></canvas>
 <div id="hud">
- <div class="top"><div class="logo">DRIVELLA<small>3D SYNTHWAVE DRIFT RACING</small></div><div class="version-label" id="version-label">v0.19.12 · BUILD 178</div><div class="stat">DISTANCE<b id="distance">000.0 KM</b></div><div class="stat">LOCATION<b>VIOLET COAST</b></div></div>
+ <div class="top"><div class="logo">DRIVELLA<small>3D SYNTHWAVE DRIFT RACING</small></div><div class="version-label" id="version-label">v0.19.13 · BUILD 179</div><div class="stat">DISTANCE<b id="distance">000.0 KM</b></div><div class="stat">LOCATION<b>VIOLET COAST</b></div></div>
  <div class="right"><div id="speed">000 <span>KM/H</span></div><div id="direction">▶ FORWARD</div><div id="music">♫ MUSIC SCANNING…</div></div>
- <div class="bottom"><div class="hint"><strong>W / ↑</strong> ACCELERATE　<strong>S / ↓</strong> BRAKE / REVERSE<br><strong>A / ←　D / →</strong> STEER　<strong>SPACE</strong> HANDBRAKE　<strong>C</strong> CAMERA　<strong>HOLD + DRAG LMB</strong> LOOK　<strong>L</strong> LIGHTS　<strong>K</strong> WIREFRAME</div><div class="build-credit"><span>3D NEON HIGHWAY // BUILD 178</span><a class="asset-credit" href="https://sketchfab.com/3d-models/low-poly-lamborghini-countach-c9b28a4ad5c74649a09afa613dd3fae1" target="_blank" rel="noopener noreferrer">Original model: 3DShinobi · Sketchfab · CC BY · modified for DRIVELLA</a></div></div>
+ <div class="bottom"><div class="hint"><strong>W / ↑</strong> ACCELERATE　<strong>S / ↓</strong> BRAKE / REVERSE<br><strong>A / ←　D / →</strong> STEER　<strong>SPACE</strong> HANDBRAKE　<strong>C</strong> CAMERA　<strong>HOLD + DRAG LMB</strong> LOOK　<strong>L</strong> LIGHTS　<strong>K</strong> WIREFRAME</div><div class="build-credit"><span>3D NEON HIGHWAY // BUILD 179</span><a class="asset-credit" href="https://sketchfab.com/3d-models/low-poly-lamborghini-countach-c9b28a4ad5c74649a09afa613dd3fae1" target="_blank" rel="noopener noreferrer">Original model: 3DShinobi · Sketchfab · CC BY · modified for DRIVELLA</a></div></div>
 </div>
 <div id="fps-counter" aria-live="off">FPS --</div>
 <div id="effects-menu" aria-hidden="true">
@@ -177,7 +177,7 @@
 <script>
 (()=>{
 'use strict';
-const VERSION='v0.19.12',BUILD='178';
+const VERSION='v0.19.13',BUILD='179';
 const canvas=document.getElementById('scene'),gl=canvas.getContext('webgl',{antialias:true,alpha:true}),sun=document.getElementById('sun'),sctx=sun.getContext('2d'),flare=document.getElementById('flare'),fctx=flare.getContext('2d');
 const $=id=>document.getElementById(id);
 let countachModel=null,countachModelReady=false;
@@ -683,7 +683,7 @@ async function loadCountachModel(){
   const stream=new Blob([packed]).stream().pipeThrough(new DecompressionStream('deflate'));
   const raw=new Uint8Array(await new Response(stream).arrayBuffer());
   if(raw.byteLength!==meta.rawBytes)throw new Error('Нарушена целостность геометрии Countach');
-  const view=new DataView(raw.buffer,raw.byteOffset,raw.byteLength),model={wheelCenters:meta.wheelCenters},extractedHeadlampCaps={left:[],right:[]};
+  const view=new DataView(raw.buffer,raw.byteOffset,raw.byteLength),model={wheelCenters:meta.wheelCenters,geometryBounds:{}},extractedHeadlampCaps={left:[],right:[]};
   const mirrorX=data=>{
    const mirrored=new Float32Array(data.length);
    for(let i=0;i<data.length;i+=9){
@@ -735,7 +735,10 @@ async function loadCountachModel(){
     if(oldLowerBlackHeadlampPanel){for(const p of triangle)frontLowerBodyColorData.push(...p);removedLowerBlackPanels++;continue;}
     for(const p of triangle){data[writeAt++]=p[0];data[writeAt++]=p[1];data[writeAt++]=p[2];}
    }
-   const geometry=writeAt===data.length?data:data.slice(0,writeAt);
+   const geometry=writeAt===data.length?data:data.slice(0,writeAt),bounds={min:[Infinity,Infinity,Infinity],max:[-Infinity,-Infinity,-Infinity]};
+   for(let v=0;v<geometry.length;v+=3)for(let axis=0;axis<3;axis++){const value=geometry[v+axis];bounds.min[axis]=Math.min(bounds.min[axis],value);bounds.max[axis]=Math.max(bounds.max[axis],value);}
+   if(geometry.length)model.geometryBounds[part.name]=bounds;
+   window.DRIVELLA_COUNTACH_GEOMETRY_BOUNDS=model.geometryBounds;
    if(part.name==='bodyPaint'){
     window.DRIVELLA_OLD_HOOD_CAP_TRIANGLES_REMOVED=removedOldHoodCaps;
     if(removedOldHoodCaps!==58||extractedHeadlampCaps.left.length!==261||extractedHeadlampCaps.right.length!==261)throw new Error('Не удалось извлечь точные панели pop-up фар Countach');
