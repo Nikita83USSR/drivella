@@ -1,6 +1,6 @@
 # DRIVELLA — Rendering Architecture
 
-Current reference: **v0.19.29 / BUILD 195**  
+Current reference: **v0.19.30 / BUILD 196**  
 Main renderer: `index.html` — custom WebGL 1 renderer, no external rendering engine.
 
 **Release marker policy:** every published renderer/game change increments `BUILD` in `index.html` and updates the visible HUD, boot screen, README, and this document in the same release. Increment the patch version with the build when appropriate. Never publish a renderer change while leaving the visible build number unchanged.
@@ -36,6 +36,14 @@ Per-instance colour keeps the original submission order rather than sorting by m
 - Palms: outer/inner trunks use two cylinder batches. Canopies use separate batches for each of the three authored leaf meshes and for their brighter secondary leaf layer. Grouping is by mesh variant; separate trees are far enough apart that their canopy meshes do not overlap each other. The two layers for each tree retain their original draw order.
 - All batches run through the same visible, directional-shadow and AO scene passes. Each instance is independently tested by shadowCasterAllowed()/shadowBoundsVisible(), sceneMaskAllowed() and the existing headlight-cone culler. Material-8 emissive windows remain excluded from cast shadows and the scene visibility mask exactly as before.
 - F3 reports the road, biome and showroom batch/instance counts. The Countach, vehicle physics and post-processing are unchanged.
+
+### BUILD 196 — track-side local point lighting
+
+- Four point sources use the existing `LOCAL_LIGHT_CAPACITY=4` shader interface. Two sources follow the current pair of roadside neon posts and two follow the next pair 30 m ahead. Positions are calculated from `roadX(z)` so the lights follow the procedural bends and stay aligned with the posts at `x = roadX(z) ± 9`, `y = 0.86`.
+- The current and next pairs cross-fade with a smoothstep curve over each 30 m segment. Magenta remains on the left and cyan on the right. The sources are point lights (`directionCone.w = -1`) and do not cast shadows; they allocate no local shadow maps.
+- `FX.trackLights` is enabled by default and independently controllable in F4. `F3` reports whether the four-source track-light set is active. Garage lights continue to use their separate two spot sources and two cached spotlight shadow maps.
+- The lights use the production `evalLocalLight()` function and affect the existing unlit world-material path, including asphalt/road props and other visible environment meshes, as well as paint/glass material branches that already evaluate local lighting. No geometry, car model, suspension or driving physics is changed.
+- Regression includes a GPU pixel fixture built from the exact production `evalLocalLight()` helper: a magenta/cyan source must illuminate a point inside its range while points outside the range remain dark. This verifies the shader contribution, not subjective in-game colour balance or target-GPU frame time.
 
 ### BUILD 195 — showroom lights and palms
 
