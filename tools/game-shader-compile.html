@@ -167,7 +167,7 @@ gl.uniform2f(location(outlineProgram,'uSunCenter'),.5,.5);
 gl.uniform1f(location(outlineProgram,'uSunRadius'),sunRadius);
 gl.uniform1f(location(outlineProgram,'uSunAspect'),aspect);
 gl.uniform1f(location(outlineProgram,'uSunTime'),1.0);
-const bloomTexture=texture(W,H,gl.NEAREST);
+gl.activeTexture(gl.TEXTURE2);const bloomTexture=texture(W,H,gl.NEAREST);
 const bloomFbo=gl.createFramebuffer();gl.bindFramebuffer(gl.FRAMEBUFFER,bloomFbo);
 gl.framebufferTexture2D(gl.FRAMEBUFFER,gl.COLOR_ATTACHMENT0,gl.TEXTURE_2D,bloomTexture,0);
 const bloomFramebufferStatus=gl.checkFramebufferStatus(gl.FRAMEBUFFER);
