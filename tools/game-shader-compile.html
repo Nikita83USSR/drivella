@@ -210,6 +210,7 @@ const bloomFramebufferStatus=gl.checkFramebufferStatus(gl.FRAMEBUFFER);
 const sunBloomFramebufferStatuses=[bloomSource.status,bloomHorizontal.status,bloomVertical.status];
 must(bloomFramebufferStatus===gl.FRAMEBUFFER_COMPLETE,'Isolated object-bloom framebuffer incomplete: '+bloomFramebufferStatus);
 gl.viewport(0,0,W,H);gl.clearColor(0,0,0,0);gl.clear(gl.COLOR_BUFFER_BIT);
+gl.activeTexture(gl.TEXTURE2);gl.bindTexture(gl.TEXTURE_2D,bloomVertical.texture);
 gl.disable(gl.DEPTH_TEST);gl.disable(gl.BLEND);gl.depthMask(false);
 drawGeometry(outlineProgram,'aPosition',fullscreenVertices,gl.TRIANGLES);
 gl.finish();
