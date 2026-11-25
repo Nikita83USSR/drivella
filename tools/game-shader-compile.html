@@ -27,7 +27,7 @@ const response=await fetch('../index.html',{cache:'no-store'});
 must(response.ok,'Cannot fetch production index.html: HTTP '+response.status);
 const html=await response.text();
 const version=html.match(/const VERSION='([^']+)',BUILD='([^']+)'/);
-must(version&&version[1]==='v0.19.10'&&version[2]==='176','Unexpected production version marker: '+JSON.stringify(version));
+must(version&&version[1]==='v0.19.11'&&version[2]==='177','Unexpected production version marker: '+JSON.stringify(version));
 function expression(name,endMarker){
  const marker='const '+name+'=';
  const start=html.indexOf(marker);
@@ -289,7 +289,7 @@ const checks={
  sunUsesVisibleMask:html.includes('uOcclusionMask')&&html.includes('renderGpuSunBackground(aoTarget.texture)'),
  sunDrawMovedAfterSceneMask:!html.includes('if(!shadowPass&&!outlinePass)renderGpuSunBackground();'),
  productionInnerBloomPresent:html.includes('centerCoverage*surfaceFalloff*sourceEnergy*sunFacing'),
- usesProgressiveSourceRayDirection:html.includes('directionalSunFacing(vUv,toSun,centerCoverage)')&&html.includes('uSceneTexel*4.0')&&html.includes('uSceneTexel*8.0')&&html.includes('uSceneTexel*12.0'),
+ usesProgressiveSourceRayDirection:html.includes('directionalSunFacing(vUv,toSun,centerCoverage)')&&html.includes('uSceneTexel*4.0')&&html.includes('uSceneTexel*12.0')&&html.includes('uSceneTexel*20.0'),
  noBlurNormalGradient:!html.includes('blurGradient'),
  noSquareGaussianKernel:!html.includes('sceneGaussian5'),
  noExteriorBloomTerm:!html.includes('outerBloom'),
