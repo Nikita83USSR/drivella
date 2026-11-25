@@ -1,6 +1,6 @@
 # DRIVELLA — Rendering Architecture
 
-Current reference: **v0.18.61 / BUILD 127**  
+Current reference: **v0.18.83 / BUILD 149**  
 Main renderer: `index.html` — custom WebGL 1 renderer, no external rendering engine.
 
 **Release marker policy:** every published renderer/game change increments `BUILD` in `index.html` and updates the visible HUD, boot screen, README, and this document in the same release. Increment the patch version with the build when appropriate. Never publish a renderer change while leaving the visible build number unchanged.
@@ -12,9 +12,9 @@ This document records the rendering decisions that future vehicle, environment, 
 The render loop currently runs these passes in order:
 
 1. `renderShadowMap()` — render the full-scene solar map and garage spotlight maps into packed-depth textures. When `FX.vehicleShadows` is enabled, also render a 1024² packed-depth PCF receiver map using only selected vehicle detail casters; the normal/road/biome environment pass is skipped for this secondary map.
-2. `drawWorld()` — render the visible scene using the active driving or garage camera and sample the shadow map on receiving materials.
+2. `drawWorld()` — render the visible scene using the active driving or garage camera, sample the shadow map on receiving materials, and draw the compact GPU sun quad before opaque scene geometry on the main framebuffer.
 3. `renderCarOutlines()` — when either `FX.ssao` or `FX.outlines` is enabled, render the half-resolution normal/depth mask and full-resolution car mask, then composite each effect independently using `uAOEnabled` and `uOutlinesEnabled`.
-4. `drawSun()` — draw the 2D synthwave sun overlay.
+4. `drawSun()` — keep the original Canvas2D sun as an A/B/initialization fallback and draw vehicle lens flares on the separate Canvas2D overlay.
 
 The scene is intentionally drawn through the same `drawWorld()` path in the normal, directional-shadow, and scene-AO passes. The shared-scene gate is `if (!outlinePass || aoScenePass)`: it includes opaque world geometry during the shadow pass and the full-scene AO capture, while the separate car-contour pass draws only car parts. `shadowCasterAllowed()` remains the single policy for excluding translucent and emissive materials. Do not build one-off shadow meshes or hard-code a shadow for every new prop.
 
@@ -152,7 +152,7 @@ The current sunset disc is a Canvas 2D overlay behind the transparent WebGL scen
 
 ### Implementation sequence
 
-1. **GPU sun disc and corona:** replace Canvas 2D sunset drawing with a procedural WebGL shader layer. Reproduce the existing striped disc and gradient first, then add corona, animated radial filaments and fine rays. Keep the current look as the baseline; do not replace it with an unstriped photorealistic sun.
+1. **[~] GPU sun disc and initial corona — implemented in BUILD 149; in-game visual/performance validation pending.** The existing striped gradient disc, breathing pulse, scan line and rim now render in a compact shader on the main WebGL framebuffer before opaque scene geometry. A bounded quad avoids another full-screen pass. The initial corona adds an animated inner ring, irregular filaments and radial spikes. F4 switches between GPU and the preserved Canvas2D implementation for A/B comparison. After visual tuning and FPS confirmation, proceed to depth-aware god rays.
 2. **Depth-aware GPU god rays:** render a compact occlusion mask for the sun-facing opaque scene, then generate radial light scattering toward the projected sun position. Start at quarter resolution (or lower), use a bounded sample count and a small number of blur/composite passes. Buildings and terrain must occlude shafts. Avoid full-resolution high-sample ray marching.
 3. **GPU bloom and glare:** add a thresholded, downsampled bloom chain for the sun, emissive lamps and selected neon. Composite with controlled intensity so highlights glow without washing out the image. Reuse the bloom result for solar corona and headlight glare where practical.
 4. **GPU lens optics:** migrate existing Canvas 2D vehicle flare profiles to shader compositing: anamorphic streak, diffraction spikes, rings and chromatic ghost shapes. Preserve source-specific profiles and camera-facing/visibility rules; do not restore the old oversized headlight flare.
@@ -311,7 +311,7 @@ When adding a new material mode, define its casting, receiving, AO, and transpar
 - The main shader also has an explicitly non-shadowing specular fill direction. It is a style-only fill term and must not be treated as a shadow source.
 - The four-source material lighting and two-source local shadow arrays add per-fragment work. Additional shadow slots require matching matrices, samplers and receiver logic.
 - The glass reflection is a procedural view-dependent approximation, not SSR or a cubemap. Painted-body and road/asphalt reflections still need work.
-- Stage 2 still needs a controlled bloom pipeline, selected track/environment light sources, improved painted-body and road reflections, and atmospheric depth / final grading.
+- BUILD 149 adds the GPU sun disc and first animated corona, but final visual tuning and GPU/Canvas2D frame-time comparison are pending in the running game. Depth-aware god rays, controlled bloom, selected track/environment light sources, improved painted-body and road reflections, and atmospheric depth / final grading remain future work.
 
 **Maintenance rule:** preserve the shared scene pipeline and central material policy. Future environment additions should become shadow casters and AO participants by using the normal scene draw functions, not by receiving bespoke shadow code.
 
@@ -599,3 +599,8 @@ BUILD 146 is preserved at `backups/index_BUILD146_before_original_moving_cap_res
 ### BUILD 148 — Source pop-up caps use the deployed pose as their datum
 
 BUILD 147 is preserved at `backups/index_BUILD147_before_headlamp_cap_open_pose_alignment_BUILD148.html`. The original body-painted Countach lamp-cap panels were treated as if their authored body-space coordinates represented the stowed pose. The observed behavior showed the opposite: they represent the fully deployed/open pose. For the cap meshes only, precompute `inverse(countachLegacyHeadlampMount(side))` and render with `vehicleWorld * hingeCurrent * mount * inverse(openMount)`. Since the full headlight rig is `hingeCurrent * mount`, the mount cancels for the source body-space cap, leaving exactly the same hinge motion around the existing pivot: at `headlightDeploy=1`, the cap returns to its source/open coordinates; at `headlightDeploy=0`, the shared +45° closed transform lowers it into the stowed position. This removes the previous `inverse(closedHinge * mount)` reference error that made source-open caps begin high and lift farther. The actual headlight mesh mount, pivot, easing, optical parts and flare transforms are untouched. Both sides were numerically checked: open-pose point drift below 1e-15 and a representative front cap vertex drops 0.137 game units in the closed pose. This is a source-level transform check only; inspect the rendered body seam and deployed clearance in game.
+
+
+### BUILD 149 — WebGL synthwave sun and initial corona
+
+The main renderer now has a small dedicated sun shader and quad buffer on its existing WebGL 1 context. `drawWorld()` draws the sun after clearing the main framebuffer and before opaque scene geometry; shadow-map and AO/outline replays are explicitly excluded. The vertex shader bounds work to a rectangle extending 2.6 sun radii around the projected source rather than processing the full screen. The fragment shader preserves the established orange/red/magenta vertical gradient, the nine clipped horizontal slices, two luminous cuts, travelling scan line, breathing scale, halo and rim. It adds a restrained animated corona ring, irregular radial filaments and narrow/broad radial spikes. The shader writes premultiplied alpha and uses `ONE / ONE_MINUS_SRC_ALPHA` blending so the transparent scene canvas composites correctly. F4 exposes `FX.sunGpu` for A/B testing: off selects the preserved Canvas2D disc; a shader/program/buffer initialization failure also leaves that fallback active. The separate Canvas2D vehicle flare pass is unchanged. The shader adds no context, dependency, framebuffer or extra full-screen pass. JavaScript syntax compilation passed; inspect visual layering, stripe appearance and F3/FPS on the target browser before declaring the stage item fully complete.
