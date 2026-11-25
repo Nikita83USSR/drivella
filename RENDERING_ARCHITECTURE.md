@@ -1,6 +1,6 @@
 # DRIVELLA — Rendering Architecture
 
-Current reference: **v0.19.19 / BUILD 185**  
+Current reference: **v0.19.20 / BUILD 186**  
 Main renderer: `index.html` — custom WebGL 1 renderer, no external rendering engine.
 
 **Release marker policy:** every published renderer/game change increments `BUILD` in `index.html` and updates the visible HUD, boot screen, README, and this document in the same release. Increment the patch version with the build when appropriate. Never publish a renderer change while leaving the visible build number unchanged.
@@ -13,7 +13,7 @@ The render loop currently runs these passes in order:
 
 1. `renderShadowMap()` — render the full-scene solar map and garage spotlight maps into packed-depth textures. When `FX.vehicleShadows` is enabled, also render a 1024² packed-depth PCF receiver map using only selected vehicle detail casters; the normal/road/biome environment pass is skipped for this secondary map.
 2. `drawWorld()` — render the visible scene using the active driving or garage camera, sample the shadow map on receiving materials, and draw the striped GPU sun disc plus radial corona before opaque scene geometry on the main framebuffer.
-3. `renderCarOutlines()` — render the half-resolution full-scene normal/depth/visibility mask for SSAO and/or the GPU sun Bloom. For Bloom, render the visible sun through that mask into a half-resolution source target, run tight and wide separable Gaussian blur pairs, and composite the two scales only onto the inward-facing, sunward portion of the occluder. The full-resolution car mask is rendered only when ink outlines are enabled. The sun mask remains active when SSAO and ink outlines are disabled if the sun is using occlusion or Bloom.
+3. `renderCarOutlines()` — render the half-resolution full-scene normal/depth/visibility mask for SSAO, solar occlusion, quarter-resolution God Rays and/or GPU Sun Bloom. God Rays sample the mask along 24 bounded radial steps toward the projected sun and write a quarter-resolution shaft texture; the existing fullscreen composite adds the shafts only where the destination remains visible background. Sun Bloom still renders the visible sun through that mask into its selected source target, runs the chosen separable Gaussian layers, and composites the result onto the inward-facing, sunward portion of the occluder. The full-resolution car mask is rendered only when ink outlines are enabled. The scene mask remains active when SSAO and ink outlines are disabled if the sun is using occlusion, God Rays or Bloom.
 4. `drawSun()` — when GPU sun is disabled or unavailable, draw the complete Canvas2D disc + halo fallback. Vehicle lens flares remain on their separate Canvas2D overlay.
 
 The scene is intentionally drawn through the same `drawWorld()` path in the normal, directional-shadow, and scene-AO passes. The shared-scene gate is `if (!outlinePass || aoScenePass)`: it includes opaque world geometry during the shadow pass and the full-scene AO capture, while the separate car-contour pass draws only car parts. `shadowCasterAllowed()` remains the single policy for excluding translucent and emissive materials. Do not build one-off shadow meshes or hard-code a shadow for every new prop.
@@ -36,7 +36,7 @@ The scene is intentionally drawn through the same `drawWorld()` path in the norm
 - **Sun disc / vehicle lens flares:** `FX.sunDisc` hides only the 2D synthwave sunset drawing; it does not remove `SUN_LIGHT`, its material illumination or cast shadows. `FX.lensFlares` independently gates the Canvas 2D vehicle-lamp optical overlay.
 - **Underglow / tyre contact:** `FX.underglow` gates the red floor pool and side neon rails (material modes 5 and 6). `FX.tireContact` separately gates the four procedural tyre-contact ovals (material mode 7).
 
-The F4 panel exposes all 16 controls and includes a reset-to-defaults action. These settings are runtime-only: a page reload restores `FX_DEFAULTS`. Music, volume and sound-effect settings remain in the existing Options menu and are not part of the graphics panel.
+The F4 panel exposes 17 controls and includes a reset-to-defaults action.
 
 ## Frame profiler — BUILD 119
 
@@ -137,9 +137,9 @@ The `flare` canvas draws its lens-flare overlay after the 3D and outline passes.
 
 This is a stylized screen-space glare effect rather than a physically simulated lens. It uses camera-facing direction and clip-range visibility, but does not yet test whether an unrelated object fully occludes a lamp. It does not add additional shadow maps or volumetric scattering.
 
-## GPU sun, atmospheric rays and optical-effects roadmap — planned Stage 2 priority
+## Stage 3 — Atmosphere and cinematic lighting
 
-The synthwave sunset is now a procedural WebGL shader drawn in a bounded quad during the main scene pass, before opaque geometry. The original Canvas 2D sun remains available for A/B comparison and as an initialization fallback. Vehicle lens flares are still drawn on a separate Canvas 2D overlay above the scene. The next major graphics task is to continue the GPU optical pipeline without removing the fallback before visual and performance parity are confirmed.
+The synthwave sunset is a procedural WebGL shader drawn in a bounded quad during the main scene pass, before opaque geometry. The original Canvas 2D sun remains available for A/B comparison and as an initialization fallback. Vehicle lens flares are still drawn on a separate transparent Canvas 2D overlay above the scene. This stage adds depth-aware solar shafts first, then a general thresholded Bloom path, GPU lens optics, and finally atmospheric integration and grading. Existing fallbacks remain until visual and performance parity are confirmed.
 
 ### Target visual
 
@@ -152,8 +152,8 @@ The synthwave sunset is now a procedural WebGL shader drawn in a bounded quad du
 
 ### Implementation sequence
 
-1. **[~] Smooth GPU sun aura and disc-localized object light-wrap — implemented in BUILD 149–154; in-game visual/performance validation pending.** BUILD 154 removes the plasma ribbons and narrow gold ring, replacing them with a continuous radial gradient: warm orange near the disc, coral through the middle and soft magenta farther out, with a restrained slow pulse. The object wrap combines fine, medium and wide scene-mask gradients to create a broader soft light transition on silhouettes crossing the disc, rather than a thin contour stripe. The wrap remains gated to the solar disc and its immediate fringe and uses premultiplied compositing. The shader remains one bounded WebGL draw call with no new framebuffer or full-screen pass. Foreground geometry still occludes the disc and background aura in the regular depth-tested scene. This is a screen-space lighting approximation, not true volumetric light transport. Confirm WebGL shader compilation, visual balance and FPS in the target browser before proceeding to depth-aware god rays.
-2. **Depth-aware GPU god rays:** render a compact occlusion mask for the sun-facing opaque scene, then generate radial light scattering toward the projected sun position. Start at quarter resolution (or lower), use a bounded sample count and a small number of blur/composite passes. Buildings and terrain must occlude shafts. Avoid full-resolution high-sample ray marching.
+1. **[~] Smooth GPU sun aura and disc-localized object light-wrap — BUILD 149–154.** The continuous radial aura and screen-space inner-surface wrap are implemented. Their final colour balance and performance remain subject to target-browser validation; this is not physical volumetric transport.
+2. **[~] Depth-aware solar God Rays — BUILD 186.** The new WebGL 1 pass uses the existing half-resolution scene-visibility mask and samples 24 points from each quarter-resolution output pixel toward the projected sun. Geometry in that path reduces transmission; a destination pixel covered by an opaque scene surface receives no shaft, so foreground silhouettes interrupt the visible rays rather than being painted over. Five samples around the solar source gate the effect when the disc is hidden. The ray field uses a restrained orange-to-magenta palette, a soft angular beam pattern and a subtle pulse. Its target is quarter width/height (one sixteenth of full-resolution pixel count); it reuses the existing post composite and adds no world pass or shadow map. It is a screen-space volumetric-light approximation, not a true 3D volume or hardware ray tracing. Automated GLSL/pixel tests check FBO creation, an unobstructed path, an occluded path, and no light drawn on the occluder; the user's full scene and GTX 1650 frame-time still require visual validation.
 3. **GPU bloom and glare:** add a thresholded, downsampled bloom chain for the sun, emissive lamps and selected neon. Composite with controlled intensity so highlights glow without washing out the image. Reuse the bloom result for solar corona and headlight glare where practical.
 4. **GPU lens optics:** migrate existing Canvas 2D vehicle flare profiles to shader compositing: anamorphic streak, diffraction spikes, rings and chromatic ghost shapes. Preserve source-specific profiles and camera-facing/visibility rules; do not restore the old oversized headlight flare.
 5. **Atmospheric integration and grading:** add distance/horizon scattering and final colour grading after sun, occlusion and bloom are stable. Keep fog/scattering depth-aware and preserve the neon palette.
@@ -162,11 +162,12 @@ The synthwave sunset is now a procedural WebGL shader drawn in a bounded quad du
 ### Performance and compatibility rules
 
 - Keep the renderer WebGL 1 compatible initially; use shader passes and framebuffer textures supported by the current renderer. WebGL 2 must not be a prerequisite for this visual upgrade.
-- Run god rays and bloom at quarter/half resolution, not full resolution. Use bounded samples, separable blur where appropriate, and avoid redundant full-screen passes.
-- Reuse existing scene depth/normal or a dedicated low-resolution occlusion mask where possible. BUILD 150–152 derive the sun-wrap silhouette from the half-resolution AO scene mask; when SSAO and ink outlines are both off, render only this half-resolution mask and skip the full-resolution car-outline mask. The wrap shader must stay gated to the projected solar disc rather than tinting every silhouette in a broad neighbourhood. BUILD 152 uses premultiplied output with the existing composite; no second capture or full-resolution mask is required.
+- God Rays render at 25% width and height with 24 radial occlusion samples. Reuse the existing half-resolution scene mask; do not rerender geometry or create another shadow map for shafts. The quarter-resolution God Rays target is composited through the existing full-screen post pass on texture unit 6, within WebGL 1's eight-unit minimum.
+- Reuse existing scene depth/normal or a dedicated low-resolution occlusion mask where possible. BUILD 150–152 derive the solar light-wrap silhouette from the half-resolution AO scene mask; when SSAO and ink outlines are both off, render only this half-resolution mask and skip the full-resolution car-outline mask. The wrap remains gated to the projected solar disc and uses premultiplied compositing. The same scene-mask capture now supplies God Rays occlusion without an additional world capture.
+- FX.sunGodRays is an independent F4 checkbox, enabled by default on the road and inactive in the garage. Disabling Sun Bloom does not disable God Rays; disabling God Rays leaves the sun disc and Sun Bloom intact. F3 reports the God Rays state. Settings are runtime-only and reset to FX_DEFAULTS on page reload.
 - Keep expensive rays and diffraction configurable by quality tier. The sun disc and compact corona should remain available on lower settings.
 - Profile GPU frame time and total FPS with effects individually enabled/disabled in garage and driving. Do not recreate the severe frame-time spike previously seen with oversized front-headlight flares.
-- Compare at the same camera, resolution and scene: baseline, GPU sun only, sun plus rays, and full optics.
+- Compare at the same camera, resolution and scene: baseline, GPU sun only, sun plus rays, and full optics. The automated SwiftShader pixel regression is deterministic but is not a substitute for FPS and image inspection on the target GTX 1650/1660.
 
 ### Related GPU-rendering optimizations
 
@@ -779,3 +780,15 @@ The automated source regression checks the exact four-ray profile and confirms t
 The four-ray cross remains source-local to each moving pop-up projector. This pass changes only the two orthogonal rays. Their profile now uses horizontal length/half-width factors `2.10 / 0.038` (previously `2.55 / 0.050`) and vertical factors `1.15 / 0.032` (previously `1.48 / 0.042`). Their separate central intensity multiplier is `0.16` (previously `0.24`). The diagonal rays remain `0.78 / 0.027` with multiplier `0.24`, preserving their existing subtle star shape.
 
 The line renderer now carries an individual energy value per ray. Projector positions, brightness/facing falloff, bloom veil, deployment animation, and all non-headlight lamp sources are unchanged. The automated production test verifies the exact per-ray profile and compiles/parses the existing production renderer. It checks source behavior, not the visual result on the user's physical display.
+
+
+
+## BUILD 186 — Depth-aware quarter-resolution solar God Rays
+
+The road scene now has an independent FX.sunGodRays effect, enabled by default and controlled from F4. It is gated by the GPU sun/disc path and is intentionally inactive in the garage. The renderer reuses the existing half-resolution, depth-tested scene visibility mask rather than rendering the world a second time.
+
+renderGodRays() allocates a quarter-width/quarter-height RGBA target and evaluates a bounded 24-step radial visibility integral toward the projected sun for each output pixel. Geometry in the ray path reduces the transmitted energy; the destination coverage gate prevents a shaft from being drawn over an opaque foreground surface. A five-point source-visibility gate suppresses rays when the solar source is blocked. The beam pattern has broad and fine angular modulation, a slow low-amplitude pulse, and a restrained orange-to-magenta colour transition.
+
+The resulting premultiplied texture is sampled by the existing post composite on texture unit 6. Sun Bloom and God Rays have independent enable flags; when Sun Bloom is off, its samplers are bound to the existing scene mask with zero gains, so the Bloom path does not need to allocate targets just to composite rays. The effect adds one quarter-resolution shader draw and one small colour target, but no additional scene geometry pass, full-resolution capture, or shadow map. F3 reports the active state and target scale.
+
+The regression compiles/links the production God Rays shader under WebGL 1 and renders it against a synthetic occluder. It verifies that clear paths produce rays, the path through geometry is attenuated, an occluding destination remains dark, and the framebuffer has the expected quarter-resolution dimensions. The complete production inline script and existing sun/Bloom/Countach checks remain part of the suite. These automated checks do not establish visual quality or frame-time on the user's physical GTX 1650; both still require in-game confirmation.
