@@ -66,8 +66,9 @@ try {
   // Run the complete game twice with deterministic biome order so both new instanced paths execute. Disable post effects through the normal F4 handlers before the first diagnostic frame; this isolates scene batching from slow software post-processing.
   async function smokeGameBiome(label, randomValue) {
     const gamePage = await browser.newPage({ viewport: { width: 640, height: 400 }, deviceScaleFactor: 1 });
-    const gameErrors = [];
+    const gameErrors = [],gameConsoleErrors=[];
     gamePage.on('pageerror', error => gameErrors.push(error.stack || error.message));
+    gamePage.on('console', message => { if(message.type()==='error')gameConsoleErrors.push(message.text()); });
     await gamePage.addInitScript(value => {
       Math.random = () => value;
       document.addEventListener('DOMContentLoaded',() => {
@@ -77,11 +78,27 @@ try {
       },{once:true});
     }, randomValue);
     await gamePage.goto(baseUrl + '/', { waitUntil: 'load', timeout: 30000 });
-    await gamePage.waitForFunction(
-      () => Boolean(document.getElementById('boot-screen')?.classList.contains('done')),
-      null,
-      { timeout: 15000 }
-    );
+    try {
+      await gamePage.waitForFunction(
+        () => Boolean(document.getElementById('boot-screen')?.classList.contains('done')),
+        null,
+        { timeout: 15000 }
+      );
+    } catch(error) {
+      const bootProbe=await gamePage.evaluate(()=>{
+        const canvas=document.getElementById('scene'),gl=canvas&&canvas.getContext('webgl');
+        return {
+          version:document.getElementById('version-label')?.textContent||'',
+          status:document.getElementById('boot-status')?.textContent||'',
+          bootClass:document.getElementById('boot-screen')?.className||'',
+          bootPercent:document.getElementById('boot-percent')?.textContent||'',
+          canvas:canvas?[canvas.width,canvas.height]:null,
+          webgl:gl?gl.getParameter(gl.VERSION):null,
+          renderer:gl?gl.getParameter(gl.RENDERER):null
+        };
+      });
+      throw new Error(label+' boot screen did not finish: '+JSON.stringify(bootProbe)+'; page errors='+JSON.stringify(gameErrors)+'; console errors='+JSON.stringify(gameConsoleErrors)+'; '+error.message);
+    }
     await gamePage.evaluate(() => document.getElementById('debug-toggle')?.click());
     await gamePage.waitForFunction(
       () => document.getElementById('debug-data')?.innerText.includes('BIOME GPU BATCH'),
