@@ -1,6 +1,6 @@
 # DRIVELLA — Rendering Architecture
 
-Current reference: **v0.18.97 / BUILD 163**  
+Current reference: **v0.19.12 / BUILD 178**  
 Main renderer: `index.html` — custom WebGL 1 renderer, no external rendering engine.
 
 **Release marker policy:** every published renderer/game change increments `BUILD` in `index.html` and updates the visible HUD, boot screen, README, and this document in the same release. Increment the patch version with the build when appropriate. Never publish a renderer change while leaving the visible build number unchanged.
@@ -13,7 +13,7 @@ The render loop currently runs these passes in order:
 
 1. `renderShadowMap()` — render the full-scene solar map and garage spotlight maps into packed-depth textures. When `FX.vehicleShadows` is enabled, also render a 1024² packed-depth PCF receiver map using only selected vehicle detail casters; the normal/road/biome environment pass is skipped for this secondary map.
 2. `drawWorld()` — render the visible scene using the active driving or garage camera, sample the shadow map on receiving materials, and draw the striped GPU sun disc plus radial corona before opaque scene geometry on the main framebuffer.
-3. `renderCarOutlines()` — render the half-resolution full-scene normal/depth mask for SSAO and/or the GPU sun aura-wrap effect; render the full-resolution car mask only when ink outlines are enabled, then composite SSAO, outlines and the sun-facing silhouette rim together. The aura-wrap path can keep the half-resolution mask active even when SSAO and ink outlines are disabled.
+3. `renderCarOutlines()` — render the half-resolution full-scene normal/depth/visibility mask for SSAO and/or the GPU sun Bloom. For Bloom, render the visible sun through that mask into a half-resolution source target, run tight and wide separable Gaussian blur pairs, and composite the two scales only onto the inward-facing, sunward portion of the occluder. The full-resolution car mask is rendered only when ink outlines are enabled. The sun mask remains active when SSAO and ink outlines are disabled if the sun is using occlusion or Bloom.
 4. `drawSun()` — when GPU sun is disabled or unavailable, draw the complete Canvas2D disc + halo fallback. Vehicle lens flares remain on their separate Canvas2D overlay.
 
 The scene is intentionally drawn through the same `drawWorld()` path in the normal, directional-shadow, and scene-AO passes. The shared-scene gate is `if (!outlinePass || aoScenePass)`: it includes opaque world geometry during the shadow pass and the full-scene AO capture, while the separate car-contour pass draws only car parts. `shadowCasterAllowed()` remains the single policy for excluding translucent and emissive materials. Do not build one-off shadow meshes or hard-code a shadow for every new prop.
@@ -714,3 +714,14 @@ Direction is determined independently from the inward distance. For each candida
 The current regression page extracts the actual production main-material, outline/bloom and GPU-sun shader expressions from `index.html`, compiles and links them under WebGL 1, and renders a synthetic translucent occluder through the production sun and bloom programs. Pixel readback separately checks occlusion, the sun-facing inner edge, the inward fade, no bloom outside the silhouette, no bloom on the opposite edge, and locality. BUILD 171 passed all checks. The sampled RGB brightness sums were: blocked sun 27, visible sun 372, inner edge 365, 15-pixel inward sample 300, deeper sample 127; outside and opposite-edge alpha were both 0. The same run verified complete mask/bloom framebuffers, JavaScript parsing, F4 wiring, shader linkage and zero WebGL errors.
 
 The synthetic fixture is a deterministic graphics regression test, not a full run of the racing game or a substitute for visual review on the target GPU. It does, however, execute the exact production sun and bloom shaders rather than a duplicate test formula. No additional full-scene render target is introduced beyond the existing AO mask. The BUILD 170 and BUILD 171 source backups are preserved in `backups/`. Version `v0.19.05` / BUILD 171.
+
+
+### BUILD 172–178 — Multi-scale inner-surface solar Bloom
+
+BUILD 172 adds a dedicated half-resolution source target for the visible GPU sun. The sun shader samples the depth-tested scene-visibility mask, so occluded disc/corona pixels are not written into the Bloom source. A separable Gaussian filter softens this visible source before the object composite.
+
+BUILD 173 adds a tight and a wide Gaussian scale. Its first mix/gain was too strong: multiple inward samples reached the output alpha cap, flattening the profile. The regression caught this; that version is not the final tuning. BUILD 174–175 balanced the layer contribution and gain but the single long source-ray sample still selected a broad, nearly uniform strip. BUILD 176 replaces it with three scene-mask samples toward the projected sun at 4, 12 and 20 half-resolution texels. Their uncovered fractions are weighted 0.52, 0.30 and 0.18, respectively, producing a progressive directional falloff. BUILD 177 extends the measured inward reach. BUILD 178 uses tight/wide Gaussian radii 3.4 / 12.0 times DPR and combines them with weights 0.90 / 0.46; composite gain is 1.50 with a 0.46 alpha cap.
+
+The final composite is gated by current object coverage and the progressive source-ray field. It therefore deposits the blurred visible solar light inside the occluder, not outside it or on the opposite edge. F4 retains independent Bloom enable/debug controls.
+
+The production-shader regression in Chromium/WebGL 1 passed all checks for shader compilation/linkage, target completeness, JavaScript parsing, visible-sun occlusion, progressive source direction, monotonic inward fade, wide-body presence, no exterior aura, no opposite-edge aura and no WebGL errors. Measured RGB sums: sunward inner edge 156, shoulder 97, mid-fade 61, deeper sample 17; exterior and opposite-side alpha 0; blocked/visible sun 27 / 372. The fixture is synthetic and does not replace visual validation of the complete racing scene on the target GPU. Backups for BUILD 172 through 177 are retained under `backups/`. Version `v0.19.12` / BUILD 178.
