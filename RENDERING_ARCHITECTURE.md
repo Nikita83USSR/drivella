@@ -1,6 +1,6 @@
 # DRIVELLA — Rendering Architecture
 
-Current reference: **v0.19.22 / BUILD 188**  
+Current reference: **v0.19.23 / BUILD 189**  
 Main renderer: `index.html` — custom WebGL 1 renderer, no external rendering engine.
 
 **Release marker policy:** every published renderer/game change increments `BUILD` in `index.html` and updates the visible HUD, boot screen, README, and this document in the same release. Increment the patch version with the build when appropriate. Never publish a renderer change while leaving the visible build number unchanged.
@@ -8,6 +8,8 @@ Main renderer: `index.html` — custom WebGL 1 renderer, no external rendering e
 This document records the rendering decisions that future vehicle, environment, lighting, and effects work must preserve. The goal is a reusable scene pipeline: new world geometry should take part in shadows and ambient occlusion automatically when it uses the shared draw path.
 
 ## Frame pipeline
+
+When `FX.sceneBloom` is enabled, the main `drawWorld()` pass renders to a full-resolution RGBA8 colour texture with a matching depth renderbuffer instead of directly to the default framebuffer. The frame is then thresholded and composited back before the existing sun/SSAO/outline post-process. With this toggle off, the main pass goes directly to the default framebuffer and the capture target is bypassed.
 
 The render loop currently runs these passes in order:
 
@@ -50,6 +52,20 @@ The garage is a three-car scene for visual-effects inspection, not a static menu
 - Dragging the garage canvas orbits the entire display around the centre car. The default orbit distance is wider to frame all three cars; the mouse wheel supports a broad zoom range for closer material and lamp inspection.
 
 The additional geometry is limited to the garage branch. The driving track, vehicle physics, road camera presets and outdoor sun placement remain unchanged. The two local garage spotlights still use their existing per-source shadow-map policy.
+
+## Thresholded scene Bloom — BUILD 189
+
+The general-purpose scene Bloom is independent of the sun-specific inner-surface Bloom and solar God Rays.
+
+- `FX.sceneBloom` is an F4 checkbox and is enabled by default. Turning it off bypasses the scene colour capture and returns the world pass to direct rendering.
+- With the effect active, the completed opaque/translucent scene is captured at full canvas resolution into an RGBA8 colour texture plus a `DEPTH_COMPONENT16` renderbuffer. The same finished frame is reused; the 3D scene is not rendered a second time for Bloom.
+- A soft bright-pass extraction samples the final scene colour on a quarter-resolution target. The peak RGB channel is tested against a threshold of **0.72** with a **0.20** soft knee, so subdued surfaces are rejected while mid-to-high highlights enter the Bloom contribution.
+- The bright-pass texture feeds two separable Gaussian levels using the shared 5-tap blur: a tight radius of **2.2** and a broader radius of **8.0** at the quarter-resolution target. One full-resolution composite copies the original scene and adds both glow levels.
+- The bright-pass, blur and composite targets are independent of `sunBloomTargets`. The older Sun Bloom continues to project a sun-derived glow onto the sun-facing side of occluding geometry; God Rays continue to sample the half-resolution geometry mask. Both effects can be enabled or disabled separately from scene Bloom.
+- If the quarter-resolution Bloom targets cannot be allocated, a simple scene-colour copy preserves the captured frame without glow. If the full-resolution colour/depth target cannot be allocated, the frame falls back to the original direct-to-screen world pass.
+- F3 reports the scene Bloom capture/target state, and its GPU post timing includes the threshold/blur/composite work. The full-resolution colour/depth capture costs additional GPU memory; final visual tuning and GTX 1650 frame-time validation remain open.
+
+This is a display-space screen effect over the renderer's RGBA8 output, not a floating-point HDR pipeline. It extracts bright portions of the already shaded scene, including emissive vehicle lamps, neon geometry and the sun where it intersects the 3D scene colour; the separate procedural GPU sun and its Sun Bloom/God Rays remain on their existing paths.
 
 ## Frame profiler — BUILD 119
 
