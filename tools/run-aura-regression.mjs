@@ -56,13 +56,13 @@ try {
   await page.goto(baseUrl + '/tools/game-shader-compile.html', { waitUntil: 'load', timeout: 20000 });
   await page.waitForFunction(() => Boolean(window.__GAME_SHADER_RESULT__), null, { timeout: 20000 });
   const result = await page.evaluate(() => window.__GAME_SHADER_RESULT__);
-  await page.screenshot({ path: 'artifacts/sun-bloom-build177.png', fullPage: true });
-  console.log('PRODUCTION EXTENDED-RAMP SUN BLOOM REGRESSION\n' + JSON.stringify(result, null, 2));
-  assert(result.pass, 'Production extended-ramp Sun Bloom regression failed: ' + JSON.stringify(result));
+  await page.screenshot({ path: 'artifacts/sun-bloom-build178.png', fullPage: true });
+  console.log('PRODUCTION WIDE-BODY SUN BLOOM REGRESSION\n' + JSON.stringify(result, null, 2));
+  assert(result.pass, 'Production wide-body Sun Bloom regression failed: ' + JSON.stringify(result));
   assert(pageErrors.length === 0, 'Browser page errors: ' + pageErrors.join('\n'));
-  console.log('ALL EXTENDED-RAMP SUN BLOOM CHECKS PASSED');
+  console.log('ALL WIDE-BODY SUN BLOOM CHECKS PASSED');
 } catch (error) {
-  console.error('EXTENDED-RAMP SUN BLOOM REGRESSION FAILED\n' + (error.stack || error));
+  console.error('WIDE-BODY SUN BLOOM REGRESSION FAILED\n' + (error.stack || error));
   console.error(serverOutput.join(''));
   process.exitCode = 1;
 } finally {
