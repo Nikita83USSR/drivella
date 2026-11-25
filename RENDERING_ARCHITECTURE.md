@@ -558,3 +558,10 @@ The legacy pop-up assembly mount is lowered by an additional 0.0206 game units r
 ### BUILD 141 — Remove legacy triangular hood lamp covers
 
 At Countach import, skip only `bodyPaint` triangles whose three vertices fall inside the verified bounds of the two isolated old upper headlamp cover shells. This removes 29 triangles on each side (58 total) from the painted body mesh. Do not filter `bodyPlastic`, `bodyBlack`, or the restored DRIVELLA pop-up lamp assembly. Hinge transform, headlamp mount offset, projector cores, flare anchors and emission behavior remain exactly as in BUILD 140.
+
+
+### BUILD 142 — Old lamp face removal and fitted bonnet closure
+
+The Countach `bodyPlastic` import filter now drops only the two old front headlamp panels whose three vertices lie on the verified `z=2.4561` plane and within the lamp-face bounds. Source-mesh verification found exactly 48 triangles per side; runtime count is exposed as `window.DRIVELLA_OLD_FRONT_HEADLAMP_OVERLAYS_REMOVED`. No other `bodyPlastic` triangles, painted body triangles, lower fog lamps, bumpers, or the restored DRIVELLA lamp meshes are affected.
+
+The existing animated painted cap is now fitted in inverse space against the exact stowed hinge + mount transform. For each upper perimeter vertex and center, solve local Y so its transformed world position sits 3 mm inside `hoodSurfaceY`. This closes the exposed hood/headlamp seam in the stowed pose without adding a static patch; the cap remains rigidly attached to the pod and follows the existing open animation. The mount parameters are centralized so the fit transform and visible assembly cannot drift apart.
