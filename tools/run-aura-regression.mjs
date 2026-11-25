@@ -87,8 +87,8 @@ try {
       const debug = document.getElementById('debug-data')?.innerText || '';
       const version = document.getElementById('version-label')?.textContent || '';
       const bootStatus = document.getElementById('boot-status')?.textContent || '';
-      const road = debug.match(/ROAD GPU BATCH\\s+(\\d+)\\s+BATCH\\s*\\/\\s*(\\d+)\\s+INSTANCES\\s*·\\s*(\\w+)/);
-      const biome = debug.match(/BIOME GPU BATCH\\s+(\\d+)\\s+BATCHES\\s*\\/\\s*(\\d+)\\s+INSTANCES/);
+      const road = debug.match(/ROAD GPU BATCH\s+(\d+)\s+BATCH\s*\/\s*(\d+)\s+INSTANCES\s*·\s*(\w+)/);
+      const biome = debug.match(/BIOME GPU BATCH\s+(\d+)\s+BATCHES\s*\/\s*(\d+)\s+INSTANCES/);
       return {
         version, bootStatus, road: road ? { batches:Number(road[1]), instances:Number(road[2]), mode:road[3] } : null,
         biome: biome ? { batches:Number(biome[1]), instances:Number(biome[2]) } : null,
