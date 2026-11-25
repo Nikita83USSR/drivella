@@ -27,7 +27,7 @@ const response=await fetch('../index.html',{cache:'no-store'});
 must(response.ok,'Cannot fetch production index.html: HTTP '+response.status);
 const html=await response.text();
 const version=html.match(/const VERSION='([^']+)',BUILD='([^']+)'/);
-must(version&&version[1]==='v0.19.17'&&version[2]==='183','Unexpected production version marker: '+JSON.stringify(version));
+must(version&&version[1]==='v0.19.18'&&version[2]==='184','Unexpected production version marker: '+JSON.stringify(version));
 function expression(name,endMarker){
  const marker='const '+name+'=';
  const start=html.indexOf(marker);
@@ -305,6 +305,7 @@ const checks={
  noExteriorBloomTerm:!html.includes('outerBloom'),
  headlightShaderPresent:html.includes('calcHeadlightEnergy()')&&html.includes('uniform vec3 headlightPosL')&&html.includes('uniform vec3 headlightPosR')&&html.includes('uniform vec3 headlightDir')&&html.includes('headlightIntensity'),
  headlightUsesCountachPodTransforms:html.includes('countachLegacyHeadlampMount(side)')&&html.includes('lampFrontPoint(side*.67,POP_LAMP_FACE_H*.5,.018)')&&html.includes('headlightCullL=lampSources[0].position'),
+ popUpHeadlightsHaveCompactCrossFlare:html.includes('const headlightRays=[[1,0,2.55,.050],[0,1,1.48,.042],[.707,.707,.78,.027],[-.707,.707,.78,.027]];')&&html.includes('rgba(.24*intensity)')&&html.includes('// Compact four-ray cross on each deployed pop-up projector; keep the larger anamorphic optics disabled.'),
  headlightEnergyReduced:html.includes('clamp((headlightDeploy-.12)/.88,0,1)*1.25:0')&&html.includes('calcHeadlightEnergy()*0.92')&&html.includes('abs(dot(surfaceNormal,toL))*0.72+0.10'),
  headlightUsesLongSoftFalloff:html.includes('smoothstep(0.60,0.94,dot(headlightDir,-toL))')&&html.includes('smoothstep(28.0,100.0,distL)')&&html.includes('smoothstep(28.0,100.0,distR)')&&html.includes('axial-radius>100.0')&&html.includes('Math.max(0.0,axial)*1.36+radius'),
  fourCountachLowerLamps:html.includes('COUNTACH_FOG_LAMP_CENTERS=[[-0.944,0.621,2.588],[-0.739,0.623,2.588],[0.739,0.623,2.588],[0.944,0.621,2.588]]')&&html.includes('COUNTACH_FOG_LAMP_FRAMES')&&html.includes('COUNTACH_FOG_LAMP_LENSES'),
