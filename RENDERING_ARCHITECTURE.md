@@ -1,6 +1,6 @@
 # DRIVELLA — Rendering Architecture
 
-Current reference: **v0.19.30 / BUILD 196**  
+Current reference: **v0.19.31 / BUILD 197**  
 Main renderer: `index.html` — custom WebGL 1 renderer, no external rendering engine.
 
 **Release marker policy:** every published renderer/game change increments `BUILD` in `index.html` and updates the visible HUD, boot screen, README, and this document in the same release. Increment the patch version with the build when appropriate. Never publish a renderer change while leaving the visible build number unchanged.
@@ -890,3 +890,14 @@ BUILD 187 replaces that global estimate with a per-output-ray source lookup. The
 The authored ray strength rises from 0.22 to 0.242 (+10%). Quarter-resolution output, 24 integration steps, angular modulation, colour palette, low-amplitude pulse, F4 independence and the existing post-composite remain unchanged.
 
 The regression adds a cross-shaped synthetic occluder covering the source centre and all four cardinal source samples while leaving diagonal solar-rim sectors exposed. It checks that a diagonal clear path still receives rays, in addition to the earlier clear-path, occluded-path, destination-mask, framebuffer, existing Bloom and Countach checks. This validates the directional source rule, not the final artistic appearance or physical-GPU frame time.
+
+
+## BUILD 197 — Painted-body and asphalt environment reflections
+
+The existing material program now shares one procedural synthwave environment function, `evalSynthwaveEnvironment(reflectionDirection, roughness)`. It samples a dark blue sky gradient, warm/magenta horizon bands, cyan neon bands, a low-contrast city sparkle and a restrained warm solar glint. The roughness parameter broadens and softens the reflected bands and suppresses the sharp city/sun components. This remains a material-shader approximation, not screen-space reflection, ray tracing, a captured scene texture or a new post-process pass.
+
+Paint material mode 4 reflects the environment along the view-dependent surface reflection vector with a sharper roughness profile and a Fresnel-weighted contribution. It has an independent `paintReflections` F4 toggle; the pre-existing clear-coat/glint switch remains separate. Road asphalt is explicitly tagged as per-instance material mode 9 (the surrounding grid, rails, lane marks, posts and ground retain their previous material modes). Its rougher reflection response is limited to top-facing road surfaces, uses a broad magenta/cyan response, and has its own independent `roadReflections` toggle. Both states are shown in F3.
+
+Material 9 is bounded separately from the emissive material-8 branch. The shadow caster and visible-scene mask policies explicitly admit the opaque asphalt mode, so it continues to cast/receive the ordinary world shadows and participate in the existing SSAO/solar-occlusion visibility capture. The road reflection branch also retains the current headlight and four-slot local-light contributions. No framebuffer, texture unit, full-screen pass, draw call or extra instance batch is added; the asphalt remains inside the existing ordered road batch.
+
+The BUILD 197 regression compiles and links the complete production material shader, extracts the exact production environment function and renders two roughness profiles into a 2×1 GPU framebuffer. It verifies measurable pixel differences, separate paint/road F4 toggles, F3 telemetry, dedicated asphalt routing, shadow/mask eligibility and isolation from emissive material 8. Chromium runs this fixture on SwiftShader; actual appearance and frame time still require inspection on the target GPU.
