@@ -308,12 +308,16 @@ const checks={
  headlightEnergyReduced:html.includes('clamp((headlightDeploy-.12)/.88,0,1)*1.25:0')&&html.includes('calcHeadlightEnergy()*0.92')&&html.includes('abs(dot(surfaceNormal,toL))*0.72+0.10'),
  headlightUsesLongSoftFalloff:html.includes('smoothstep(0.60,0.94,dot(headlightDir,-toL))')&&html.includes('smoothstep(28.0,100.0,distL)')&&html.includes('smoothstep(28.0,100.0,distR)')&&html.includes('axial-radius>100.0')&&html.includes('Math.max(0.0,axial)*1.36+radius'),
  fourCountachLowerLamps:html.includes('COUNTACH_FOG_LAMP_CENTERS=[[-0.944,0.621,2.588],[-0.739,0.623,2.588],[0.739,0.623,2.588],[0.944,0.621,2.588]]')&&html.includes('COUNTACH_FOG_LAMP_FRAMES')&&html.includes('COUNTACH_FOG_LAMP_LENSES'),
- lowerLampFlaresUseSameCoordinates:html.includes('for(const [x,y,z] of COUNTACH_FOG_LAMP_CENTERS)'),
+ lowerLampFlaresUseSameCoordinates:html.includes('for(const index of COUNTACH_FRONT_FOG_LAMP_INDICES)')&&html.includes('COUNTACH_FOG_LAMP_CENTERS[index]'),
+ frontTurnSignalsUseOutboardBumperLenses:html.includes('COUNTACH_FRONT_TURN_SIGNAL_INDICES=[0,3]')&&html.includes('COUNTACH_FRONT_FOG_LAMP_INDICES=[1,2]'),
+ rearTurnSignalsUseSourceTailBars:html.includes("if(part.name==='bodyTail')")&&html.includes('Math.abs(centerX)>.935')&&html.includes('bodyTailSignalLeft')&&html.includes('bodyTailSignalRight')&&html.includes('p[2]-.004'),
+ rearBrakeResponseRetained:html.includes('rearLampColor=[.56+.38*brakeLampLevel,.006+.012*brakeLampLevel,.018+.020*brakeLampLevel,1]')&&html.includes('drawCarMesh(m.bodyTail,carX,carZ,rearLampColor,yaw,8,false,false)'),
+ rearLensFlareAnchorsUseMeasuredPoints:html.includes('COUNTACH_REAR_LAMP_FLARE_POINTS')&&html.includes('COUNTACH_REAR_SIGNAL_FLARE_POINTS'),
  vehicleSelfShadowCastersRestored:html.includes('drawCarMesh(m.bodyPaint,carX,carZ,C.body,yaw,PAINT_MATERIAL,false,true)')&&html.includes('bindMesh(shape,model,color,1,material,false,true)'),
  selfShadowF4DescriptionFixed:!html.includes('ОТЛОЖЕНО: доработка контура и артефактов'),
  ...pixelTests
 };
-must(Object.values(checks).every(Boolean),'One or more production inner-surface checks failed');
+must(Object.values(checks).every(Boolean),'One or more production checks failed: '+JSON.stringify(Object.entries(checks).filter(([,ok])=>!ok).map(([name])=>name)));
 const glError=gl.getError();must(glError===gl.NO_ERROR,'WebGL error after production shader pixel test: '+glError);
 const result={pass:true,version:version[1],build:version[2],checks,probes,brightness:{edge:edgeStrength,shoulder:shoulderStrength,mid:midStrength,deep:deepStrength,blockedSun:brightness(probes.blockedSun),visibleSun:brightness(probes.visibleSun)},glVersion:gl.getParameter(gl.VERSION),renderer:gl.getParameter(gl.RENDERER),glError};
 window.__GAME_SHADER_RESULT__=result;
