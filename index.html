@@ -759,6 +759,7 @@ async function loadCountachModel(){
   const status=$('boot-status');if(status)status.textContent='COUNTACH MODEL LOADED';
  }catch(error){
   countachModelReady=false;
+  window.DRIVELLA_COUNTACH_MODEL_ERROR=String(error&&error.stack||error);
   reportStartupError('Модель Countach: '+(error&&error.message||error));
  }
 }
