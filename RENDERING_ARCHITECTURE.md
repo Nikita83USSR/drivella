@@ -1,6 +1,6 @@
 # DRIVELLA — Rendering Architecture
 
-Current reference: **v0.19.16 / BUILD 182**  
+Current reference: **v0.19.17 / BUILD 183**  
 Main renderer: `index.html` — custom WebGL 1 renderer, no external rendering engine.
 
 **Release marker policy:** every published renderer/game change increments `BUILD` in `index.html` and updates the visible HUD, boot screen, README, and this document in the same release. Increment the patch version with the build when appropriate. Never publish a renderer change while leaving the visible build number unchanged.
@@ -745,3 +745,21 @@ The F4 menu has a live quality selector with three profiles. The default **Perfo
 Only the selected profile's framebuffer/texture set is allocated. A quality change disposes the former Sun Bloom targets and allocates the new source plus two ping-pong targets per layer. The renderer outputs the four possible layer textures to the post shader; per-profile gain uniforms allow Performance to keep middle/atmosphere gains at zero. The extra fragment samplers use texture units 4 and 5 (WebGL 1's minimum fragment texture unit guarantee is eight). The Gaussian shader selects the five-, nine- or thirteen-sample kernel by a uniform. The existing depth-tested solar source, mask occlusion, directional ray sampling, silhouette coverage gate and inward-only composite remain unchanged.
 
 The selected quality is displayed in F3. Resetting visual effects restores Performance. The automated regression compiles and links the actual production WebGL 1 shaders, measures the existing Performance pixel fixture, executes both additional Gaussian branches, checks all profile definitions and F4 controls, and retains the Countach geometry/headlight checks. This is not an FPS benchmark on target consumer hardware; no GTX 1650/1660 timings are claimed.
+
+
+## BUILD 183 — Countach rear lamps and low front turn indicators
+
+The front bumper geometry and the imported Countach asset remain unchanged. The four existing lower-bumper lamp pads are used as the complete front lighting row. Their local centres are:
+
+| Index | Centre | Role |
+|---:|---|---|
+| 0 | `[-0.944, 0.621, 2.588]` | Left outboard amber turn indicator |
+| 1 | `[-0.739, 0.623, 2.588]` | Left inboard white auxiliary lamp |
+| 2 | `[0.739, 0.623, 2.588]` | Right inboard white auxiliary lamp |
+| 3 | `[0.944, 0.621, 2.588]` | Right outboard amber turn indicator |
+
+The existing frames and lens quads are aligned to the measured bumper normal `[0, 0.925, 0.38]`. Turn signal lens emission follows the existing blink phase and steering-side selection. The two inner lamps retain their white emissive material. `drawVehicleLensFlares()` projects only the inner pair as white fog sources and uses the exact outboard lens centres for amber indicator flares.
+
+The imported `bodyTail` source part is a 12-triangle red rear-lens assembly at `z=-2.6039`, spanning `x=-1.079..1.079` and `y=0.7616..0.8695`. Each side has three vertical lens bars. The complete original mesh remains the red tail/brake surface and keeps the smoothed brake-level colour response. The two triangles forming the outermost bar on each side are duplicated into a separate turn-signal mesh and translated only `-0.004` on local Z so they sit just behind the original lens plane. A selected side renders amber on the active blink phase; the inactive state is a dark amber lens. No rear fascia, bumper or body mesh is reshaped. The screen-space tail and rear indicator glare use optical points centred on the matching source bars.
+
+`loadCountachModel()` validates that it extracts exactly two triangles for each rear signal side before marking the imported model ready. The automated regression additionally checks the original four bumper pads and eight source triangles, both rear source bars, flare-point bounds, the complete production script's syntax, production WebGL 1 shader compilation, and runtime creation of the two rear-signal meshes. This covers source geometry, parsing and loading; it is not a visual certification on the target GPU.
