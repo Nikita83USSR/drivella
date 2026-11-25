@@ -189,3 +189,8 @@ Restored the BUILD 122 front-headlamp glow profile: one soft white-blue screen-s
 ### BUILD 145 — Restore pop-up lamp cap geometry after BUILD 144 regression
 
 Reverted only the imported-surface cap sampler/rebuild introduced in BUILD 144. Its nearest-edge fallback could select an unrelated lower body face near the front of the hood, pulling a cap vertex down by about 0.4 game units and visibly distorting the moving lid. Restored the previously validated BUILD 143 `makeLampCap()` geometry and immutable cap meshes. Retained the eight lower lamp-pad triangles rendered in body paint and the two-source BUILD 122-style white-blue headlight glow. Version `v0.18.79` / BUILD 145. JavaScript syntax validation and GitHub Pages deployment passed. The remaining upper seam is not claimed fixed; geometry should be targeted from a current in-game view before another cap change.
+
+
+### BUILD 146 — Conservative moving headlamp-cap rear extension
+
+Save BUILD 145 as `backups/index_BUILD145_before_rear_cap_extension_BUILD146.html`. Extend the rear edge of each painted moving lamp cap by 0.060 local Z units (about 0.034 game units after the existing mount Z scale). The extra painted area is part of the same cap mesh, so it uses the existing Countach hinge and mount and moves with the headlamp assembly. Do not change the optical projectors, pod housing, lens positions, hinge pivot/angle, headlight glow, lower red pads, grille, bumper or other front details. The existing `hoodSurfaceY()` cap fit remains in place; this is a conservative geometry trial, not a claim of verified visual closure. Version `v0.18.80` / BUILD 146. JavaScript syntax validation passed; closed and fully deployed visual clearance still requires in-game inspection.
