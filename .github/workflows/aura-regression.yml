@@ -1,11 +1,10 @@
-name: Aura WebGL regression
+name: Inner-surface bloom regression
 on:
   push:
     branches: [main]
     paths:
       - 'index.html'
       - 'assets/**'
-      - 'tools/aura-regression.html'
       - 'tools/game-shader-compile.html'
       - 'tools/run-aura-regression.mjs'
       - '.github/workflows/aura-regression.yml'
@@ -26,7 +25,7 @@ jobs:
         run: npm install --no-save playwright
       - name: Install Chromium
         run: npx playwright install --with-deps chromium
-      - name: Run synthetic bloom and production shader checks
+      - name: Run production inner-surface bloom pixel regression
         run: node tools/run-aura-regression.mjs
       - name: Upload test screenshots
         if: always()
