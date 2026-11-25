@@ -1048,7 +1048,7 @@ const C={
  glass:[.012,.035,.075,1],glassLight:[.055,.17,.28,1],trim:[.012,.016,.026,1],
  tire:[.012,.014,.019,1],hub:[.55,.52,.68,1],brake:[.20,.20,.28,1],city:[.085,.045,.12,1],mount:[.08,.045,.14,1]
 };
-let keys={},headlightsUp=false,headlightDeploy=0,wireframeMode=false,started=false,paused=true,speed=0,playerX=0,steer=0,bodyRoll=0,distance=0,boost=0,carYaw=0,yawRate=0,lateralVelocity=0,driftIntensity=0,handbrakeActive=false,driftLocked=false,driftDirection=0,driftRecovery=0,brakeLight=0,last=performance.now(),musicOn=true,track=0,trackOrder=[],trackPos=0,audio=null,musicPending=true,foundTracks=[],audioCtx=null,engineOsc=null,engineOsc2=null,engineGain=null,engineFilter=null,skidGain=null,skidFilter=null,roadGain=null,roadFilter=null,audioNoise=null;
+let keys={},headlightsUp=false,headlightDeploy=0,wireframeMode=false,started=false,paused=true,speed=0,playerX=0,steer=0,bodyRoll=0,distance=0,boost=0,carYaw=0,yawRate=0,lateralVelocity=0,driftIntensity=0,handbrakeActive=false,driftLocked=false,driftDirection=0,driftRecovery=0,driftCooldown=0,brakeLight=0,last=performance.now(),musicOn=true,track=0,trackOrder=[],trackPos=0,audio=null,musicPending=true,foundTracks=[],audioCtx=null,engineOsc=null,engineOsc2=null,engineGain=null,engineFilter=null,skidGain=null,skidFilter=null,roadGain=null,roadFilter=null,audioNoise=null;
 // One axis convention shared by controls, car movement, body lean and indicators.
 const STEER_AXIS=Object.freeze({left:-1,right:1,screenRight:1,bodyLean:-1});
 function readSteeringInput(){return (keys.d||keys.arrowright?STEER_AXIS.right:0)+(keys.a||keys.arrowleft?STEER_AXIS.left:0);}
@@ -1704,8 +1704,9 @@ function frame(now){
   const slipAngle=Math.atan2(lateralVelocity,Math.max(2,v));
   const slipAbs=Math.abs(slipAngle);
   const steerDir=Math.sign(steerInput);
+  driftCooldown=Math.max(0,driftCooldown-dt);
   const handbrakeKick=handbrakeActive&&v>8&&steerDir!==0;
-  const naturalDrift=!driftLocked&&v>15&&slipAbs>.24&&Math.abs(yawRate)>.48;
+  const naturalDrift=!driftLocked&&driftCooldown<=0&&v>15&&slipAbs>.24&&Math.abs(yawRate)>.48;
   if(!driftLocked&&(handbrakeKick||naturalDrift)){
    driftLocked=true;
    driftDirection=handbrakeKick?steerDir:Math.sign(yawRate||-lateralVelocity||steerDir);
@@ -1718,9 +1719,9 @@ function frame(now){
   // The handbrake adds a controllable yaw impulse instead of merely slowing the car.
   if(handbrakeActive&&steerDir!==0)yawTarget+=steerDir*Math.min(.88,v*.022);
   if(driftLocked&&!countersteering&&steerDir!==0)yawTarget*=1.08;
-  if(countersteering)yawTarget*=.82;
+  if(countersteering)yawTarget*=.42*clamp(slipAbs/.42,0,1);
   yawTarget=clamp(yawTarget,-2.1,2.1);
-  const yawResponse=countersteering?5.5:handbrakeActive?4.1:driftLocked?3.6:5.2;
+  const yawResponse=countersteering?4.5:handbrakeActive?4.1:driftLocked?3.6:5.2;
   yawRate+=(yawTarget-yawRate)*Math.min(1,dt*yawResponse);
   yawRate=clamp(yawRate,-2.4,2.4);
   // Rear grip stays low while locked; deliberate countersteer restores it progressively.
@@ -1736,7 +1737,7 @@ function frame(now){
    const centered=countersteering&&recoveredSlip<.075;
    if(crossedCenter||centered)driftRecovery+=dt;else driftRecovery=0;
    if(driftRecovery>.12||v<5.5){
-    driftLocked=false;driftDirection=0;driftRecovery=0;
+    driftLocked=false;driftDirection=0;driftRecovery=0;driftCooldown=.75;
    }
   }
   const oldRoadX=roadX(distance);
