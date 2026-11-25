@@ -2,7 +2,7 @@
 
 A browser-based synthwave drift-racing prototype with a custom low-poly 3D car, a procedural neon environment, and a hand-built WebGL renderer.
 
-> **Status:** Playable prototype under active development. Current renderer reference: **v0.18.99 / BUILD 165**.
+> **Status:** Playable prototype under active development. Current renderer reference: **v0.19.12 / BUILD 178**.
 > **Release identification:** every published game change increments the visible BUILD number in the HUD and startup screen; README and rendering architecture are updated in the same release.
 
 ## Current game
@@ -299,3 +299,12 @@ The object aura no longer uses the half-resolution AO mask or a post-process edg
 The sun disc and corona are now composited through a depth-tested visible-scene mask, so they are hidden by foreground geometry. The object aura was then corrected: BUILD 167's exterior bloom and square blur were removed. BUILD 171 uses a circular mask sample field and an inward-only surface falloff. A separate ray toward the sun selects the lit contact side, leaving the opposite edge and exterior unlit.
 
 The Playwright/Chromium regression extracts and runs the exact production sun and bloom shaders on a semi-transparent synthetic occluder. BUILD 171 passed the pixel checks: inner edge brightness 365, inward samples 300 and 127, blocked sun 27, visible sun 372, with zero alpha outside and on the opposite edge. It also checks shader compilation/linkage, framebuffers, JavaScript syntax, F4 wiring and WebGL errors. The fixture is a production-shader regression test, not a full race-game visual run on the target GPU. Version `v0.19.05` / BUILD 171.
+
+
+### BUILD 172–178 — Multi-scale inner-surface solar Bloom
+
+BUILD 172 moves the visible GPU sun disc/corona into a half-resolution source target using the depth-tested scene-visibility mask, then applies a separable Gaussian blur before compositing light onto the occluder's inward-facing surface. BUILD 173 adds distinct tight and wide Gaussian scales. The first blend was intentionally rejected by the pixel regression because its wide contribution and composite gain saturated the alpha cap, making several inward samples equally bright. BUILD 174–175 reduced the wide-layer balance and composite gain, but the directional gate still produced a broad plateau.
+
+BUILD 176 replaces the single long source-ray lookup with three progressively farther mask samples toward the sun (4, 12 and 20 half-resolution texels), weighted 0.52 / 0.30 / 0.18. This makes the light-wrap strength decay with depth into the silhouette rather than treating a whole strip as equally sun-facing. BUILD 177 extends the wide blur reach. BUILD 178 sets the tight/wide mix to 0.90 / 0.46, tight/wide radii to 3.4 / 12.0 times DPR, and composite gain/cap to 1.50 / 0.46. The result retains a defined contact edge and adds a broader soft inner tail; the exterior and opposite edge remain unlit.
+
+The regression executes the production WebGL 1 sun, Gaussian-blur and object-composite shaders on a synthetic translucent occluder. BUILD 178 passes shader compilation/linkage, framebuffer, JavaScript, direction, fade, locality and occlusion checks. Measured RGB sums are 156 at the sunward inner edge, 97 at the shoulder, 61 at the mid-fade and 17 deeper inside; outside and opposite-side alpha are zero. The sun remains blocked behind the occluder (27) while visible beside it (372). This is a deterministic production-shader regression, not a full race-game run or visual confirmation on the target GPU. BUILD 172–177 source snapshots are preserved in `backups/`. Version `v0.19.12` / BUILD 178.
