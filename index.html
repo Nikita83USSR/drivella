@@ -2471,8 +2471,8 @@ function updateDebug(dt){
    '<strong>GPU SHADOW / WORLD / POST</strong> '+(gpuTimerExt?['shadow','world','post'].map(k=>gpuPassMs[k]===null?'--':gpuPassMs[k].toFixed(2)).join(' / ')+' ms':'TIMER UNSUPPORTED')+'<br>'+
    '<strong>SCENE</strong> '+(garageMode?'GARAGE':'ROAD')+'<br>'+
    '<strong>SUN BLOOM QUALITY</strong> '+sunBloomQuality.toUpperCase()+'<br>'+
-   '<strong>SCENE BLOOM</strong> '+(FX.sceneBloom&&sceneColorTarget?'ON · 25% RES / 2 SCALES':'OFF')+'<br>'+
-   '<strong>GOD RAYS</strong> '+(FX.sunGodRays&&gpuSunReady&&!garageMode?'ON · 25% RES':'OFF')+'<br>'+
+   '<strong>SCENE BLOOM</strong> '+(FX.sceneBloom&&sceneColorTarget?(sceneBloomTargets?'ON · 25% RES / 2 SCALES':'FALLBACK · COPY ONLY'):'OFF')+'<br>'+
+   '<strong>GOD RAYS</strong> '+(FX.sunGodRays&&gpuSunReady?'ON · 25% RES':'OFF')+'<br>'+
    '<strong>HEADLIGHT LENS GLOW (H)</strong> '+(headlightLightingEnabled?'ON':'OFF')+'<br>'+
    '<strong>MOUSE LOOK</strong> '+(mouseLookActive?'ACTIVE':'AUTO')+' · '+mouseLookYaw.toFixed(2)+' / '+mouseLookPitch.toFixed(2)+'<br>'+
    '<strong>POP-UP DEPLOY</strong> '+Math.round(headlightDeploy*100)+'%<br>'+
