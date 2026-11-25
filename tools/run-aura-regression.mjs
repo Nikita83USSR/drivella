@@ -56,11 +56,11 @@ try {
   await page.goto(baseUrl + '/tools/game-shader-compile.html', { waitUntil: 'load', timeout: 20000 });
   await page.waitForFunction(() => Boolean(window.__GAME_SHADER_RESULT__), null, { timeout: 20000 });
   const result = await page.evaluate(() => window.__GAME_SHADER_RESULT__);
-  await page.screenshot({ path: 'artifacts/sun-bloom-build172.png', fullPage: true });
-  console.log('PRODUCTION INNER-SURFACE BLOOM REGRESSION\n' + JSON.stringify(result, null, 2));
-  assert(result.pass, 'Production inner-surface bloom regression failed: ' + JSON.stringify(result));
+  await page.screenshot({ path: 'artifacts/sun-bloom-build173.png', fullPage: true });
+  console.log('PRODUCTION MULTI-SCALE SUN BLOOM REGRESSION\n' + JSON.stringify(result, null, 2));
+  assert(result.pass, 'Production multi-scale Sun Bloom regression failed: ' + JSON.stringify(result));
   assert(pageErrors.length === 0, 'Browser page errors: ' + pageErrors.join('\n'));
-  console.log('ALL INNER-SURFACE BLOOM CHECKS PASSED');
+  console.log('ALL MULTI-SCALE SUN BLOOM CHECKS PASSED');
 } catch (error) {
   console.error('INNER-SURFACE BLOOM REGRESSION FAILED\n' + (error.stack || error));
   console.error(serverOutput.join(''));
