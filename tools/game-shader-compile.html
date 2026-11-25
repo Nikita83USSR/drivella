@@ -494,6 +494,7 @@ const roadGridAtStart=1+(Math.ceil(150/10)-Math.floor(-150/10)+1)+(Math.ceil(245
  (Math.floor(Math.ceil(230/10)/3)-Math.ceil(Math.floor(-40/10)/3)+1)*2;
 
 const checks={
+  productionVersionVisibleEverywhere:html.includes('id="version-label">v0.19.29 · BUILD 195</div>')&&html.includes('3D NEON HIGHWAY // BUILD 195')&&html.includes('ENGINE STARTUP // v0.19.29 · BUILD 195'),
  roadInstancingProductionVertexCompiled:!!roadProbeV.shader,
  roadInstancingProbeProgramLinked:!!roadProbeP.program,
  roadInstancingAttributesArePresent:['attribute vec3 instancePosition;','attribute vec3 instanceScale;','attribute vec2 instanceYaw;','attribute vec4 instanceColor;','attribute float instanceHeadlight;','attribute float instanceMaterial;'].every(token=>sources.mainVertex.includes(token)),
