@@ -1,6 +1,6 @@
 # DRIVELLA — Rendering Architecture
 
-Current reference: **v0.19.18 / BUILD 184**  
+Current reference: **v0.19.19 / BUILD 185**  
 Main renderer: `index.html` — custom WebGL 1 renderer, no external rendering engine.
 
 **Release marker policy:** every published renderer/game change increments `BUILD` in `index.html` and updates the visible HUD, boot screen, README, and this document in the same release. Increment the patch version with the build when appropriate. Never publish a renderer change while leaving the visible build number unchanged.
@@ -772,3 +772,10 @@ The imported `bodyTail` source part is a 12-triangle red rear-lens assembly at `
 The cross uses four tapered line gradients in screen space: horizontal `2.55 × radius`, vertical `1.48 × radius`, and two diagonal rays `0.78 × radius`; their half-width factors are `0.050`, `0.042`, and `0.027`. Their central energy is `0.24 ×` the already bounded source intensity. This keeps the cross readable without reviving the longer anamorphic streak or the larger lens-optics stack. The existing `if(main) continue` still bypasses the old full flare treatment after drawing the new cross; tail and indicator flare paths are unchanged.
 
 The automated source regression checks the exact four-ray profile and confirms the cross stays within the upper-headlight source branch. The production WebGL shader tests, complete inline-script syntax check and decoded Countach lamp-placement geometry checks remain active. The check validates source wiring and JavaScript parsing rather than visual appearance on the user's GPU.
+
+
+## BUILD 185 — Tune horizontal and vertical rays in the upper-headlight cross
+
+The four-ray cross remains source-local to each moving pop-up projector. This pass changes only the two orthogonal rays. Their profile now uses horizontal length/half-width factors `2.10 / 0.038` (previously `2.55 / 0.050`) and vertical factors `1.15 / 0.032` (previously `1.48 / 0.042`). Their separate central intensity multiplier is `0.16` (previously `0.24`). The diagonal rays remain `0.78 / 0.027` with multiplier `0.24`, preserving their existing subtle star shape.
+
+The line renderer now carries an individual energy value per ray. Projector positions, brightness/facing falloff, bloom veil, deployment animation, and all non-headlight lamp sources are unchanged. The automated production test verifies the exact per-ray profile and compiles/parses the existing production renderer. It checks source behavior, not the visual result on the user's physical display.
