@@ -1,6 +1,6 @@
 # DRIVELLA — Rendering Architecture
 
-Current reference: **v0.19.12 / BUILD 178**  
+Current reference: **v0.19.14 / BUILD 180**  
 Main renderer: `index.html` — custom WebGL 1 renderer, no external rendering engine.
 
 **Release marker policy:** every published renderer/game change increments `BUILD` in `index.html` and updates the visible HUD, boot screen, README, and this document in the same release. Increment the patch version with the build when appropriate. Never publish a renderer change while leaving the visible build number unchanged.
@@ -725,3 +725,14 @@ BUILD 173 adds a tight and a wide Gaussian scale. Its first mix/gain was too str
 The final composite is gated by current object coverage and the progressive source-ray field. It therefore deposits the blurred visible solar light inside the occluder, not outside it or on the opposite edge. F4 retains independent Bloom enable/debug controls.
 
 The production-shader regression in Chromium/WebGL 1 passed all checks for shader compilation/linkage, target completeness, JavaScript parsing, visible-sun occlusion, progressive source direction, monotonic inward fade, wide-body presence, no exterior aura, no opposite-edge aura and no WebGL errors. Measured RGB sums: sunward inner edge 156, shoulder 97, mid-fade 61, deeper sample 17; exterior and opposite-side alpha 0; blocked/visible sun 27 / 372. The fixture is synthetic and does not replace visual validation of the complete racing scene on the target GPU. Backups for BUILD 172 through 177 are retained under `backups/`. Version `v0.19.12` / BUILD 178.
+
+
+### BUILD 180 — Countach headlight and self-shadow restoration
+
+The imported Countach's two upper headlight optical points are derived from the same world vehicle transform, animated 45-degree pop-up hinge, and side-specific `countachLegacyHeadlampMount()` used by the visible headlamp pod. The headlight shader receives the transformed left/right position and transformed lens normal. Its per-surface energy combines a soft angular cone, an inverse-square-like distance attenuation, a 38–57 unit smooth range fade and a modest diffuse floor; a bounding-sphere / cone test suppresses lighting on meshes which cannot intersect either beam. This restores road/environment illumination without reintroducing fixed coordinates from the prior car model.
+
+Four lower lamps are constructed as framed/lensed quads directly over the imported Countach's two black lower-front bumper pads per side. Their centre positions are `[-0.944,0.621,2.588]`, `[-0.739,0.623,2.588]`, `[0.739,0.623,2.588]` and `[0.944,0.621,2.588]`; the light-flare overlay uses these same centres and the measured bumper normal. The geometry regression decodes the actual compressed source mesh and confirms all four positions are inside the original bumper-pad bounds (eight source triangles).
+
+The F4 vehicle self-shadow toggle controls the dedicated secondary `vehicleShadowTarget` pass. Restore the imported body paint, plastic, black trim, lower body, metal details, mirrors, exhausts and all four wheel assemblies as `vehicleSolarShadowCaster` participants, so they are included by the `vehicle-self-only` pass. Emissive headlight/fog lenses and emissive rear lamp surfaces remain excluded. The F4 text no longer describes the feature as deferred.
+
+BUILD 180 passed Chromium/WebGL 1 production shader compilation/linkage, JavaScript parsing, the existing inner-surface solar Bloom pixel regression, headlight/shadow feature invariants and imported Countach lower-pad geometry checks. GitHub Pages deployment passed. These checks validate production shader syntax, data wiring and geometry placement; they do not replace a full visual review of the running race on the target GPU. The pre-change source is preserved at `backups/index_BUILD179_before_headlight_and_shadow_restore_BUILD180.html`.
