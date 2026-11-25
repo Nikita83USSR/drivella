@@ -184,3 +184,8 @@ The moving upper lamp caps are rebuilt after the Countach import completes. Thei
 Separated exactly eight `bodyBlack` triangles (four per side) that form the small lower pads directly beneath the pop-up headlamps. These triangles are drawn with the existing body colour and paint material; all other black front details, central radiator, bumper, fog lamps and splitter remain in their original materials. The count is exposed as `window.DRIVELLA_LOWER_HEADLAMP_BLACK_PANELS_RECOLORED`.
 
 Restored the BUILD 122 front-headlamp glow profile: one soft white-blue screen-space source per headlamp, centred on each current twin-projector pod and transformed by its actual Countach mount. This uses the existing Canvas2D lens-flare pass, not dynamic per-fragment lighting or a new shadow/light pass. Version `v0.18.78` / BUILD 144.
+
+
+### BUILD 145 — Restore pop-up lamp cap geometry after BUILD 144 regression
+
+Reverted only the imported-surface cap sampler/rebuild introduced in BUILD 144. Its nearest-edge fallback could select an unrelated lower body face near the front of the hood, pulling a cap vertex down by about 0.4 game units and visibly distorting the moving lid. Restored the previously validated BUILD 143 `makeLampCap()` geometry and immutable cap meshes. Retained the eight lower lamp-pad triangles rendered in body paint and the two-source BUILD 122-style white-blue headlight glow. Version `v0.18.79` / BUILD 145. JavaScript syntax validation and GitHub Pages deployment passed. The remaining upper seam is not claimed fixed; geometry should be targeted from a current in-game view before another cap change.
