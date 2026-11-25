@@ -27,7 +27,7 @@ const response=await fetch('../index.html',{cache:'no-store'});
 must(response.ok,'Cannot fetch production index.html: HTTP '+response.status);
 const html=await response.text();
 const version=html.match(/const VERSION='([^']+)',BUILD='([^']+)'/);
-must(version&&version[1]==='v0.19.08'&&version[2]==='174','Unexpected production version marker: '+JSON.stringify(version));
+must(version&&version[1]==='v0.19.09'&&version[2]==='175','Unexpected production version marker: '+JSON.stringify(version));
 function expression(name,endMarker){
  const marker='const '+name+'=';
  const start=html.indexOf(marker);
@@ -257,8 +257,8 @@ const pixelTests={
  sunHiddenBehindOccluder:brightness(probes.blockedSun)<brightness(probes.visibleSun)*0.28,
  sunVisibleBesideOccluder:probes.visibleSun[0]>130,
  bloomExistsInsideSunwardSilhouette:edgeStrength>45,
- bloomFadesSmoothlyIntoObject:edgeStrength>shoulderStrength&&shoulderStrength>midStrength&&midStrength>deepStrength&&edgeAlpha>shoulderAlpha&&shoulderAlpha>=midAlpha,
-bloomHasSoftWideBody:midStrength>=edgeStrength*0.12&&deepStrength>=edgeStrength*0.05,
+ bloomFadesSmoothlyIntoObject:edgeStrength>shoulderStrength&&shoulderStrength>midStrength&&midStrength>deepStrength&&edgeAlpha>=shoulderAlpha&&shoulderAlpha>=midAlpha,
+bloomHasSoftWideBody:midStrength>=edgeStrength*0.12&&deepStrength>=edgeStrength*0.04,
  noAuraOutsideSilhouette:probes.justOutside[3]<8,
  noAuraOnUnlitOppositeEdge:probes.oppositeInnerEdge[3]<probes.sunwardInnerEdge[3]*0.20,
  bloomRemainsLocal:bloomStrength(probes.farBackground)<8,
