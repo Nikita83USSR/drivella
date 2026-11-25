@@ -1262,8 +1262,8 @@ const COUNTACH_FOG_LAMP_CENTERS=[[-0.944,0.621,2.588],[-0.739,0.623,2.588],[0.73
 const COUNTACH_FRONT_TURN_SIGNAL_INDICES=[0,3],COUNTACH_FRONT_FOG_LAMP_INDICES=[1,2];
 const COUNTACH_FOG_LAMP_NORMAL=[0,.925,.38];
 // Optical anchors follow the source Countach's three rear lens bars per side.
-const COUNTACH_REAR_LAMP_FLARE_POINTS=[[-.843,.815,-2.610],[.843,.815,-2.610]];
-const COUNTACH_REAR_SIGNAL_FLARE_POINTS=[[-1.011,.815,-2.610],[1.011,.815,-2.610]];
+const COUNTACH_REAR_LAMP_FLARE_POINTS=[[-0.843,0.815,-2.610],[0.843,0.815,-2.610]];
+const COUNTACH_REAR_SIGNAL_FLARE_POINTS=[[-1.011,0.815,-2.610],[1.011,0.815,-2.610]];
 function makeCountachFogLampQuad(center,halfWidth,halfHeight,normalOffset){
  const out=[],[cx,cy,cz]=center,upY=.38,upZ=-.925,nY=.925,nZ=.38;
  const p=(sx,sy)=>[cx+sx*halfWidth,cy+sy*halfHeight*upY+normalOffset*nY,cz+sy*halfHeight*upZ+normalOffset*nZ];
