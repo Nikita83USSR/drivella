@@ -175,3 +175,12 @@ Refitted each moving painted cap against the exact closed Countach hinge + lamp-
 ### BUILD 143 — Countach loader regression fix
 
 Fixed the BUILD 142 import regression: the counter for the two removed front headlamp overlays is now declared inside the per-part import scope before triangle filtering. Previously, the first matching overlay referenced an undeclared variable, threw a `ReferenceError`, and caused `loadCountachModel()` to abort; the renderer then entered its procedural fallback branch, making the older car appear. The imported Countach now completes loading while retaining the approved 96-triangle overlay removal and fitted moving lamp caps. No body geometry, wheel rig, hinge, animation, or lighting behavior was rolled back. Version `v0.18.77` / BUILD 143. All embedded JavaScript blocks passed syntax compilation after the fix; confirm the rendered car in the browser.
+
+
+### BUILD 144 — Countach headlamp seam fit, lower body-colour pads and BUILD 122 glow
+
+The moving upper lamp caps are rebuilt after the Countach import completes. Their perimeter and centre are fitted against the actual imported `bodyPaint` triangles in X/Z space, selecting the upper hood surface and following the nearest real mesh edge where an opening remains. This replaces the earlier generic `hoodSurfaceY` approximation for the imported Countach and keeps the existing 3 mm overlap and shared hinge/mount transform. The caps remain part of the moving lamp pods; no static filler slab or change to the radiator is added.
+
+Separated exactly eight `bodyBlack` triangles (four per side) that form the small lower pads directly beneath the pop-up headlamps. These triangles are drawn with the existing body colour and paint material; all other black front details, central radiator, bumper, fog lamps and splitter remain in their original materials. The count is exposed as `window.DRIVELLA_LOWER_HEADLAMP_BLACK_PANELS_RECOLORED`.
+
+Restored the BUILD 122 front-headlamp glow profile: one soft white-blue screen-space source per headlamp, centred on each current twin-projector pod and transformed by its actual Countach mount. This uses the existing Canvas2D lens-flare pass, not dynamic per-fragment lighting or a new shadow/light pass. Version `v0.18.78` / BUILD 144.
