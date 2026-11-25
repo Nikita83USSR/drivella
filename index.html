@@ -1363,6 +1363,16 @@ function drawCountachWheelPart(shape,cx,cz,x,y,z,color,yaw,spin,steering=0,mater
  bindMesh(shape,model,color,1,material,false,false);
 }
 
+function countachHeadlightAngle(){
+ const d=clamp(headlightDeploy,0,1),ease=d*d*(3-2*d);
+ return Math.PI*.25*(1-ease);
+}
+function countachHeadlightHinge(){
+ return matMul(
+  translate(0,COUNTACH_HEADLIGHT_HINGE_Y,COUNTACH_HEADLIGHT_HINGE_Z),
+  matMul(rotateX(countachHeadlightAngle()),translate(0,-COUNTACH_HEADLIGHT_HINGE_Y,-COUNTACH_HEADLIGHT_HINGE_Z))
+ );
+}
 function countachLegacyHeadlampMount(side){
  // The legacy optical face is built at 45° in its stowed coordinate system.
  // Counter-rotate it by 45° so the current Countach hinge (45° closed -> 0° open) remains authoritative.
