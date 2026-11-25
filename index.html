@@ -983,12 +983,12 @@ const popLampLensL=makeLampLens(-1),popLampLensR=makeLampLens(1);
 const popLampRingsL=makeLampProjectorRings(-1),popLampRingsR=makeLampProjectorRings(1);
 const popLampCoreL=makeLampProjectorCore(-1),popLampCoreR=makeLampProjectorCore(1);
 // Wide central radiator with a bevelled surround and six horizontal cooling vanes.// Wide central radiator with a bevelled surround and six horizontal cooling vanes.
-const frontGrilleFrame=quad([-.53,.47,2.963],[.53,.47,2.963],[.45,.205,2.963],[-.45,.205,2.963]);
-const frontIntake=quad([-.475,.425,2.972],[.475,.425,2.972],[.405,.245,2.972],[-.405,.245,2.972]);
+const frontGrilleFrame=quad([-.70,.46,2.963],[.70,.46,2.963],[.62,.195,2.963],[-.62,.195,2.963]);
+const frontIntake=quad([-.645,.425,2.972],[.645,.425,2.972],[.585,.225,2.972],[-.585,.225,2.972]);
 function makeFrontGrilleSlats(){
  const out=[];
  for(let i=0;i<6;i++){
-  const y=.265+i*.027,half=.425-(i/6)*.035,h=.009;
+  const y=.245+i*.028,half=.615-(i/6)*.035,h=.009;
   const pts=[[-half,y,2.979],[half,y,2.979],[half,y+h,2.979],[-half,y+h,2.979]];
   out.push(...pts[0],...pts[1],...pts[2],...pts[0],...pts[2],...pts[3]);
  }
@@ -996,8 +996,8 @@ function makeFrontGrilleSlats(){
 }
 const frontGrilleSlats=makeFrontGrilleSlats();
 // Separate upper bumper crease and lower splitter define the blunt, straight nose.
-const frontBumperCrease=quad([-.88,.555,2.958],[.88,.555,2.958],[.84,.535,2.958],[-.84,.535,2.958]);
-const frontSplitter=quad([-.86,.185,2.979],[.86,.185,2.979],[.79,.145,2.979],[-.79,.145,2.979]);
+const frontBumperCrease=quad([-1.00,.535,2.958],[1.00,.535,2.958],[.94,.515,2.958],[-.94,.515,2.958]);
+const frontSplitter=quad([-1.06,.16,2.979],[1.06,.16,2.979],[.98,.125,2.979],[-.98,.125,2.979]);
 // Rectangular amber indicators outboard, with two compact fog / driving lamps on each side.
 const frontTurnSignalL=quad([-.87,.505,2.968],[-.72,.505,2.968],[-.72,.435,2.968],[-.87,.435,2.968]);
 const frontTurnSignalR=quad([.72,.505,2.968],[.87,.505,2.968],[.87,.435,2.968],[.72,.435,2.968]);
@@ -1010,14 +1010,14 @@ const frontFogLensL2=quad([-.655,.360,2.981],[-.555,.360,2.981],[-.555,.270,2.98
 const frontFogLensR1=quad([.755,.360,2.981],[.855,.360,2.981],[.855,.270,2.981],[.755,.270,2.981]);
 const frontFogLensR2=quad([.555,.360,2.981],[.655,.360,2.981],[.655,.270,2.981],[.555,.270,2.981]);
 // This flat, full-width rear panel is intentionally proud of the hull: the silhouette reads as a squared tail.
-const rearFascia=quad([-1.16,.93,-2.905],[1.16,.93,-2.905],[1.16,.30,-2.905],[-1.16,.30,-2.905]);
-const rearLampFrameL=quad([-1.14,.87,-2.92],[-.72,.87,-2.92],[-.72,.47,-2.92],[-1.14,.47,-2.92]);
-const rearLampFrameR=quad([1.14,.87,-2.92],[1.14,.47,-2.92],[.72,.47,-2.92],[.72,.87,-2.92]);
-const rearLampL=quad([-1.105,.82,-2.935],[-.755,.82,-2.935],[-.755,.52,-2.935],[-1.105,.52,-2.935]);
-const rearLampR=quad([1.105,.82,-2.935],[1.105,.52,-2.935],[.755,.52,-2.935],[.755,.82,-2.935]);
-const rearLampGlowL=quad([-1.16,.90,-2.93],[-.70,.90,-2.93],[-.70,.43,-2.93],[-1.16,.43,-2.93]);
-const rearLampGlowR=quad([1.16,.90,-2.93],[1.16,.43,-2.93],[.70,.43,-2.93],[.70,.90,-2.93]);
-const rearVent=quad([-.68,.84,-2.935],[.68,.84,-2.935],[.68,.34,-2.935],[-.68,.34,-2.935]);
+const rearFascia=quad([-1.25,.96,-2.905],[1.25,.96,-2.905],[1.25,.30,-2.905],[-1.25,.30,-2.905]);
+const rearLampFrameL=quad([-1.23,.88,-2.92],[-.78,.88,-2.92],[-.78,.47,-2.92],[-1.23,.47,-2.92]);
+const rearLampFrameR=quad([1.23,.88,-2.92],[1.23,.47,-2.92],[.78,.47,-2.92],[.78,.88,-2.92]);
+const rearLampL=quad([-1.20,.82,-2.935],[-.82,.82,-2.935],[-.82,.52,-2.935],[-1.20,.52,-2.935]);
+const rearLampR=quad([1.20,.82,-2.935],[1.20,.52,-2.935],[.82,.52,-2.935],[.82,.82,-2.935]);
+const rearLampGlowL=quad([-1.25,.91,-2.93],[-.77,.91,-2.93],[-.77,.43,-2.93],[-1.25,.43,-2.93]);
+const rearLampGlowR=quad([1.25,.91,-2.93],[1.25,.43,-2.93],[.77,.43,-2.93],[.77,.91,-2.93]);
+const rearVent=quad([-.73,.84,-2.935],[.73,.84,-2.935],[.73,.34,-2.935],[-.73,.34,-2.935]);
 const rearDiffuser=quad([-.90,.36,-2.94],[.90,.36,-2.94],[.82,.235,-2.94],[-.82,.235,-2.94]);
 const rearLedL1=quad([-1.06,.755,-2.95],[-.80,.755,-2.95],[-.80,.715,-2.95],[-1.06,.715,-2.95]);
 const rearLedL2=quad([-1.06,.665,-2.95],[-.80,.665,-2.95],[-.80,.625,-2.95],[-1.06,.625,-2.95]);
@@ -1048,9 +1048,9 @@ const sillInkL=makeProfileLine(bodyProfile,-1,-2.58,2.56,'side',.96,.028,.016);
 const sillInkR=makeProfileLine(bodyProfile,1,-2.58,2.56,'side',.96,.028,.016);
 const archInk=[makeArchLine(-1.6375,-1,.025),makeArchLine(-1.6375,1,.025),makeArchLine(1.6375,-1,.025),makeArchLine(1.6375,1,.025)];
 // Faceted paint zones: a dark lower flank and two crisp planes on the hood.
-const hoodFacetL=quad([-.38,.57,2.875],[-.59,.93,2.15],[0,.956,2.15],[0,.596,2.875]);
-const hoodFacetR=quad([.38,.57,2.875],[0,.596,2.875],[0,.956,2.15],[.59,.93,2.15]);
-const hoodCenterInk=sideRibbon(1,[[.62,2.70,.012],[.78,2.48,.012],[.92,2.15,.012],[.98,1.90,.012]],.014);
+const hoodFacetL=quad([-.38,.62,2.875],[-.59,.84,2.15],[0,.855,2.15],[0,.645,2.875]);
+const hoodFacetR=quad([.38,.62,2.875],[0,.645,2.875],[0,.855,2.15],[.59,.84,2.15]);
+const hoodCenterInk=sideRibbon(1,[[.65,2.70,.012],[.72,2.48,.012],[.84,2.15,.012],[.89,1.90,.012]],.014);
 const hoodEdgeL=sideRibbon(-1,[[.59,2.55,.98],[.78,2.15,1.17],[.90,1.72,1.19],[.95,1.30,1.15]],.025);
 const hoodEdgeR=sideRibbon(1,[[.59,2.55,.98],[.78,2.15,1.17],[.90,1.72,1.19],[.95,1.30,1.15]],.025);
 const flankShadeL=makeProfileLine(bodyProfile,-1,-2.48,2.45,'mid',1.005,.105,.022);
@@ -1522,7 +1522,7 @@ function drawWorld(){
  drawCarMesh(rearSignalL,carX,carZ,steerNow<0&&signalOn?[1.55,.48,.055,1]:[.16,.052,.008,1],yaw,steerNow<0&&signalOn?8:0);
  drawCarMesh(rearSignalR,carX,carZ,steerNow>0&&signalOn?[1.55,.48,.055,1]:[.16,.052,.008,1],yaw,steerNow>0&&signalOn?8:0);
  drawCarMesh(rearVent,carX,carZ,C.trim,yaw,0);
- for(let i=0;i<5;i++)drawCarPart(carX,carZ,0,.43+i*.075,-2.955,.52,.012,.012,[.17,.20,.28,1],yaw);
+ for(let i=0;i<6;i++)drawCarPart(carX,carZ,0,.405+i*.075,-2.955,.63,.012,.012,[.17,.20,.28,1],yaw);
  drawCarMesh(rearDiffuser,carX,carZ,[.018,.022,.038,1],yaw,0);
  for(const side of [-1,1]){
   drawCarPart(carX,carZ,side*.61,.255,-2.94,1,1,1,[.58,.62,.72,1],yaw,exhaustTip,0);
