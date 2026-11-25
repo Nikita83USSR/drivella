@@ -14,7 +14,7 @@ canvas{display:block;width:100%;height:auto;border:1px solid #58eaff55;margin:14
 </style>
 </head>
 <body><main>
-<h1>DRIVELLA // BUILD 193 INSTANCING + PRODUCTION GLSL</h1>
+<h1>DRIVELLA // BUILD 194 ENVIRONMENT INSTANCING + PRODUCTION GLSL</h1>
 <canvas id="gl" width="960" height="540"></canvas>
 <pre id="report">Extracting production shaders…</pre>
 </main>
@@ -27,7 +27,7 @@ const response=await fetch('../index.html',{cache:'no-store'});
 must(response.ok,'Cannot fetch production index.html: HTTP '+response.status);
 const html=await response.text();
 const version=html.match(/const VERSION='([^']+)',BUILD='([^']+)'/);
-must(version&&version[1]==='v0.19.27'&&version[2]==='193','Unexpected production version marker: '+JSON.stringify(version));
+must(version&&version[1]==='v0.19.28'&&version[2]==='194','Unexpected production version marker: '+JSON.stringify(version));
 function expression(name,endMarker){
  const marker='const '+name+'=';
  const start=html.indexOf(marker);
@@ -436,7 +436,7 @@ const garageGodRaysSource=garageRaysStart>=0&&garageRaysEnd>garageRaysStart?html
 
 // Compile the exact production vertex shader against a small instance-colour probe.
 const roadInstancingExt=gl.getExtension('ANGLE_instanced_arrays');
-const roadProbeFs='precision mediump float;varying vec4 vInstanceColor;varying float vInstanceMode;varying float vInstanceHeadlight;void main(){gl_FragColor=vec4(vInstanceColor.rgb*(0.9+0.1*vInstanceHeadlight)+vec3(vInstanceMode*0.001),1.0);}';
+const roadProbeFs='precision mediump float;varying vec4 vInstanceColor;varying float vInstanceMode;varying float vInstanceHeadlight;varying float vInstanceMaterial;void main(){gl_FragColor=vec4(vInstanceColor.rgb*(0.9+0.1*vInstanceHeadlight)+vec3(vInstanceMode*0.001),vInstanceMaterial>7.5?1.0:0.5);}';
 const roadProbeV=compile(gl.VERTEX_SHADER,sources.mainVertex,'Production road instancing vertex');
 const roadProbeF=compile(gl.FRAGMENT_SHADER,roadProbeFs,'Road instancing pixel probe fragment');
 const roadProbeP=link(roadProbeV,roadProbeF,'Production vertex instancing probe');
@@ -451,8 +451,8 @@ if(roadInstancingExt){
   -.18,.18,0,0,0,1,   .18,-.18,0,0,0,1,  .18,.18,0,0,0,1
  ]);
  const instanceData=new Float32Array([
-  -.5,0,0, 1,1,1, 1,0, 1,0,0,1, 1,
-   .5,0,0, 1,1,1, 1,0, 0,1,0,1, 0
+  -.5,0,0, 1,1,1, 1,0, 1,0,0,1, 1,0,
+   .5,0,0, 1,1,1, 1,0, 0,1,0,1, 0,8
  ]);
  const vertexBuffer=gl.createBuffer(),instanceBuffer=gl.createBuffer();
  gl.bindFramebuffer(gl.FRAMEBUFFER,roadProbeFramebuffer);gl.viewport(0,0,32,16);gl.disable(gl.DEPTH_TEST);gl.disable(gl.BLEND);gl.depthMask(true);
@@ -470,10 +470,10 @@ if(roadInstancingExt){
  gl.enableVertexAttribArray(p);gl.vertexAttribPointer(p,3,gl.FLOAT,false,24,0);
  gl.enableVertexAttribArray(n);gl.vertexAttribPointer(n,3,gl.FLOAT,false,24,12);
  gl.bindBuffer(gl.ARRAY_BUFFER,instanceBuffer);gl.bufferData(gl.ARRAY_BUFFER,instanceData,gl.STATIC_DRAW);
- const stride=13*4,attrs=[
+ const stride=14*4,attrs=[
   {name:'instancePosition',size:3,offset:0},{name:'instanceScale',size:3,offset:12},
   {name:'instanceYaw',size:2,offset:24},{name:'instanceColor',size:4,offset:32},
-  {name:'instanceHeadlight',size:1,offset:48}
+  {name:'instanceHeadlight',size:1,offset:48},{name:'instanceMaterial',size:1,offset:52}
  ];
  for(const a of attrs){
   const loc=gl.getAttribLocation(roadProbeP.program,a.name);must(loc>=0,'Production instance attribute missing: '+a.name);
@@ -483,7 +483,7 @@ if(roadInstancingExt){
  const left=new Uint8Array(4),right=new Uint8Array(4);
  gl.readPixels(8,8,1,1,gl.RGBA,gl.UNSIGNED_BYTE,left);gl.readPixels(24,8,1,1,gl.RGBA,gl.UNSIGNED_BYTE,right);
  roadProbePixels={left:Array.from(left),right:Array.from(right)};
- roadInstancingPixelFixturePass=left[0]>200&&left[1]<40&&right[1]>200&&right[0]<40&&left[3]>240&&right[3]>240;
+ roadInstancingPixelFixturePass=left[0]>200&&left[1]<40&&right[1]>200&&right[0]<40&&left[3]>120&&left[3]<136&&right[3]>240;
  for(const a of attrs){const loc=gl.getAttribLocation(roadProbeP.program,a.name);roadInstancingExt.vertexAttribDivisorANGLE(loc,0);gl.disableVertexAttribArray(loc);}
  gl.disableVertexAttribArray(p);gl.disableVertexAttribArray(n);
 }
@@ -496,14 +496,24 @@ const roadGridAtStart=1+(Math.ceil(150/10)-Math.floor(-150/10)+1)+(Math.ceil(245
 const checks={
  roadInstancingProductionVertexCompiled:!!roadProbeV.shader,
  roadInstancingProbeProgramLinked:!!roadProbeP.program,
- roadInstancingAttributesArePresent:['attribute vec3 instancePosition;','attribute vec3 instanceScale;','attribute vec2 instanceYaw;','attribute vec4 instanceColor;','attribute float instanceHeadlight;'].every(token=>sources.mainVertex.includes(token)),
+ roadInstancingAttributesArePresent:['attribute vec3 instancePosition;','attribute vec3 instanceScale;','attribute vec2 instanceYaw;','attribute vec4 instanceColor;','attribute float instanceHeadlight;','attribute float instanceMaterial;'].every(token=>sources.mainVertex.includes(token)),
  roadInstancingPreservesInverseScaleNormals:sources.mainVertex.includes('normal/max(abs(instanceScale),vec3(0.0001))'),
  roadInstancingPreservesPerObjectHeadlights:sources.mainFragment.includes('headlightIntensity*vInstanceHeadlight')&&html.includes('headlightAffectsMesh(cube,model)'),
- roadInstancingCallsSingleInstancedBatch:html.includes('drawArraysInstancedANGLE(gl.TRIANGLES,0,cube.n,count)')&&html.includes('drawRoadCubeInstances(roadInstances);'),
- roadInstancingPreservesShadowAndAOCulling:html.includes('shadowBoundsVisible(cube,model)')&&html.includes('shadowCasterAllowed(item.color,0)')&&html.includes('sceneMaskAllowed(item.color,0)'),
+ roadInstancingCallsSingleInstancedBatch:html.includes('drawArraysInstancedANGLE(gl.TRIANGLES,0,shape.n,count)')&&html.includes('drawRoadCubeInstances(roadInstances);'),
+ roadInstancingPreservesShadowAndAOCulling:html.includes('shadowBoundsVisible(shape,model)')&&html.includes('shadowCasterAllowed(item.color,item.material)')&&html.includes('sceneMaskAllowed(item.color,item.material)'),
  roadInstancingHasSafeFallback:html.includes("if(!useInstancing)")&&html.includes("lastRoadInstancingMode='FALLBACK'"),
  roadInstancingPixelFixture:!roadInstancingExt||roadProbeFramebufferStatus===gl.FRAMEBUFFER_COMPLETE&&roadInstancingPixelFixturePass,
  roadInstancingReducesRoadToOneBatch:roadGridAtStart===192&&html.includes("lastRoadBatchCount=1;lastRoadInstanceCount=count;lastRoadInstancingMode='ANGLE_INSTANCED'"),
+ environmentInstancingResolvesPerInstanceMaterial:sources.mainVertex.includes('vInstanceMaterial=instanceMaterial')&&sources.mainFragment.includes('resolvedMaterialMode=mix(materialMode,vInstanceMaterial,step(0.5,vInstanceMode))'),
+ environmentInstancingPreservesMaterialEight:sources.mainFragment.includes('if(resolvedMaterialMode>7.5)')&&html.includes('queueBiomeInstance(cityCubes,cx-side*(w+.035),wy,wz,.045,.48,.38,tint,0,8)'),
+ environmentInstancingBatchesCityBlocks:html.includes('const cityCubes=[]')&&html.includes('drawBiomeInstances(cube,cityCubes);'),
+ environmentInstancingBatchesCoastline:html.includes('const shorelineCubes=[]')&&html.includes('drawBiomeInstances(cube,shorelineCubes);'),
+ environmentInstancingBatchesPalmTrunks:html.includes('drawBiomeInstances(cylinder,trunkOuter);')&&html.includes('drawBiomeInstances(cylinder,trunkInner);'),
+ environmentInstancingBatchesPalmCanopies:['leafMain=[[],[],[]]','leafAccent=[[],[],[]]','drawBiomeInstances(leafShapes[variant],leafMain[variant])','drawBiomeInstances(leafShapes[variant],leafAccent[variant])'].every(term=>html.includes(term)),
+ environmentInstancingPreservesShadowAOCullingAndHeadlights:html.includes('shadowCasterAllowed(item.color,item.material)')&&html.includes('sceneMaskAllowed(item.color,item.material)')&&html.includes('headlightAffectsMesh(shape,model)'),
+ environmentInstancingReportsF3:html.includes('BIOME GPU BATCH')&&html.includes('lastBiomeInstanceCount'),
+ environmentInstancingPixelFixtureReadsMaterialAndColour:roadInstancingPixelFixturePass&&roadProbePixels.left[3]<roadProbePixels.right[3]
+
  atmosphereVertexShaderCompiled:!!atmosphereV.shader,
  atmosphereFragmentShaderCompiled:!!atmosphereF.shader,
  atmosphereFixtureProgramLinked:!!atmosphereProgram.program&&atmosphereFramebufferStatus===gl.FRAMEBUFFER_COMPLETE,
@@ -599,7 +609,7 @@ const result={pass:true,version:version[1],build:version[2],checks,probes:{...pr
 window.__GAME_SHADER_RESULT__=result;
 report.className='pass';
 report.textContent='PASS\\n'+JSON.stringify(result,null,2);
-document.title='PASS DRIVELLA BUILD 193 road instancing + atmosphere + lighting regression';
+document.title='PASS DRIVELLA BUILD 194 biome instancing + road + atmosphere + lighting regression';
 })().catch(error=>{
  const report=document.getElementById('report');
  report.className='fail';
