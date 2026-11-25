@@ -516,8 +516,8 @@ function cylinder(){
 }
 function makeWheelTread(){
  const out=[],segments=28,point=(a,y)=>[Math.cos(a)*1.006,y,Math.sin(a)*1.006];
- for(let row=0;row<2;row++)for(let i=0;i<segments;i++){
-  const base=i*Math.PI*2/segments+row*.055,half=Math.PI/segments*.30,y0=-.64+row*.66,y1=y0+.22;
+ for(let row=0;row<4;row++)for(let i=0;i<segments;i++){
+  const base=i*Math.PI*2/segments+row*.055,half=Math.PI/segments*.30,y0=-.88+row*.48,y1=y0+.30;
   const a=base-half,b=base+half,A=point(a,y0),B=point(b,y0),C=point(b,y1),D=point(a,y1);
   out.push(...A,...B,...C,...A,...C,...D);
  }
