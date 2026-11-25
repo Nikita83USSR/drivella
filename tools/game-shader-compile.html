@@ -587,7 +587,7 @@ const checks={
  atmosphereSkipsGarageFog:sources.mainFragment.includes('if(showroom>0.5)return max(graded,vec3(0.0))'),
  atmosphereF4TogglePresent:html.includes('data-fx="atmosphere" checked')&&html.includes('atmosphere:true'),
  atmosphereGradesOpaqueMaterialFamilies:['applyAtmosphere(worldLit)','applyAtmosphere(glassTint)','applyAtmosphere(paintColor)','applyAtmosphere(lit)'].every(term=>sources.mainFragment.includes(term)),
- atmospherePreservesEmissiveAndNeonBranches:sources.mainFragment.includes('if(resolvedMaterialMode>7.5){gl_FragColor=vec4(color.rgb*(lampEmissionEnabled>0.5?1.55:0.18),color.a);')&&sources.mainFragment.includes('if(resolvedMaterialMode>5.5){'),
+ atmospherePreservesEmissiveAndNeonBranches:sources.mainFragment.includes('if(resolvedMaterialMode>7.5&&resolvedMaterialMode<8.5){gl_FragColor=vec4(color.rgb*(lampEmissionEnabled>0.5?1.55:0.18),color.a);')&&sources.mainFragment.includes('if(resolvedMaterialMode>5.5&&resolvedMaterialMode<6.5){'),
  lensOpticsVertexShaderCompiled:!!lensOpticsV.shader,
  lensOpticsFragmentShaderCompiled:!!lensOpticsF.shader,
  lensOpticsProgramLinked:!!lensOpticsP.program,
