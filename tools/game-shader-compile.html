@@ -27,7 +27,7 @@ const response=await fetch('../index.html',{cache:'no-store'});
 must(response.ok,'Cannot fetch production index.html: HTTP '+response.status);
 const html=await response.text();
 const version=html.match(/const VERSION='([^']+)',BUILD='([^']+)'/);
-must(version&&version[1]==='v0.19.15'&&version[2]==='181','Unexpected production version marker: '+JSON.stringify(version));
+must(version&&version[1]==='v0.19.16'&&version[2]==='182','Unexpected production version marker: '+JSON.stringify(version));
 function expression(name,endMarker){
  const marker='const '+name+'=';
  const start=html.indexOf(marker);
@@ -152,11 +152,11 @@ function drawSunSource(){
  gl.uniform2f(location(sunProgram,'uCanvasSize'),maskW,maskH);gl.uniform1f(location(sunProgram,'uOcclusionEnabled'),1.0);
  drawGeometry(sunProgram,'aPosition',fullscreenVertices,gl.TRIANGLES);
 }
-function runSunBloomBlur(source,target,direction,radius){
+function runSunBloomBlur(source,target,direction,radius,tapMode=0){
  gl.bindFramebuffer(gl.FRAMEBUFFER,target.framebuffer);gl.viewport(0,0,maskW,maskH);gl.disable(gl.DEPTH_TEST);gl.disable(gl.BLEND);gl.useProgram(sunBloomP.program);
  gl.activeTexture(gl.TEXTURE0);gl.bindTexture(gl.TEXTURE_2D,source.texture);
  gl.uniform1i(location(sunBloomP.program,'uSource'),0);gl.uniform2f(location(sunBloomP.program,'uTexel'),1/maskW,1/maskH);
- gl.uniform2f(location(sunBloomP.program,'uDirection'),direction[0],direction[1]);gl.uniform1f(location(sunBloomP.program,'uRadius'),radius);
+ gl.uniform2f(location(sunBloomP.program,'uDirection'),direction[0],direction[1]);gl.uniform1f(location(sunBloomP.program,'uRadius'),radius);gl.uniform1f(location(sunBloomP.program,'uTapMode'),tapMode);
  drawGeometry(sunBloomP.program,'aPosition',fullscreenVertices,gl.TRIANGLES);
 }
 drawSunSource();
@@ -201,13 +201,15 @@ gl.uniform1f(location(outlineProgram,'uOutlinesEnabled'),0);
 gl.uniform1f(location(outlineProgram,'uAOEnabled'),0);
 gl.uniform1f(location(outlineProgram,'uSunWrapEnabled'),0);
 gl.uniform1f(location(outlineProgram,'uSunAuraDebug'),0);
-gl.uniform1i(location(outlineProgram,'uSunBloomTexture'),2);gl.uniform1i(location(outlineProgram,'uSunBloomWideTexture'),3);gl.uniform1f(location(outlineProgram,'uSunBloomEnabled'),1);gl.uniform1f(location(outlineProgram,'uSunBloomDebug'),0);
+gl.uniform1i(location(outlineProgram,'uSunBloomTexture'),2);gl.uniform1i(location(outlineProgram,'uSunBloomWideTexture'),3);gl.uniform1i(location(outlineProgram,'uSunBloomMidTexture'),4);gl.uniform1i(location(outlineProgram,'uSunBloomAtmosTexture'),5);gl.uniform1f(location(outlineProgram,'uSunBloomTightGain'),0.90);gl.uniform1f(location(outlineProgram,'uSunBloomMidGain'),0.0);gl.uniform1f(location(outlineProgram,'uSunBloomWideGain'),0.46);gl.uniform1f(location(outlineProgram,'uSunBloomAtmosGain'),0.0);gl.uniform1f(location(outlineProgram,'uSunBloomEnabled'),1);gl.uniform1f(location(outlineProgram,'uSunBloomDebug'),0);
 gl.uniform2f(location(outlineProgram,'uSunCenter'),.5,.5);
 gl.uniform1f(location(outlineProgram,'uSunRadius'),sunRadius);
 gl.uniform1f(location(outlineProgram,'uSunAspect'),aspect);
 gl.uniform1f(location(outlineProgram,'uSunTime'),1.0);
 gl.activeTexture(gl.TEXTURE2);gl.bindTexture(gl.TEXTURE_2D,bloomTightVertical.texture);
 gl.activeTexture(gl.TEXTURE3);gl.bindTexture(gl.TEXTURE_2D,bloomWideVertical.texture);
+gl.activeTexture(gl.TEXTURE4);gl.bindTexture(gl.TEXTURE_2D,bloomTightVertical.texture);
+gl.activeTexture(gl.TEXTURE5);gl.bindTexture(gl.TEXTURE_2D,bloomTightVertical.texture);
 const bloomTexture=texture(W,H,gl.NEAREST);
 const bloomFbo=gl.createFramebuffer();gl.bindFramebuffer(gl.FRAMEBUFFER,bloomFbo);
 gl.framebufferTexture2D(gl.FRAMEBUFFER,gl.COLOR_ATTACHMENT0,gl.TEXTURE_2D,bloomTexture,0);
@@ -217,6 +219,8 @@ must(bloomFramebufferStatus===gl.FRAMEBUFFER_COMPLETE,'Isolated object-bloom fra
 gl.viewport(0,0,W,H);gl.clearColor(0,0,0,0);gl.clear(gl.COLOR_BUFFER_BIT);
 gl.activeTexture(gl.TEXTURE2);gl.bindTexture(gl.TEXTURE_2D,bloomTightVertical.texture);
 gl.activeTexture(gl.TEXTURE3);gl.bindTexture(gl.TEXTURE_2D,bloomWideVertical.texture);
+gl.activeTexture(gl.TEXTURE4);gl.bindTexture(gl.TEXTURE_2D,bloomTightVertical.texture);
+gl.activeTexture(gl.TEXTURE5);gl.bindTexture(gl.TEXTURE_2D,bloomTightVertical.texture);
 gl.disable(gl.DEPTH_TEST);gl.disable(gl.BLEND);gl.depthMask(false);
 drawGeometry(outlineProgram,'aPosition',fullscreenVertices,gl.TRIANGLES);
 gl.finish();
@@ -265,7 +269,7 @@ bloomHasSoftWideBody:midStrength>=edgeStrength*0.12&&deepStrength>=edgeStrength*
  webglStateClean:gl.getError()===gl.NO_ERROR
 };
 must(Object.values(pixelTests).every(Boolean),'Production inner-surface pixel regression failed: '+JSON.stringify({pixelTests,probes,brightness:{edge:edgeStrength,shoulder:shoulderStrength,mid:midStrength,deep:deepStrength}}));
-const inlineScripts=[...html.matchAll(/<script>([\s\S]*?)<\/script>/g)].map(m=>m[1]).filter(x=>x.trim());
+runSunBloomBlur(bloomSource,bloomTightHorizontal,[1,0],3.4,1);\nrunSunBloomBlur(bloomSource,bloomTightHorizontal,[1,0],3.4,2);\ngl.finish();must(gl.getError()===gl.NO_ERROR,'WebGL error in 9/13-tap Gaussian branches');\nconst inlineScripts=[...html.matchAll(/<script>([\s\S]*?)<\/script>/g)].map(m=>m[1]).filter(x=>x.trim());
 must(inlineScripts.length>0,'No inline game script found');
 for(let i=0;i<inlineScripts.length;i++)new Function(inlineScripts[i]);
 const checks={
@@ -280,10 +284,10 @@ const checks={
  gameInlineJavaScriptParses:true,
  bloomTogglePresent:html.includes('data-fx="sunAuraBloom"'),
  legacyBloomComparePresent:html.includes('data-fx="sunAuraWrap"'),
- bloomTargetsAreHalfResolution:html.includes('Math.round(canvas.width*.5)')&&html.includes('createSunBloomTarget(width,height)'),
+ bloomTargetsUseSelectableResolutionProfiles:html.includes('performance:{scale:.5')&&html.includes('high:{scale:.67')&&html.includes('ultra:{scale:.75')&&html.includes('profile.scale'),
  visibleSunRenderedThroughOcclusionMask:html.includes('function renderSunBloom(maskTexture)')&&html.includes('gpuSunLoc.occlusionEnabled,1.0'),
- multiScaleGaussianBloomPresent:html.includes('tightRadius=3.4*DPR')&&html.includes('wideRadius=12.0*DPR')&&html.includes('blurPass(targets.source,targets.tightHorizontal,[1,0],tightRadius)')&&html.includes('blurPass(targets.source,targets.wideHorizontal,[1,0],wideRadius)'),
- bloomCompositeClippedToObject:html.includes('wrappedEnergy=bloomEnergy*centerCoverage*sunFacing'),
+ bloomQualityMenuPresent:html.includes('data-fx-quality="sunBloom"')&&html.includes('value="performance"')&&html.includes('value="high"')&&html.includes('value="ultra"'),\n multiScaleGaussianBloomPresent:html.includes("name:'atmos',radius:46.0,gain:.12")&&html.includes('uTapMode>0.5')&&html.includes('uTapMode>1.5')&&html.includes('blurPass(horizontal,vertical,[0,1],radius,profile.tapMode)'),
+ bloomCompositeClippedToObject:html.includes('wrappedEnergy=bloomEnergy*centerCoverage*sunFacing'),\n bloomProfileLayersComposite:html.includes('uSunBloomMidGain')&&html.includes('uSunBloomAtmosGain')&&html.includes('sunBloomMaps.gains.mid')&&html.includes('sunBloomMaps.gains.atmos'),
  bloomDebugTogglePresent:html.includes('data-fx="sunAuraDebug"'),
  f4HandlerPresent:html.includes("e.code==='F4'"),
  sunUsesVisibleMask:html.includes('uOcclusionMask')&&html.includes('renderGpuSunBackground(aoTarget.texture)'),
