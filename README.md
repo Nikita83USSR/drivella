@@ -2,7 +2,7 @@
 
 A browser-based synthwave drift-racing prototype with a custom low-poly 3D car, a procedural neon environment, and a hand-built WebGL renderer.
 
-> **Status:** Playable prototype under active development. Current renderer reference: **v0.18.61 / BUILD 127**.
+> **Status:** Playable prototype under active development. Current renderer reference: **v0.18.83 / BUILD 149**.
 > **Release identification:** every published game change increments the visible BUILD number in the HUD and startup screen; README and rendering architecture are updated in the same release.
 
 ## Current game
@@ -82,7 +82,7 @@ Core implementation completed: adaptive directional shadows, PCSS-style filterin
 - [x] Build a reusable four-slot local-light shader and use it for the two coloured garage spotlights.
 - [x] Bind outdoor shadows to the actual sun source and garage spot shadows to each fixture's own position, direction and cone; isolate vehicle self-shadow receivers from the main car shell.
 - [x] Make environment reflections clearly visible on the windshield, rear glass and side glazing.
-- [ ] **Priority: GPU synthwave sun and optical-effects pipeline.** Replace the Canvas 2D sunset with a procedural WebGL sun while preserving its striped orange/red/magenta disc; add a layered solar corona, animated radial rays and fine spikes.
+- [~] **Stage 2 / item 1: GPU synthwave sun and initial corona (BUILD 149).** The striped gradient disc, pulse, scan line, halo and first animated corona are now rendered in a compact shader inside the main WebGL scene pass. F4 offers GPU/Canvas2D A/B comparison; visual quality and FPS still need confirmation in the running game. Next: depth-aware GPU god rays.
 - [ ] **Depth-aware mini-RTX god rays.** Generate sun shafts from a low-resolution scene-occlusion mask so buildings, mountains and palms interrupt the rays; use bounded radial scattering at quarter resolution.
 - [ ] **GPU bloom and lens optics.** Add controlled thresholded bloom, anamorphic streaks, diffraction spikes, optical rings and chromatic ghosts; migrate current Canvas 2D vehicle flare profiles without restoring oversized headlight glare.
 - [ ] **Atmospheric scattering and final grading.** Add depth-aware horizon haze and atmospheric light integration while preserving road/car readability and the synthwave palette.
@@ -99,7 +99,7 @@ Core implementation completed: adaptive directional shadows, PCSS-style filterin
 
 ## Tech
 
-Vanilla HTML, CSS, and JavaScript. The main 3D scene uses a custom WebGL 1 renderer; Canvas 2D is used for the sunset overlay.
+Vanilla HTML, CSS, and JavaScript. The main 3D scene uses a custom WebGL 1 renderer; the synthwave sun is a shader-rendered background element in the main scene pass, with the previous Canvas2D sun retained as an A/B fallback and vehicle lens flares still drawn on Canvas2D.
 
 ## License
 
@@ -204,3 +204,8 @@ Save BUILD 146 as `backups/index_BUILD146_before_original_moving_cap_restore_BUI
 ### BUILD 148 — Align source lamp lids to the open-pose datum
 
 Save BUILD 147 as `backups/index_BUILD147_before_headlamp_cap_open_pose_alignment_BUILD148.html`. The original imported Countach cap panels are authored in the fully open/deployed pose, not the closed/stowed pose. BUILD 147 incorrectly used the inverse closed assembly transform, so the panels began at their already-raised source pose and were rotated farther upward during deployment. BUILD 148 changes only the cap reference transform: precompute the inverse of the existing open lamp mount (`countachLegacyHeadlampMount`) and submit each source cap through `current hinge × mount × inverse(open mount)`. At full deployment the cap returns to its authored pose; at rest the existing +45° hinge rotates the panel down by the same motion as the lamp assembly. The lamp hinge, mount constants, easing curve, projector and housing meshes, and lighting are unchanged. Numerical checks on both sides show effectively zero open-pose drift and a 0.137 game-unit downward shift at a representative front-edge point in the closed pose. JavaScript syntax passed; final visual mating/clearance needs in-game inspection. Version `v0.18.82` / BUILD 148.
+
+
+### BUILD 149 — WebGL synthwave sun and initial corona
+
+Save BUILD 148 as `backups/index_BUILD148_before_gpu_sun_BUILD149.html`. Add a compact procedural WebGL sun shader to the existing renderer/context. The shader draws only a bounded quad around the projected disc at the beginning of the main `drawWorld()` pass, before opaque scene geometry, so the car and environment naturally occlude the sun. Preserve the orange/red/magenta gradient, clipped horizontal bands, breathing pulse, moving scan line and thin disc rim; add a restrained animated corona with an inner ring, irregular filaments and radial spikes. No second WebGL context, full-screen render pass, new dependency or change to vehicle lens flares is introduced. F4 now includes a GPU-sun checkbox: enabled uses WebGL; disabled runs the preserved original Canvas2D sun for A/B comparison. The Canvas2D path also remains the automatic fallback if the shader cannot initialize. JavaScript syntax compilation passed; final visual quality and FPS comparison still require inspection in the running game. Version `v0.18.83` / BUILD 149.
