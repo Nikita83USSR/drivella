@@ -170,3 +170,8 @@ Removed only the two disconnected triangular painted hood-cap shells from the im
 Removed only the two approved front-facing Countach lamp overlays from `bodyPlastic`: 48 triangles on the left and 48 on the right (96 total). The import loader records the removal count as `window.DRIVELLA_OLD_FRONT_HEADLAMP_OVERLAYS_REMOVED`. The independent DRIVELLA replacement assembly remains intact.
 
 Refitted each moving painted cap against the exact closed Countach hinge + lamp-mount transform. The cap's upper skin is solved against `hoodSurfaceY` and overlaps the bonnet by 3 mm; its 40 mm return closes the perimeter. This makes the cap cover the old overlay opening and sit against the hood while remaining part of the animated lamp pod. The shared mount constants are used by both the fitted cap and visible lamp assembly. Version `v0.18.76` / `BUILD 142`.
+
+
+### BUILD 143 — Countach loader regression fix
+
+Fixed the BUILD 142 import regression: the counter for the two removed front headlamp overlays is now declared inside the per-part import scope before triangle filtering. Previously, the first matching overlay referenced an undeclared variable, threw a `ReferenceError`, and caused `loadCountachModel()` to abort; the renderer then entered its procedural fallback branch, making the older car appear. The imported Countach now completes loading while retaining the approved 96-triangle overlay removal and fitted moving lamp caps. No body geometry, wheel rig, hinge, animation, or lighting behavior was rolled back. Version `v0.18.77` / BUILD 143. All embedded JavaScript blocks passed syntax compilation after the fix; confirm the rendered car in the browser.
