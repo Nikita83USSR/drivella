@@ -269,7 +269,10 @@ bloomHasSoftWideBody:midStrength>=edgeStrength*0.12&&deepStrength>=edgeStrength*
  webglStateClean:gl.getError()===gl.NO_ERROR
 };
 must(Object.values(pixelTests).every(Boolean),'Production inner-surface pixel regression failed: '+JSON.stringify({pixelTests,probes,brightness:{edge:edgeStrength,shoulder:shoulderStrength,mid:midStrength,deep:deepStrength}}));
-runSunBloomBlur(bloomSource,bloomTightHorizontal,[1,0],3.4,1);\nrunSunBloomBlur(bloomSource,bloomTightHorizontal,[1,0],3.4,2);\ngl.finish();must(gl.getError()===gl.NO_ERROR,'WebGL error in 9/13-tap Gaussian branches');\nconst inlineScripts=[...html.matchAll(/<script>([\s\S]*?)<\/script>/g)].map(m=>m[1]).filter(x=>x.trim());
+runSunBloomBlur(bloomSource,bloomTightHorizontal,[1,0],3.4,1);
+runSunBloomBlur(bloomSource,bloomTightHorizontal,[1,0],3.4,2);
+gl.finish();must(gl.getError()===gl.NO_ERROR,'WebGL error in 9/13-tap Gaussian branches');
+const inlineScripts=[...html.matchAll(/<script>([\s\S]*?)<\/script>/g)].map(m=>m[1]).filter(x=>x.trim());
 must(inlineScripts.length>0,'No inline game script found');
 for(let i=0;i<inlineScripts.length;i++)new Function(inlineScripts[i]);
 const checks={
@@ -285,9 +288,12 @@ const checks={
  bloomTogglePresent:html.includes('data-fx="sunAuraBloom"'),
  legacyBloomComparePresent:html.includes('data-fx="sunAuraWrap"'),
  bloomTargetsUseSelectableResolutionProfiles:html.includes('performance:{scale:.5')&&html.includes('high:{scale:.67')&&html.includes('ultra:{scale:.75')&&html.includes('profile.scale'),
+ sunBloomRenderUsesSelectedProfile:html.includes('const profile=SUN_BLOOM_PROFILES[sunBloomQuality]||SUN_BLOOM_PROFILES.performance,targets=sunBloomTargets')&&html.includes('setSunBloomQuality(select.dataset.fxQuality,select.value)'),
  visibleSunRenderedThroughOcclusionMask:html.includes('function renderSunBloom(maskTexture)')&&html.includes('gpuSunLoc.occlusionEnabled,1.0'),
- bloomQualityMenuPresent:html.includes('data-fx-quality="sunBloom"')&&html.includes('value="performance"')&&html.includes('value="high"')&&html.includes('value="ultra"'),\n multiScaleGaussianBloomPresent:html.includes("name:'atmos',radius:46.0,gain:.12")&&html.includes('uTapMode>0.5')&&html.includes('uTapMode>1.5')&&html.includes('blurPass(horizontal,vertical,[0,1],radius,profile.tapMode)'),
- bloomCompositeClippedToObject:html.includes('wrappedEnergy=bloomEnergy*centerCoverage*sunFacing'),\n bloomProfileLayersComposite:html.includes('uSunBloomMidGain')&&html.includes('uSunBloomAtmosGain')&&html.includes('sunBloomMaps.gains.mid')&&html.includes('sunBloomMaps.gains.atmos'),
+ bloomQualityMenuPresent:html.includes('data-fx-quality="sunBloom"')&&html.includes('value="performance"')&&html.includes('value="high"')&&html.includes('value="ultra"'),
+ multiScaleGaussianBloomPresent:html.includes("name:'atmos',radius:46.0,gain:.12")&&html.includes('uTapMode>0.5')&&html.includes('uTapMode>1.5')&&html.includes('blurPass(horizontal,vertical,[0,1],radius,profile.tapMode)'),
+ bloomCompositeClippedToObject:html.includes('wrappedEnergy=bloomEnergy*centerCoverage*sunFacing'),
+ bloomProfileLayersComposite:html.includes('uSunBloomMidGain')&&html.includes('uSunBloomAtmosGain')&&html.includes('sunBloomMaps.gains.mid')&&html.includes('sunBloomMaps.gains.atmos'),
  bloomDebugTogglePresent:html.includes('data-fx="sunAuraDebug"'),
  f4HandlerPresent:html.includes("e.code==='F4'"),
  sunUsesVisibleMask:html.includes('uOcclusionMask')&&html.includes('renderGpuSunBackground(aoTarget.texture)'),
