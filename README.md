@@ -88,21 +88,17 @@ Core implementation completed: adaptive directional shadows, PCSS-style filterin
 - [~] **Stage 2 / item 1: smooth GPU sun aura and disc-localized light wrap (BUILD 149–154).** BUILD 154 removes the plasma ribbons and narrow yellow ring. The disc now has a continuous multi-layer warm glow: orange close to the sun, coral through the middle and magenta farther out, with only a slow overall pulse. The object light-wrap uses three spatial scales to create a wider, softer transition along silhouettes crossing the disc instead of a thin yellow stripe. It reuses the existing scene mask and one bounded sun draw call. Target-browser visual balance and FPS validation remain part of final sign-off.
 - [ ] **Add selected local lights to track and environment props**, using the shared four-slot source format.
 - [ ] Improve painted-body and road reflections beyond the procedural glass environment.
-- [ ] Add instanced rendering for repeated road markings, lamps, vegetation and environment props to reduce CPU draw-call overhead across normal, shadow and AO passes.
-- [ ] Move high-count particle simulation to GPU only when effects and profiling justify it; keep vehicle physics and gameplay state on CPU.
 
 ### Stage 3 — Atmosphere and cinematic lighting
 
-- [~] **Depth-aware solar God Rays — BUILD 186.** Screen-space radial scattering at 25% width/height resolution, using 24 samples through the existing half-resolution scene-visibility mask. Foreground geometry blocks the visible destination and reduces shafts behind occluders. F4 toggle is independent of Sun Bloom; F3 reports the active state. Automated WebGL shader and synthetic-occluder pixel validation is being added; visual quality and GTX 1650 frame-time still need in-game confirmation.
+- [~] **Depth-aware solar God Rays — BUILD 186.** Screen-space radial scattering at 25% width/height resolution, using 24 samples through the existing half-resolution scene-visibility mask. Foreground geometry blocks the visible destination and reduces shafts behind occluders. F4 is independent of Sun Bloom; F3 reports the active state. The automated WebGL regression compiles the production shader and checks clear, blocked and fully occluded pixel paths. Visual quality and GTX 1650 frame-time still need in-game confirmation.
 - [ ] **Thresholded GPU Bloom and glare.** Extract bright regions from the scene at reduced resolution and create controlled multi-scale glow for the sun, lamps and selected neon without washing out the image.
 - [ ] **GPU lens optics.** Move vehicle flare streaks, diffraction spikes, rings and chromatic ghosts from Canvas 2D to shader compositing, preserving source-specific behaviour and compact headlight effects.
 - [ ] **Atmospheric integration and final grading.** Add depth-aware distance/horizon scattering and a restrained final colour grade while preserving readable road/car contrast and the synthwave palette.
 
 ### Rendering and performance work
-- [ ] Add selected local lights to track and environment props, using the shared four-slot source format.
-- [ ] Improve painted-body and road reflections beyond the procedural glass environment.
 - [ ] Add instanced rendering for repeated road markings, lamps, vegetation and environment props to reduce CPU draw-call overhead across normal, shadow and AO passes.
-- [ ] Move high-count particle simulation to GPU only when effects and profiling justify it; keep vehicle physics and gameplay state on CPU.
+- [ ] Move high-count particle simulation to GPU only when effects and profiling justify the complexity; keep vehicle physics and gameplay state on the CPU.
 
 ### Later stages
 
