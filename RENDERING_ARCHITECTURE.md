@@ -1,6 +1,6 @@
 # DRIVELLA — Rendering Architecture
 
-Current reference: **v0.18.90 / BUILD 156**  
+Current reference: **v0.18.91 / BUILD 157**  
 Main renderer: `index.html` — custom WebGL 1 renderer, no external rendering engine.
 
 **Release marker policy:** every published renderer/game change increments `BUILD` in `index.html` and updates the visible HUD, boot screen, README, and this document in the same release. Increment the patch version with the build when appropriate. Never publish a renderer change while leaving the visible build number unchanged.
@@ -639,3 +639,10 @@ The existing AO scene-mask wrap now uses a `sceneCoverage()` smoothstep over the
 BUILD 155 is preserved at `backups/index_BUILD155_before_radial_sun_wrap_BUILD156.html`. Reintroduce the broad solar aura in the existing GPU sun fragment shader rather than relying on a lower Canvas2D layer. The halo is calculated from radial distance to the disc edge using three overlapping exponential falloffs, a subdued time pulse, warm-to-magenta colour interpolation and a smooth fade before the bounded quad edge. Its alpha is composited premultiplied with the disc. The sun remains one bounded GPU draw before opaque scene geometry, which preserves natural depth occlusion; the Canvas2D fallback path is untouched.
 
 The previous four-axis scene-mask gradient created a cross/square-like edge response. It is replaced by `sceneRingMean()`, a 12-direction circular filter at two radii (3.5 and 8 AO texels). Smooth mask coverage and the difference between centre coverage and circular-ring coverage estimate a soft radial silhouette band without axis-aligned lobes. The existing AO framebuffer and full-screen post composite are reused; no new framebuffer or scene capture is added. Texture sample count is higher within the sun gate, so frame timing needs a browser check. JavaScript parsing and source invariants passed; WebGL shader compile, rendered smoothness and FPS remain to be verified in-game. Version `v0.18.90` / BUILD 156.
+
+
+### BUILD 157 — Stronger radial bloom and blurred silhouette light-wrap
+
+BUILD 156 is preserved at `backups/index_BUILD156_before_soft_solar_bloom_BUILD157.html`. Strengthen the GPU sun's three radial exponential layers and broaden the outer fade while retaining the single bounded draw call, existing alpha compositing, disc geometry and depth order. Foreground opaque geometry continues to cover the disc and aura naturally. The Canvas2D path remains the complete fallback.
+
+Replace the 12-sample ring contrast with a two-scale, 16-direction-per-scale circular blur field over `aoTarget`. Each filtered ring returns both mean scene coverage and a directional coverage vector. The absolute difference between centre coverage and the blurred values creates the soft edge band on both sides of the silhouette; the directional vector selects the rim facing the solar source. The output remains restricted to the disc footprint and reuses the existing scene mask and post composite. It is a screen-space approximation; the additional 32 texture samples per affected output pixel should be profiled. JavaScript source parsing and invariants passed; WebGL compilation, in-game light-wrap smoothness and FPS remain unverified in the target browser. Version `v0.18.91` / BUILD 157.
