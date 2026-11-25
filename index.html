@@ -118,9 +118,9 @@
 <body>
 <canvas id="scene"></canvas><canvas id="sun"></canvas><canvas id="flare"></canvas>
 <div id="hud">
- <div class="top"><div class="logo">DRIVELLA<small>3D SYNTHWAVE DRIFT RACING</small></div><div class="version-label" id="version-label">v0.18.74 · BUILD 140</div><div class="stat">DISTANCE<b id="distance">000.0 KM</b></div><div class="stat">LOCATION<b>VIOLET COAST</b></div></div>
+ <div class="top"><div class="logo">DRIVELLA<small>3D SYNTHWAVE DRIFT RACING</small></div><div class="version-label" id="version-label">v0.18.75 · BUILD 141</div><div class="stat">DISTANCE<b id="distance">000.0 KM</b></div><div class="stat">LOCATION<b>VIOLET COAST</b></div></div>
  <div class="right"><div id="speed">000 <span>KM/H</span></div><div id="direction">▶ FORWARD</div><div id="music">♫ MUSIC SCANNING…</div></div>
- <div class="bottom"><div class="hint"><strong>W / ↑</strong> ACCELERATE　<strong>S / ↓</strong> BRAKE / REVERSE<br><strong>A / ←　D / →</strong> STEER　<strong>SPACE</strong> HANDBRAKE　<strong>C</strong> CAMERA　<strong>HOLD + DRAG LMB</strong> LOOK　<strong>L</strong> LIGHTS　<strong>K</strong> WIREFRAME</div><div class="build-credit"><span>3D NEON HIGHWAY // BUILD 140</span><a class="asset-credit" href="https://sketchfab.com/3d-models/low-poly-lamborghini-countach-c9b28a4ad5c74649a09afa613dd3fae1" target="_blank" rel="noopener noreferrer">Original model: 3DShinobi · Sketchfab · CC BY · modified for DRIVELLA</a></div></div>
+ <div class="bottom"><div class="hint"><strong>W / ↑</strong> ACCELERATE　<strong>S / ↓</strong> BRAKE / REVERSE<br><strong>A / ←　D / →</strong> STEER　<strong>SPACE</strong> HANDBRAKE　<strong>C</strong> CAMERA　<strong>HOLD + DRAG LMB</strong> LOOK　<strong>L</strong> LIGHTS　<strong>K</strong> WIREFRAME</div><div class="build-credit"><span>3D NEON HIGHWAY // BUILD 141</span><a class="asset-credit" href="https://sketchfab.com/3d-models/low-poly-lamborghini-countach-c9b28a4ad5c74649a09afa613dd3fae1" target="_blank" rel="noopener noreferrer">Original model: 3DShinobi · Sketchfab · CC BY · modified for DRIVELLA</a></div></div>
 </div>
 <div id="fps-counter" aria-live="off">FPS --</div>
 <div id="effects-menu" aria-hidden="true">
@@ -173,7 +173,7 @@
 <script>
 (()=>{
 'use strict';
-const VERSION='v0.18.74',BUILD='140';
+const VERSION='v0.18.75',BUILD='141';
 const canvas=document.getElementById('scene'),gl=canvas.getContext('webgl',{antialias:true,alpha:true}),sun=document.getElementById('sun'),sctx=sun.getContext('2d'),flare=document.getElementById('flare'),fctx=flare.getContext('2d');
 const $=id=>document.getElementById(id);
 let countachModel=null,countachModelReady=false;
@@ -538,15 +538,31 @@ async function loadCountachModel(){
    // the restored DRIVELLA dual-projector pop-up pods are the only visible upper lamps.
    if(part.name==='headlampR'||part.name==='headlampL')continue;
    const data=new Float32Array(part.indexCount*3);
-   for(let i=0;i<part.indexCount;i++){
-    const vertex=view.getUint16(part.indexOffset+i*2,true),v=part.vertexOffset+vertex*6,at=i*3;
-    data[at]=view.getInt16(v,true)/meta.unitsPerGameUnit;
-    data[at+1]=view.getInt16(v+2,true)/meta.unitsPerGameUnit;
-    data[at+2]=view.getInt16(v+4,true)/meta.unitsPerGameUnit;
+   let writeAt=0,removedOldHoodCaps=0;
+   for(let i=0;i<part.indexCount;i+=3){
+    const triangle=[];
+    for(let j=0;j<3;j++){
+     const vertex=view.getUint16(part.indexOffset+(i+j)*2,true),v=part.vertexOffset+vertex*6;
+     triangle.push([
+      view.getInt16(v,true)/meta.unitsPerGameUnit,
+      view.getInt16(v+2,true)/meta.unitsPerGameUnit,
+      view.getInt16(v+4,true)/meta.unitsPerGameUnit
+     ]);
+    }
+    // Remove only the two disconnected painted Countach hood-cap shells (29 triangles each).
+    // The DRIVELLA pop-up lamp assemblies are separate meshes and are deliberately untouched.
+    const oldTriangularHoodCap=part.name==='bodyPaint'&&triangle.every(p=>{
+     const ax=Math.abs(p[0]);
+     return ax>=.60&&ax<=1.12&&p[1]>=.63&&p[1]<=.86&&p[2]>=2.19&&p[2]<=2.46;
+    });
+    if(oldTriangularHoodCap){removedOldHoodCaps++;continue;}
+    for(const p of triangle){data[writeAt++]=p[0];data[writeAt++]=p[1];data[writeAt++]=p[2];}
    }
-   model[part.name]=mesh(data);
-   if(['front_tyre','front_rims','front_extra_NoMaterial','rear_tyre','rear_rims'].includes(part.name))model[part.name+'Left']=mesh(mirrorX(data));
-   if(part.name==='sideMirror_bodyPlastic')model.sideMirror_bodyPlasticLeft=mesh(mirrorX(data));
+   const geometry=writeAt===data.length?data:data.slice(0,writeAt);
+   if(part.name==='bodyPaint')window.DRIVELLA_OLD_HOOD_CAP_TRIANGLES_REMOVED=removedOldHoodCaps;
+   model[part.name]=mesh(geometry);
+   if(['front_tyre','front_rims','front_extra_NoMaterial','rear_tyre','rear_rims'].includes(part.name))model[part.name+'Left']=mesh(mirrorX(geometry));
+   if(part.name==='sideMirror_bodyPlastic')model.sideMirror_bodyPlasticLeft=mesh(mirrorX(geometry));
   }
   countachModel=model;countachModelReady=true;
   const status=$('boot-status');if(status)status.textContent='COUNTACH MODEL LOADED';
