@@ -495,11 +495,11 @@ const roadGridAtStart=1+(Math.ceil(150/10)-Math.floor(-150/10)+1)+(Math.ceil(245
 
 // Execute the exact production point-light function in a GPU pixel fixture.
 const trackLightFunctionStart=sources.mainFragment.indexOf('vec3 evalLocalLight(');
-const trackLightFunctionEnd=sources.mainFragment.indexOf('\\nvec3 calcLocalLighting(',trackLightFunctionStart);
+const trackLightFunctionEnd=sources.mainFragment.indexOf('\nvec3 calcLocalLighting(',trackLightFunctionStart);
 must(trackLightFunctionStart>=0&&trackLightFunctionEnd>trackLightFunctionStart,'Production local-light evaluation function was not found');
 const trackLightFunction=sources.mainFragment.slice(trackLightFunctionStart,trackLightFunctionEnd);
 const trackLightProbeVs='attribute vec2 aPosition;varying vec3 vWorldPos;void main(){vWorldPos=vec3(aPosition.x*12.0,0.0,0.0);gl_Position=vec4(aPosition,0.0,1.0);}';
-const trackLightProbeFs='precision mediump float;varying vec3 vWorldPos;uniform vec4 uPosRange;uniform vec4 uColorPower;uniform vec4 uDirectionCone;'+trackLightFunction+'\\nvoid main(){vec3 energy=evalLocalLight(vec3(0.0,1.0,0.0),vec3(0.0,0.0,1.0),vec3(0.25),38.0,uPosRange,uColorPower,uDirectionCone,1.0);gl_FragColor=vec4(energy,1.0);}';
+const trackLightProbeFs='precision mediump float;varying vec3 vWorldPos;uniform vec4 uPosRange;uniform vec4 uColorPower;uniform vec4 uDirectionCone;'+trackLightFunction+'\nvoid main(){vec3 energy=evalLocalLight(vec3(0.0,1.0,0.0),vec3(0.0,0.0,1.0),vec3(0.25),38.0,uPosRange,uColorPower,uDirectionCone,1.0);gl_FragColor=vec4(energy,1.0);}';
 const trackLightProbeProgram=makeProgram(trackLightProbeVs,trackLightProbeFs,'Production track point-light pixel fixture');
 const trackLightProbeTarget=makeTarget(3,1);
 must(trackLightProbeTarget.status===gl.FRAMEBUFFER_COMPLETE,'Track point-light fixture framebuffer incomplete');
