@@ -1,6 +1,6 @@
 # DRIVELLA — Rendering Architecture
 
-Current reference: **v0.19.25 / BUILD 191**  
+Current reference: **v0.19.27 / BUILD 193**  
 Main renderer: `index.html` — custom WebGL 1 renderer, no external rendering engine.
 
 **Release marker policy:** every published renderer/game change increments `BUILD` in `index.html` and updates the visible HUD, boot screen, README, and this document in the same release. Increment the patch version with the build when appropriate. Never publish a renderer change while leaving the visible build number unchanged.
@@ -14,12 +14,12 @@ When `FX.sceneBloom` is enabled, the main `drawWorld()` pass renders to a full-r
 The render loop currently runs these passes in order:
 
 1. `renderShadowMap()` — render the full-scene solar map and garage spotlight maps into packed-depth textures. When `FX.vehicleShadows` is enabled, also render a 1024² packed-depth PCF receiver map using only selected vehicle detail casters; the normal/road/biome environment pass is skipped for this secondary map.
-2. `drawWorld()` — render the visible scene using the active driving or garage camera, sample the shadow map on receiving materials, and draw the striped GPU sun disc plus radial corona before opaque scene geometry on the main framebuffer.
+2. `drawWorld()` — render the visible scene using the active driving or garage camera, sample the shadow map on receiving materials, and draw the striped GPU sun disc plus radial corona before opaque scene geometry on the main framebuffer. In the driving branch, the repeated ground/grid, asphalt, road-edge, lane-marking and roadside-post cubes are submitted by one ordered instance batch when ANGLE_instanced_arrays is available; all other scene objects continue through the ordinary mesh path.
 3. `renderCarOutlines()` — render the half-resolution full-scene normal/depth/visibility mask for SSAO, solar occlusion, quarter-resolution God Rays and/or GPU Sun Bloom. God Rays sample the mask along 24 bounded radial steps toward the projected sun and write a quarter-resolution shaft texture; the existing fullscreen composite adds the shafts only where the destination remains visible background. Sun Bloom still renders the visible sun through that mask into its selected source target, runs the chosen separable Gaussian layers, and composites the result onto the inward-facing, sunward portion of the occluder. The full-resolution car mask is rendered only when ink outlines are enabled. The scene mask remains active when SSAO and ink outlines are disabled if the sun is using occlusion, God Rays or Bloom.
 4. `drawSun()` — when GPU sun is disabled or unavailable, draw the complete Canvas2D disc + halo fallback. This canvas is no longer used for vehicle-lamp optics.
 5. `renderVehicleLensFlaresGPU()` — project the existing Countach light-source anchors through the active camera, apply source-facing and distance attenuation, then send all visible optical elements through one dynamic vertex buffer and one additive WebGL draw on the main scene canvas. It runs after the world and outline composites so the optical overlay remains above the 3D scene.
 
-The scene is intentionally drawn through the same `drawWorld()` path in the normal, directional-shadow, and scene-AO passes. The shared-scene gate is `if (!outlinePass || aoScenePass)`: it includes opaque world geometry during the shadow pass and the full-scene AO capture, while the separate car-contour pass draws only car parts. `shadowCasterAllowed()` remains the single policy for excluding translucent and emissive materials. Do not build one-off shadow meshes or hard-code a shadow for every new prop.
+The scene is intentionally drawn through the same `drawWorld()` path in the normal, directional-shadow, and scene-AO passes. The shared-scene gate is `if (!outlinePass || aoScenePass)`: it includes opaque world geometry during the shadow pass and the full-scene AO capture, while the separate car-contour pass draws only car parts. `shadowCasterAllowed()` remains the single policy for excluding translucent and emissive materials. Do not build one-off shadow meshes or hard-code a shadow for every new prop.\n\n## GPU-instanced road geometry — BUILD 193\n\nThe repeated driving-road set is currently submitted from `drawWorld()` as one ordered instance batch using WebGL 1's optional ANGLE_instanced_arrays extension. It includes the scrolling ground slab, the two perpendicular synthwave grid families, asphalt segments, cyan/magenta road-edge rails, dashed white lane marks and the small roadside posts. At the reference distance `distance = 0`, these are **192 cube instances**. When the extension is available, this replaces 192 separate `drawArrays()` submissions with one `drawArraysInstancedANGLE()` call per `drawWorld()` pass.\n\nEach instance carries position, scale, yaw, RGBA colour and a headlight-receiver mask. The shared cube vertex/normal buffers and material-0 shader are reused. The vertex shader applies inverse-scale normal transformation before rotation, so the non-uniformly scaled road elements retain their original lighting response. Per-instance colour keeps the original submission order rather than sorting by material, avoiding reordered intersections where grid lines cross.\n\nThe same batch function runs in the visible world pass, the full directional-shadow pass and the full-scene AO/visibility capture. Shadow instances are individually filtered through `shadowCasterAllowed()` and `shadowBoundsVisible()`; AO retains `sceneMaskAllowed()`. Headlight-cone culling is evaluated per instance and passed as an instance attribute, preserving the existing CPU-side cutoff without applying the beam to every road cube. The F3 panel reports batch count, instance count and whether ANGLE instancing or fallback is active.\n\nIf the extension or any required attribute is unavailable, the batch falls back to the original `draw(cube, ...)` call for each object. The Countach, procedural biome meshes, garage props, lamps, vehicle physics, and all post-processing remain on their existing paths in this first pass. This is a draw-submission optimization; its actual FPS benefit must be measured on the target GPU rather than inferred from the lower draw-call count.
 
 ## Visual effects console — BUILD 117
 
@@ -39,7 +39,7 @@ The scene is intentionally drawn through the same `drawWorld()` path in the norm
 - **Sun disc / vehicle lens flares:** `FX.sunDisc` hides only the 2D synthwave sunset drawing; it does not remove `SUN_LIGHT`, its material illumination or cast shadows. `FX.lensFlares` independently gates the batched GPU vehicle-lamp optical overlay.
 - **Underglow / tyre contact:** `FX.underglow` gates the red floor pool and side neon rails (material modes 5 and 6). `FX.tireContact` separately gates the four procedural tyre-contact ovals (material mode 7).
 
-The F4 panel exposes 22 effect checkboxes plus the separate Sun Bloom quality selector, and includes a reset-to-defaults action.
+The F4 panel exposes 23 effect checkboxes plus the separate Sun Bloom quality selector, and includes a reset-to-defaults action.
 
 ## Garage effects showroom — BUILD 188
 
@@ -75,6 +75,14 @@ Reduce only the two final composite gains by 10%: the tight glow changes from **
 ### BUILD 191 — scene Bloom strength
 
 The two general-purpose scene Bloom gains are reduced to **0.976** (tight) and **0.576** (wide), which is 80% of their BUILD 189 baseline values (**1.22 / 0.72**) and therefore 20% lower overall. BUILD 190 first moved them to 90%; BUILD 191 applies the additional 10 percentage points of the original baseline. Threshold (**0.72**), knee (**0.20**), quarter-resolution target, Gaussian radii (**2.2 / 8.0**) and all Sun Bloom/God Rays paths are unchanged.
+
+## Atmospheric integration and final grading — BUILD 192
+
+A restrained atmosphere and material grade are applied inside the existing main material fragment shader through applyAtmosphere(). The grade adds a small saturation increase, contrast adjustment and subtle cool lift in shadows. Outdoor materials then receive a depth-aware haze term that grows with camera-to-surface distance and is weighted toward near-horizontal view rays; the fog colour transitions from cool blue to muted violet.
+
+The same helper is applied to the regular opaque world, glass, paint and standard lit material branches. Emissive lamp and neon/underglow branches bypass it so their authored colours and glow energy are not washed out. The garage receives the restrained colour grade but returns before outdoor fog is evaluated. The effect is controlled by the F4 Atmosphere toggle and reported in F3. No new framebuffer, texture, fullscreen pass or post-process target is allocated; atmosphere is evaluated as part of the existing material shading.
+
+The production regression extracts the exact helper from the main shader and compiles it in an isolated fixture. GPU pixel probes compare near/far surfaces, horizon-facing rays, garage mode and the disabled state. The implementation is visually accepted; GTX 1650 frame-time remains to be measured during local play.
 
 ## GPU Lens Optics — BUILD 191
 
