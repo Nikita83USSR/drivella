@@ -243,7 +243,7 @@ void main(){
  float alpha=disc+(1.0-disc)*glowAlpha;
  vec3 premultiplied=discColor*disc+glowColor*glowAlpha*(1.0-disc);
  float sceneCoverage=texture2D(uOcclusionMask,gl_FragCoord.xy/max(uCanvasSize,vec2(1.0))).a;
- float sunVisibility=mix(1.0,1.0-smoothstep(0.14,0.26,sceneCoverage),uOcclusionEnabled);
+ float sunVisibility=mix(1.0,1.0-smoothstep(0.015,0.08,sceneCoverage),uOcclusionEnabled);
  alpha*=sunVisibility;premultiplied*=sunVisibility;
  gl_FragColor=vec4(premultiplied,alpha);
 }`;
