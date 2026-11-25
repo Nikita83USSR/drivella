@@ -27,7 +27,7 @@ const response=await fetch('../index.html',{cache:'no-store'});
 must(response.ok,'Cannot fetch production index.html: HTTP '+response.status);
 const html=await response.text();
 const version=html.match(/const VERSION='([^']+)',BUILD='([^']+)'/);
-must(version&&version[1]==='v0.19.21'&&version[2]==='187','Unexpected production version marker: '+JSON.stringify(version));
+must(version&&version[1]==='v0.19.22'&&version[2]==='188','Unexpected production version marker: '+JSON.stringify(version));
 function expression(name,endMarker){
  const marker='const '+name+'=';
  const start=html.indexOf(marker);
@@ -316,7 +316,15 @@ gl.finish();must(gl.getError()===gl.NO_ERROR,'WebGL error in 9/13-tap Gaussian b
 const inlineScripts=[...html.matchAll(/<script>([\s\S]*?)<\/script>/g)].map(m=>m[1]).filter(x=>x.trim());
 must(inlineScripts.length>0,'No inline game script found');
 for(let i=0;i<inlineScripts.length;i++)new Function(inlineScripts[i]);
+const garageRaysStart=html.indexOf('function renderGodRays(maskTexture){'),garageRaysEnd=html.indexOf('\nfunction renderGpuSunBackground',garageRaysStart);
+const garageGodRaysSource=garageRaysStart>=0&&garageRaysEnd>garageRaysStart?html.slice(garageRaysStart,garageRaysEnd):'';
 const checks={
+ garageSunUsesTheSharedDepthMask:html.includes('const sunOcclusionActive=!!(gpuSunReady&&FX.sunGpu&&FX.sunDisc);'),
+ garageSunHasGarageSpecificPlacement:html.includes('if(garageMode)return{x:W*.5,y:H*.285,r:Math.min(W*.27,H*.24,185)};'),
+ garageGodRaysRunWithoutGarageExclusion:garageGodRaysSource.includes('FX.sunGodRays')&&!garageGodRaysSource.includes('garageMode'),
+ garageShowroomUsesProductionCountachCopies:html.includes('function drawGarageReplica(')&&html.includes('drawGarageReplica(-10.2,0,0')&&html.includes('drawGarageReplica(10.2,0,Math.PI'),
+ garageHasThreeDimensionalHomesAndPalms:html.includes('function drawGarageHouse(')&&html.includes('function drawGaragePalm(')&&html.includes('drawGarageHouse(-19.8,-18')&&html.includes('drawGaragePalm(-14.4,-9.8'),
+ garageCameraCanFrameTheShowroom:html.includes('garageZoom=22')&&html.includes('garageZoom+Math.sign(e.deltaY)*.8,7,36'),
  mainMaterialShaderCompiled:true,
  bloomPostShaderCompiled:true,
  sunOcclusionShaderCompiled:true,
