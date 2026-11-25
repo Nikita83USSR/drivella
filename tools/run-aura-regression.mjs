@@ -58,7 +58,7 @@ try {
   assert(synthetic.pass, 'Synthetic occlusion/bloom test failed: ' + JSON.stringify(synthetic));
 
   pageErrors.length = 0;
-  await page.goto(baseUrl + '/index.html', { waitUntil: 'load' });
+  await page.goto(baseUrl + '/index.html', { waitUntil: 'domcontentloaded', timeout: 20000 });
   await page.waitForFunction(() => {
     const label = document.querySelector('#version-label')?.textContent || '';
     return label.includes('v0.19.01') || Boolean(document.querySelector('#boot-status')?.textContent?.startsWith('ОШИБКА ЗАПУСКА'));
