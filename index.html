@@ -1234,7 +1234,7 @@ function lampFrontPoint(x,t,offset=0){
 }
 function lampRearPoint(x){return [x,hoodSurfaceY(x,POP_LAMP_Z_REAR)-.037,POP_LAMP_Z_REAR];}
 function pushLampQuad(out,a,b,c,d){out.push(...a,...b,...c,...a,...c,...d);}
-const COUNTACH_FOG_LAMP_CENTERS=[[-.944,.621,2.588],[-.739,.623,2.588],[.739,.623,2.588],[.944,.621,2.588]];
+const COUNTACH_FOG_LAMP_CENTERS=[[-0.944,0.621,2.588],[-0.739,0.623,2.588],[0.739,0.623,2.588],[0.944,0.621,2.588]];
 const COUNTACH_FOG_LAMP_NORMAL=[0,.925,.38];
 function makeCountachFogLampQuad(center,halfWidth,halfHeight,normalOffset){
  const out=[],[cx,cy,cz]=center,upY=.38,upZ=-.925,nY=.925,nZ=.38;
