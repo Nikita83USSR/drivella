@@ -118,9 +118,9 @@
 <body>
 <canvas id="scene"></canvas><canvas id="sun"></canvas><canvas id="flare"></canvas>
 <div id="hud">
- <div class="top"><div class="logo">DRIVELLA<small>3D SYNTHWAVE DRIFT RACING</small></div><div class="version-label" id="version-label">v0.18.78 · BUILD 144</div><div class="stat">DISTANCE<b id="distance">000.0 KM</b></div><div class="stat">LOCATION<b>VIOLET COAST</b></div></div>
+ <div class="top"><div class="logo">DRIVELLA<small>3D SYNTHWAVE DRIFT RACING</small></div><div class="version-label" id="version-label">v0.18.79 · BUILD 145</div><div class="stat">DISTANCE<b id="distance">000.0 KM</b></div><div class="stat">LOCATION<b>VIOLET COAST</b></div></div>
  <div class="right"><div id="speed">000 <span>KM/H</span></div><div id="direction">▶ FORWARD</div><div id="music">♫ MUSIC SCANNING…</div></div>
- <div class="bottom"><div class="hint"><strong>W / ↑</strong> ACCELERATE　<strong>S / ↓</strong> BRAKE / REVERSE<br><strong>A / ←　D / →</strong> STEER　<strong>SPACE</strong> HANDBRAKE　<strong>C</strong> CAMERA　<strong>HOLD + DRAG LMB</strong> LOOK　<strong>L</strong> LIGHTS　<strong>K</strong> WIREFRAME</div><div class="build-credit"><span>3D NEON HIGHWAY // BUILD 144</span><a class="asset-credit" href="https://sketchfab.com/3d-models/low-poly-lamborghini-countach-c9b28a4ad5c74649a09afa613dd3fae1" target="_blank" rel="noopener noreferrer">Original model: 3DShinobi · Sketchfab · CC BY · modified for DRIVELLA</a></div></div>
+ <div class="bottom"><div class="hint"><strong>W / ↑</strong> ACCELERATE　<strong>S / ↓</strong> BRAKE / REVERSE<br><strong>A / ←　D / →</strong> STEER　<strong>SPACE</strong> HANDBRAKE　<strong>C</strong> CAMERA　<strong>HOLD + DRAG LMB</strong> LOOK　<strong>L</strong> LIGHTS　<strong>K</strong> WIREFRAME</div><div class="build-credit"><span>3D NEON HIGHWAY // BUILD 145</span><a class="asset-credit" href="https://sketchfab.com/3d-models/low-poly-lamborghini-countach-c9b28a4ad5c74649a09afa613dd3fae1" target="_blank" rel="noopener noreferrer">Original model: 3DShinobi · Sketchfab · CC BY · modified for DRIVELLA</a></div></div>
 </div>
 <div id="fps-counter" aria-live="off">FPS --</div>
 <div id="effects-menu" aria-hidden="true">
@@ -173,10 +173,10 @@
 <script>
 (()=>{
 'use strict';
-const VERSION='v0.18.78',BUILD='144';
+const VERSION='v0.18.79',BUILD='145';
 const canvas=document.getElementById('scene'),gl=canvas.getContext('webgl',{antialias:true,alpha:true}),sun=document.getElementById('sun'),sctx=sun.getContext('2d'),flare=document.getElementById('flare'),fctx=flare.getContext('2d');
 const $=id=>document.getElementById(id);
-let countachModel=null,countachModelReady=false,countachBodyPaintSurfaceTriangles=[];
+let countachModel=null,countachModelReady=false;
 const clamp=(v,a,b)=>Math.max(a,Math.min(b,v));
 function reportStartupError(message){
  const status=$('boot-status');
@@ -524,7 +524,6 @@ async function loadCountachModel(){
   const raw=new Uint8Array(await new Response(stream).arrayBuffer());
   if(raw.byteLength!==meta.rawBytes)throw new Error('Нарушена целостность геометрии Countach');
   const view=new DataView(raw.buffer,raw.byteOffset,raw.byteLength),model={wheelCenters:meta.wheelCenters};
-  countachBodyPaintSurfaceTriangles=[];
   const mirrorX=data=>{
    const mirrored=new Float32Array(data.length);
    for(let i=0;i<data.length;i+=9){
@@ -569,7 +568,6 @@ async function loadCountachModel(){
      Math.abs(p[0])>=.62&&Math.abs(p[0])<=1.07&&p[1]>=.57&&p[1]<=.68&&p[2]>=2.47&&p[2]<=2.71
     );
     if(oldLowerBlackHeadlampPanel){for(const p of triangle)frontLowerBodyColorData.push(...p);removedLowerBlackPanels++;continue;}
-    if(part.name==='bodyPaint')countachBodyPaintSurfaceTriangles.push(triangle);
     for(const p of triangle){data[writeAt++]=p[0];data[writeAt++]=p[1];data[writeAt++]=p[2];}
    }
    const geometry=writeAt===data.length?data:data.slice(0,writeAt);
@@ -584,9 +582,6 @@ async function loadCountachModel(){
    if(part.name==='sideMirror_bodyPlastic')model.sideMirror_bodyPlasticLeft=mesh(mirrorX(geometry));
   }
   countachModel=model;countachModelReady=true;
-  // Rebuild the moving painted lamp caps against the imported Countach hood mesh, not the generic profile.
-  popLampCapL=makeLampCap(-1,countachBodyPaintSurfaceYAt);
-  popLampCapR=makeLampCap(1,countachBodyPaintSurfaceYAt);
   const status=$('boot-status');if(status)status.textContent='COUNTACH MODEL LOADED';
  }catch(error){
   countachModelReady=false;
@@ -1061,36 +1056,7 @@ function makeLampTrianglePod(side){
  pushLampQuad(out,A0,A1,B1,B0);
  return mesh(out);
 }
-function countachBodyPaintSurfaceYAt(x,z){
- let surfaceY=-Infinity,nearestDistanceSq=Infinity,nearestY=null;
- for(const tri of countachBodyPaintSurfaceTriangles){
-  const a=tri[0],b=tri[1],c=tri[2];
-  const den=(b[2]-c[2])*(a[0]-c[0])+(c[0]-b[0])*(a[2]-c[2]);
-  if(Math.abs(den)>1e-10){
-   const wa=((b[2]-c[2])*(x-c[0])+(c[0]-b[0])*(z-c[2]))/den;
-   const wb=((c[2]-a[2])*(x-c[0])+(a[0]-c[0])*(z-c[2]))/den;
-   const wc=1-wa-wb;
-   if(wa>=-1e-5&&wb>=-1e-5&&wc>=-1e-5){
-    const y=wa*a[1]+wb*b[1]+wc*c[1];
-    if(y>surfaceY)surfaceY=y;
-    continue;
-   }
-  }
-  // If the sample falls on a removed-panel boundary, follow the nearest real hood edge.
-  for(const [u,v] of [[a,b],[b,c],[c,a]]){
-   const dx=v[0]-u[0],dz=v[2]-u[2],lengthSq=dx*dx+dz*dz;
-   const t=lengthSq>1e-12?clamp(((x-u[0])*dx+(z-u[2])*dz)/lengthSq,0,1):0;
-   const qx=u[0]+dx*t,qz=u[2]+dz*t,ox=x-qx,oz=z-qz,distanceSq=ox*ox+oz*oz;
-   if(distanceSq<nearestDistanceSq){
-    nearestDistanceSq=distanceSq;nearestY=u[1]+(v[1]-u[1])*t;
-   }
-  }
- }
- if(surfaceY>-Infinity)return surfaceY;
- if(nearestY!==null&&nearestDistanceSq<.12*.12)return nearestY;
- return hoodSurfaceY(x,z);
-}
-function makeLampCap(side,surfaceY=hoodSurfaceY){
+function makeLampCap(side){
  const outline=[[side*.423,POP_LAMP_Z_REAR],[side*.877,POP_LAMP_Z_REAR],[side*.905,POP_LAMP_Z_REAR+.028],[side*.905,POP_LAMP_Z_FRONT-.028],[side*.877,POP_LAMP_Z_FRONT],[side*.423,POP_LAMP_Z_FRONT],[side*.395,POP_LAMP_Z_FRONT-.028],[side*.395,POP_LAMP_Z_REAR+.028]];
  // Fit the cap against the real stowed transform, including the mount's X/Z scaling.
  const closedTransform=countachClosedHeadlampTransform(side);
@@ -1098,7 +1064,7 @@ function makeLampCap(side,surfaceY=hoodSurfaceY){
   let lo=0,hi=1.5;
   for(let i=0;i<30;i++){
    const y=(lo+hi)*.5,world=transformCountachLampPoint(closedTransform,[x,y,z]);
-   const gap=world[1]-surfaceY(world[0],world[2]);
+   const gap=world[1]-hoodSurfaceY(world[0],world[2]);
    if(gap<-.003)lo=y;else hi=y;
   }
   return (lo+hi)*.5;
@@ -1145,7 +1111,7 @@ function makeLampProjectorCore(side){
  return mesh(out);
 }
 const popLampHousingL=makeLampTrianglePod(-1),popLampHousingR=makeLampTrianglePod(1);
-let popLampCapL=makeLampCap(-1),popLampCapR=makeLampCap(1);
+const popLampCapL=makeLampCap(-1),popLampCapR=makeLampCap(1);
 const popLampFrontL=makeLampFrontPlate(-1),popLampFrontR=makeLampFrontPlate(1);
 const popLampBezelL=makeLampBezel(-1),popLampBezelR=makeLampBezel(1);
 const popLampLensL=makeLampLens(-1),popLampLensR=makeLampLens(1);
