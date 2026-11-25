@@ -57,11 +57,11 @@ try {
   await page.goto(baseUrl + '/tools/game-shader-compile.html', { waitUntil: 'load', timeout: 20000 });
   await page.waitForFunction(() => Boolean(window.__GAME_SHADER_RESULT__), null, { timeout: 20000 });
   const result = await page.evaluate(() => window.__GAME_SHADER_RESULT__);
-  await page.screenshot({ path: 'artifacts/sun-bloom-build179.png', fullPage: true });
-  console.log('PRODUCTION SHADER + COUNTACH GEOMETRY REGRESSION\n' + JSON.stringify(result, null, 2));
+  await page.screenshot({ path: 'artifacts/vehicle-lighting-build180.png', fullPage: true });
+  console.log('PRODUCTION SHADER + VEHICLE LIGHTING REGRESSION\n' + JSON.stringify(result, null, 2));
   assert(result.pass, 'Production shader regression failed: ' + JSON.stringify(result));
   assert(pageErrors.length === 0, 'Browser page errors: ' + pageErrors.join('\n'));
-  console.log('ALL SHADER REGRESSION CHECKS PASSED');
+  console.log('ALL SHADER AND VEHICLE LIGHTING CHECKS PASSED');
   const metaScript = await readFile('assets/countach_model_0.js', 'utf8');
   const metaMatch = metaScript.match(/window\.DRIVELLA_COUNTACH_META=(\{[\s\S]*?\});/);
   assert(metaMatch, 'Countach metadata JSON was not found');
@@ -103,10 +103,15 @@ try {
     }
     partBounds[part.name]=bounds;
   }
-  console.log('COUNTACH MODEL PART BOUNDS\\n'+JSON.stringify({partBounds,lowerLampPads},null,2));
-  assert(partBounds.bodyPaint && partBounds.bodyPlastic && lowerLampPads.length>0, 'Countach front geometry diagnostics are incomplete');
+  const productionIndex = await readFile('index.html', 'utf8');
+  const centresMatch = productionIndex.match(/const COUNTACH_FOG_LAMP_CENTERS=(\[[^;]+\]);/);
+  assert(centresMatch, 'Countach lower lamp source positions are missing');
+  const centres = JSON.parse(centresMatch[1]);
+  assert(centres.length===4 && lowerLampPads.length===8, 'Expected four lower lamps fitted over eight source bumper triangles');
+  for(const [x,y,z] of centres)assert(Math.abs(x)>=.62&&Math.abs(x)<=1.07&&y>=.57&&y<=.68&&z>=2.47&&z<=2.71,'Lower lamp is outside the imported Countach bumper pad: '+JSON.stringify([x,y,z]));
+  console.log('COUNTACH LOWER LIGHTS // PLACEMENT CHECK\\n'+JSON.stringify({centres,sourcePads:lowerLampPads.map(p=>p.center),bodyBounds:partBounds.bodyPaint,blackBounds:partBounds.bodyBlack},null,2));
 } catch (error) {
-  console.error('WIDE-BODY SUN BLOOM REGRESSION FAILED\n' + (error.stack || error));
+  console.error('VEHICLE LIGHTING REGRESSION FAILED\n' + (error.stack || error));
   console.error(serverOutput.join(''));
   process.exitCode = 1;
 } finally {
