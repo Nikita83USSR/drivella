@@ -19,6 +19,8 @@ async function waitForServer() {
   while (Date.now() < deadline) {
     try {
       const response = await fetch(baseUrl + '/tools/game-shader-compile.html');
+      // Consume the readiness response before reusing Undici's keep-alive socket.
+      await response.arrayBuffer();
       if (response.ok) return;
       lastError = new Error('HTTP ' + response.status);
     } catch (error) {
