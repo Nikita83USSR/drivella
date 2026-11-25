@@ -57,11 +57,11 @@ try {
   await page.goto(baseUrl + '/tools/game-shader-compile.html', { waitUntil: 'load', timeout: 20000 });
   await page.waitForFunction(() => Boolean(window.__GAME_SHADER_RESULT__), null, { timeout: 20000 });
   const result = await page.evaluate(() => window.__GAME_SHADER_RESULT__);
-  await page.screenshot({ path: 'artifacts/atmosphere-grading-build192-regression.png', fullPage: true });
-  console.log('PRODUCTION ATMOSPHERE + GPU LENS OPTICS + SCENE BLOOM + GOD RAYS + VEHICLE REGRESSION\n' + JSON.stringify(result, null, 2));
+  await page.screenshot({ path: 'artifacts/road-instancing-build193-regression.png', fullPage: true });
+  console.log('PRODUCTION ROAD INSTANCING + ATMOSPHERE + GPU LENS OPTICS + SCENE BLOOM + GOD RAYS + VEHICLE REGRESSION\n' + JSON.stringify(result, null, 2));
   assert(result.pass, 'Production shader regression failed: ' + JSON.stringify(result));
   assert(pageErrors.length === 0, 'Browser page errors: ' + pageErrors.join('\n'));
-  console.log('ALL ATMOSPHERE, GPU LENS OPTICS, SCENE BLOOM, GOD RAYS, SHADER AND VEHICLE CHECKS PASSED');
+  console.log('ALL ROAD INSTANCING, ATMOSPHERE, GPU LENS OPTICS, SCENE BLOOM, GOD RAYS, SHADER AND VEHICLE CHECKS PASSED');
   const metaScript = await readFile('assets/countach_model_0.js', 'utf8');
   const metaMatch = metaScript.match(/window\.DRIVELLA_COUNTACH_META=(\{[\s\S]*?\});/);
   assert(metaMatch, 'Countach metadata JSON was not found');
