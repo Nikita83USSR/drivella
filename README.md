@@ -292,3 +292,8 @@ Correct the BUILD 162 diagnostic so it no longer draws guide rings, radial arrow
 ### BUILD 166 — Direct solar light wrap
 
 The object aura no longer uses the half-resolution AO mask or a post-process edge reconstruction. It is computed directly for each visible environment fragment using the same projected sun centre/radius as the disc, with view-grazing emphasis at silhouettes. F4's object test paints visible fragments in the solar zone magenta through the same direct shader path. JavaScript syntax and source wiring are checked; WebGL runtime compilation and in-browser appearance still need confirmation. Version `v0.19.00` / BUILD 166.
+
+
+### BUILD 167 — Depth-aware sun occlusion and object-edge bloom
+
+The GPU sun is now composited through a depth-tested visible-scene mask, so semi-transparent cross-fading scenery occludes the disc and corona instead of letting them show through. Object bloom is generated from that same mask with an inward surface glow and a soft outward silhouette spill. F4 tests the bloom field itself. A Playwright/Chromium regression test now runs a synthetic translucent occluder scene and a live-game WebGL smoke test; CI uploads screenshots and probe values. Version `v0.19.01` / BUILD 167.
