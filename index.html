@@ -514,7 +514,16 @@ function cylinder(){
  }
  return mesh(a);
 }
-const wheel=cylinder();
+function makeWheelTread(){
+ const out=[],segments=28,point=(a,y)=>[Math.cos(a)*1.006,y,Math.sin(a)*1.006];
+ for(let row=0;row<2;row++)for(let i=0;i<segments;i++){
+  const base=i*Math.PI*2/segments+row*.055,half=Math.PI/segments*.30,y0=-.64+row*.66,y1=y0+.22;
+  const a=base-half,b=base+half,A=point(a,y0),B=point(b,y0),C=point(b,y1),D=point(a,y1);
+  out.push(...A,...B,...C,...A,...C,...D);
+ }
+ return mesh(out);
+}
+const wheel=cylinder(),wheelTread=makeWheelTread();
 function makeRidge(seed,count,width){
  let out=[],r=seed>>>0;const rand=()=>{r=(r*1664525+1013904223)>>>0;return r/4294967296;};
  for(let i=0;i<count;i++){const x=-width/2+i*width/count,span=width/count*(1.25+rand()*.8),peak=x+span*(.15+rand()*.7),h=.35+rand()*.65;out.push(x,0,0,peak,h,0,x+span,0,0);}return mesh(out);
@@ -719,18 +728,37 @@ function makeExhaustCore(){
  return mesh(out);
 }
 function makeWheelFace(){
- const out=[],seg=24,tri=(a,b,c)=>out.push(...a,...b,...c);
- for(const face of [-1,1]){
+ const out=[],seg=40,tri=(a,b,c)=>out.push(...a,...b,...c);
+ const point=(r,a,y)=>[Math.cos(a)*r,y,Math.sin(a)*r];
+ const ring=(outer,inner,y)=>{
   for(let i=0;i<seg;i++){
-   const a=i*Math.PI*2/seg,b=(i+1)*Math.PI*2/seg,p=[Math.cos(a),face*.10,Math.sin(a)],q=[Math.cos(b),face*.10,Math.sin(b)],p2=[Math.cos(a)*.72,face*.10,Math.sin(a)*.72],q2=[Math.cos(b)*.72,face*.10,Math.sin(b)*.72];
-   tri(p,p2,q2);tri(p,q2,q);
+   const a=i*Math.PI*2/seg,b=(i+1)*Math.PI*2/seg;
+   const A=point(outer,a,y),B=point(outer,b,y),C=point(inner,b,y),D=point(inner,a,y);
+   tri(A,B,C);tri(A,C,D);
+  }
+ };
+ for(const face of [-1,1]){
+  const y=face*.105;
+  ring(1,.88,y);ring(.86,.70,y*1.015);ring(.39,.29,y*1.04);
+  for(let k=0;k<5;k++){
+   const angle=k*Math.PI*2/5+.08,inner=.19,outer=.78;
+   const A=point(inner,angle-.17,face*.112),B=point(inner,angle+.17,face*.112);
+   const C=point(outer,angle+.075,face*.112),D=point(outer,angle-.075,face*.112);
+   tri(A,B,C);tri(A,C,D);
   }
   for(let k=0;k<5;k++){
-   const angle=k*Math.PI*2/5,half=.075,ri=.15,ro=.70,p1=[Math.cos(angle-half)*ri,face*.108,Math.sin(angle-half)*ri],p2=[Math.cos(angle+half)*ri,face*.108,Math.sin(angle+half)*ri],p3=[Math.cos(angle+half*.55)*ro,face*.108,Math.sin(angle+half*.55)*ro],p4=[Math.cos(angle-half*.55)*ro,face*.108,Math.sin(angle-half*.55)*ro];
-   tri(p1,p2,p3);tri(p1,p3,p4);
+   const angle=k*Math.PI*2/5,center=point(.315,angle,face*.116),r=.035;
+   for(let i=0;i<6;i++){
+    const a=angle+i*Math.PI/3,b=angle+(i+1)*Math.PI/3;
+    tri(center,point(.315+r,a,face*.116),point(.315+r,b,face*.116));
+   }
   }
-  for(let i=0;i<12;i++){const a=i*Math.PI*2/12,b=(i+1)*Math.PI*2/12,ri=.135;tri([0,face*.112,0],[Math.cos(a)*ri,face*.112,Math.sin(a)*ri],[Math.cos(b)*ri,face*.112,Math.sin(b)*ri]);}
- }return mesh(out);
+  for(let i=0;i<seg;i++){
+   const a=i*Math.PI*2/seg,b=(i+1)*Math.PI*2/seg;
+   tri([0,face*.116,0],point(.205,a,face*.116),point(.205,b,face*.116));
+  }
+ }
+ return mesh(out);
 }
 function makeMirrorShell(side){
  const out=[],outline=[[.50,-1],[.82,-.62],[.92,-.08],[.72,.55],[.34,.92],[-.30,.98],[-.76,.60],[-.94,.06],[-.72,-.56],[-.28,-.90]],inner=side*.14,outer=side;
@@ -1049,7 +1077,7 @@ const C={
  glass:[.012,.035,.075,1],glassLight:[.055,.17,.28,1],trim:[.012,.016,.026,1],
  tire:[.012,.014,.019,1],hub:[.55,.52,.68,1],brake:[.20,.20,.28,1],city:[.085,.045,.12,1],mount:[.08,.045,.14,1]
 };
-let keys={},headlightsUp=false,headlightDeploy=0,wireframeMode=false,started=false,paused=true,speed=0,playerX=0,steer=0,bodyRoll=0,distance=0,travelDistance=0,boost=0,carYaw=0,yawRate=0,lateralVelocity=0,driftIntensity=0,driftState=0,driftDirection=0,driftTimer=0,driftPeakSlip=0,countersteerTime=0,driftCooldown=0,handbrakePulse=0,previousHandbrake=false,previousSteerInput=0,wheelTravel=0,handbrakeActive=false,brakeLight=0,last=performance.now(),musicOn=true,track=0,trackOrder=[],trackPos=0,audio=null,musicPending=true,foundTracks=[],audioCtx=null,engineOsc=null,engineOsc2=null,engineGain=null,engineFilter=null,skidGain=null,skidFilter=null,roadGain=null,roadFilter=null,audioNoise=null;
+let keys={},headlightsUp=false,headlightDeploy=0,wireframeMode=false,started=false,paused=true,speed=0,playerX=0,steer=0,bodyRoll=0,distance=0,travelDistance=0,boost=0,carYaw=0,yawRate=0,lateralVelocity=0,driftIntensity=0,driftState=0,driftDirection=0,driftTimer=0,driftPeakSlip=0,countersteerTime=0,driftCooldown=0,handbrakePulse=0,previousHandbrake=false,previousSteerInput=0,wheelTravel={fl:0,fr:0,rl:0,rr:0},handbrakeActive=false,brakeLight=0,last=performance.now(),musicOn=true,track=0,trackOrder=[],trackPos=0,audio=null,musicPending=true,foundTracks=[],audioCtx=null,engineOsc=null,engineOsc2=null,engineGain=null,engineFilter=null,skidGain=null,skidFilter=null,roadGain=null,roadFilter=null,audioNoise=null;
 // One axis convention shared by controls, car movement, body lean and indicators.
 const STEER_AXIS=Object.freeze({left:-1,right:1,screenRight:1,bodyLean:-1});
 const DRIFT_STATE=Object.freeze({GRIP:0,INITIATION:1,DRIFT:2,RECOVERY:3});
@@ -1270,7 +1298,7 @@ function draw(shape,x,y,z,sx,sy,sz,color,yaw=0,roll=0,material=0){
   bindMesh(shape,model,color,0,material);
  }
  function drawCarPart(cx,cz,x,y,z,sx,sy,sz,color,yaw=0,shape=cube,material=1,spin=0,steering=0,steeringPivotX=null,vehicleShadowCaster=false,vehicleSolarShadowCaster=true){
- const isWheel=shape===wheel||shape===wheelFace;
+ const isWheel=shape===wheel||shape===wheelFace||shape===wheelTread;
  const localPosition=steeringPivotX===null?translate(x,y,z):matMul(translate(steeringPivotX,y,z),matMul(rotateY(steering),translate(x-steeringPivotX,0,0)));
  const localRotation=isWheel?matMul(rotateZ(Math.PI/2),rotateY(spin)):matIdentity();
  const model=matMul(translate(cx,0,cz),matMul(rotateY(yaw),matMul(rotateZ(bodyRoll),matMul(localPosition,matMul(localRotation,scale(sx,sy,sz))))));
@@ -1443,11 +1471,14 @@ function drawWorld(){
  drawCarMesh(doorSeamR,carX,carZ,[.025,.006,.018,1],yaw,0,false,false);
  // Raised wheel-arch overlays removed to leave the tyres unobstructed.
  // Four low-profile tyres with machined five-spoke alloy faces. Spin follows world travel.
- const wheelSpin=garageMode?0:-wheelTravel/WHEEL_RADIUS;
  for(const side of [-1,1])for(const wz of [-1.6375,1.6375]){
-  const wx=1.105,wy=WHEEL_CENTER_Y,tyreR=WHEEL_RADIUS,isFront=wz>0;
+  const wx=1.105,wy=WHEEL_CENTER_Y,tyreR=WHEEL_RADIUS,isFront=wz>0,wheelKey=(isFront?'f':'r')+(side<0?'l':'r');
+  const wheelSpin=garageMode?0:-wheelTravel[wheelKey]/WHEEL_RADIUS;
   const frontSteer=isFront&&!garageMode?getFrontWheelSteerAngle(side):0,steerPivotX=isFront?side*wx:null;
   drawCarPart(carX,carZ,side*wx,wy,wz,tyreR,.145,tyreR,C.tire,yaw,wheel,1,wheelSpin,frontSteer,steerPivotX);
+  drawCarPart(carX,carZ,side*wx,wy,wz,tyreR,.145,tyreR,[.035,.038,.046,1],yaw,wheelTread,1,wheelSpin,frontSteer,steerPivotX);
+  // Brake calipers stay fixed to the suspension while the tyre, rotor and alloy spin.
+  drawCarPart(carX,carZ,side*(wx+.105),wy+.012,wz+.115,.045,.16,.12,[.52,.025,.045,1],yaw,cube,1,0,frontSteer,steerPivotX);
   drawCarPart(carX,carZ,side*(wx+.128),wy,wz,.328,.020,.328,C.brake,yaw,wheelFace,1,wheelSpin,frontSteer,steerPivotX);
   drawCarPart(carX,carZ,side*(wx+.148),wy,wz,.318,.018,.318,C.hub,yaw,wheelFace,1,wheelSpin,frontSteer,steerPivotX);
   drawCarPart(carX,carZ,side*(wx+.163),wy,wz,.092,.020,.092,C.bodyLight,yaw,wheelFace,PAINT_MATERIAL,wheelSpin,frontSteer,steerPivotX);
@@ -1812,7 +1843,16 @@ function frame(now){
   distance+=worldVelocityZ*dt*WORLD_MOTION_SCALE;
   travelDistance+=Math.hypot(worldVelocityX,worldVelocityZ)*dt*WORLD_MOTION_SCALE;
   playerX=clamp(playerX+worldVelocityX*dt*WORLD_MOTION_SCALE-(roadX(distance)-oldRoadX),-10.5,10.5);
-  wheelTravel+=vLong*dt*WORLD_MOTION_SCALE;
+  const wheelRoll=(side,front)=>{
+   const axleZ=front?1.6375:-1.6375,localX=side*1.105;
+   const localForward=vLong-yawRate*localX,localSide=lateralVelocity+yawRate*axleZ;
+   const wheelAngle=front?getFrontWheelSteerAngle(side):0;
+   return localForward*Math.cos(wheelAngle)+localSide*Math.sin(wheelAngle);
+  };
+  wheelTravel.fl+=wheelRoll(-1,true)*dt*WORLD_MOTION_SCALE;
+  wheelTravel.fr+=wheelRoll(1,true)*dt*WORLD_MOTION_SCALE;
+  wheelTravel.rl+=wheelRoll(-1,false)*dt*WORLD_MOTION_SCALE;
+  wheelTravel.rr+=wheelRoll(1,false)*dt*WORLD_MOTION_SCALE;
   driftIntensity=clamp((updatedSlipAbs-.055)/.72,0,1);
   const lateralLoad=clamp(-lateralAccel/24,-1,1);
   const rollTarget=clamp(-lateralLoad*.10-steer*.012,-.12,.12);
