@@ -118,9 +118,9 @@
 <body>
 <canvas id="scene"></canvas><canvas id="sun"></canvas><canvas id="flare"></canvas>
 <div id="hud">
- <div class="top"><div class="logo">DRIVELLA<small>3D SYNTHWAVE DRIFT RACING</small></div><div class="version-label" id="version-label">v0.18.72 · BUILD 138</div><div class="stat">DISTANCE<b id="distance">000.0 KM</b></div><div class="stat">LOCATION<b>VIOLET COAST</b></div></div>
+ <div class="top"><div class="logo">DRIVELLA<small>3D SYNTHWAVE DRIFT RACING</small></div><div class="version-label" id="version-label">v0.18.73 · BUILD 139</div><div class="stat">DISTANCE<b id="distance">000.0 KM</b></div><div class="stat">LOCATION<b>VIOLET COAST</b></div></div>
  <div class="right"><div id="speed">000 <span>KM/H</span></div><div id="direction">▶ FORWARD</div><div id="music">♫ MUSIC SCANNING…</div></div>
- <div class="bottom"><div class="hint"><strong>W / ↑</strong> ACCELERATE　<strong>S / ↓</strong> BRAKE / REVERSE<br><strong>A / ←　D / →</strong> STEER　<strong>SPACE</strong> HANDBRAKE　<strong>C</strong> CAMERA　<strong>HOLD + DRAG LMB</strong> LOOK　<strong>L</strong> LIGHTS　<strong>K</strong> WIREFRAME</div><div class="build-credit"><span>3D NEON HIGHWAY // BUILD 138</span><a class="asset-credit" href="https://sketchfab.com/3d-models/low-poly-lamborghini-countach-c9b28a4ad5c74649a09afa613dd3fae1" target="_blank" rel="noopener noreferrer">Original model: 3DShinobi · Sketchfab · CC BY · modified for DRIVELLA</a></div></div>
+ <div class="bottom"><div class="hint"><strong>W / ↑</strong> ACCELERATE　<strong>S / ↓</strong> BRAKE / REVERSE<br><strong>A / ←　D / →</strong> STEER　<strong>SPACE</strong> HANDBRAKE　<strong>C</strong> CAMERA　<strong>HOLD + DRAG LMB</strong> LOOK　<strong>L</strong> LIGHTS　<strong>K</strong> WIREFRAME</div><div class="build-credit"><span>3D NEON HIGHWAY // BUILD 139</span><a class="asset-credit" href="https://sketchfab.com/3d-models/low-poly-lamborghini-countach-c9b28a4ad5c74649a09afa613dd3fae1" target="_blank" rel="noopener noreferrer">Original model: 3DShinobi · Sketchfab · CC BY · modified for DRIVELLA</a></div></div>
 </div>
 <div id="fps-counter" aria-live="off">FPS --</div>
 <div id="effects-menu" aria-hidden="true">
@@ -173,7 +173,7 @@
 <script>
 (()=>{
 'use strict';
-const VERSION='v0.18.72',BUILD='138';
+const VERSION='v0.18.73',BUILD='139';
 const canvas=document.getElementById('scene'),gl=canvas.getContext('webgl',{antialias:true,alpha:true}),sun=document.getElementById('sun'),sctx=sun.getContext('2d'),flare=document.getElementById('flare'),fctx=flare.getContext('2d');
 const $=id=>document.getElementById(id);
 let countachModel=null,countachModelReady=false;
@@ -1363,98 +1363,37 @@ function drawCountachWheelPart(shape,cx,cz,x,y,z,color,yaw,spin,steering=0,mater
  bindMesh(shape,model,color,1,material,false,false);
 }
 
-const COUNTACH_HEADLAMP_BULBS=[
- [-.9571,.7607,2.4825],[-.7424,.7617,2.4822],
- [.7424,.7617,2.4822],[.9571,.7607,2.4825]
-];
-function pushCountachHeadlampTriangle(out,a,b,c,side=1,reverse=false){
- const flip=(side<0)!==reverse;
- if(flip)out.push(...a,...c,...b);else out.push(...a,...b,...c);
-}
-function makeCountachHeadlampHousing(side){
- const rearZ=COUNTACH_HEADLIGHT_HINGE_Z,frontZ=2.4510;
- const outline=(x0,x1,y0,y1,z,cut)=>[
-  [x0+cut,y0,z],[x1-cut,y0,z],[x1,y0+cut,z],[x1,y1-cut,z],
-  [x1-cut,y1,z],[x0+cut,y1,z],[x0,y1-cut,z],[x0,y0+cut,z]
- ];
- const front=outline(.615,1.085,.644,.846,frontZ,.018).map(p=>[p[0]*side,p[1],p[2]]);
- const rear=outline(.646,1.054,.695,.822,rearZ,.012).map(p=>[p[0]*side,p[1],p[2]]);
- const out=[],center=pts=>pts.reduce((p,v)=>[p[0]+v[0]/pts.length,p[1]+v[1]/pts.length,p[2]+v[2]/pts.length],[0,0,0]);
- const fc=center(front),rc=center(rear);
- for(let i=0;i<front.length;i++){
-  const j=(i+1)%front.length;
-  // Chamfered optical face, rear closing plate and tapered perimeter walls.
-  pushCountachHeadlampTriangle(out,fc,front[i],front[j],side,false);
-  pushCountachHeadlampTriangle(out,rc,rear[j],rear[i],side,false);
-  pushCountachHeadlampTriangle(out,rear[i],rear[j],front[j],side,false);
-  pushCountachHeadlampTriangle(out,rear[i],front[j],front[i],side,false);
- }
- return mesh(out);
-}
-function makeCountachHeadlampLid(side){
- const out=[];
- const rearL=[side*.658,.824,COUNTACH_HEADLIGHT_HINGE_Z],rearR=[side*1.042,.824,COUNTACH_HEADLIGHT_HINGE_Z];
- const frontL=[side*.633,.848,2.4510],frontR=[side*1.067,.848,2.4510];
- // Painted upper skin follows the imported bonnet's sampled rise from the hinge to the nose.
- // Its orientation is part of the same rigid pod: stowed it masks the optics; deployed it remains the top of the raised module.
- pushCountachHeadlampTriangle(out,rearL,frontR,rearR,side,false);
- pushCountachHeadlampTriangle(out,rearL,frontL,frontR,side,false);
- return mesh(out);
-}
-const countachHeadlampLidL=makeCountachHeadlampLid(-1);
-const countachHeadlampLidR=makeCountachHeadlampLid(1);
-function makeCountachHeadlampBezels(side){
- const out=[],segments=32,outer=.087,inner=.0795,zBack=2.452,zFront=2.459;
- const centers=[[.7424,.7617],[.9571,.7607]];
- for(const [sourceX,cy] of centers){
-  for(let i=0;i<segments;i++){
-   const a=i*Math.PI*2/segments,b=(i+1)*Math.PI*2/segments;
-   const pt=(r,t,z)=>[side*(sourceX+Math.cos(t)*r),cy+Math.sin(t)*r,z];
-   const oa=pt(outer,a,zFront),ob=pt(outer,b,zFront),ib=pt(inner,b,zFront),ia=pt(inner,a,zFront);
-   const OBA=pt(outer,a,zBack),OBB=pt(outer,b,zBack),IBA=pt(inner,a,zBack),IBB=pt(inner,b,zBack);
-   // Front annulus, outer wall, and inner wall create a real metal collar around each lens.
-   pushCountachHeadlampTriangle(out,oa,ob,ib,side,false);
-   pushCountachHeadlampTriangle(out,oa,ib,ia,side,false);
-   pushCountachHeadlampTriangle(out,OBA,OBB,ob,side,false);
-   pushCountachHeadlampTriangle(out,OBA,ob,oa,side,false);
-   pushCountachHeadlampTriangle(out,IBA,ib,IBB,side,false);
-   pushCountachHeadlampTriangle(out,IBA,ia,ib,side,false);
-  }
- }
- return mesh(out);
-}
-const countachHeadlampHousingL=makeCountachHeadlampHousing(-1);
-const countachHeadlampHousingR=makeCountachHeadlampHousing(1);
-const countachHeadlampBezelsL=makeCountachHeadlampBezels(-1);
-const countachHeadlampBezelsR=makeCountachHeadlampBezels(1);
-function countachHeadlightAngle(){
- const d=clamp(headlightDeploy,0,1),ease=d*d*(3-2*d);
- return Math.PI*.25*(1-ease);
-}
-function countachHeadlightHinge(){
+function countachLegacyHeadlampMount(side){
+ // The legacy optical face is built at 45° in its stowed coordinate system.
+ // Counter-rotate it by 45° so the current Countach hinge (45° closed -> 0° open) remains authoritative.
+ // The mapped projector centre is fitted to the source Countach lamp datum; scale only the pod footprint.
+ const mountScaleX=.9215686274509803,mountScaleZ=.5687,mountOffsetX=.25098,mountOffsetY=-.0054;
  return matMul(
-  translate(0,COUNTACH_HEADLIGHT_HINGE_Y,COUNTACH_HEADLIGHT_HINGE_Z),
-  matMul(rotateX(countachHeadlightAngle()),translate(0,-COUNTACH_HEADLIGHT_HINGE_Y,-COUNTACH_HEADLIGHT_HINGE_Z))
+  translate(side*mountOffsetX,COUNTACH_HEADLIGHT_HINGE_Y+mountOffsetY,COUNTACH_HEADLIGHT_HINGE_Z),
+  matMul(
+   scale(mountScaleX,1,mountScaleZ),
+   matMul(rotateX(-Math.PI*.25),translate(0,-POP_HINGE_Y,-POP_HINGE_Z))
+  )
  );
 }
-
-function drawCountachHeadlampAssembly(modelParts,side,cx,cz,color,yaw=0){
- // One shared matrix owns the shell, painted cover, metal collars and imported twin-lens mesh.
- const hinge=countachHeadlightHinge();
- const model=matMul(translate(cx,0,cz),matMul(rotateY(yaw),matMul(rotateZ(bodyRoll),hinge)));
- const housing=side<0?countachHeadlampHousingL:countachHeadlampHousingR;
- const lid=side<0?countachHeadlampLidL:countachHeadlampLidR;
- const bezels=side<0?countachHeadlampBezelsL:countachHeadlampBezelsR;
- const lenses=side<0?modelParts.headlampL:modelParts.headlampR;
- bindMesh(housing,model,[.018,.024,.034,1],1,0,false,false);
- bindMesh(lid,model,C.body,1,PAINT_MATERIAL,true,true);
- bindMesh(bezels,model,[.42,.48,.58,1],1,2,false,false);
- bindMesh(lenses,model,color,1,8,false,false);
-}
-function drawCountachHingedMesh(shape,cx,cz,color,yaw=0,material=8){
- const hinge=countachHeadlightHinge();
- const model=matMul(translate(cx,0,cz),matMul(rotateY(yaw),matMul(rotateZ(bodyRoll),hinge)));
- bindMesh(shape,model,color,1,material,false,false);
+function drawCountachLegacyHeadlampAssembly(side,cx,cz,color,yaw=0){
+ // Restore the original seven-part lamp assembly; every part uses this exact same rigid mount and hinge.
+ const hinge=countachHeadlightHinge(),mount=countachLegacyHeadlampMount(side);
+ const model=matMul(translate(cx,0,cz),matMul(rotateY(yaw),matMul(rotateZ(bodyRoll),matMul(hinge,mount))));
+ const housing=side<0?popLampHousingL:popLampHousingR;
+ const front=side<0?popLampFrontL:popLampFrontR;
+ const bezel=side<0?popLampBezelL:popLampBezelR;
+ const lens=side<0?popLampLensL:popLampLensR;
+ const rings=side<0?popLampRingsL:popLampRingsR;
+ const core=side<0?popLampCoreL:popLampCoreR;
+ const cap=side<0?popLampCapL:popLampCapR;
+ bindMesh(housing,model,[.035,.043,.055,1],1,1,true,true);
+ bindMesh(front,model,[.012,.022,.038,1],1,1,false,true);
+ bindMesh(bezel,model,[.52,.56,.66,1],1,2,false,true);
+ bindMesh(lens,model,[.045,.115,.17,1],1,3,false,true);
+ bindMesh(rings,model,[.70,.78,.90,1],1,2,false,true);
+ bindMesh(core,model,color,1,8,false,true);
+ bindMesh(cap,model,C.bodyLight,1,PAINT_MATERIAL,true,true);
 }
 
 function matIdentity(){return [1,0,0,0,0,1,0,0,0,0,1,0,0,0,0,1];}
@@ -1606,12 +1545,12 @@ function drawWorld(){
    if(front)drawWheelPart('extra_NoMaterial',[.055,.065,.080,1],2);
   }
 
-  // Complete Countach pods move as one rigid assembly; H affects lens glow only, never scene lighting.
+  // Original DRIVELLA dual-projector pop-up lamps, fitted to the Countach datums and current rigid hinge.
   const lampDeployPower=clamp((headlightDeploy-.12)/.88,0,1);
   const lampPower=lampDeployPower*(headlightLightingEnabled?1:.10);
   const lampColor=[.48+1.0*lampPower,.58+1.0*lampPower,.72+1.0*lampPower,1];
-  drawCountachHeadlampAssembly(m,-1,carX,carZ,lampColor,yaw);
-  drawCountachHeadlampAssembly(m,1,carX,carZ,lampColor,yaw);
+  drawCountachLegacyHeadlampAssembly(-1,carX,carZ,lampColor,yaw);
+  drawCountachLegacyHeadlampAssembly(1,carX,carZ,lampColor,yaw);
  }else{
  // Continuous hull with broad painted planes and shader-driven clear-coat highlights.
  drawCarMesh(bodyMesh,carX,carZ,C.body,yaw,PAINT_MATERIAL,false,false);
@@ -1768,14 +1707,21 @@ function drawVehicleLensFlares(){
  const lampEase=clamp(headlightDeploy,0,1),lampSmooth=lampEase*lampEase*(3-2*lampEase),lampAngle=countachModelReady?countachHeadlightAngle():-Math.PI*.25*lampSmooth;
  const hinge=countachModelReady?countachHeadlightHinge():matMul(translate(0,POP_HINGE_Y,POP_HINGE_Z),matMul(rotateX(lampAngle),translate(0,-POP_HINGE_Y,-POP_HINGE_Z)));
  const lampWorld=matMul(bodyWorld,hinge),lampRotation=matMul(rotateY(yaw),matMul(rotateZ(roll),rotateX(lampAngle)));
- const lampNormal=direction(lampRotation,countachModelReady?[0,0,1]:[0,-POP_LAMP_DIAG,POP_LAMP_DIAG]);
  const lampPower=clamp((headlightDeploy-.12)/.88,0,1)*(headlightLightingEnabled?1:0);
  if(lampPower>.02){
   if(countachModelReady){
-   for(const bulb of COUNTACH_HEADLAMP_BULBS){
-    sources.push({kind:'headlight',p:point(lampWorld,bulb),n:lampNormal,c:[.91,.97,1],power:.64*lampPower});
+   // Four projector flares are transformed by the same legacy mount matrix as the visible optical cores.
+   for(const side of [-1,1]){
+    const moduleWorld=matMul(lampWorld,countachLegacyHeadlampMount(side));
+    const lampNormal=direction(moduleWorld,[0,0,1]),[x0,x1]=lampXBounds(side);
+    const centers=[x0+(x1-x0)*.34,x0+(x1-x0)*.66];
+    for(const cx of centers){
+     const bulb=lampFrontPoint(cx,POP_LAMP_FACE_H*.5,.013);
+     sources.push({kind:'headlight',p:point(moduleWorld,bulb),n:lampNormal,c:[.91,.97,1],power:.64*lampPower});
+    }
    }
   }else{
+   const lampNormal=direction(lampRotation,[0,-POP_LAMP_DIAG,POP_LAMP_DIAG]);
    const lampLocalL=lampFrontPoint(-.67,POP_LAMP_FACE_H*.5,.018),lampLocalR=lampFrontPoint(.67,POP_LAMP_FACE_H*.5,.018);
    sources.push({kind:'headlight',p:point(lampWorld,lampLocalL),n:lampNormal,c:[.91,.97,1],power:.64*lampPower});
    sources.push({kind:'headlight',p:point(lampWorld,lampLocalR),n:lampNormal,c:[.91,.97,1],power:.64*lampPower});
