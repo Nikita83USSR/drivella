@@ -115,9 +115,9 @@
 <body>
 <canvas id="scene"></canvas><canvas id="sun"></canvas><canvas id="flare"></canvas>
 <div id="hud">
- <div class="top"><div class="logo">DRIVELLA<small>3D SYNTHWAVE DRIFT RACING</small></div><div class="version-label" id="version-label">v0.18.66 · BUILD 132</div><div class="stat">DISTANCE<b id="distance">000.0 KM</b></div><div class="stat">LOCATION<b>VIOLET COAST</b></div></div>
+ <div class="top"><div class="logo">DRIVELLA<small>3D SYNTHWAVE DRIFT RACING</small></div><div class="version-label" id="version-label">v0.18.67 · BUILD 133</div><div class="stat">DISTANCE<b id="distance">000.0 KM</b></div><div class="stat">LOCATION<b>VIOLET COAST</b></div></div>
  <div class="right"><div id="speed">000 <span>KM/H</span></div><div id="direction">▶ FORWARD</div><div id="music">♫ MUSIC SCANNING…</div></div>
- <div class="bottom"><div class="hint"><strong>W / ↑</strong> ACCELERATE　<strong>S / ↓</strong> BRAKE / REVERSE<br><strong>A / ←　D / →</strong> STEER　<strong>SPACE</strong> HANDBRAKE　<strong>C</strong> CAMERA　<strong>HOLD + DRAG LMB</strong> LOOK　<strong>L</strong> LIGHTS　<strong>K</strong> WIREFRAME</div><div>3D NEON HIGHWAY // BUILD 132</div></div>
+ <div class="bottom"><div class="hint"><strong>W / ↑</strong> ACCELERATE　<strong>S / ↓</strong> BRAKE / REVERSE<br><strong>A / ←　D / →</strong> STEER　<strong>SPACE</strong> HANDBRAKE　<strong>C</strong> CAMERA　<strong>HOLD + DRAG LMB</strong> LOOK　<strong>L</strong> LIGHTS　<strong>K</strong> WIREFRAME</div><div>3D NEON HIGHWAY // BUILD 133</div></div>
 </div>
 <div id="fps-counter" aria-live="off">FPS --</div>
 <div id="effects-menu" aria-hidden="true">
@@ -151,7 +151,7 @@
 </div>
 <div id="tools-ui"><button id="cam-prev" aria-label="Previous camera">◀</button><span id="cam-label">CAM 2 · CLOSE</span><button id="cam-next" aria-label="Next camera">▶</button><button id="debug-toggle">DEBUG</button></div>
 <div id="debug-panel"><div class="debug-title">DRIVELLA DIAGNOSTICS</div><div id="debug-data">Initializing…</div></div>
-<div id="boot-screen"><div class="boot-content"><div class="boot-kicker">NIGHT DRIVE SYSTEMS // INITIALIZING</div><div class="boot-logo">DRIVELLA</div><div class="boot-subtitle">3D SYNTHWAVE DRIFT RACING</div><div class="boot-mark"></div><div class="boot-status" id="boot-status">BUILDING THE 3D WORLD</div><div class="boot-track"><div class="boot-progress" id="boot-progress"></div></div><div class="boot-meta"><span>3D ENGINE ONLINE</span><span id="boot-percent">00%</span></div><div class="boot-footer">ENGINE STARTUP // v0.18.66 · BUILD 132</div></div></div>
+<div id="boot-screen"><div class="boot-content"><div class="boot-kicker">NIGHT DRIVE SYSTEMS // INITIALIZING</div><div class="boot-logo">DRIVELLA</div><div class="boot-subtitle">3D SYNTHWAVE DRIFT RACING</div><div class="boot-mark"></div><div class="boot-status" id="boot-status">BUILDING THE 3D WORLD</div><div class="boot-track"><div class="boot-progress" id="boot-progress"></div></div><div class="boot-meta"><span>3D ENGINE ONLINE</span><span id="boot-percent">00%</span></div><div class="boot-footer">ENGINE STARTUP // v0.18.67 · BUILD 133</div></div></div>
 <div id="main-menu"><div class="menu-content"><div class="menu-brand">DRIVELLA GTS</div><div class="menu-sub">RIDE THE RETRO FUTURE</div><div class="menu-actions"><button class="menu-btn" id="menu-start">СТАРТ</button><button class="menu-btn" id="menu-garage">ГАРАЖ</button><button class="menu-btn" id="menu-options">НАСТРОЙКИ</button></div></div><div class="menu-footer">РАЗРАБОТЧИК — <b>НИКИТА МАРКИН</b></div></div>
 <div id="garage-screen"><div class="garage-head">ГАРАЖ // DRIVELLA GTS</div><div class="garage-copy">ТЕКУЩИЙ АВТОМОБИЛЬ<br>DRIVELLA GTS · RETRO GT COUPE<br>ПОКАЖИ ЕЁ СО ВСЕХ СТОРОН</div><div class="garage-controls"><button id="garage-back">← НАЗАД В МЕНЮ</button></div><div class="garage-tip">ЗАЖМИ И ТЯНИ — ВРАЩЕНИЕ<br>КОЛЁСИКО — ПРИБЛИЗИТЬ / ОТДАЛИТЬ</div></div>
 <div id="options-screen"><div class="options-head">ОПЦИИ</div><div class="options-card"><div class="option-row"><span>МУЗЫКА</span><button id="option-music">ВКЛЮЧЕНА</button></div><div class="option-row"><span>ГРОМКОСТЬ</span><input id="option-volume" type="range" min="0" max="100" value="52"></div><div class="option-row"><span>ЗВУК ДВИГАТЕЛЯ</span><button id="option-sfx">ВКЛЮЧЁН</button></div><div class="option-row"><span>КАМЕРА</span><span>КЛАВИШИ 1–4</span></div><button id="options-back" style="width:100%;margin-top:18px">← НАЗАД В МЕНЮ</button></div></div>
@@ -159,7 +159,7 @@
 <script>
 (()=>{
 'use strict';
-const VERSION='v0.18.66',BUILD='132';
+const VERSION='v0.18.67',BUILD='133';
 const canvas=document.getElementById('scene'),gl=canvas.getContext('webgl',{antialias:true,alpha:true}),sun=document.getElementById('sun'),sctx=sun.getContext('2d'),flare=document.getElementById('flare'),fctx=flare.getContext('2d');
 const $=id=>document.getElementById(id);
 const clamp=(v,a,b)=>Math.max(a,Math.min(b,v));
@@ -395,7 +395,7 @@ function renderShadowMap(){
 function projectCabinRoofFrontSeam(vp,carX,carZ,yaw,cam){
  const model=matMul(translate(carX,0,carZ),matMul(rotateY(yaw),matMul(rotateZ(bodyRoll),matIdentity())));
  const project=x=>{
-  const y=1.207,z=.275;
+  const y=1.157,z=.36;
   const wx=model[0]*x+model[4]*y+model[8]*z+model[12];
   const wy=model[1]*x+model[5]*y+model[9]*z+model[13];
   const wz=model[2]*x+model[6]*y+model[10]*z+model[14];
@@ -667,12 +667,12 @@ function makeCarHull(keys,wheelArches=false,flatRoof=false,windowOpenings=false,
  cap(rings[0],true);cap(rings[rings.length-1],false);return mesh(out);
 }
 const CABIN_ROOF_STATIONS=[
- // Straight, level roof side rail; side glass is a single plane just wider than the windscreen.
- {z:-1.42,w:.84,edge:1.205,crown:1.235},
- {z:-.92,w:.84,edge:1.205,crown:1.240},
- {z:-.30,w:.84,edge:1.205,crown:1.240},
- {z:.275,w:.84,edge:1.205,crown:1.235}
-];
+  // Lower, flatter Countach canopy with a wider roof rail and a long wedge windscreen.
+  {z:-1.30,w:.86,edge:1.155,crown:1.185},
+  {z:-.77,w:.86,edge:1.155,crown:1.190},
+  {z:-.18,w:.86,edge:1.155,crown:1.190},
+  {z:.36,w:.86,edge:1.155,crown:1.185}
+ ];
 function cabinRoofAt(z){
  const stations=CABIN_ROOF_STATIONS;
  let i=0;while(i<stations.length-2&&z>stations[i+1].z)i++;
@@ -759,7 +759,7 @@ function makeMirrorArm(side){
 const mirrorShellL=makeMirrorShell(-1),mirrorShellR=makeMirrorShell(1),mirrorFaceL=makeMirrorFace(-1),mirrorFaceR=makeMirrorFace(1),mirrorArmL=makeMirrorArm(-1),mirrorArmR=makeMirrorArm(1);function makeWheelArch(center,side){
  const out=[],steps=12;
  for(let i=0;i<steps;i++){
-  const d0=-WHEEL_RADIUS+2*WHEEL_RADIUS*i/steps,d1=-WHEEL_RADIUS+2*WHEEL_RADIUS*(i+1)/steps,y0=WHEEL_CENTER_Y+Math.sqrt(Math.max(0,WHEEL_RADIUS*WHEEL_RADIUS-d0*d0))+.045,y1=WHEEL_CENTER_Y+Math.sqrt(Math.max(0,WHEEL_RADIUS*WHEEL_RADIUS-d1*d1))+.045,x=side*1.205,x2=side*1.175;
+  const d0=-WHEEL_RADIUS+2*WHEEL_RADIUS*i/steps,d1=-WHEEL_RADIUS+2*WHEEL_RADIUS*(i+1)/steps,y0=WHEEL_CENTER_Y+Math.sqrt(Math.max(0,WHEEL_RADIUS*WHEEL_RADIUS-d0*d0))+.045,y1=WHEEL_CENTER_Y+Math.sqrt(Math.max(0,WHEEL_RADIUS*WHEEL_RADIUS-d1*d1))+.045,x=side*1.29,x2=side*1.26;
   const a=[x,y0,center+d0],b=[x2,y0-.012,center+d0],c=[x2,y1-.012,center+d1],d=[x,y1,center+d1];out.push(...a,...b,...c,...a,...c,...d);
  }return mesh(out);
 }
@@ -782,33 +782,34 @@ function makeArchLine(center,side,width,offset=.012){
  for(let i=0;i<=steps;i++){
   const z=center-.48+.96*i/steps,d=z-center;
   const y=WHEEL_CENTER_Y+Math.sqrt(Math.max(0,WHEEL_RADIUS*WHEEL_RADIUS-d*d))+.045;
-  pts.push([y,z,1.205+offset]);
+  pts.push([y,z,1.295+offset]);
  }
  return sideRibbon(side,pts,width);
 }
 // Scaled 1.25x from the design sheet: 5.75 x 2.475 x 1.40 game units.
 const bodyProfile=[
- {z:-2.875,w:1.24,floor:.20,side:.36,mid:.70,shoulder:.94,upper:1.00,top:1.00},
- {z:-2.70,w:1.29,floor:.20,side:.37,mid:.72,shoulder:.98,upper:1.00,top:1.00},
- {z:-2.20,w:1.23,floor:.18,side:.35,mid:.65,shoulder:.90,upper:.99,top:.99},
- {z:-1.6375,w:1.235,floor:.18,side:.34,mid:.68,shoulder:.96,upper:1.00,top:1.02},
- {z:-1.25,w:1.18,floor:.18,side:.33,mid:.65,shoulder:.88,upper:.97,top:.98},
- {z:-.70,w:1.12,floor:.18,side:.31,mid:.57,shoulder:.80,upper:.84,top:.86},
- {z:0,w:1.10,floor:.18,side:.30,mid:.55,shoulder:.77,upper:.82,top:.84},
- {z:.72,w:1.12,sideW:1.12,midW:1.10,shoulderW:1.02,upperW:.90,topW:.80,floor:.18,side:.31,mid:.57,shoulder:.81,upper:.85,top:.87},
- {z:.945,w:1.16,sideW:1.16,midW:1.12,shoulderW:1.05,upperW:.98,topW:.90,floor:.18,side:.32,mid:.61,shoulder:.84,upper:.914,top:.914},
- {z:1.31,w:1.20,sideW:1.20,midW:1.16,shoulderW:1.10,upperW:1.03,topW:.97,floor:.18,side:.34,mid:.65,shoulder:.86,upper:.915,top:.92},
- {z:1.6375,w:1.235,sideW:1.235,midW:1.18,shoulderW:1.12,upperW:1.05,topW:.99,floor:.18,side:.34,mid:.68,shoulder:.88,upper:.915,top:.92},
- {z:2.15,w:1.18,sideW:1.18,midW:1.14,shoulderW:1.08,upperW:1.02,topW:.98,floor:.18,side:.34,mid:.62,shoulder:.84,upper:.90,top:.91},
- {z:2.55,w:1.08,sideW:1.08,midW:1.05,shoulderW:1.02,upperW:.98,topW:.95,floor:.18,side:.29,mid:.51,shoulder:.72,upper:.74,top:.74},
- {z:2.875,w:1.00,sideW:1.00,midW:.97,shoulderW:.94,upperW:.91,topW:.87,floor:.18,side:.27,mid:.42,shoulder:.62,upper:.66,top:.66}
+ // Countach wedge: low pointed nose, flat rear engine deck and broad rear haunches.
+ {z:-2.875,w:1.28,floor:.20,side:.36,mid:.70,shoulder:.99,upper:1.015,top:1.015},
+ {z:-2.70,w:1.34,floor:.20,side:.37,mid:.75,shoulder:1.06,upper:1.075,top:1.075},
+ {z:-2.20,w:1.31,floor:.18,side:.35,mid:.70,shoulder:1.00,upper:1.04,top:1.04},
+ {z:-1.6375,w:1.34,floor:.18,side:.34,mid:.72,shoulder:1.04,upper:1.09,top:1.10},
+ {z:-1.25,w:1.26,floor:.18,side:.33,mid:.68,shoulder:.96,upper:1.015,top:1.02},
+ {z:-.70,w:1.17,floor:.18,side:.31,mid:.58,shoulder:.84,upper:.90,top:.91},
+ {z:0,w:1.15,floor:.18,side:.30,mid:.55,shoulder:.80,upper:.87,top:.88},
+ {z:.72,w:1.18,sideW:1.18,midW:1.15,shoulderW:1.07,upperW:.95,topW:.86,floor:.18,side:.31,mid:.57,shoulder:.84,upper:.89,top:.90},
+ {z:.945,w:1.22,sideW:1.22,midW:1.18,shoulderW:1.12,upperW:1.04,topW:.96,floor:.18,side:.32,mid:.61,shoulder:.89,upper:.94,top:.94},
+ {z:1.31,w:1.26,sideW:1.26,midW:1.21,shoulderW:1.16,upperW:1.08,topW:1.00,floor:.18,side:.34,mid:.65,shoulder:.92,upper:.95,top:.96},
+ {z:1.6375,w:1.30,sideW:1.30,midW:1.24,shoulderW:1.19,upperW:1.10,topW:1.03,floor:.18,side:.34,mid:.68,shoulder:.95,upper:.97,top:.98},
+ {z:2.15,w:1.22,sideW:1.22,midW:1.17,shoulderW:1.10,upperW:1.02,topW:.95,floor:.18,side:.33,mid:.60,shoulder:.82,upper:.83,top:.84},
+ {z:2.55,w:1.15,sideW:1.15,midW:1.12,shoulderW:1.06,upperW:.98,topW:.92,floor:.18,side:.29,mid:.49,shoulder:.70,upper:.71,top:.71},
+ {z:2.875,w:1.10,sideW:1.10,midW:1.08,shoulderW:1.02,upperW:.94,topW:.88,floor:.18,side:.27,mid:.40,shoulder:.59,upper:.62,top:.62}
  ];
 // Remove the upper side skin behind the glazing as well; otherwise the original body shell shows through as a second cabin.
 // One vertical side-glass plane per side. Top corners overlap the roof edge by 4–5 mm to close raster seams.
-const CABIN_GLASS_TOP_X=.84,CABIN_GLASS_TOP_Y=1.209;
-const CABIN_GLASS_BOTTOM_X=1.08,CABIN_GLASS_BOTTOM_Y=.90;
-const CABIN_GLASS_FRONT_TOP_Z=.270,CABIN_GLASS_REAR_TOP_Z=-1.415;
-const CABIN_GLASS_FRONT_BOTTOM_Z=.945,CABIN_GLASS_REAR_BOTTOM_Z=-1.6375;
+const CABIN_GLASS_TOP_X=.86,CABIN_GLASS_TOP_Y=1.159;
+const CABIN_GLASS_BOTTOM_X=1.10,CABIN_GLASS_BOTTOM_Y=.895;
+const CABIN_GLASS_FRONT_TOP_Z=.36,CABIN_GLASS_REAR_TOP_Z=-1.30;
+const CABIN_GLASS_FRONT_BOTTOM_Z=.945,CABIN_GLASS_REAR_BOTTOM_Z=-1.55;
 function cabinWindowUpperYAt(z){
  if(z>CABIN_GLASS_FRONT_TOP_Z){
   const t=clamp((z-CABIN_GLASS_FRONT_TOP_Z)/(CABIN_GLASS_FRONT_BOTTOM_Z-CABIN_GLASS_FRONT_TOP_Z),0,1);
@@ -850,7 +851,7 @@ function makeCabinPillar(side,t,width){
 const sideGlassL=makeCabinSideGlass(-1);
 const sideGlassR=makeCabinSideGlass(1);
 const sideAPillarL=makeCabinPillar(-1,0,.070),sideAPillarR=makeCabinPillar(1,0,.070);
-const sideBPillarL=makeCabinPillar(-1,.52,.075),sideBPillarR=makeCabinPillar(1,.52,.075);
+const sideBPillarL=makeCabinPillar(-1,.58,.075),sideBPillarR=makeCabinPillar(1,.58,.075);
 const sideCPillarL=makeCabinPillar(-1,1,.075),sideCPillarR=makeCabinPillar(1,1,.075);
 function makeCabinRoofRail(side){
  const points=CABIN_ROOF_STATIONS.map(p=>[p.edge+.006,p.z,p.w+.020]);
@@ -867,7 +868,7 @@ const windshield=quad(
  [CABIN_GLASS_TOP_X,CABIN_GLASS_TOP_Y,CABIN_GLASS_FRONT_TOP_Z]
 );
 // Rear screen closes the cabin against the actual rear deck top profile.
-const rearRoof=cabinRoofAt(-1.42);
+const rearRoof=cabinRoofAt(-1.30);
 const rearGlass=quad(
  [-CABIN_GLASS_TOP_X,CABIN_GLASS_TOP_Y,CABIN_GLASS_REAR_TOP_Z],
  [-CABIN_GLASS_BOTTOM_X,CABIN_GLASS_BOTTOM_Y,CABIN_GLASS_REAR_BOTTOM_Z],
@@ -875,14 +876,14 @@ const rearGlass=quad(
  [CABIN_GLASS_TOP_X,CABIN_GLASS_TOP_Y,CABIN_GLASS_REAR_TOP_Z]
 );
 // Clean rear-quarter intake, fine door shut-lines and lower sills.
-const [sideVentL,sideVentR]=mirroredQuadPair([-1.075,.755,-.82],[-1.075,.755,-1.20],[-1.135,.575,-1.17],[-1.135,.575,-.86]);
-const [sideVentSlat1L,sideVentSlat1R]=mirroredQuadPair([-1.083,.710,-.88],[-1.083,.710,-1.145],[-1.096,.695,-1.14],[-1.096,.695,-.885]);
-const [sideVentSlat2L,sideVentSlat2R]=mirroredQuadPair([-1.105,.650,-.89],[-1.105,.650,-1.13],[-1.118,.635,-1.125],[-1.118,.635,-.895]);
+const [sideVentL,sideVentR]=mirroredQuadPair([-1.145,.775,-.56],[-1.225,.775,-1.46],[-1.300,.405,-1.34],[-1.255,.405,-.70]);
+const [sideVentSlat1L,sideVentSlat1R]=mirroredQuadPair([-1.175,.710,-.65],[-1.245,.710,-1.39],[-1.270,.682,-1.35],[-1.205,.682,-.69]);
+const [sideVentSlat2L,sideVentSlat2R]=mirroredQuadPair([-1.195,.600,-.70],[-1.270,.600,-1.34],[-1.292,.572,-1.30],[-1.230,.572,-.73]);
 const doorSeamL=sideRibbon(-1,[[.78,.85,.95],[.72,-.68,1.03],[.40,-.78,1.12],[.39,.82,1.12]],.010);
 const doorSeamR=sideRibbon(1,[[.78,.85,.95],[.39,.82,1.12],[.40,-.78,1.12],[.72,-.68,1.03]],.010);
 const sideSillL=makeProfileLine(bodyProfile,-1,-2.68,2.68,'side',1.012,.045,.014);
 const sideSillR=makeProfileLine(bodyProfile,1,-2.68,2.68,'side',1.012,.045,.014);
-// Twin Ferrari-style pop-up lamp pods: chamfered rectangular housings with real depth.
+// Countach-style dual pop-up lamp pods; their rigid 45° lift and light transforms are shared.
 function hoodSurfaceY(x,z){
  const p=profileValue(z,bodyProfile),ax=Math.abs(x);
  const stations=[[0,p.top],[p.topW,p.top],[p.upperW,p.upper],[p.shoulderW,p.shoulder]];
