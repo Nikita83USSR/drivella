@@ -157,13 +157,20 @@
 <div id="options-screen"><div class="options-head">ОПЦИИ</div><div class="options-card"><div class="option-row"><span>МУЗЫКА</span><button id="option-music">ВКЛЮЧЕНА</button></div><div class="option-row"><span>ГРОМКОСТЬ</span><input id="option-volume" type="range" min="0" max="100" value="52"></div><div class="option-row"><span>ЗВУК ДВИГАТЕЛЯ</span><button id="option-sfx">ВКЛЮЧЁН</button></div><div class="option-row"><span>КАМЕРА</span><span>КЛАВИШИ 1–4</span></div><button id="options-back" style="width:100%;margin-top:18px">← НАЗАД В МЕНЮ</button></div></div>
 <div id="overlay" class="hidden"><div class="panel"><h1>DRIVELLA</h1><p>VIOLET COAST // NIGHT DRIVE</p><p class="start">PRESS W / ↑ TO DRIVE</p><p>W FORWARD · S REVERSE · A/D STEER · SPACE HANDBRAKE</p></div></div>
 <script src="assets/countach_model_0.js"></script>
+<script src="assets/countach_model_0a.js"></script>
+<script src="assets/countach_model_0b.js"></script>
+<script src="assets/countach_model_0c.js"></script>
+<script src="assets/countach_model_0d.js"></script>
 <script src="assets/countach_model_1.js"></script>
 <script src="assets/countach_model_2.js"></script>
-<script src="assets/countach_model_3.js"></script>
+<script src="assets/countach_model_3a.js"></script>
+<script src="assets/countach_model_3b.js"></script>
+<script src="assets/countach_model_3c.js"></script>
+<script src="assets/countach_model_3d.js"></script>
 <script>
 (()=>{
 'use strict';
-const VERSION='v0.18.68',BUILD='134';
+const VERSION='v0.18.69',BUILD='135';
 const canvas=document.getElementById('scene'),gl=canvas.getContext('webgl',{antialias:true,alpha:true}),sun=document.getElementById('sun'),sctx=sun.getContext('2d'),flare=document.getElementById('flare'),fctx=flare.getContext('2d');
 const $=id=>document.getElementById(id);
 let countachModel=null,countachModelReady=false;
@@ -675,7 +682,7 @@ function profileValue(z,keys){
  return o;
 }
 // Shared wheel datum: lower all four wheels by 8 mm while retaining minimal ground clearance.
-const WHEEL_CENTER_Y=.457,WHEEL_RADIUS=.400;
+const WHEEL_CENTER_Y=.457,WHEEL_RADIUS=.455,COUNTACH_WHEEL_RADIUS=.400;
 function makeCarHull(keys,wheelArches=false,flatRoof=false,windowOpenings=false,roofOpening=null,fitWindowPlane=false){
  // Keep only designed profile stations. The two wheel arches add a few deliberate silhouette points.
  const out=[],N=14,rings=[],zSet=new Set(keys.map(p=>p.z));
@@ -1141,7 +1148,7 @@ function getFrontWheelSteerAngle(side){
  const angle=clamp(getSteeringAngle()+slipAngle*autoCounter,-.42,.42),magnitude=Math.abs(angle);
  if(magnitude<.0001)return 0;
  // Ackermann correction: the wheel on the inside of the turn steers slightly farther.
- const wheelbase=3.275,halfTrack=1.105,turnRadius=wheelbase/Math.tan(magnitude),inner=side*Math.sign(angle)>0;
+ const wheelbase=VEHICLE_WHEELBASE,halfTrack=COUNTACH_WHEEL_X,turnRadius=wheelbase/Math.tan(magnitude),inner=side*Math.sign(angle)>0;
  return Math.sign(angle)*Math.atan(wheelbase/Math.max(.1,turnRadius+(inner?-halfTrack:halfTrack)));
 }
 let cameraMode=1,debugVisible=false,drawCalls=0,fps=0,fpsFrames=0,fpsTime=performance.now(),debugTime=0,bootDone=false,garageMode=false,garageAngle=0,garageTilt=.24,garageZoom=11,garageDrag=false,garageLastX=0,garageLastY=0,musicVolume=.52,sfxEnabled=true,headlightLightingEnabled=true,mouseLookActive=false,mouseLookYaw=0,mouseLookPitch=0,mouseLookX=0,mouseLookY=0,mouseLookPointerId=null,mouseLookReturning=false;
@@ -1359,7 +1366,7 @@ function drawCarMesh(shape,cx,cz,color,yaw=0,material=1,vehicleShadowCaster=fals
  bindMesh(shape,model,color,1,material,vehicleShadowCaster,vehicleSolarShadowCaster);
 }
 function drawCarHingedMesh(shape,cx,cz,color,yaw=0,material=1,vehicleShadowCaster=false,vehicleSolarShadowCaster=true){
- const deploy=clamp(headlightDeploy,0,1),ease=deploy*deploy*(3-2*deploy),angle=-Math.PI*.25*ease;
+ const deploy=clamp(headlightDeploy,0,1),ease=deploy*deploy*(3-2*deploy),angle=Math.PI*.25*(1-ease);
  // Every part shares one rigid transform; no scaling, vertex updates or independent deformation.
  const hinge=matMul(translate(0,POP_HINGE_Y,POP_HINGE_Z),matMul(rotateX(angle),translate(0,-POP_HINGE_Y,-POP_HINGE_Z)));
  const model=matMul(translate(cx,0,cz),matMul(rotateY(yaw),matMul(rotateZ(bodyRoll),hinge)));
@@ -1428,7 +1435,7 @@ function drawWorld(){
  gl.uniform3fv(loc.keyLightDir,new Float32Array(SUN_LIGHT.direction));gl.uniform3fv(loc.nonShadowFillDir,new Float32Array(NON_SHADOW_FILL_DIRECTION));gl.uniform3f(loc.viewPos,cam.x,cam.y,cam.z);gl.uniform1f(loc.showroom,garageMode?1:0);gl.uniform1f(loc.time,performance.now()*.001);gl.uniform1f(loc.shadowEnabled,FX.worldShadows?1:0);gl.uniform1f(loc.vehicleShadowEnabled,FX.vehicleShadows?1:0);gl.uniform1f(loc.glassReflectionEnabled,FX.glassReflections?1:0);gl.uniform1f(loc.paintHighlightsEnabled,FX.paintHighlights?1:0);gl.uniform1f(loc.lampEmissionEnabled,FX.lampEmission?1:0);
  uploadLocalLights(garageMode&&FX.garageSpotlights?GARAGE_LOCAL_LIGHTS:[]);
  // Stage 2: two real local headlight spots follow the same rigid pop-up hinge transform as the optical modules.
- const lampDeploy=clamp(headlightDeploy,0,1),lampEase=lampDeploy*lampDeploy*(3-2*lampDeploy),lampAngle=-Math.PI*.25*lampEase,heading=garageMode?0:carYaw,roll=garageMode?0:bodyRoll;
+ const lampDeploy=clamp(headlightDeploy,0,1),lampEase=lampDeploy*lampDeploy*(3-2*lampDeploy),lampAngle=countachModelReady?Math.PI*.25*(1-lampEase):-Math.PI*.25*lampEase,heading=garageMode?0:carYaw,roll=garageMode?0:bodyRoll;
  const hingeY=countachModelReady?COUNTACH_HEADLIGHT_HINGE_Y:POP_HINGE_Y,hingeZ=countachModelReady?COUNTACH_HEADLIGHT_HINGE_Z:POP_HINGE_Z;
  const lampHinge=matMul(translate(0,hingeY,hingeZ),matMul(rotateX(lampAngle),translate(0,-hingeY,-hingeZ)));
  const lampWorld=matMul(translate(carX,0,carZ),matMul(rotateY(heading),matMul(rotateZ(roll),lampHinge)));
@@ -1531,14 +1538,14 @@ function drawWorld(){
   const centers=m.wheelCenters;
   for(const side of [-1,1])for(const axle of ['front','rear']){
    const front=axle==='front',center=centers[axle],wheelKey=(front?'f':'r')+(side<0?'l':'r');
-   const spin=garageMode?0:-wheelTravel[wheelKey]/WHEEL_RADIUS;
+   const spin=garageMode?0:(side<0?1:-1)*wheelTravel[wheelKey]/COUNTACH_WHEEL_RADIUS;
    const steering=front&&!garageMode?getFrontWheelSteerAngle(side):0;
    const suffix=side<0?'Left':'';
    const wheelX=side*center[0],wheelY=center[1],wheelZ=center[2];
    const drawWheelPart=(part,color,material)=>drawCountachWheelPart(m[axle+'_'+part+suffix],carX,carZ,wheelX,wheelY,wheelZ,color,yaw,spin,steering,material);
    drawWheelPart('tyre',C.tire,0);
    drawWheelPart('rims',[.58,.64,.73,1],2);
-   drawWheelPart('extra_NoMaterial',[.055,.065,.080,1],2);
+   if(front)drawWheelPart('extra_NoMaterial',[.055,.065,.080,1],2);
   }
 
   // Original Countach lenses share the old 45-degree pop-up hinge and independent real light/glow rig.
@@ -1699,7 +1706,7 @@ function drawVehicleLensFlares(){
  const project=p=>{const x=vp[0]*p[0]+vp[4]*p[1]+vp[8]*p[2]+vp[12],y=vp[1]*p[0]+vp[5]*p[1]+vp[9]*p[2]+vp[13],z=vp[2]*p[0]+vp[6]*p[1]+vp[10]*p[2]+vp[14],w=vp[3]*p[0]+vp[7]*p[1]+vp[11]*p[2]+vp[15];if(w<=.05||z/w< -1||z/w>1)return null;const nx=x/w,ny=y/w;if(nx< -1.2||nx>1.2||ny< -1.2||ny>1.2)return null;return{x:(nx*.5+.5)*W,y:(.5-ny*.5)*H};};
  const sources=[];
  // Upper pop-up headlamps use the same lightweight optical profile as the indicators.
- const lampEase=clamp(headlightDeploy,0,1),lampAngle=-Math.PI*.25*(lampEase*lampEase*(3-2*lampEase));
+ const lampEase=clamp(headlightDeploy,0,1),lampSmooth=lampEase*lampEase*(3-2*lampEase),lampAngle=countachModelReady?Math.PI*.25*(1-lampSmooth):-Math.PI*.25*lampSmooth;
  const hingeY=countachModelReady?COUNTACH_HEADLIGHT_HINGE_Y:POP_HINGE_Y,hingeZ=countachModelReady?COUNTACH_HEADLIGHT_HINGE_Z:POP_HINGE_Z;
  const hinge=matMul(translate(0,hingeY,hingeZ),matMul(rotateX(lampAngle),translate(0,-hingeY,-hingeZ)));
  const lampWorld=matMul(bodyWorld,hinge),lampRotation=matMul(rotateY(yaw),matMul(rotateZ(roll),rotateX(lampAngle)));
