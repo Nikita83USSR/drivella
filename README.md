@@ -2,7 +2,7 @@
 
 A browser-based synthwave drift-racing prototype with a custom low-poly 3D car, a procedural neon environment, and a hand-built WebGL renderer.
 
-> **Status:** Playable prototype under active development. Current renderer reference: **v0.19.18 / BUILD 184**.
+> **Status:** Playable prototype under active development. Current renderer reference: **v0.19.19 / BUILD 185**.
 > **Release identification:** every published game change increments the visible BUILD number in the HUD and startup screen; README and rendering architecture are updated in the same release.
 
 ## Current game
@@ -346,3 +346,8 @@ Vehicle lens-flare points are moved onto the same lower front lamps and rear len
 Each of the two upper pop-up headlight projectors now receives a compact four-ray cross: a horizontal ray, a shorter vertical ray and two restrained diagonals. The flare uses the existing camera projection, the same per-projector world position and the same facing/distance/intensity gates as the soft headlight glow, so it follows the mechanical hinge through deployment instead of remaining at a fixed point.
 
 Only the cross strokes are added. The existing upper-headlight broad halo remains unchanged, and the larger anamorphic streak, long diffraction treatment and chromatic ghost layers remain bypassed to avoid restoring the old expensive glare profile. The regression checks the four ray axes/lengths/widths and verifies the feature remains in the headlight-only branch before the existing `continue` that skips the larger optical treatment. Version `v0.19.18` / BUILD 184. BUILD 183 is preserved at `backups/index_BUILD183_before_pop_up_headlight_cross_flare_BUILD184.html`.
+
+
+### BUILD 185 — Softer horizontal and vertical pop-up headlight cross rays
+
+Tune only the horizontal and vertical rays of the BUILD 184 four-ray cross. The horizontal length factor changes from 2.55 to 2.10 and its half-width from 0.050 to 0.038; the vertical length changes from 1.48 to 1.15 and its half-width from 0.042 to 0.032. Their individual central energy is reduced from 0.24 to 0.16. The two diagonal rays retain their BUILD 184 length, width and energy. The cross remains attached to the animated pop-up projector points; all other lamp effects are unchanged. The production regression checks the exact tuned profile and parses the full game script. BUILD 184 is preserved at `backups/index_BUILD184_before_cross_ray_tuning_BUILD185.html`. Version `v0.19.19` / BUILD 185.
