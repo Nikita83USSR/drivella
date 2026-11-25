@@ -27,7 +27,7 @@ const response=await fetch('../index.html',{cache:'no-store'});
 must(response.ok,'Cannot fetch production index.html: HTTP '+response.status);
 const html=await response.text();
 const version=html.match(/const VERSION='([^']+)',BUILD='([^']+)'/);
-must(version&&version[1]==='v0.19.05'&&version[2]==='171','Unexpected production version marker: '+JSON.stringify(version));
+must(version&&version[1]==='v0.19.06'&&version[2]==='172','Unexpected production version marker: '+JSON.stringify(version));
 function expression(name,endMarker){
  const marker='const '+name+'=';
  const start=html.indexOf(marker);
@@ -49,7 +49,8 @@ const sources={
  outlineVertex:new Function('gl','return ('+expression('outlineVs',';\nconst outlineFs=')+');')(glExpression),
  outlineFragment:new Function('gl','return ('+expression('outlineFs',';const outlineProgram=')+');')(glExpression),
  sunVertex:new Function('gl','return ('+expression('sunVs',';\n const sunFs=')+');')(glExpression),
- sunFragment:new Function('gl','return ('+expression('sunFs',';\n gpuSunProgram=')+');')(glExpression)
+ sunFragment:new Function('gl','return ('+expression('sunFs',';\n gpuSunProgram=')+');')(glExpression),
+ sunBloomFragment:new Function('gl','return ('+expression('sunBloomFs',';\n const sunBloomProgram=')+');')(glExpression)
 };
 function compile(type,source,label){
  const shader=gl.createShader(type);
@@ -81,6 +82,9 @@ const outlineP=link(outlineV,outlineF,'Bloom post-process program');
 const sunV=compile(gl.VERTEX_SHADER,sources.sunVertex,'Sun vertex');
 const sunF=compile(gl.FRAGMENT_SHADER,sources.sunFragment,'Sun fragment');
 const sunP=link(sunV,sunF,'Depth-occluded sun program');
+const sunBloomV=compile(gl.VERTEX_SHADER,sources.outlineVertex,'Sun Bloom vertex');
+const sunBloomF=compile(gl.FRAGMENT_SHADER,sources.sunBloomFragment,'Sun Bloom Gaussian fragment');
+const sunBloomP=link(sunBloomV,sunBloomF,'Sun Bloom Gaussian program');
 
 // Use the real production sun and bloom shaders in a synthetic scene with a semi-transparent occluder.
 const W=canvas.width,H=canvas.height,maskW=W>>1,maskH=H>>1,aspect=W/H,sunRadius=0.28;
@@ -126,8 +130,37 @@ gl.clearColor(0.008,0.010,0.026,1);gl.clear(gl.COLOR_BUFFER_BIT|gl.DEPTH_BUFFER_
 gl.disable(gl.DEPTH_TEST);gl.depthMask(false);gl.enable(gl.BLEND);gl.blendFunc(gl.SRC_ALPHA,gl.ONE_MINUS_SRC_ALPHA);
 drawGeometry(occluderColourProgram,'p',occluderVertices,gl.TRIANGLE_FAN);
 
-// Draw the actual GPU sun shader; it must be punched out by the visible-scene mask.
+// Render the same depth-occluded sun into an isolated half-resolution source texture.
 const sunProgram=sunP.program;
+function makeTarget(width,height){
+ const targetTexture=texture(width,height,gl.LINEAR),targetFramebuffer=gl.createFramebuffer();
+ gl.bindFramebuffer(gl.FRAMEBUFFER,targetFramebuffer);gl.framebufferTexture2D(gl.FRAMEBUFFER,gl.COLOR_ATTACHMENT0,gl.TEXTURE_2D,targetTexture,0);
+ const status=gl.checkFramebufferStatus(gl.FRAMEBUFFER);
+ return{texture:targetTexture,framebuffer:targetFramebuffer,status};
+}
+const bloomSource=makeTarget(maskW,maskH),bloomHorizontal=makeTarget(maskW,maskH),bloomVertical=makeTarget(maskW,maskH);
+must([bloomSource,bloomHorizontal,bloomVertical].every(t=>t.status===gl.FRAMEBUFFER_COMPLETE),'Sun Bloom framebuffer incomplete');
+function drawSunSource(){
+ gl.bindFramebuffer(gl.FRAMEBUFFER,bloomSource.framebuffer);gl.viewport(0,0,maskW,maskH);gl.clearColor(0,0,0,0);gl.clear(gl.COLOR_BUFFER_BIT);
+ gl.disable(gl.DEPTH_TEST);gl.disable(gl.BLEND);gl.depthMask(false);gl.useProgram(sunProgram);
+ gl.uniform2f(location(sunProgram,'uViewport'),W,H);gl.uniform2f(location(sunProgram,'uCenter'),W*.5,H*.5);
+ gl.uniform1f(location(sunProgram,'uExtent'),sunRadius*H*3.8);gl.uniform1f(location(sunProgram,'uTime'),1.0);gl.uniform1f(location(sunProgram,'uRadius'),sunRadius*H);
+ gl.uniform1f(location(sunProgram,'uBreathe'),1.0);gl.uniform1f(location(sunProgram,'uGlowPulse'),1.0);
+ gl.activeTexture(gl.TEXTURE2);gl.bindTexture(gl.TEXTURE_2D,sceneMask);gl.uniform1i(location(sunProgram,'uOcclusionMask'),2);
+ gl.uniform2f(location(sunProgram,'uCanvasSize'),maskW,maskH);gl.uniform1f(location(sunProgram,'uOcclusionEnabled'),1.0);
+ drawGeometry(sunProgram,'aPosition',fullscreenVertices,gl.TRIANGLES);
+}
+function runSunBloomBlur(source,target,direction){
+ gl.bindFramebuffer(gl.FRAMEBUFFER,target.framebuffer);gl.viewport(0,0,maskW,maskH);gl.disable(gl.DEPTH_TEST);gl.disable(gl.BLEND);gl.useProgram(sunBloomP.program);
+ gl.activeTexture(gl.TEXTURE0);gl.bindTexture(gl.TEXTURE_2D,source.texture);
+ gl.uniform1i(location(sunBloomP.program,'uSource'),0);gl.uniform2f(location(sunBloomP.program,'uTexel'),1/maskW,1/maskH);
+ gl.uniform2f(location(sunBloomP.program,'uDirection'),direction[0],direction[1]);gl.uniform1f(location(sunBloomP.program,'uRadius'),4.0);
+ drawGeometry(sunBloomP.program,'aPosition',fullscreenVertices,gl.TRIANGLES);
+}
+drawSunSource();
+runSunBloomBlur(bloomSource,bloomHorizontal,[1,0]);
+runSunBloomBlur(bloomHorizontal,bloomVertical,[0,1]);
+// Draw the actual GPU sun shader; it must be punched out by the visible-scene mask.
 gl.useProgram(sunProgram);
 const sunBuffer=gl.createBuffer();gl.bindBuffer(gl.ARRAY_BUFFER,sunBuffer);gl.bufferData(gl.ARRAY_BUFFER,fullscreenVertices,gl.STATIC_DRAW);
 const sunPosition=gl.getAttribLocation(sunProgram,'aPosition');must(sunPosition>=0,'Sun position attribute missing');
@@ -162,15 +195,18 @@ gl.uniform1f(location(outlineProgram,'uRoofEdgeVisible'),0);
 gl.uniform1f(location(outlineProgram,'uOutlinesEnabled'),0);
 gl.uniform1f(location(outlineProgram,'uAOEnabled'),0);
 gl.uniform1f(location(outlineProgram,'uSunWrapEnabled'),0);
-gl.uniform1f(location(outlineProgram,'uSunAuraDebug'),1);
+gl.uniform1f(location(outlineProgram,'uSunAuraDebug'),0);
+gl.uniform1i(location(outlineProgram,'uSunBloomTexture'),2);gl.uniform1f(location(outlineProgram,'uSunBloomEnabled'),1);gl.uniform1f(location(outlineProgram,'uSunBloomDebug'),0);
 gl.uniform2f(location(outlineProgram,'uSunCenter'),.5,.5);
 gl.uniform1f(location(outlineProgram,'uSunRadius'),sunRadius);
 gl.uniform1f(location(outlineProgram,'uSunAspect'),aspect);
 gl.uniform1f(location(outlineProgram,'uSunTime'),1.0);
-gl.activeTexture(gl.TEXTURE2);const bloomTexture=texture(W,H,gl.NEAREST);
+gl.activeTexture(gl.TEXTURE2);gl.bindTexture(gl.TEXTURE_2D,bloomVertical.texture);
+const bloomTexture=texture(W,H,gl.NEAREST);
 const bloomFbo=gl.createFramebuffer();gl.bindFramebuffer(gl.FRAMEBUFFER,bloomFbo);
 gl.framebufferTexture2D(gl.FRAMEBUFFER,gl.COLOR_ATTACHMENT0,gl.TEXTURE_2D,bloomTexture,0);
 const bloomFramebufferStatus=gl.checkFramebufferStatus(gl.FRAMEBUFFER);
+const sunBloomFramebufferStatuses=[bloomSource.status,bloomHorizontal.status,bloomVertical.status];
 must(bloomFramebufferStatus===gl.FRAMEBUFFER_COMPLETE,'Isolated object-bloom framebuffer incomplete: '+bloomFramebufferStatus);
 gl.viewport(0,0,W,H);gl.clearColor(0,0,0,0);gl.clear(gl.COLOR_BUFFER_BIT);
 gl.disable(gl.DEPTH_TEST);gl.disable(gl.BLEND);gl.depthMask(false);
@@ -224,11 +260,18 @@ const checks={
  mainMaterialShaderCompiled:true,
  bloomPostShaderCompiled:true,
  sunOcclusionShaderCompiled:true,
- allThreeProgramsLinked:true,
+ sunBloomGaussianShaderCompiled:true,
+ sunBloomTargetsComplete:sunBloomFramebufferStatuses.every(v=>v===gl.FRAMEBUFFER_COMPLETE),
+ allFourProgramsLinked:true,
  sceneMaskFramebufferComplete:framebufferStatus===gl.FRAMEBUFFER_COMPLETE,
  bloomMeasurementFramebufferComplete:bloomFramebufferStatus===gl.FRAMEBUFFER_COMPLETE,
  gameInlineJavaScriptParses:true,
- bloomTogglePresent:html.includes('data-fx="sunAuraWrap"'),
+ bloomTogglePresent:html.includes('data-fx="sunAuraBloom"'),
+ legacyBloomComparePresent:html.includes('data-fx="sunAuraWrap"'),
+ bloomTargetsAreHalfResolution:html.includes('Math.round(canvas.width*.5)')&&html.includes('createSunBloomTarget(width,height)'),
+ visibleSunRenderedThroughOcclusionMask:html.includes('function renderSunBloom(maskTexture)')&&html.includes('gpuSunLoc.occlusionEnabled,1.0'),
+ separableGaussianBloomPresent:html.includes('1.384615')&&html.includes('3.230769')&&html.includes('blurPass(targets.source,targets.horizontal,[1,0]')&&html.includes('blurPass(targets.horizontal,targets.vertical,[0,1]'),
+ bloomCompositeClippedToObject:html.includes('visibleSunBloom.a*centerCoverage*sunFacing'),
  bloomDebugTogglePresent:html.includes('data-fx="sunAuraDebug"'),
  f4HandlerPresent:html.includes("e.code==='F4'"),
  sunUsesVisibleMask:html.includes('uOcclusionMask')&&html.includes('renderGpuSunBackground(aoTarget.texture)'),
