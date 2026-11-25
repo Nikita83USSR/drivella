@@ -543,3 +543,8 @@ The full BUILD 136 page is preserved at `backups/index_BUILD136_before_unified_h
 ### BUILD 138 — GLSL startup fix
 
 Removed an accidental closing brace after the fragment-shader varying declarations. The brace had been left behind when the previous build removed the per-fragment headlight-lighting function, causing WebGL to abort fragment-shader compilation at startup. No rendering or vehicle behavior was intentionally changed in this fix.
+
+
+### BUILD 139 — Legacy pop-up headlamp assembly restored
+
+The original seven-part dual-projector pop-up lamp assembly (wedge housing, front plate, bezel, lens, projector rings, emissive cores and painted cap) replaces the imported Countach optic render path. A fixed per-side mounting transform aligns the legacy module to the Countach lamp footprint and compensates for the legacy 45° optical-face orientation. The existing Countach hinge axis, eased `headlightDeploy` animation, `L` toggle and low-cost emissive/2D flare behavior remain shared; imported Countach headlamp meshes are no longer drawn, preventing stacked optics. No dynamic per-fragment headlight illumination was reintroduced.
