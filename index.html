@@ -1696,6 +1696,8 @@ function frame(now){
   if(handbrakePressed&&Math.abs(speed/3.6)>8)handbrakePulse=.16;
   else handbrakePulse=Math.max(0,handbrakePulse-dt);
   handbrakeActive=handbrakePulse>0&&Math.abs(speed/3.6)>5;
+  const brakeTarget=down||handbrakeActive?1:0;
+  brakeLight+=(brakeTarget-brakeLight)*Math.min(1,dt*(brakeTarget?18:8));
   driftCooldown=Math.max(0,driftCooldown-dt);
   // Body-frame velocity: speed is longitudinal, lateralVelocity is the side-slip component.
   let vLong=speed/3.6;
@@ -1710,7 +1712,7 @@ function frame(now){
   const slipAbs=Math.abs(slipAngle);
   const lateralDemand=Math.abs(frontLateralAccel);
   const handbrakeInitiation=handbrakePressed&&steerDir!==0&&totalSpeed>8;
-  const sharpSteerInitiation=steerDir!==0&&steerInput!==previousSteerInput&&totalSpeed>17&&lateralDemand>9.5;
+  const sharpSteerInitiation=steerDir!==0&&totalSpeed>17&&lateralDemand>9.5&&(steerInput!==previousSteerInput||Math.abs(steer)>.82);
   const brakeInitiation=down&&steerDir!==0&&totalSpeed>12&&lateralDemand>4.5;
   if(driftState===DRIFT_STATE.GRIP&&driftCooldown<=0&&totalSpeed>12&&(handbrakeInitiation||sharpSteerInitiation||brakeInitiation)){
    driftState=DRIFT_STATE.INITIATION;
@@ -1767,7 +1769,7 @@ function frame(now){
   const updatedSlipAbs=Math.abs(updatedSlip);
   if(driftState===DRIFT_STATE.INITIATION&&driftTimer>.22){
    if(updatedSlipAbs>7*Math.PI/180){driftState=DRIFT_STATE.DRIFT;driftTimer=0;driftPeakSlip=updatedSlipAbs;}
-   else if(driftTimer>.36){driftState=DRIFT_STATE.GRIP;driftDirection=0;driftTimer=0;driftCooldown=.35;}
+   else if(driftTimer>.36){driftState=DRIFT_STATE.GRIP;driftDirection=0;driftTimer=0;driftPeakSlip=0;driftCooldown=.35;}
   }else if(driftState===DRIFT_STATE.DRIFT){
    driftPeakSlip=Math.max(driftPeakSlip,updatedSlipAbs);
    // Holding countersteer through neutral slip automatically initiates the opposite drift.
@@ -1818,7 +1820,8 @@ function frame(now){
   driftIntensity*=.88;
   bodyRoll*=Math.pow(.88,dt*60);
  }else{
-  previousHandbrake=false;
+  handbrakeActive=false;handbrakePulse=0;previousHandbrake=false;
+  brakeLight*=Math.pow(.88,dt*60);
  }
 
  let passCpuStart=performance.now();beginGpuPass('shadow');renderShadowMap();endGpuPass();cpuPassMs.shadow=performance.now()-passCpuStart;
