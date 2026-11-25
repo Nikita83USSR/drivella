@@ -2,7 +2,7 @@
 
 A browser-based synthwave drift-racing prototype with a custom low-poly 3D car, a procedural neon environment, and a hand-built WebGL renderer.
 
-> **Status:** Playable prototype under active development. Current renderer reference: **v0.19.15 / BUILD 181**.
+> **Status:** Playable prototype under active development. Current renderer reference: **v0.19.16 / BUILD 182**.
 > **Release identification:** every published game change increments the visible BUILD number in the HUD and startup screen; README and rendering architecture are updated in the same release.
 
 ## Current game
@@ -320,3 +320,11 @@ The secondary vehicle self-shadow map is generated only when **Самозате�
 
 The BUILD 180 regression compiles the production WebGL 1 material, bloom and sun shaders, verifies the headlight uniforms/cone and shared pop-up transform wiring, checks that opaque body/wheel casters are enabled and emissive lower lenses are not casters, and decodes the actual compressed Countach geometry. It confirms four lower-lamp centres sit within the eight source bumper-pad triangles. The shader/geometry regression and Pages deployment passed. This is a code/GLSL/geometry regression, not a full visual run on the user's target GPU. BUILD 179 is preserved at `backups/index_BUILD179_before_headlight_and_shadow_restore_BUILD180.html`. Version `v0.19.14` / BUILD 180.
 \n\n### BUILD 181 — Softer, longer-range Countach headlight falloff\n\nReduce the dynamic headlight contribution substantially: source intensity changes from 3.8 to 1.25, the material contribution from 1.38 to 0.92, and the diffuse response is capped at 0.82 with a smaller ambient floor. This is intended to stop nearby road and object surfaces from being overexposed while keeping a visible cool-white beam.\n\nReplace the relatively abrupt 38–57 unit distance fade with a broad 28–100 unit smooth fade, while slightly softening and widening the angular transition from `smoothstep(0.78,0.985)` to `smoothstep(0.60,0.94)`. The CPU mesh culler follows the same 100-unit limit and wider cone, so surfaces within the new beam are not prematurely excluded. Lamp positions, Countach hinge transforms, pop-up animation and H/F4 controls are unchanged.\n\nThe production regression now verifies the lower energy, expanded distance fade, cone transition and matching CPU culling values, while compiling/linking the actual production material shader and retaining the solar Bloom pixel tests and Countach lower-lamp geometry checks. It does not render a complete drive scene or certify appearance on the user's GPU. BUILD 180 is preserved at `backups/index_BUILD180_before_soft_headlight_falloff_BUILD181.html`. Version `v0.19.15` / BUILD 181.\n
+
+### BUILD 182 — Selectable Sun Bloom quality in F4
+
+Add a live **Качество Sun Bloom** selector to the F4 effects panel. **Performance** remains the default and keeps the previous half-resolution two-scale/five-sample path. **High** uses a two-thirds-resolution source, three Gaussian scales and a nine-sample separable kernel. **Ultra** uses three-quarter resolution, four scales (including a broad atmospheric layer) and a thirteen-sample kernel. The selected profile reallocates only its own targets when changed; it does not require a reload. Resetting F4 returns the quality to Performance.
+
+The post composite accepts up to four scale textures and applies profile-specific gains. Unused middle/atmosphere samplers bind the tight layer with zero gain, so Performance keeps its original two-layer contribution. All modes continue to use the depth-tested visible-sun source, progressive sun-facing ray field, object coverage gate and inward-only composite. F3 reports the selected profile.
+
+The regression compiles the production WebGL 1 shaders, renders the existing Performance pixel fixture, executes the nine- and thirteen-sample Gaussian branches, checks all three resolution profiles and their F4 wiring, and retains Countach/headlight and solar Bloom geometry/pixel checks. These tests validate shader and source behaviour but do not establish a measured frame-time budget on a GTX 1650/1660. Version `v0.19.16` / BUILD 182.
