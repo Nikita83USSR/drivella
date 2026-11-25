@@ -38,7 +38,7 @@ The scene is intentionally drawn through the same `drawWorld()` path in the norm
 - **Sun disc / vehicle lens flares:** `FX.sunDisc` hides only the 2D synthwave sunset drawing; it does not remove `SUN_LIGHT`, its material illumination or cast shadows. `FX.lensFlares` independently gates the Canvas 2D vehicle-lamp optical overlay.
 - **Underglow / tyre contact:** `FX.underglow` gates the red floor pool and side neon rails (material modes 5 and 6). `FX.tireContact` separately gates the four procedural tyre-contact ovals (material mode 7).
 
-The F4 panel exposes 21 effect checkboxes plus the separate Sun Bloom quality selector, and includes a reset-to-defaults action.
+The F4 panel exposes 22 effect checkboxes plus the separate Sun Bloom quality selector, and includes a reset-to-defaults action.
 
 ## Garage effects showroom — BUILD 188
 
