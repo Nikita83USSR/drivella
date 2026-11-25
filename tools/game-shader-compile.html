@@ -67,6 +67,11 @@ function link(vertex,fragment,label){
  if(!ok)throw new Error(label+' link failed:\n'+log);
  return {program:p,log};
 }
+function makeProgram(vertexSource,fragmentSource,label){
+ const vertex=compile(gl.VERTEX_SHADER,vertexSource,label+' vertex');
+ const fragment=compile(gl.FRAGMENT_SHADER,fragmentSource,label+' fragment');
+ return link(vertex,fragment,label).program;
+}
 const mainV=compile(gl.VERTEX_SHADER,sources.mainVertex,'Main vertex');
 const mainF=compile(gl.FRAGMENT_SHADER,sources.mainFragment,'Main fragment');
 const mainP=link(mainV,mainF,'Main material program');
