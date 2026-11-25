@@ -2,7 +2,7 @@
 
 A browser-based synthwave drift-racing prototype with a custom low-poly 3D car, a procedural neon environment, and a hand-built WebGL renderer.
 
-> **Status:** Playable prototype under active development. Current renderer reference: **v0.18.96 / BUILD 162**.
+> **Status:** Playable prototype under active development. Current renderer reference: **v0.18.97 / BUILD 163**.
 > **Release identification:** every published game change increments the visible BUILD number in the HUD and startup screen; README and rendering architecture are updated in the same release.
 
 ## Current game
@@ -282,3 +282,8 @@ The light's source direction is not reversed or remapped: evaluate `sourceRadial
 ### BUILD 162 — F4 solar-aura debug overlay
 
 BUILD 161 is preserved at `backups/index_BUILD161_before_sun_aura_debug_overlay_BUILD162.html`. Add an opt-in `sunAuraDebug` switch to the F4 effects panel, disabled by default. When enabled, reuse the existing full-scene half-resolution mask and fullscreen post composite to display an unmistakable diagnostic visualization of the actual inner-surface aura field: a bright contact band at the silhouette, repeated contour stripes that show the decay depth into the object, and a heat colour shifting from the solar hue at contact toward cyan farther inward. The debug shader is composited after the 3D world, so these marks remain visible over the occluding geometry. The existing foreground `#flare` canvas receives a source-center crosshair, labelled `SOURCE // SUN`, concentric radial falloff guides and outward arrowheads, all drawn after the scene and lens flares so the source and propagation direction are always visible in front of objects. No extra canvas, WebGL target, framebuffer or render pass is added; the mask and post composite are reused. The diagnostic is off by default and can be toggled in F4. JavaScript syntax and source invariants passed; GLSL runtime and target-browser appearance remain to be verified. Version `v0.18.96` / BUILD 162.
+
+
+### BUILD 163 — Object-surface aura diagnostics
+
+Correct the BUILD 162 diagnostic so it no longer draws guide rings, radial arrows or a source label around the solar disc. The F4 test is now restricted to the scene geometry: a bright warm contact edge marks the sun-facing side of an occluding object, inward chevrons show the direction of propagation into its silhouette, and contour bands shift from warm to cyan as the aura fades across the surface. The diagnostic remains in the existing fullscreen post composite after the 3D world; no extra canvas, mask, framebuffer or render pass is introduced. The test remains off by default. JavaScript parsing and source invariants pass; WebGL shader compilation and in-game appearance still require target-browser validation. Version `v0.18.97` / BUILD 163.
