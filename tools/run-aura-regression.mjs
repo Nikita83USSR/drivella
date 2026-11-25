@@ -56,11 +56,21 @@ try {
   await page.goto(baseUrl + '/tools/game-shader-compile.html', { waitUntil: 'load', timeout: 20000 });
   await page.waitForFunction(() => Boolean(window.__GAME_SHADER_RESULT__), null, { timeout: 20000 });
   const result = await page.evaluate(() => window.__GAME_SHADER_RESULT__);
-  await page.screenshot({ path: 'artifacts/sun-bloom-build178.png', fullPage: true });
-  console.log('PRODUCTION WIDE-BODY SUN BLOOM REGRESSION\n' + JSON.stringify(result, null, 2));
-  assert(result.pass, 'Production wide-body Sun Bloom regression failed: ' + JSON.stringify(result));
+  await page.screenshot({ path: 'artifacts/sun-bloom-build179.png', fullPage: true });
+  console.log('PRODUCTION SHADER + COUNTACH GEOMETRY REGRESSION\n' + JSON.stringify(result, null, 2));
+  assert(result.pass, 'Production shader regression failed: ' + JSON.stringify(result));
   assert(pageErrors.length === 0, 'Browser page errors: ' + pageErrors.join('\n'));
-  console.log('ALL WIDE-BODY SUN BLOOM CHECKS PASSED');
+  console.log('ALL SHADER REGRESSION CHECKS PASSED');
+  const gamePage = await browser.newPage({ viewport: { width: 1280, height: 900 }, deviceScaleFactor: 1 });
+  const gamePageErrors = [];
+  gamePage.on('pageerror', error => gamePageErrors.push(error.stack || error.message));
+  await gamePage.goto(baseUrl + '/index.html', { waitUntil: 'load', timeout: 25000 });
+  await gamePage.waitForFunction(() => Boolean(window.DRIVELLA_COUNTACH_GEOMETRY_BOUNDS), null, { timeout: 25000 });
+  const modelGeometry = await gamePage.evaluate(() => ({ ready: typeof countachModelReady !== 'undefined' && countachModelReady, bounds: window.DRIVELLA_COUNTACH_GEOMETRY_BOUNDS }));
+  assert(modelGeometry.ready, 'Imported Countach geometry did not finish loading');
+  assert(gamePageErrors.length === 0, 'Game startup page errors: ' + gamePageErrors.join('\\n'));
+  console.log('COUNTACH MODEL PART BOUNDS\\n' + JSON.stringify(modelGeometry.bounds, null, 2));
+  await gamePage.close();
 } catch (error) {
   console.error('WIDE-BODY SUN BLOOM REGRESSION FAILED\n' + (error.stack || error));
   console.error(serverOutput.join(''));
