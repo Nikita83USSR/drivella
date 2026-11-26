@@ -720,7 +720,7 @@ const checks={
  roadInstancingProductionVertexCompiled:!!roadProbeV.shader,
  roadInstancingProbeProgramLinked:!!roadProbeP.program,
  roadInstancingAttributesArePresent:['attribute vec3 instancePosition;','attribute vec3 instanceScale;','attribute vec2 instanceYaw;','attribute vec4 instanceColor;','attribute float instanceHeadlight;','attribute float instanceMaterial;'].every(token=>sources.mainVertex.includes(token)),
- roadInstancingPreservesInverseScaleNormals:sources.mainVertex.includes('normal/max(abs(instanceScale),vec3(0.0001))'),
+ roadInstancingPreservesInverseScaleNormals:sources.mainVertex.includes('normal/max(abs(effectiveScale),vec3(0.0001))')&&sources.mainVertex.includes('effectiveScale=instanceScale'),
  roadInstancingPreservesPerObjectHeadlights:sources.mainFragment.includes('headlightIntensity*vInstanceHeadlight')&&html.includes('headlightAffectsMesh(shape,model)'),
  roadInstancingCallsSingleInstancedBatch:html.includes('drawArraysInstancedANGLE(gl.TRIANGLES,0,shape.n,count)')&&html.includes('drawRoadCubeInstances(roadInstances);'),
  roadInstancingPreservesShadowAndAOCulling:html.includes('shadowBoundsVisible(shape,model)')&&html.includes('shadowCasterAllowed(item.color,item.material)')&&html.includes('sceneMaskAllowed(item.color,item.material)'),
