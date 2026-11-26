@@ -14,7 +14,7 @@ canvas{display:block;width:100%;height:auto;border:1px solid #58eaff55;margin:14
 </style>
 </head>
 <body><main>
-<h1>DRIVELLA // BUILD 215 ADAPTIVE SHADOW RESOLUTION + HIGH-PERFORMANCE GPU + ADAPTIVE RENDER RESOLUTION + PRODUCTION GLSL</h1>
+<h1>DRIVELLA // BUILD 217 ADAPTIVE SHADOW RESOLUTION + HIGH-PERFORMANCE GPU + ADAPTIVE RENDER RESOLUTION + PRODUCTION GLSL</h1>
 <canvas id="gl" width="960" height="540"></canvas>
 <pre id="report">Extracting production shaders…</pre>
 </main>
@@ -870,7 +870,8 @@ const checks={
   vehicleReflectionIsStableWhenParkedAndSubtlyRipplesInMotion:vehicleReflectionMotionPixelFixturePass&&html.includes("vehicleReflectionMotion:gl.getUniformLocation(prog,'vehicleReflectionMotion')")&&html.includes('getVehicleSpeed()-2.0')&&html.includes('loc.vehicleReflectionMotion,garageMode?0.0:clamp('),
   vehicleReflectionPreservesLampMaterial:sources.mainFragment.includes('solidLamp=min(color.rgb*vec3(1.90,1.50,1.25)+vec3(0.03,0.06,0.15),vec3(1.35))'),
   asphaltEnvironmentReflectionReducedByHalf:sources.mainFragment.includes('clamp(0.06+roadFresnel*0.20,0.0,0.24)'),
-  vehicleReflectionIntensityIsHalved:sources.mainFragment.includes('reflectionCoverage*0.45')&&!sources.mainFragment.includes('reflectionCoverage*0.90')&&sources.mainFragment.includes('vec4 reflectionClip=vehicleReflectionVP*vec4(vWorldPos.x,vehicleReflectionPlaneY,vWorldPos.z,1.0)'),
+  vehicleReflectionIntensityIsHalved:sources.mainFragment.includes('reflectionCoverage*reflectionHeightFade*0.225')&&!sources.mainFragment.includes('reflectionCoverage*0.3375')&&sources.mainFragment.includes('vec4 reflectionClip=vehicleReflectionVP*vec4(vWorldPos.x,vehicleReflectionPlaneY,vWorldPos.z,1.0)'),
+  vehicleReflectionFadesAlongScreenHeight:sources.mainFragment.includes('float reflectionHeightFade=1.0-0.30*smoothstep(0.30,0.86,reflectionUv.y);'),
   continuousRoadSurfaceHasNoSegmentBoxes:continuousRoadGeometryPixelFixturePass&&!html.includes('queueRoadCube(roadInstances,cx,-.105,z,9.4,.11,5,C.road,0,9)'),
   continuousRoadSurfaceUsesOneDynamicMesh:html.includes('const ROAD_SURFACE_SEGMENTS=108')&&html.includes('gl.bufferData(gl.ARRAY_BUFFER,geometry.data,gl.DYNAMIC_DRAW)')&&html.includes('buildRoadSurfaceGeometry(centerZ)'),
   neonGridIsSingleColourEmitter:html.includes('grid:[.18,.84,1,1]')&&html.includes('gridPlane,0,-.245')&&!html.includes('C.grid2')&&neonGridEmissionPixelPass,
