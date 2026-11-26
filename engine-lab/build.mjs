@@ -31,7 +31,7 @@ const copies = [
     path.join(vendor, "HavokPhysics.wasm")
   ],
   [
-    path.join(root, "node_modules", "@babylonjs", "core", "LICENSE"),
+    path.join(root, "node_modules", "@babylonjs", "core", "license.md"),
     path.join(licenses, "BABYLON-APACHE-2.0.txt")
   ],
   [
