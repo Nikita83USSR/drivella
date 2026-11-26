@@ -776,13 +776,17 @@ const roadFrameStart=html.indexOf('function roadSidePoint(z,lateral){');
 const roadFrameEnd=html.indexOf('\nfunction normalMatrix3(',roadFrameStart);
 must(roadFrameStart>=0&&roadFrameEnd>roadFrameStart,'Shared road tangent/normal helper is missing');
 const roadFrameSource=html.slice(roadFrameStart,roadFrameEnd);
+const trackVertexWriterStart=html.indexOf('function writeTrackVertex(data,normals,offset,position,normal){');
+const trackVertexWriterEnd=html.indexOf('\nfunction uploadTrackGeometry(',trackVertexWriterStart);
+must(trackVertexWriterStart>=0&&trackVertexWriterEnd>trackVertexWriterStart,'Dynamic track vertex writer helper is missing');
+const trackVertexWriterSource=html.slice(trackVertexWriterStart,trackVertexWriterEnd);
 const roadGeometryStart=html.indexOf('function buildRoadSurfaceGeometry(centerZ){');
 const roadGeometryEnd=html.indexOf('\nfunction updateRoadSurfaceMesh(',roadGeometryStart);
 must(roadGeometryStart>=0&&roadGeometryEnd>roadGeometryStart,'Continuous asphalt ribbon geometry helper is missing');
 const roadGeometrySource=html.slice(roadGeometryStart,roadGeometryEnd);
 const testRoadCurve=z=>2.8*Math.sin(z*.012)+.65*Math.sin(z*.036);
 const ROAD_TEST_SEGMENTS=164,ROAD_TEST_BACK=180,ROAD_TEST_FORWARD=230,ROAD_TEST_LENGTH=ROAD_TEST_BACK+ROAD_TEST_FORWARD;
-const buildRoadGeometry=new Function('roadX','ROAD_SURFACE_SEGMENTS','ROAD_SURFACE_CENTER_OFFSET','ROAD_SURFACE_LENGTH','ROAD_SURFACE_WIDTH','ROAD_SURFACE_TOP',roadFrameSource+'\n'+roadGeometrySource+'\nreturn buildRoadSurfaceGeometry;')(testRoadCurve,ROAD_TEST_SEGMENTS,(ROAD_TEST_FORWARD-ROAD_TEST_BACK)*.5,ROAD_TEST_LENGTH,9.4,.005);
+const buildRoadGeometry=new Function('roadX','ROAD_SURFACE_SEGMENTS','ROAD_SURFACE_CENTER_OFFSET','ROAD_SURFACE_LENGTH','ROAD_SURFACE_WIDTH','ROAD_SURFACE_TOP',roadFrameSource+'\n'+trackVertexWriterSource+'\n'+roadGeometrySource+'\nreturn buildRoadSurfaceGeometry;')(testRoadCurve,ROAD_TEST_SEGMENTS,(ROAD_TEST_FORWARD-ROAD_TEST_BACK)*.5,ROAD_TEST_LENGTH,9.4,.005);
 const roadGeometryProbe=buildRoadGeometry(240);
 let continuousRoadSharedEdges=true;
 for(let i=0;i<ROAD_TEST_SEGMENTS-1;i++){
@@ -797,10 +801,6 @@ const roadCurbsStart=html.indexOf('function buildRoadCurbsGeometry(centerZ){');
 const roadCurbsEnd=html.indexOf('\nfunction updateRoadCurbsMesh(',roadCurbsStart);
 must(roadCurbsStart>=0&&roadCurbsEnd>roadCurbsStart,'Continuous curb geometry helper is missing');
 const roadCurbsSource=html.slice(roadCurbsStart,roadCurbsEnd);
-const trackVertexWriterStart=html.indexOf('function writeTrackVertex(data,normals,offset,position,normal){');
-const trackVertexWriterEnd=html.indexOf('\nfunction uploadTrackGeometry(',trackVertexWriterStart);
-must(trackVertexWriterStart>=0&&trackVertexWriterEnd>trackVertexWriterStart,'Dynamic track vertex writer helper is missing');
-const trackVertexWriterSource=html.slice(trackVertexWriterStart,trackVertexWriterEnd);
 const buildRoadCurbs=new Function(
  'roadX','ROAD_SURFACE_SEGMENTS','ROAD_SURFACE_BACK','ROAD_SURFACE_LENGTH','ROAD_SURFACE_WIDTH',
  'ROAD_CURB_GAP','ROAD_CURB_WIDTH','ROAD_CURB_BEVEL','ROAD_CURB_HEIGHT',
