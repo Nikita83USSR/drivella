@@ -686,7 +686,7 @@ const underbodyAreaHasSixteenGeometricSamples=underbodyAreaFunctions.includes('f
 gl.bindFramebuffer(gl.FRAMEBUFFER,null);gl.viewport(0,0,W,H);gl.depthMask(true);gl.enable(gl.DEPTH_TEST);
 
 // Confirm the vehicle reflection capture explicitly activates the production program and now spreads its reflected image along the road.
-const reflectionCaptureStart=html.indexOf('function renderVehicleReflectionCapture(vp){');
+const reflectionCaptureStart=html.indexOf('function renderVehicleReflectionCapture(vp,currentVehiclePose){');
 const reflectionCaptureEnd=html.indexOf('\nfunction bindMesh(',reflectionCaptureStart);
 must(reflectionCaptureStart>=0&&reflectionCaptureEnd>reflectionCaptureStart,'Production vehicle reflection capture function missing');
 const reflectionCaptureSource=html.slice(reflectionCaptureStart,reflectionCaptureEnd);
@@ -807,7 +807,7 @@ const checks={
   vehicleReflectionMirrorPlacesOpaqueCarBelowRoadPlane:vehicleReflectionProjectionPixelFixturePass,
   vehicleReflectionUsesOneSharedMirrorViewProjection:vehicleReflectionProjectionPixelFixturePass,
   vehicleReflectionHardLocksCurrentFramePose:vehicleReflectionCurrentFramePoseFixturePass,
-  vehicleReflectionUsesDepthTestedFramebufferCapture:html.includes('vehicleReflectionTarget={texture,depth,framebuffer,width,height}')&&html.includes('gl.framebufferRenderbuffer(gl.FRAMEBUFFER,gl.DEPTH_ATTACHMENT,gl.RENDERBUFFER,depth)')&&html.includes('renderVehicleReflectionCapture(vp)'),
+  vehicleReflectionUsesDepthTestedFramebufferCapture:html.includes('vehicleReflectionTarget={texture,depth,framebuffer,width,height}')&&html.includes('gl.framebufferRenderbuffer(gl.FRAMEBUFFER,gl.DEPTH_ATTACHMENT,gl.RENDERBUFFER,depth)')&&html.includes('renderVehicleReflectionCapture(vp,vehicleFrame)'),
   vehicleReflectionCaptureUsesOpaqueDepthMaterial:vehicleReflectionOpaqueCapturePixelFixturePass&&reflectionCaptureBranch.includes('gl_FragColor=vec4(reflectionTint,1.0)'),
   vehicleReflectionCaptureExplicitlyBindsMainProgram:reflectionNineTapPixelFixturePass,
   vehicleReflectionCollectionPreservedAcrossOutlinePass:reflectionCollectionPreservedAcrossOutlinePass,
