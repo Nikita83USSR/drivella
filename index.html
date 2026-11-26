@@ -674,6 +674,16 @@ function ensureAOTarget(){
  return true;
 }
 const SHADOW_MAP_SIZE=2048;
+function getAdaptiveShadowMapSize(){
+ if(garageMode||renderScale>=.96)return SHADOW_MAP_SIZE;
+ if(renderScale>=.84)return 1536;
+ return 1024;
+}
+function disposeShadowTarget(){
+ if(!shadowTarget)return;
+ gl.deleteTexture(shadowTarget.texture);gl.deleteRenderbuffer(shadowTarget.depth);gl.deleteFramebuffer(shadowTarget.framebuffer);
+ shadowTarget=null;
+}
 function createShadowTarget(size,filter=gl.NEAREST){
  const texture=gl.createTexture();
  gl.bindTexture(gl.TEXTURE_2D,texture);
@@ -692,7 +702,12 @@ function createShadowTarget(size,filter=gl.NEAREST){
  if(!complete){gl.deleteTexture(texture);gl.deleteRenderbuffer(depth);gl.deleteFramebuffer(framebuffer);return null;}
  return {texture,depth,framebuffer,size};
 }
-function ensureShadowTarget(){if(!shadowTarget)shadowTarget=createShadowTarget(SHADOW_MAP_SIZE);return !!shadowTarget;}
+function ensureShadowTarget(){
+ const desiredSize=getAdaptiveShadowMapSize();
+ if(shadowTarget&&shadowTarget.size!==desiredSize)disposeShadowTarget();
+ if(!shadowTarget)shadowTarget=createShadowTarget(desiredSize);
+ return !!shadowTarget;
+}
 function ensureVehicleShadowTarget(){if(!vehicleShadowTarget){vehicleShadowTarget=createShadowTarget(VEHICLE_SHADOW_MAP_SIZE,gl.NEAREST);if(!vehicleShadowTarget&&VEHICLE_SHADOW_MAP_SIZE>1024)vehicleShadowTarget=createShadowTarget(1024,gl.NEAREST);}return !!vehicleShadowTarget;}
 function ensureLocalShadowTarget(index){if(!localShadowTargets[index])localShadowTargets[index]=createShadowTarget(LOCAL_SHADOW_MAP_SIZE);return !!localShadowTargets[index];}
 function invalidateShadowCaches(){shadowSceneRevision++;localShadowSignatures=['',''];}
