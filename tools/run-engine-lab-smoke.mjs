@@ -78,7 +78,11 @@ try {
     terrainYAtProbe: window.__DRIVELLA_LAB__.terrainYAtProbe,
     spatial: window.__DRIVELLA_LAB__.spatial,
     biomes: window.__DRIVELLA_LAB__.biomes,
-    biomeTypes: window.__DRIVELLA_LAB__.biomeTypes
+    biomeTypes: window.__DRIVELLA_LAB__.biomeTypes,
+    roadChunks: window.__DRIVELLA_LAB__.roadChunks,
+    roadLength: window.__DRIVELLA_LAB__.roadLength,
+    roadSampleCount: window.__DRIVELLA_LAB__.roadSampleCount,
+    roadYAtProbe: window.__DRIVELLA_LAB__.roadYAtProbe
   }));
 
   if (state.frames < 30) throw new Error("Render loop did not advance enough frames.");
@@ -93,6 +97,13 @@ try {
   }
   const propCount = Object.values(state.biomes).reduce((sum, count) => sum + count, 0);
   if (propCount < 8) throw new Error("Biome decoration did not create enough world props: " + JSON.stringify(state.biomes));
+  if (!Number.isFinite(state.roadLength) || state.roadLength < 1200 || state.roadChunks < 8) {
+    throw new Error("The spline road was not streamed into the world chunks: " + JSON.stringify(state));
+  }
+  const roadClearance = state.probeY - 1.5 - state.roadYAtProbe;
+  if (!Number.isFinite(roadClearance) || roadClearance < -0.8 || roadClearance > 1.4) {
+    throw new Error("Physics probe is not resting on the streamed road surface: " + JSON.stringify({ roadClearance, state }));
+  }
   if (!state.spatial || Object.values(state.spatial.axisCoverage).some((covered) => !covered)) {
     throw new Error("Spatial chunk coverage is incomplete in one or more XYZ directions.");
   }
