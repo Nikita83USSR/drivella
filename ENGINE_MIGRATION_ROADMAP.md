@@ -58,8 +58,27 @@ Acceptance:
 - WebGPU or WebGL fallback is identified in diagnostics.
 - The original game route is unchanged.
 
-### 2 — Full 3D world system
-- Replace road-relative, Z-only environment placement with world-space chunk coordinates X/Y/Z.
+### 2 — Full 3D world system (in progress)
+
+Implemented and covered by automated tests:
+- [x] Deterministic XYZ chunk manager with a 420 m spherical availability radius and 128 m cells.
+- [x] Chunk inclusion based on closest-point distance from the player to each 3D chunk volume.
+- [x] Symmetric coverage tests for all six cardinal directions and diagonal chunks.
+- [x] Stable coordinate-derived seeds and high/medium/low distance tiers.
+- [x] Chunk lifetime independent of the camera frustum; looking away cannot evict nearby chunks.
+- [x] Height-field terrain split into reusable 128 m patches with continuous world-space height sampling.
+- [x] Havok static collision attached to streamed terrain patches and disposed with their chunks.
+
+Still required:
+- Expand relief into broad, high-elevation terrain and assign terrain patches to the correct vertical chunk layers.
+- Add coherent biomes, cliff faces, valleys, ravines, coastlines, underground spaces and caves.
+- Generate vertical structures, bridges, overpasses and tunnels as XYZ-streamed content.
+- Move chunk generation and asset preparation off the render-critical path; add worker-backed asynchronous generation and bounded queues.
+- Tie the chunk-manager center to the actual vehicle physics body rather than the current lab camera target.
+- Add performance budgets, frustum/occlusion rendering (without coupling it to chunk lifetime), and further seam/collision regression tests.
+
+### 3 — Vehicle and driving physics
+- Replace the current custom game car with a rigid-body chassis and a physically coherent centre of mass.
 - Use one consistent spherical availability radius measured in 3D distance; support all six cardinal directions and diagonal directions.
 - Keep simulation/chunk lifetime separate from camera-frustum visibility: looking away must not delete nearby world content.
 - Add deterministic chunk seeds, asynchronous loading, LOD, occlusion and safe fallback geometry.
@@ -71,23 +90,23 @@ Acceptance:
 - No nearby chunk disappears merely because it moves behind the camera.
 - Chunk streaming remains stable during driving, jumping and camera rotation.
 
-### 3 — Vehicle and driving physics
+### 4 — Vehicle and driving physics
 - Build the DRIVELLA GTS as a rigid chassis with a physically coherent centre of mass.
 - Implement four independent suspension units, wheel contact, steering geometry, tire forces, braking, drivetrain and handbrake.
 - Add controlled drift behaviour, countersteer response, collisions and recoverable rollovers.
 - Keep visual wheels, physics wheels, shadows and road contact aligned.
 
-### 4 — World interaction and characters
+### 5 — World interaction and characters
 - Add reusable rigid-body props, breakable objects, traffic and physical obstacles.
 - Add character controllers, skeleton-linked ragdoll bodies and joint constraints.
 - Ensure physics LOD and object budgets keep simulation cost predictable.
 
-### 5 — Content and visual migration
+### 6 — Content and visual migration
 - Port the existing Countach-inspired car, garage, UI, music and effects into the new scene architecture.
 - Rebuild materials, reflections, shadows, bloom, lighting and atmosphere on the new render path.
 - Keep the existing game available until the new version passes functional and performance gates.
 
-### 6 — Production cutover
+### 7 — Production cutover
 - Test Chrome, Edge and Firefox, desktop and mobile, WebGPU and WebGL fallback.
 - Profile representative low-, mid- and high-end GPUs.
 - Confirm offline/cache behaviour, interrupted downloads, retry, version changes and rollback.
@@ -95,4 +114,4 @@ Acceptance:
 
 ## Current status
 
-The current commit adds only the isolated engine lab, build pipeline and tests. It does not replace the original game, does not alter the existing car physics, and does not claim that the full 3D world, vehicle simulation or ragdolls are complete.
+The current branch contains the self-hosted engine, Havok runtime, isolated browser lab and the first tested XYZ chunk/terrain layer. It does not replace the original game, does not alter the existing car physics, and does not claim that a populated open world, production vehicle simulation or ragdolls are complete.
