@@ -1,6 +1,7 @@
 import assert from "node:assert/strict";
 import { SpatialChunkManager } from "../engine-lab/src/SpatialChunkManager.mjs";
 import { terrainChunkHeightRange, terrainChunkLayer, terrainHeight } from "../engine-lab/src/TerrainField.mjs";
+import { BIOME_IDS, generateBiomePlacements, sampleBiome } from "../engine-lab/src/BiomeField.mjs";
 
 const disposed = [];
 const manager = new SpatialChunkManager({
@@ -26,6 +27,29 @@ assert.ok(eastRange.max > 100 && westRange.min < -80, "terrain relief must cross
 assert.ok(eastRange.max - eastRange.min > 35, "terrain patches need meaningful relief rather than a flat sheet");
 assert.notEqual(terrainHeight(240, 96), terrainHeight(-240, 96), "the terrain field must vary in world space");
 assert.equal(terrainHeight(384, 0), terrainHeight(384, 0), "terrain coordinates must resolve deterministically");
+const sampledBiomes = new Set();
+for (let z = -420; z <= 420; z += 42) {
+  for (let x = -420; x <= 420; x += 42) sampledBiomes.add(sampleBiome(x, z).id);
+}
+assert.ok(sampledBiomes.size >= 4, "world climate and elevation should produce several distinct biomes");
+for (const biome of sampledBiomes) assert.ok(BIOME_IDS.includes(biome));
+
+const scatterA = generateBiomePlacements(3, -2, 128, 0x1234abcd, "high");
+const scatterB = generateBiomePlacements(3, -2, 128, 0x1234abcd, "high");
+assert.deepEqual(scatterA, scatterB, "biome props must remain stable for the same chunk seed");
+assert.ok(scatterA.trees.length + scatterA.grass.length + scatterA.reeds.length + scatterA.rocks.length > 0);
+for (const group of [scatterA.trees, scatterA.grass, scatterA.reeds, scatterA.rocks]) {
+  for (const prop of group) {
+    assert.ok(prop.x >= -57 && prop.x <= 57 && prop.z >= -57 && prop.z <= 57,
+      "biome placements must remain inside their terrain patch");
+  }
+}
+const lowScatter = generateBiomePlacements(3, -2, 128, 0x1234abcd, "low");
+assert.ok(
+  lowScatter.trees.length + lowScatter.grass.length + lowScatter.reeds.length + lowScatter.rocks.length
+  <= scatterA.trees.length + scatterA.grass.length + scatterA.reeds.length + scatterA.rocks.length,
+  "far LOD must not create more objects than near LOD"
+);
 
 for (const axis of ["+X", "-X", "+Y", "-Y", "+Z", "-Z"]) {
   assert.equal(initial.axisCoverage[axis], true, `missing symmetric world coverage on ${axis}`);
