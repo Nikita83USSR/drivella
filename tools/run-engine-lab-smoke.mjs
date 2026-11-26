@@ -1,5 +1,5 @@
 import { createServer } from "node:http";
-import { readFile, stat } from "node:fs/promises";
+import { mkdir, readFile, stat } from "node:fs/promises";
 import path from "node:path";
 import { chromium } from "playwright";
 
@@ -65,20 +65,23 @@ try {
   await page.goto("http://127.0.0.1:" + port + "/engine-lab/", { waitUntil: "load" });
   await page.waitForFunction(() => window.__DRIVELLA_LAB__?.ready === true, { timeout: 60000 });
   await page.waitForFunction(() => window.__DRIVELLA_LAB__?.physicsReady === true, { timeout: 60000 });
-  await page.waitForFunction(() => {
-    const y = window.__DRIVELLA_LAB__?.probeY;
-    return Number.isFinite(y) && y < 6 && y > -5;
-  }, { timeout: 25000 });
+  await page.waitForFunction(() => window.__DRIVELLA_LAB__?.probeStableFrames >= 30, { timeout: 30000 });
 
   const state = await page.evaluate(() => ({
     renderer: window.__DRIVELLA_LAB__.renderer,
     frames: window.__DRIVELLA_LAB__.frames,
     physicsMode: window.__DRIVELLA_LAB__.physicsMode,
-    probeY: window.__DRIVELLA_LAB__.probeY
+    probeY: window.__DRIVELLA_LAB__.probeY,
+    probeStableFrames: window.__DRIVELLA_LAB__.probeStableFrames,
+    spatial: window.__DRIVELLA_LAB__.spatial
   }));
 
   if (state.frames < 30) throw new Error("Render loop did not advance enough frames.");
   if (!state.physicsMode.startsWith("havok")) throw new Error("Havok Physics V2 was not initialized.");
+  if (state.probeStableFrames < 30) throw new Error("Physics probe did not settle after collision.");
+  if (!state.spatial || Object.values(state.spatial.axisCoverage).some((covered) => !covered)) {
+    throw new Error("Spatial chunk coverage is incomplete in one or more XYZ directions.");
+  }
   if (externalRequests.length) throw new Error("Third-party runtime requests detected: " + externalRequests.join(", "));
   if (pageErrors.length) throw new Error("Browser page errors: " + pageErrors.join(" | "));
   const unexpectedConsoleErrors = browserConsoleErrors.filter((message) => {
@@ -90,6 +93,8 @@ try {
     throw new Error("Unexpected browser console errors: " + unexpectedConsoleErrors.join(" | "));
   }
 
+  await mkdir("artifacts", { recursive: true });
+  await page.screenshot({ path: "artifacts/engine-lab-spatial-preview.png" });
   console.log("ENGINE LAB PASS", JSON.stringify(state));
   console.log("RUNTIME NETWORK PASS: same-origin requests only.");
 } finally {
