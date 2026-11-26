@@ -44,7 +44,7 @@ const gl=canvas.getContext('webgl',{alpha:true,antialias:false,preserveDrawingBu
 must(gl,'WebGL context unavailable');
 const glExpression={getShaderPrecisionFormat:()=>gl.getShaderPrecisionFormat(gl.FRAGMENT_SHADER,gl.HIGH_FLOAT),getExtension:name=>gl.getExtension(name)};
 const standardDerivativesExt=!!gl.getExtension('OES_standard_derivatives');
-const gridAntiAliasSource=new Function('standardDerivativesExt','return ('+expression('gridAntiAliasSource',';\\nconst fs=')+');')(standardDerivativesExt);
+const gridAntiAliasSource=new Function('standardDerivativesExt','return ('+expression('gridAntiAliasSource',';\nconst fs=')+');')(standardDerivativesExt);
 const sources={
  mainVertex:new Function('gl','return ('+expression('vs',';\nconst gridAntiAliasSource=')+');')(glExpression),
  mainFragment:new Function('gl','standardDerivativesExt','gridAntiAliasSource','return ('+expression('fs',';\nfunction shader')+');')(glExpression,standardDerivativesExt,gridAntiAliasSource),
