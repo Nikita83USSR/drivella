@@ -140,6 +140,8 @@ Core implementation completed: adaptive directional shadows, PCSS-style filterin
 
 **Goal:** keep the world visually complete when the camera rotates through 360°, and make the road a smooth three-dimensional route with stable edges, curbs, climbs and descents.
 
+**Approved direction:** the proposed environment additions are accepted for implementation. The car is allowed to leave the road briefly and make controlled jumps over crests and elevation transitions; airtime is an intentional gameplay/visual effect, not something to eliminate.
+
 #### 1. Expand world coverage and visibility in every direction
 
 - Preserve the current forward-world coverage, which is already sufficient for the present driving view.
@@ -162,12 +164,12 @@ Core implementation completed: adaptive directional shadows, PCSS-style filterin
 - Generate gradual climbs, descents, crests and dips in addition to the existing horizontal bends.
 - Build the asphalt, lane markings, shoulders, curbs and roadside alignment from one shared road frame so that every element follows the same horizontal and vertical profile.
 - Preserve road width and continuous texture coordinates across segment joins; avoid gaps, stretched texture sections and sudden surface-normal changes.
-- Make vehicle ground/contact and collision calculations follow the same road height and direction as the rendered surface.
+- Make vehicle ground/contact and collision calculations follow the same road height and direction as the rendered surface, while allowing the car to remain airborne briefly instead of snapping to the road on every frame.
 
 #### 4. Add safe geometric limits
 
 - Bound maximum uphill/downhill grade, rate of grade change, vertical curvature, horizontal curvature and total elevation range. Tune the actual values against the current vehicle handling rather than choosing arbitrary numbers in advance.
-- Smooth the generated profile and clamp extreme combinations of bend plus elevation so the vehicle does not launch from abrupt ramps or lose contact with the road.
+- Smooth the generated profile and clamp extreme combinations of bend plus elevation so the vehicle does not launch uncontrollably because of broken geometry. Do **not** suppress natural airtime: crests, rises and suitable transitions may produce visible, controlled jumps.
 - Keep both curbs attached to the road frame at all times. Their height, offset and orientation must not drift away from the asphalt at sharp bends or slope transitions.
 - Keep the playable road and its texture inside a clearly defined safe corridor; prevent procedural offsets from moving the vehicle path or road edges beyond the generated surface.
 
@@ -193,7 +195,7 @@ Core implementation completed: adaptive directional shadows, PCSS-style filterin
 - At a standstill and while driving, a full 360° camera rotation does not reveal prematurely disappearing side or rear objects.
 - The expanded environment has no obvious short boundary or empty cut-off at the sides and behind the car.
 - Both curbs remain continuous, level relative to the road surface, equally offset and the same colour through bends and segment joins.
-- Climbs and descents are smooth; the vehicle does not unexpectedly launch, sink through the road or lose ground contact.
+- Climbs and descents are smooth; suitable crests/transitions can produce visible jumps and natural landing, while broken geometry must not cause uncontrolled launches, sinking through the road or permanent loss of contact.
 - Road texture, lane markings, shoulders and curbs have no visible gaps or separation when the road changes direction or elevation.
 - The expanded world remains compatible with the shared shadow/AO scene path and does not introduce an unacceptable frame-time increase on the target PC and mobile devices.
 
