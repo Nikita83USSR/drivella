@@ -1,3 +1,13 @@
+import {
+  MAIN_ROUTE_CONTROL_POINTS,
+  ROAD_PROFILE_BLEND_RADIUS,
+  ROAD_PROFILE_CORE_RADIUS,
+  ROAD_PROFILE_MAX_GRADE,
+  ROAD_SAMPLE_SPACING,
+  nearestMainRouteSegment,
+  sampleClosedRoutePoints
+} from "./WorldLayout.mjs";
+
 function hashGrid(x, z) {
   let hash = Math.imul(x | 0, 0x45d9f3b);
   hash = Math.imul(hash ^ (hash >>> 16), 0x45d9f3b);
@@ -40,7 +50,7 @@ function fbm(x, z, octaves = 5) {
   return sum / weight;
 }
 
-export function terrainHeight(x, z) {
+function rawTerrainHeight(x, z) {
   if (!Number.isFinite(x) || !Number.isFinite(z)) {
     throw new TypeError("terrainHeight expects finite world coordinates.");
   }
@@ -65,6 +75,105 @@ export function terrainHeight(x, z) {
   const valley = -32 * Math.exp(-(valleyDistance * valleyDistance));
 
   return reliefMask * (macroTilt + continental + ridged + detail + valley);
+}
+
+
+let roadElevationProfile = null;
+
+function getRoadElevationProfile() {
+  if (roadElevationProfile) return roadElevationProfile;
+
+  const route = sampleClosedRoutePoints(MAIN_ROUTE_CONTROL_POINTS, ROAD_SAMPLE_SPACING);
+  const heights = route.map((point) => rawTerrainHeight(point.x, point.z));
+  const edgeLengths = route.map((point, index) => {
+    const next = route[(index + 1) % route.length];
+    return Math.hypot(next.x - point.x, next.z - point.z);
+  });
+  const maxGrade = ROAD_PROFILE_MAX_GRADE;
+  const anchorHeight = heights[0];
+
+  // Project raw terrain elevations onto a closed-loop grade envelope.
+  // The start/finish anchor stays fixed; neighbouring stations are cut/filled
+  // until every segment, including the loop seam, respects the grade limit.
+  for (let pass = 0; pass < 240; pass += 1) {
+    let largestCorrection = 0;
+    for (let index = 0; index < heights.length; index += 1) {
+      const nextIndex = (index + 1) % heights.length;
+      const limit = maxGrade * edgeLengths[index];
+      const difference = heights[nextIndex] - heights[index];
+      if (difference > limit + 1e-7) {
+        const correction = difference - limit;
+        if (index === 0) {
+          heights[nextIndex] -= correction;
+        } else if (nextIndex === 0) {
+          heights[index] += correction;
+        } else {
+          heights[index] += correction * 0.5;
+          heights[nextIndex] -= correction * 0.5;
+        }
+        largestCorrection = Math.max(largestCorrection, correction);
+      } else if (difference < -limit - 1e-7) {
+        const correction = -limit - difference;
+        if (index === 0) {
+          heights[nextIndex] += correction;
+        } else if (nextIndex === 0) {
+          heights[index] -= correction;
+        } else {
+          heights[index] -= correction * 0.5;
+          heights[nextIndex] += correction * 0.5;
+        }
+        largestCorrection = Math.max(largestCorrection, correction);
+      }
+    }
+    heights[0] = anchorHeight;
+    if (largestCorrection < 1e-5) break;
+  }
+
+  roadElevationProfile = Object.freeze({
+    route,
+    heights: Object.freeze(heights.slice()),
+    edgeLengths: Object.freeze(edgeLengths),
+    maxGrade
+  });
+  return roadElevationProfile;
+}
+
+export function getMainRoadElevationStats() {
+  const profile = getRoadElevationProfile();
+  let maxGrade = 0;
+  let minHeight = Infinity;
+  let maxHeight = -Infinity;
+  for (let index = 0; index < profile.heights.length; index += 1) {
+    const nextIndex = (index + 1) % profile.heights.length;
+    const distance = Math.max(profile.edgeLengths[index], 0.001);
+    const grade = Math.abs(profile.heights[nextIndex] - profile.heights[index]) / distance;
+    maxGrade = Math.max(maxGrade, grade);
+    minHeight = Math.min(minHeight, profile.heights[index]);
+    maxHeight = Math.max(maxHeight, profile.heights[index]);
+  }
+  return { maxGrade, minHeight, maxHeight, sampleCount: profile.heights.length };
+}
+
+export function terrainHeight(x, z) {
+  if (!Number.isFinite(x) || !Number.isFinite(z)) {
+    throw new TypeError("terrainHeight expects finite world coordinates.");
+  }
+
+  const rawHeight = rawTerrainHeight(x, z);
+  const nearest = nearestMainRouteSegment(x, z);
+  if (!nearest || nearest.distance >= ROAD_PROFILE_BLEND_RADIUS) return rawHeight;
+
+  const profile = getRoadElevationProfile();
+  const nextIndex = (nearest.index + 1) % profile.heights.length;
+  const routeHeight = profile.heights[nearest.index]
+    + (profile.heights[nextIndex] - profile.heights[nearest.index]) * nearest.t;
+
+  if (nearest.distance <= ROAD_PROFILE_CORE_RADIUS) return routeHeight;
+  const blendT = (nearest.distance - ROAD_PROFILE_CORE_RADIUS)
+    / (ROAD_PROFILE_BLEND_RADIUS - ROAD_PROFILE_CORE_RADIUS);
+  const smoothBlend = blendT * blendT * (3 - 2 * blendT);
+  const weight = 1 - smoothBlend;
+  return rawHeight + (routeHeight - rawHeight) * weight;
 }
 
 export function terrainChunkLayer(chunkX, chunkZ, chunkSize = 128) {
