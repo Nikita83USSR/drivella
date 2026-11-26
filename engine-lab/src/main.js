@@ -20,6 +20,7 @@ import HavokPhysics from "@babylonjs/havok";
 import { SpatialChunkManager } from "./SpatialChunkManager.mjs";
 import { terrainChunkLayer, terrainHeight, terrainMoisture } from "./TerrainField.mjs";
 import { generateBiomePlacements } from "./BiomeField.mjs";
+import { buildRoadChunkGeometry, generateMainRoadSamples, getRoadStats, nearestRoadSurfaceHeight } from "./RoadNetwork.mjs";
 
 const canvas = document.getElementById("renderCanvas");
 const statusText = document.getElementById("engineStatus");
@@ -28,6 +29,7 @@ const physicsMeta = document.getElementById("physicsMeta");
 const renderMeta = document.getElementById("renderMeta");
 const fpsMeta = document.getElementById("fpsMeta");
 const worldMeta = document.getElementById("worldMeta");
+const roadMeta = document.getElementById("roadMeta");
 const dropButton = document.getElementById("dropButton");
 const resetButton = document.getElementById("resetButton");
 
@@ -42,6 +44,10 @@ const labState = {
   probeX: null,
   probeZ: null,
   terrainYAtProbe: null,
+  roadYAtProbe: null,
+  roadChunks: 0,
+  roadLength: 0,
+  roadSampleCount: 0,
   error: null,
   spatial: null
 };
@@ -400,6 +406,17 @@ function createEnvironment(scene) {
   terrainMaterial.twoSidedLighting = true;
   terrainMaterial.useVertexColors = true;
 
+  const roadSamples = generateMainRoadSamples();
+  const roadStats = getRoadStats(roadSamples);
+  const roadMeshes = new Map();
+  const roadBodies = new Map();
+  const roadMaterial = new StandardMaterial("drivella-road-material", scene);
+  roadMaterial.diffuseColor = Color3.White();
+  roadMaterial.specularColor = new Color3(0.26, 0.3, 0.34);
+  roadMaterial.specularPower = 24;
+  roadMaterial.useVertexColors = true;
+  roadMaterial.backFaceCulling = false;
+
   const terrainMeshes = new Map();
   const terrainBodies = new Map();
   const biomeMeshes = new Map();
@@ -421,7 +438,7 @@ function createEnvironment(scene) {
     radius: worldRadius,
     maxActiveChunks: 512,
     onCreate: (chunk) => {
-      const payload = { terrainMesh: null, biome: null };
+      const payload = { terrainMesh: null, biome: null, roadMesh: null };
       if (chunk.y === terrainChunkLayer(chunk.x, chunk.z, 128)) {
         const mesh = createTerrainChunk(scene, chunk.x, chunk.y, chunk.z, 128, terrainMaterial);
         payload.terrainMesh = mesh;
@@ -429,6 +446,20 @@ function createEnvironment(scene) {
         const biome = createBiomeChunk(scene, chunk, 128, biomeMaterial, rockMaterial);
         payload.biome = biome;
         if (biome.vegetationMesh || biome.rockMesh) biomeMeshes.set(chunk.key, biome);
+
+        const roadGeometry = buildRoadChunkGeometry(roadSamples, chunk.x, chunk.y, chunk.z, 128);
+        const roadOrigin = new Vector3(chunk.x * 128, chunk.y * 128, chunk.z * 128);
+        const roadMesh = createCombinedPropMesh(
+          scene, `road-${chunk.x}-${chunk.y}-${chunk.z}`, roadGeometry, roadMaterial, roadOrigin
+        );
+        if (roadMesh) {
+          payload.roadMesh = roadMesh;
+          roadMeshes.set(chunk.key, roadMesh);
+          if (scene.getPhysicsEngine()) {
+            const roadBody = addPhysicalProbe(scene, roadMesh, 0, PhysicsShapeType.MESH, { friction: 0.94, restitution: 0.02 });
+            roadBodies.set(chunk.key, roadBody);
+          }
+        }
         if (biome.rockMesh && scene.getPhysicsEngine()) {
           const rockBody = addPhysicalProbe(scene, biome.rockMesh, 0, PhysicsShapeType.MESH, { friction: 0.88, restitution: 0.04 });
           rockBodies.set(chunk.key, rockBody);
@@ -445,6 +476,15 @@ function createEnvironment(scene) {
       if (body) {
         body.dispose();
         terrainBodies.delete(chunk.key);
+      }
+      const roadBody = roadBodies.get(chunk.key);
+      if (roadBody) {
+        roadBody.dispose();
+        roadBodies.delete(chunk.key);
+      }
+      if (payload?.roadMesh) {
+        payload.roadMesh.dispose();
+        roadMeshes.delete(chunk.key);
       }
       const rockBody = rockBodies.get(chunk.key);
       if (rockBody) {
@@ -472,7 +512,7 @@ function createEnvironment(scene) {
   scene.imageProcessingConfiguration.exposure = 1.18;
   scene.imageProcessingConfiguration.contrast = 1.12;
 
-  return { camera, chunkManager, terrainMeshes, terrainBodies, biomeMeshes, rockBodies };
+  return { camera, chunkManager, terrainMeshes, terrainBodies, biomeMeshes, rockBodies, roadSamples, roadStats, roadMeshes, roadBodies };
 }
 
 function addPhysicalProbe(scene, mesh, mass, shape, options = {}) {
@@ -491,6 +531,10 @@ let terrainMeshes;
 let terrainBodies;
 let biomeMeshes;
 let rockBodies;
+let roadSamples;
+let roadStats;
+let roadMeshes;
+let roadBodies;
 let havokAttemptRunning = false;
 let havokInstance = null;
 let probeMesh = null;
@@ -528,6 +572,12 @@ function enableHavokPhysics() {
       if (props.rockMesh && !rockBodies.has(key)) {
         const body = addPhysicalProbe(scene, props.rockMesh, 0, PhysicsShapeType.MESH, { friction: 0.88, restitution: 0.04 });
         rockBodies.set(key, body);
+      }
+    }
+    for (const [key, mesh] of roadMeshes) {
+      if (!roadBodies.has(key)) {
+        const body = addPhysicalProbe(scene, mesh, 0, PhysicsShapeType.MESH, { friction: 0.94, restitution: 0.02 });
+        roadBodies.set(key, body);
       }
     }
 
@@ -618,6 +668,12 @@ async function boot() {
     terrainBodies = environment.terrainBodies;
     biomeMeshes = environment.biomeMeshes;
     rockBodies = environment.rockBodies;
+    roadSamples = environment.roadSamples;
+    roadStats = environment.roadStats;
+    roadMeshes = environment.roadMeshes;
+    roadBodies = environment.roadBodies;
+    labState.roadLength = Number(roadStats.length.toFixed(1));
+    labState.roadSampleCount = roadSamples.length;
 
     scene.onAfterRenderObservable.add(() => {
       frameCounter += 1;
@@ -628,6 +684,8 @@ async function boot() {
         labState.probeX = Number(probeMesh.position.x.toFixed(3));
         labState.probeZ = Number(probeMesh.position.z.toFixed(3));
         labState.terrainYAtProbe = Number(terrainHeight(probeMesh.position.x, probeMesh.position.z).toFixed(3));
+        const roadY = nearestRoadSurfaceHeight(probeMesh.position.x, probeMesh.position.z, roadSamples);
+        labState.roadYAtProbe = roadY === null ? null : Number(roadY.toFixed(3));
         if (lastProbeY !== null && Math.abs(currentY - lastProbeY) < 0.05) {
           probeStableFrames += 1;
         } else {
@@ -641,6 +699,7 @@ async function boot() {
         const spatial = chunkManager.update(camera.target);
         labState.spatial = spatial;
         const terrainLayers = [...new Set([...terrainMeshes.values()].map((mesh) => mesh.metadata.chunkY))].sort((a, b) => a - b);
+        labState.roadChunks = roadMeshes.size;
         const biomeTotals = { trees: 0, grass: 0, reeds: 0, rocks: 0 };
         const biomeDistribution = {};
         for (const props of biomeMeshes.values()) {
@@ -654,6 +713,7 @@ async function boot() {
         labState.biomeTypes = biomeTypes;
         labState.biomeDistribution = biomeDistribution;
         worldMeta.textContent = `XYZ chunks: ${spatial.activeCount} · terrain: ${terrainMeshes.size} patches · Y layers ${terrainLayers.join("/") || "—"} · ${Object.values(spatial.axisCoverage).every(Boolean) ? "6/6 directions" : "coverage check pending"}`;
+        roadMeta.textContent = `Road: ${roadMeshes.size} chunks · ${Math.round(roadStats.length)} m loop · ${roadSamples.length} spline samples`;
         biomeMeta.textContent = `Biomes: ${biomeTypes.slice(0, 4).join("/") || "preparing"} · ${biomeTotals.trees} trees · ${biomeTotals.rocks} rocks`;
       }
     });
