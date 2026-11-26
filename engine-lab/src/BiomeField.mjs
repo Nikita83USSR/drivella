@@ -1,4 +1,5 @@
 import { terrainHeight, terrainMoisture, terrainSlope } from "./TerrainField.mjs";
+import { distanceToMainRoute } from "./WorldLayout.mjs";
 
 export const BIOME_IDS = Object.freeze([
   "forest",
@@ -91,7 +92,7 @@ export function generateBiomePlacements(chunkX, chunkZ, chunkSize, seed, lod = "
     const localZ = -half + margin + random() * (chunkSize - margin * 2);
     const worldX = chunkX * chunkSize + localX;
     const worldZ = chunkZ * chunkSize + localZ;
-    if (Math.hypot(worldX, worldZ) < 80) continue;
+    if (Math.hypot(worldX, worldZ) < 80 || distanceToMainRoute(worldX, worldZ) < 15) continue;
 
     const biome = sampleBiome(worldX, worldZ);
     result.biomeCounts[biome.id] += 1;
