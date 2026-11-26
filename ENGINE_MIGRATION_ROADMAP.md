@@ -85,12 +85,6 @@ Still required:
 - Keep visual wheels, physics wheels, shadows and road contact aligned.
 
 ### 4 — World interaction and characters
-- Build the DRIVELLA GTS as a rigid chassis with a physically coherent centre of mass.
-- Implement four independent suspension units, wheel contact, steering geometry, tire forces, braking, drivetrain and handbrake.
-- Add controlled drift behaviour, countersteer response, collisions and recoverable rollovers.
-- Keep visual wheels, physics wheels, shadows and road contact aligned.
-
-### 4 — World interaction and characters
 - Add reusable rigid-body props, breakable objects, traffic and physical obstacles.
 - Add character controllers, skeleton-linked ragdoll bodies and joint constraints.
 - Ensure physics LOD and object budgets keep simulation cost predictable.
