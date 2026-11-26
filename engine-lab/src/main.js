@@ -20,7 +20,7 @@ import HavokPhysics from "@babylonjs/havok";
 import { SpatialChunkManager } from "./SpatialChunkManager.mjs";
 import { terrainChunkLayer, terrainHeight, terrainMoisture } from "./TerrainField.mjs";
 import { generateBiomePlacements } from "./BiomeField.mjs";
-import { buildRoadChunkGeometry, generateMainRoadSamples, getRoadStats, nearestRoadSurfaceHeight } from "./RoadNetwork.mjs";
+import { buildRoadChunkGeometry, generateMainRoadSamples, getRoadStats, nearestRoadSurfaceHeight, nearestRoadSurfaceInfo } from "./RoadNetwork.mjs";
 
 const canvas = document.getElementById("renderCanvas");
 const statusText = document.getElementById("engineStatus");
@@ -45,6 +45,14 @@ const labState = {
   probeZ: null,
   terrainYAtProbe: null,
   roadYAtProbe: null,
+  roadDistanceAtProbe: null,
+  roadProbeY: null,
+  roadProbeX: null,
+  roadProbeZ: null,
+  roadProbeYAtRoad: null,
+  roadProbeDistanceToRoad: null,
+  roadProbeStableFrames: 0,
+  roadProbeTargetGrade: null,
   roadChunks: 0,
   roadLength: 0,
   roadSampleCount: 0,
@@ -538,10 +546,31 @@ let roadBodies;
 let havokAttemptRunning = false;
 let havokInstance = null;
 let probeMesh = null;
+let roadProbeMesh = null;
+let roadProbeStableFrames = 0;
+let lastRoadProbePosition = null;
 let frameCounter = 0;
 let lastProbeY = null;
 let probeStableFrames = 0;
 const dynamicMeshes = [];
+
+function findStableRoadProbeSample(samples) {
+  let best = null;
+  let bestScore = Infinity;
+  for (let index = 0; index < samples.length; index += 1) {
+    const previous = samples[(index - 1 + samples.length) % samples.length];
+    const current = samples[index];
+    const next = samples[(index + 1) % samples.length];
+    const distance = Math.hypot(next.x - previous.x, next.z - previous.z);
+    const grade = Math.abs(next.y - previous.y) / Math.max(distance, 0.001);
+    const score = grade + Math.abs(current.bank) * 0.45;
+    if (score < bestScore) {
+      bestScore = score;
+      best = { sample: current, grade };
+    }
+  }
+  return best;
+}
 
 function spawnDynamicBox(x, y, z) {
   if (!labState.physicsReady) return null;
@@ -590,6 +619,27 @@ function enableHavokPhysics() {
     probeMaterial.roughness = 0.38;
     probeMesh.material = probeMaterial;
     addPhysicalProbe(scene, probeMesh, 2.5, PhysicsShapeType.SPHERE, { friction: 0.7, restitution: 0.16 });
+
+    const roadProbeTarget = findStableRoadProbeSample(roadSamples);
+    if (!roadProbeTarget) throw new Error("Could not select a flat road segment for Havok contact test.");
+    labState.roadProbeTargetGrade = roadProbeTarget.grade;
+    roadProbeMesh = MeshBuilder.CreateBox("road-collision-probe", {
+      width: 2,
+      height: 2,
+      depth: 2
+    }, scene);
+    roadProbeMesh.position.set(
+      roadProbeTarget.sample.x,
+      roadProbeTarget.sample.y + 12,
+      roadProbeTarget.sample.z
+    );
+    const roadProbeMaterial = new StandardMaterial("road-probe-material", scene);
+    roadProbeMaterial.diffuseColor = new Color3(1, 0.61, 0.16);
+    roadProbeMaterial.emissiveColor = new Color3(0.12, 0.055, 0.01);
+    roadProbeMaterial.metallic = 0.12;
+    roadProbeMaterial.roughness = 0.5;
+    roadProbeMesh.material = roadProbeMaterial;
+    addPhysicalProbe(scene, roadProbeMesh, 18, PhysicsShapeType.BOX, { friction: 1.8, restitution: 0.01 });
 
     for (let i = 0; i < 5; i += 1) {
       spawnDynamicBox(16 + (i % 2) * 6, 8 + i * 5.5, 5);
@@ -693,6 +743,25 @@ async function boot() {
         }
         lastProbeY = currentY;
         labState.probeStableFrames = probeStableFrames;
+      }
+      if (roadProbeMesh) {
+        const position = roadProbeMesh.position;
+        const roadContact = nearestRoadSurfaceInfo(position.x, position.z, roadSamples);
+        labState.roadProbeX = Number(position.x.toFixed(3));
+        labState.roadProbeY = Number(position.y.toFixed(3));
+        labState.roadProbeZ = Number(position.z.toFixed(3));
+        labState.roadProbeYAtRoad = roadContact ? Number(roadContact.y.toFixed(3)) : null;
+        labState.roadProbeDistanceToRoad = roadContact ? Number(roadContact.distance.toFixed(3)) : null;
+        if (lastRoadProbePosition) {
+          const movement = Math.hypot(
+            position.x - lastRoadProbePosition.x,
+            position.y - lastRoadProbePosition.y,
+            position.z - lastRoadProbePosition.z
+          );
+          roadProbeStableFrames = movement < 0.025 ? roadProbeStableFrames + 1 : 0;
+        }
+        lastRoadProbePosition = { x: position.x, y: position.y, z: position.z };
+        labState.roadProbeStableFrames = roadProbeStableFrames;
       }
       if (frameCounter % 18 === 0) fpsMeta.textContent = "FPS: " + engine.getFps().toFixed(0);
       if (frameCounter % 6 === 0 && chunkManager && camera) {
