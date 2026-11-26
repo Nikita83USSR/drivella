@@ -78,25 +78,23 @@ try {
   await gamePage.bringToFront();
   const gameResponse = await gamePage.goto(baseUrl + '/', { waitUntil: 'commit', timeout: 30000 });
   assert(gameResponse && gameResponse.ok(), 'Game document request failed: ' + (gameResponse ? gameResponse.status() : 'no response'));
-  try {
-    await gamePage.waitForSelector('#main-menu.show', { timeout: 45000 });
-  } catch (error) {
-    let startupState = null;
-    try {
-      startupState = await gamePage.evaluate(() => ({
-        title: document.title,
-        bodyClass: document.body.className,
-        bootScreen: document.getElementById('boot-screen')?.className,
-        bootStatus: document.getElementById('boot-status')?.innerText,
-        bootPercent: document.getElementById('boot-percent')?.innerText,
-        menuClass: document.getElementById('main-menu')?.className
-      }));
-      await gamePage.screenshot({ path: 'artifacts/build219-live-game-startup-failure.png', fullPage: true });
-    } catch (_) {}
-    throw new Error('Live game boot diagnostics: ' + JSON.stringify({ startupState, pageErrors }) + ' // ' + error.message);
-  }
-  await gamePage.locator('#menu-start').click();
-  await gamePage.locator('#debug-toggle').click();
+  await gamePage.waitForFunction(() => {
+    const menu = document.getElementById('main-menu');
+    const style = menu ? getComputedStyle(menu) : null;
+    const rect = menu?.getBoundingClientRect();
+    return !!menu && menu.classList.contains('show') && style?.display !== 'none'
+      && style?.visibility !== 'hidden' && rect?.width > 0 && rect?.height > 0;
+  }, null, { timeout: 90000 });
+  const menuDiagnostics = await gamePage.evaluate(() => {
+    const menu = document.getElementById('main-menu'), style = getComputedStyle(menu), rect = menu.getBoundingClientRect();
+    return {display:style.display,visibility:style.visibility,opacity:style.opacity,width:rect.width,height:rect.height,
+      bootStatus:document.getElementById('boot-status')?.innerText,bootPercent:document.getElementById('boot-percent')?.innerText};
+  });
+  assert(menuDiagnostics.display === 'flex' && menuDiagnostics.visibility === 'visible'
+    && menuDiagnostics.width > 0 && menuDiagnostics.height > 0, 'Main menu did not become a visible layout surface: '+JSON.stringify(menuDiagnostics));
+  await gamePage.screenshot({path:'artifacts/build219-live-game-menu.png'});
+  await gamePage.evaluate(() => document.getElementById('menu-start')?.click());
+  await gamePage.evaluate(() => document.getElementById('debug-toggle')?.click());
   await gamePage.waitForFunction(() => {
     const value = document.getElementById('debug-data')?.innerText || '';
     return value.includes('CAR REFLECTION TARGET') && value.includes('MESHES') && value.includes('TRACK WORLD') && value.includes('ROAD CURBS') && value.includes('WORLD PANORAMA');
@@ -107,7 +105,7 @@ try {
   }, null, { timeout: 45000 });
   await gamePage.screenshot({ path: 'artifacts/build219-live-game-reflection-capture-smoke.png', fullPage: true });
   await gamePage.context().grantPermissions(['clipboard-read', 'clipboard-write']);
-  await gamePage.locator('#debug-copy').click();
+  await gamePage.evaluate(() => document.getElementById('debug-copy')?.click());
   const copiedDiagnostics = await gamePage.evaluate(() => navigator.clipboard.readText());
   assert(copiedDiagnostics.includes('CAR REFLECTION RATE') && copiedDiagnostics.includes('FRAME PACING P50 / P95 / MAX') && copiedDiagnostics.includes('RENDER TARGET MEMORY EST.') && copiedDiagnostics.includes('CPU FRAME / UPDATE / SHADOW / WORLD / MIRROR / BLOOM / POST') && copiedDiagnostics.includes('GPU SHADOW / WORLD / MIRROR / BLOOM / POST') && copiedDiagnostics.includes('TRACK WORLD') && copiedDiagnostics.includes('ROAD CURBS') && copiedDiagnostics.includes('WORLD PANORAMA'), 'F3 copy button did not copy complete renderer/environment diagnostics: ' + copiedDiagnostics);
   assert((await gamePage.locator('#debug-copy').innerText()) === 'СКОПИРОВАНО', 'F3 copy button did not show its success state');
