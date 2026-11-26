@@ -14,7 +14,7 @@ canvas{display:block;width:100%;height:auto;border:1px solid #58eaff55;margin:14
 </style>
 </head>
 <body><main>
-<h1>DRIVELLA // BUILD 217 ADAPTIVE SHADOW RESOLUTION + HIGH-PERFORMANCE GPU + ADAPTIVE RENDER RESOLUTION + PRODUCTION GLSL</h1>
+<h1>DRIVELLA // BUILD 218 ADAPTIVE SHADOW RESOLUTION + HIGH-PERFORMANCE GPU + ADAPTIVE RENDER RESOLUTION + PRODUCTION GLSL</h1>
 <canvas id="gl" width="960" height="540"></canvas>
 <pre id="report">Extracting production shaders…</pre>
 </main>
@@ -27,7 +27,7 @@ const response=await fetch('../index.html',{cache:'no-store'});
 must(response.ok,'Cannot fetch production index.html: HTTP '+response.status);
 const html=await response.text();
 const version=html.match(/const VERSION='([^']+)',BUILD='([^']+)'/);
-must(version&&version[1]==='v0.19.51'&&version[2]==='217','Unexpected production version marker: '+JSON.stringify(version));
+must(version&&version[1]==='v0.19.52'&&version[2]==='218','Unexpected production version marker: '+JSON.stringify(version));
 must(html.includes("const GPU_POWER_PREFERENCE='high-performance'")&&html.includes('powerPreference:GPU_POWER_PREFERENCE'),'Production WebGL context does not request a high-performance GPU');
 must(html.includes('function updateAdaptiveRenderScale(now)'),'Production adaptive render-resolution controller is missing');
 function expression(name,endMarker){
@@ -890,7 +890,7 @@ const checks={
   asphaltEnvironmentReflectionSkipsWorkWhenDisabled:sources.mainFragment.includes('if(roadReflectionEnabled>0.5){vec3 roadReflected=evalSynthwaveEnvironment(reflect(-roadV,roadN),0.82)'),
   asphaltVehicleMirrorSkipsTextureReadsWhenUnavailable:sources.mainFragment.includes('if(vehicleReflectionEnabled>0.5&&reflectionInFrame>0.5){')&&sources.mainFragment.includes('blurStep.y*24.0'),
   surfaceReflectionDoesNotCaptureEmissiveMaterialEight:sources.mainFragment.includes('resolvedMaterialMode>7.5&&resolvedMaterialMode<8.5')&&html.includes('fixtureYaw,8'),
-  productionVersionVisibleEverywhere:html.includes('id="version-label">v0.19.51 · BUILD 217</div>')&&html.includes('3D NEON HIGHWAY // BUILD 217')&&html.includes('ENGINE STARTUP // v0.19.51 · BUILD 217'),
+  productionVersionVisibleEverywhere:html.includes('id="version-label">v0.19.52 · BUILD 218</div>')&&html.includes('3D NEON HIGHWAY // BUILD 218')&&html.includes('ENGINE STARTUP // v0.19.52 · BUILD 218'),
  roadInstancingProductionVertexCompiled:!!roadProbeV.shader,
  roadInstancingProbeProgramLinked:!!roadProbeP.program,
  roadInstancingAttributesArePresent:['attribute vec3 instancePosition;','attribute vec3 instanceScale;','attribute vec2 instanceYaw;','attribute vec4 instanceColor;','attribute float instanceHeadlight;','attribute float instanceMaterial;'].every(token=>sources.mainVertex.includes(token)),

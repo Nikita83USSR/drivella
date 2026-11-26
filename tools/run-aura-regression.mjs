@@ -61,10 +61,10 @@ try {
   const result = await page.evaluate(() => window.__GAME_SHADER_RESULT__);
   assert(result, 'Browser test page reported failure without a result object: ' + await page.title());
   await page.screenshot({ path: 'artifacts/derivative-grid-area-light-end-to-end-mirror-build215-regression.png', fullPage: true });
-  console.log('PRODUCTION BUILD215: DERIVATIVE GRID + 16-POINT RED AREA LIGHT + VEHICLE MIRROR CAPTURE-TO-ROAD PIXEL REGRESSION\n' + JSON.stringify(result, null, 2));
+  console.log('PRODUCTION BUILD218: DERIVATIVE GRID + 16-POINT RED AREA LIGHT + VEHICLE MIRROR CAPTURE-TO-ROAD PIXEL REGRESSION\n' + JSON.stringify(result, null, 2));
   assert(result.pass, 'Production shader regression failed: ' + JSON.stringify(result));
   assert(pageErrors.length === 0, 'Browser page errors: ' + pageErrors.join('\\n'));
-  console.log('ALL BUILD 215 DERIVATIVE GRID/16-POINT AREA LIGHT/REAL MIRROR-TO-ASPHALT PIXELS/SHADER/VEHICLE CHECKS PASSED');
+  console.log('ALL BUILD 218 DERIVATIVE GRID/16-POINT AREA LIGHT/REAL MIRROR-TO-ASPHALT PIXELS/SHADER/VEHICLE CHECKS PASSED');
 
 
   // Release the shader-fixture WebGL context before the live game allocates its own renderer targets.
@@ -114,7 +114,7 @@ try {
   assert(/MIRROR CAPTURE READY/.test(liveReflectionDiagnostics), 'Live game did not produce a READY planar vehicle reflection: ' + liveReflectionDiagnostics);
   assert(/\\b[1-9][0-9]* MESHES\\b/.test(liveReflectionDiagnostics), 'Live game mirror capture has no vehicle meshes: ' + liveReflectionDiagnostics);
   assert(pageErrors.length === 0, 'Game browser page errors: ' + pageErrors.join('\\n'));
-  console.log('BUILD 215 LIVE GAME MIRROR CAPTURE // ' + liveReflectionDiagnostics.replace(/\s+/g, ' '));
+  console.log('BUILD 218 LIVE GAME MIRROR CAPTURE // ' + liveReflectionDiagnostics.replace(/\s+/g, ' '));
 
   await gamePage.keyboard.press('Escape');
   await gamePage.waitForSelector('#main-menu.show', { timeout: 10000 });
@@ -133,7 +133,7 @@ try {
   assert(/2 REPLICAS ROTATING/.test(garageDiagnostics), 'Garage turntable replicas are not reported as rotating: ' + garageDiagnostics);
   assert(/GARAGE MIRROR READY · \d+ MESHES · 3 PLINTHS/.test(garageDiagnostics), 'Garage did not capture all showroom cars for the podium mirrors: ' + garageDiagnostics);
   await gamePage.screenshot({ path: 'artifacts/build215-live-garage-car-reflections.png', fullPage: true });
-  console.log('BUILD 215 LIVE GARAGE MIRRORS + EFFECTS // ' + garageDiagnostics.replace(/\s+/g, ' '));
+  console.log('BUILD 218 LIVE GARAGE MIRRORS + EFFECTS // ' + garageDiagnostics.replace(/\s+/g, ' '));
   await gamePage.close();
 
   const metaScript = await readFile('assets/countach_model_0.js', 'utf8');
