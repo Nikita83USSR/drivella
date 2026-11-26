@@ -178,12 +178,13 @@ export class SpatialChunkManager {
     for (const chunk of this.active.values()) lod[chunk.lod] += 1;
 
     const axisCoverage = {};
+    const [centerX, centerY, centerZ] = (this.lastCenterChunk || "0:0:0").split(":").map(Number);
+    const index = Math.ceil(this.radius / this.chunkSize) - 1;
     for (const axis of AXES) {
-      const index = Math.ceil(this.radius / this.chunkSize) - 1;
       const coords = {
-        x: axis.x * index,
-        y: axis.y * index,
-        z: axis.z * index
+        x: centerX + axis.x * index,
+        y: centerY + axis.y * index,
+        z: centerZ + axis.z * index
       };
       const key = SpatialChunkManager.chunkKey(coords.x, coords.y, coords.z);
       axisCoverage[axis.name] = this.active.has(key);
