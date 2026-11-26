@@ -76,7 +76,8 @@ try {
     if (message.type() === 'error') console.error('GAME BROWSER CONSOLE:', message.text());
   });
   await gamePage.bringToFront();
-  await gamePage.goto(baseUrl + '/', { waitUntil: 'domcontentloaded', timeout: 20000 });
+  const gameResponse = await gamePage.goto(baseUrl + '/', { waitUntil: 'commit', timeout: 30000 });
+  assert(gameResponse && gameResponse.ok(), 'Game document request failed: ' + (gameResponse ? gameResponse.status() : 'no response'));
   try {
     await gamePage.waitForSelector('#main-menu.show', { timeout: 45000 });
   } catch (error) {
