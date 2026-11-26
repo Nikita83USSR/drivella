@@ -1241,13 +1241,14 @@ function drawBiome(z,weight,type){
  }
 }
 function drawDistantRidgeRing(centerZ){
- const centerX=roadX(centerZ),shapes=[ridgeFarEdge,ridgeMidEdge,ridgeNearEdge,ridgeFarEdge];
- const heights=[34,29,38,31];
+ const centerX=roadX(centerZ),shapes=[ridgeFarEdge,ridgeMidEdge,ridgeNearEdge],batches=[[],[],[]];
+ const heights=[34,29,38,31,36,30,39,32];
  for(let i=0;i<8;i++){
   const angle=i*Math.PI*.25,x=centerX+Math.sin(angle)*350,z=centerZ+Math.cos(angle)*350;
   const tone=i%2?[.052,.026,.13,1]:[.042,.021,.11,1];
-  draw(shapes[i%4],x,0,z,1,heights[i%4],1.6,tone,angle);
+  queueBiomeInstance(batches[i%3],x,0,z,1,heights[i],1.6,tone,angle);
  }
+ for(let i=0;i<3;i++)drawBiomeInstances(shapes[i],batches[i]);
 }
 function quad(a,b,c,d){return mesh([...a,...b,...c,...a,...c,...d]);}
 function mirroredQuadPair(a,b,c,d){
