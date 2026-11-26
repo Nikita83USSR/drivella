@@ -1,6 +1,6 @@
 # DRIVELLA — Rendering Architecture
 
-Current reference: **v0.19.44 / BUILD 210**  
+Current reference: **v0.19.45 / BUILD 211**  
 Main renderer: `index.html` — custom WebGL 1 renderer, no external rendering engine.
 
 **Release marker policy:** every published renderer/game change increments `BUILD` in `index.html` and updates the visible HUD, boot screen, README, and this document in the same release. Increment the patch version with the build when appropriate. Never publish a renderer change while leaving the visible build number unchanged.
@@ -19,7 +19,7 @@ The render loop currently runs these passes in order:
 4. `drawSun()` — when GPU sun is disabled or unavailable, draw the complete Canvas2D disc + halo fallback. This canvas is no longer used for vehicle-lamp optics.
 5. `renderVehicleLensFlaresGPU()` — project the existing Countach light-source anchors through the active camera, apply source-facing and distance attenuation, then send all visible optical elements through one dynamic vertex buffer and one additive WebGL draw on the main scene canvas. It runs after the world and outline composites so the optical overlay remains above the 3D scene.
 
-The scene is intentionally drawn through the same `drawWorld()` path in the normal, directional-shadow, and scene-AO passes. The shared-scene gate is `if (!outlinePass || aoScenePass)`: it includes opaque world geometry during the shadow pass and the full-scene AO capture, while the separate car-contour pass draws only car parts. `shadowCasterAllowed()` remains the single policy for excluding translucent and emissive materials. Do not build one-off shadow meshes or hard-code a shadow for every new prop.\n\n## BUILD 210 — adaptive mirror capture and shader early-outs
+The scene is intentionally drawn through the same `drawWorld()` path in the normal, directional-shadow, and scene-AO passes. The shared-scene gate is `if (!outlinePass || aoScenePass)`: it includes opaque world geometry during the shadow pass and the full-scene AO capture, while the separate car-contour pass draws only car parts. `shadowCasterAllowed()` remains the single policy for excluding translucent and emissive materials. Do not build one-off shadow meshes or hard-code a shadow for every new prop.\n\n## BUILD 211 — adaptive mirror capture and shader early-outs
 
 The road vehicle reflection retains its half-resolution depth-tested capture, nine-tap anisotropic road sampling kernel, distortion and blend level. The road shader now evaluates procedural environment reflection only when that feature is enabled and performs its nine vehicle-reflection texture reads only when the receiver is enabled and the projected coordinate is valid. When enabled and valid, the original sample weights and coefficients are unchanged.
 

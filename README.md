@@ -2,10 +2,10 @@
 
 A browser-based synthwave drift-racing prototype with a custom low-poly 3D car, a procedural neon environment, and a hand-built WebGL renderer.
 
-> **Status:** Playable prototype under active development. Current renderer reference: **v0.19.44 / BUILD 210**.
+> **Status:** Playable prototype under active development. Current renderer reference: **v0.19.45 / BUILD 211**.
 > **Release identification:** every published game change increments the visible BUILD number in the HUD and startup screen; README and rendering architecture are updated in the same release.
 
-- **BUILD 210:** preserve the original asphalt-reflection kernel and spatial resolution while skipping road-environment and vehicle-mirror shader work when their effects are disabled or the projected mirror is invalid. In races only, mirror capture refreshes every second frame below 62 FPS and returns to full rate above 70 FPS; the garage remains full-rate. F3 separates mirror capture CPU/GPU timing from the rest of the world pass.
+- **BUILD 211:** preserve the original asphalt-reflection kernel and spatial resolution while skipping road-environment and vehicle-mirror shader work when their effects are disabled or the projected mirror is invalid. In races only, mirror capture refreshes every second frame below 62 FPS and returns to full rate above 70 FPS; the garage remains full-rate. F3 separates mirror capture CPU/GPU timing from the rest of the world pass.
 
 ## Current game
 

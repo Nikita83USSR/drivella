@@ -14,7 +14,7 @@ canvas{display:block;width:100%;height:auto;border:1px solid #58eaff55;margin:14
 </style>
 </head>
 <body><main>
-<h1>DRIVELLA // BUILD 210 ADAPTIVE MIRROR CAPTURE + ROAD SHADER EARLY-OUTS + PRODUCTION GLSL</h1>
+<h1>DRIVELLA // BUILD 211 ADAPTIVE MIRROR CAPTURE + ROAD SHADER EARLY-OUTS + PRODUCTION GLSL</h1>
 <canvas id="gl" width="960" height="540"></canvas>
 <pre id="report">Extracting production shaders…</pre>
 </main>
@@ -27,7 +27,7 @@ const response=await fetch('../index.html',{cache:'no-store'});
 must(response.ok,'Cannot fetch production index.html: HTTP '+response.status);
 const html=await response.text();
 const version=html.match(/const VERSION='([^']+)',BUILD='([^']+)'/);
-must(version&&version[1]==='v0.19.44'&&version[2]==='210','Unexpected production version marker: '+JSON.stringify(version));
+must(version&&version[1]==='v0.19.45'&&version[2]==='211','Unexpected production version marker: '+JSON.stringify(version));
 function expression(name,endMarker){
  const marker='const '+name+'=';
  const start=html.indexOf(marker);
@@ -885,7 +885,7 @@ const checks={
   asphaltEnvironmentReflectionSkipsWorkWhenDisabled:sources.mainFragment.includes('if(roadReflectionEnabled>0.5){vec3 roadReflected=evalSynthwaveEnvironment(reflect(-roadV,roadN),0.82)'),
   asphaltVehicleMirrorSkipsTextureReadsWhenUnavailable:sources.mainFragment.includes('if(vehicleReflectionEnabled>0.5&&reflectionInFrame>0.5){')&&sources.mainFragment.includes('blurStep.y*24.0'),
   surfaceReflectionDoesNotCaptureEmissiveMaterialEight:sources.mainFragment.includes('resolvedMaterialMode>7.5&&resolvedMaterialMode<8.5')&&html.includes('fixtureYaw,8'),
-  productionVersionVisibleEverywhere:html.includes('id="version-label">v0.19.44 · BUILD 210</div>')&&html.includes('3D NEON HIGHWAY // BUILD 210')&&html.includes('ENGINE STARTUP // v0.19.44 · BUILD 210'),
+  productionVersionVisibleEverywhere:html.includes('id="version-label">v0.19.44 · BUILD 211</div>')&&html.includes('3D NEON HIGHWAY // BUILD 211')&&html.includes('ENGINE STARTUP // v0.19.44 · BUILD 211'),
  roadInstancingProductionVertexCompiled:!!roadProbeV.shader,
  roadInstancingProbeProgramLinked:!!roadProbeP.program,
  roadInstancingAttributesArePresent:['attribute vec3 instancePosition;','attribute vec3 instanceScale;','attribute vec2 instanceYaw;','attribute vec4 instanceColor;','attribute float instanceHeadlight;','attribute float instanceMaterial;'].every(token=>sources.mainVertex.includes(token)),
@@ -1026,7 +1026,7 @@ const result={pass:true,version:version[1],build:version[2],checks,gridDerivativ
 window.__GAME_SHADER_RESULT__=result;
 report.className='pass';
 report.textContent='PASS\\n'+JSON.stringify(result,null,2);
-document.title='PASS DRIVELLA BUILD 210 adaptive mirror capture + exact road-shader gates';
+document.title='PASS DRIVELLA BUILD 211 adaptive mirror capture + exact road-shader gates';
 })().catch(error=>{
  const report=document.getElementById('report');
  report.className='fail';
