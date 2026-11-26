@@ -1,11 +1,18 @@
 # DRIVELLA — Rendering Architecture
 
-Current reference: **v0.19.46 / BUILD 212**  
+Current reference: **v0.19.53 / BUILD 219**  
 Main renderer: `index.html` — custom WebGL 1 renderer, no external rendering engine.
 
 **Release marker policy:** every published renderer/game change increments `BUILD` in `index.html` and updates the visible HUD, boot screen, README, and this document in the same release. Increment the patch version with the build when appropriate. Never publish a renderer change while leaving the visible build number unchanged.
 
 This document records the rendering decisions that future vehicle, environment, lighting, and effects work must preserve. The goal is a reusable scene pipeline: new world geometry should take part in shadows and ambient occlusion automatically when it uses the shared draw path.
+
+## BUILD 219 — 360° environment coverage and continuous road curbs
+
+The active asphalt window now extends 180 m behind and 230 m ahead of the car. A single widened ground/grid region and symmetric city/coast generation keep scenery present when the camera is turned to the sides or rear. Repeated far windows and secondary palm details use a distance-based LOD; near geometry retains the authored details. Road and biome seeds are fixed so the same environment can be reproduced during regression.
+
+The road surface, lane marks, roadside posts, track-light sources and continuous left/right curbs share one horizontal road tangent/normal. The curbs are a single dynamic mesh with a trapezoidal raised profile, equal lateral clearance, a unified cyan material and shared vertices at adjacent segments. The dynamic asphalt and curb buffers update once per car position and are reused by the visible, directional-shadow and scene/AO passes. Directional shadow focus follows the active camera's look direction so the world remains consistently lit during rear/side inspection. Vehicle physics and wheel placement are intentionally unchanged; wheel/suspension adaptation and vertical road elevation are separate later stages.
+
 
 ## Frame pipeline
 

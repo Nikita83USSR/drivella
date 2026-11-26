@@ -61,10 +61,10 @@ try {
   const result = await page.evaluate(() => window.__GAME_SHADER_RESULT__);
   assert(result, 'Browser test page reported failure without a result object: ' + await page.title());
   await page.screenshot({ path: 'artifacts/derivative-grid-area-light-end-to-end-mirror-build218-regression.png', fullPage: true });
-  console.log('PRODUCTION BUILD218: DERIVATIVE GRID + 16-POINT RED AREA LIGHT + VEHICLE MIRROR CAPTURE-TO-ROAD PIXEL REGRESSION\n' + JSON.stringify(result, null, 2));
+  console.log('PRODUCTION BUILD219: DERIVATIVE GRID + AREA LIGHT + VEHICLE MIRROR + 360-DEGREE ENVIRONMENT REGRESSION\n' + JSON.stringify(result, null, 2));
   assert(result.pass, 'Production shader regression failed: ' + JSON.stringify(result));
   assert(pageErrors.length === 0, 'Browser page errors: ' + pageErrors.join('\\n'));
-  console.log('ALL BUILD 218 DERIVATIVE GRID/16-POINT AREA LIGHT/REAL MIRROR-TO-ASPHALT PIXELS/SHADER/VEHICLE CHECKS PASSED');
+  console.log('ALL BUILD 219 SHADER/AREA LIGHT/MIRROR/ENVIRONMENT/VEHICLE CHECKS PASSED');
 
 
   // Release the shader-fixture WebGL context before the live game allocates its own renderer targets.
@@ -98,7 +98,7 @@ try {
   await gamePage.locator('#debug-toggle').click();
   await gamePage.waitForFunction(() => {
     const value = document.getElementById('debug-data')?.innerText || '';
-    return value.includes('CAR REFLECTION TARGET') && value.includes('MESHES');
+    return value.includes('CAR REFLECTION TARGET') && value.includes('MESHES') && value.includes('TRACK WORLD') && value.includes('ROAD CURBS');
   }, null, { timeout: 45000 });
   await gamePage.waitForFunction(() => {
     const value = document.getElementById('debug-data')?.innerText || '';
@@ -108,13 +108,27 @@ try {
   await gamePage.context().grantPermissions(['clipboard-read', 'clipboard-write']);
   await gamePage.locator('#debug-copy').click();
   const copiedDiagnostics = await gamePage.evaluate(() => navigator.clipboard.readText());
-  assert(copiedDiagnostics.includes('CAR REFLECTION RATE') && copiedDiagnostics.includes('FRAME PACING P50 / P95 / MAX') && copiedDiagnostics.includes('RENDER TARGET MEMORY EST.') && copiedDiagnostics.includes('CPU FRAME / UPDATE / SHADOW / WORLD / MIRROR / BLOOM / POST') && copiedDiagnostics.includes('GPU SHADOW / WORLD / MIRROR / BLOOM / POST'), 'F3 copy button did not copy the complete renderer diagnostics: ' + copiedDiagnostics);
+  assert(copiedDiagnostics.includes('CAR REFLECTION RATE') && copiedDiagnostics.includes('FRAME PACING P50 / P95 / MAX') && copiedDiagnostics.includes('RENDER TARGET MEMORY EST.') && copiedDiagnostics.includes('CPU FRAME / UPDATE / SHADOW / WORLD / MIRROR / BLOOM / POST') && copiedDiagnostics.includes('GPU SHADOW / WORLD / MIRROR / BLOOM / POST') && copiedDiagnostics.includes('TRACK WORLD') && copiedDiagnostics.includes('ROAD CURBS'), 'F3 copy button did not copy complete renderer/environment diagnostics: ' + copiedDiagnostics);
   assert((await gamePage.locator('#debug-copy').innerText()) === 'СКОПИРОВАНО', 'F3 copy button did not show its success state');
   const liveReflectionDiagnostics = await gamePage.locator('#debug-data').innerText();
   assert(/MIRROR CAPTURE READY/.test(liveReflectionDiagnostics), 'Live game did not produce a READY planar vehicle reflection: ' + liveReflectionDiagnostics);
+  assert(/ROAD CURBS.*CONTINUOUS CYAN · BOTH SIDES · 164 SEGMENTS/.test(liveReflectionDiagnostics), 'Live road curb diagnostics are incomplete: ' + liveReflectionDiagnostics);
+  const viewCanvas=gamePage.locator('#scene'),viewBox=await viewCanvas.boundingBox();
+  assert(viewBox,'Main scene canvas has no visible bounds');
+  const lookX=viewBox.x+viewBox.width*.5,lookY=viewBox.y+viewBox.height*.52;
+  await gamePage.mouse.move(lookX,lookY);await gamePage.mouse.down();
+  await gamePage.screenshot({path:'artifacts/build219-world-view-front.png'});
+  await gamePage.mouse.move(lookX+262,lookY,{steps:10});
+  await gamePage.screenshot({path:'artifacts/build219-world-view-right.png'});
+  await gamePage.mouse.move(lookX,lookY,{steps:10});
+  await gamePage.mouse.move(lookX-262,lookY,{steps:10});
+  await gamePage.screenshot({path:'artifacts/build219-world-view-left.png'});
+  await gamePage.mouse.move(lookX-524,lookY,{steps:10});
+  await gamePage.screenshot({path:'artifacts/build219-world-view-rear.png'});
+  await gamePage.mouse.up();
   assert(/\\b[1-9][0-9]* MESHES\\b/.test(liveReflectionDiagnostics), 'Live game mirror capture has no vehicle meshes: ' + liveReflectionDiagnostics);
   assert(pageErrors.length === 0, 'Game browser page errors: ' + pageErrors.join('\\n'));
-  console.log('BUILD 218 LIVE GAME MIRROR CAPTURE // ' + liveReflectionDiagnostics.replace(/\s+/g, ' '));
+  console.log('BUILD 219 LIVE GAME WORLD + MIRROR CAPTURE // ' + liveReflectionDiagnostics.replace(/\s+/g, ' '));
 
   await gamePage.keyboard.press('Escape');
   await gamePage.waitForSelector('#main-menu.show', { timeout: 10000 });
