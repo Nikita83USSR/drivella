@@ -47,6 +47,14 @@ jobs:
         run: npx playwright install --with-deps chromium
       - name: Verify browser startup, Havok collision and network isolation
         run: node tools/run-engine-lab-smoke.mjs
+      - name: Upload spatial world preview
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: drivella-engine-lab-spatial-preview
+          path: artifacts/
+          if-no-files-found: ignore
+          retention-days: 7
       - name: Commit generated runtime files to migration branch
         if: github.event_name == 'push' && github.ref == 'refs/heads/engine-migration-foundation'
         run: |
