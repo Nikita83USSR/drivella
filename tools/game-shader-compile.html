@@ -27,7 +27,7 @@ const response=await fetch('../index.html',{cache:'no-store'});
 must(response.ok,'Cannot fetch production index.html: HTTP '+response.status);
 const html=await response.text();
 const version=html.match(/const VERSION='([^']+)',BUILD='([^']+)'/);
-must(version&&version[1]==='v0.19.53'&&version[2]==='218','Unexpected production version marker: '+JSON.stringify(version));
+must(version&&version[1]==='v0.19.53'&&version[2]==='219','Unexpected production version marker: '+JSON.stringify(version));
 must(html.includes("const GPU_POWER_PREFERENCE='high-performance'")&&html.includes('powerPreference:GPU_POWER_PREFERENCE'),'Production WebGL context does not request a high-performance GPU');
 must(html.includes('function updateAdaptiveRenderScale(now)'),'Production adaptive render-resolution controller is missing');
 function expression(name,endMarker){
