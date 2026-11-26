@@ -575,6 +575,29 @@ const opaqueGlassReflectionPixel=reflectionCaptureProbe(3,[.20,.30,.40,.12]);
 const opaqueLampReflectionPixel=reflectionCaptureProbe(8,[.45,.60,.78,.18]);
 const vehicleReflectionOpaqueCapturePixelFixturePass=opaqueGlassReflectionPixel[3]===255&&opaqueLampReflectionPixel[3]===255&&opaqueGlassReflectionPixel[2]>opaqueGlassReflectionPixel[0]&&opaqueLampReflectionPixel[2]>opaqueLampReflectionPixel[0];
 
+// Compile and pixel-test the actual production cyan grid-emitter branch.
+const neonGridStart=sources.mainFragment.indexOf('if(resolvedMaterialMode>9.5&&resolvedMaterialMode<10.5){');
+const neonGridEnd=sources.mainFragment.indexOf('float shadowVisibility=1.0;',neonGridStart);
+must(neonGridStart>=0&&neonGridEnd>neonGridStart,'Production neon grid emissive branch is missing');
+const neonGridBranch=sources.mainFragment.slice(neonGridStart,neonGridEnd);
+const neonGridVs='attribute vec2 aPosition;void main(){gl_Position=vec4(aPosition,0.0,1.0);}';
+const neonGridFs='precision mediump float;uniform vec4 baseColor;uniform float resolvedMaterialMode;void main(){vec4 color=baseColor;'+neonGridBranch+'gl_FragColor=vec4(0.0);}';
+const neonGridProgram=makeProgram(neonGridVs,neonGridFs,'Production cyan grid emissive pixel fixture');
+const neonGridTarget=makeTarget(1,1);
+must(neonGridTarget.status===gl.FRAMEBUFFER_COMPLETE,'Neon grid fixture framebuffer incomplete');
+function neonGridProbe(){
+ gl.bindFramebuffer(gl.FRAMEBUFFER,neonGridTarget.framebuffer);gl.viewport(0,0,1,1);
+ gl.disable(gl.DEPTH_TEST);gl.disable(gl.BLEND);gl.depthMask(false);gl.clearColor(0,0,0,0);gl.clear(gl.COLOR_BUFFER_BIT);
+ gl.useProgram(neonGridProgram);
+ gl.uniform4f(location(neonGridProgram,'baseColor'),.18,.84,1,1);
+ gl.uniform1f(location(neonGridProgram,'resolvedMaterialMode'),10);
+ drawGeometry(neonGridProgram,'aPosition',fullscreenVertices,gl.TRIANGLES);gl.finish();
+ const pixel=new Uint8Array(4);gl.readPixels(0,0,1,1,gl.RGBA,gl.UNSIGNED_BYTE,pixel);return Array.from(pixel);
+}
+const neonGridPixel=neonGridProbe();
+const neonGridEmissionPixelPass=neonGridTarget.status===gl.FRAMEBUFFER_COMPLETE&&neonGridPixel[1]>200&&neonGridPixel[2]>230&&neonGridPixel[3]===255;
+gl.bindFramebuffer(gl.FRAMEBUFFER,null);gl.viewport(0,0,W,H);gl.depthMask(true);gl.enable(gl.DEPTH_TEST);
+
 // Test distance-stable screen-space grid geometry. The production VS expands only the thin line axis.
 const gridLodPixelScale=2*Math.tan(68*Math.PI/360)/540;
 const gridLodNearHalfWidth=Math.max(.012,Math.min(.16,25*gridLodPixelScale*.88*.5));
