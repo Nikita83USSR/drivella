@@ -22,7 +22,10 @@ assert.equal(terrainChunkLayer(3, 0, 128), 1);
 assert.equal(terrainChunkLayer(-3, 0, 128), -1);
 const eastRange = terrainChunkHeightRange(3, 0, 128);
 const westRange = terrainChunkHeightRange(-3, 0, 128);
-assert.ok(eastRange.max > 64 && westRange.min < -64, "terrain relief must cross vertical chunk layers");
+assert.ok(eastRange.max > 100 && westRange.min < -80, "terrain relief must cross vertical chunk layers");
+assert.ok(eastRange.max - eastRange.min > 35, "terrain patches need meaningful relief rather than a flat sheet");
+assert.notEqual(terrainHeight(240, 96), terrainHeight(-240, 96), "the terrain field must vary in world space");
+assert.equal(terrainHeight(384, 0), terrainHeight(384, 0), "terrain coordinates must resolve deterministically");
 
 for (const axis of ["+X", "-X", "+Y", "-Y", "+Z", "-Z"]) {
   assert.equal(initial.axisCoverage[axis], true, `missing symmetric world coverage on ${axis}`);
