@@ -73,12 +73,19 @@ try {
     physicsMode: window.__DRIVELLA_LAB__.physicsMode,
     probeY: window.__DRIVELLA_LAB__.probeY,
     probeStableFrames: window.__DRIVELLA_LAB__.probeStableFrames,
+    probeX: window.__DRIVELLA_LAB__.probeX,
+    probeZ: window.__DRIVELLA_LAB__.probeZ,
+    terrainYAtProbe: window.__DRIVELLA_LAB__.terrainYAtProbe,
     spatial: window.__DRIVELLA_LAB__.spatial
   }));
 
   if (state.frames < 30) throw new Error("Render loop did not advance enough frames.");
   if (!state.physicsMode.startsWith("havok")) throw new Error("Havok Physics V2 was not initialized.");
   if (state.probeStableFrames < 30) throw new Error("Physics probe did not settle after collision.");
+  const probeClearance = state.probeY - 1.5 - state.terrainYAtProbe;
+  if (!Number.isFinite(probeClearance) || probeClearance < -0.8 || probeClearance > 8) {
+    throw new Error("Physics probe is not resting against the visible terrain surface: " + JSON.stringify({ probeClearance, state }));
+  }
   if (!state.spatial || Object.values(state.spatial.axisCoverage).some((covered) => !covered)) {
     throw new Error("Spatial chunk coverage is incomplete in one or more XYZ directions.");
   }
