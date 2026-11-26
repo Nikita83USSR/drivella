@@ -14,7 +14,7 @@ canvas{display:block;width:100%;height:auto;border:1px solid #58eaff55;margin:14
 </style>
 </head>
 <body><main>
-<h1>DRIVELLA // BUILD 204 HALF-AMPLITUDE MIRROR RIPPLE + SOFT UNDERGLOW EDGE + PRODUCTION GLSL</h1>
+<h1>DRIVELLA // BUILD 205 HALF-AMPLITUDE MIRROR RIPPLE + SOFT UNDERGLOW EDGE + PRODUCTION GLSL</h1>
 <canvas id="gl" width="960" height="540"></canvas>
 <pre id="report">Extracting production shaders…</pre>
 </main>
@@ -27,7 +27,7 @@ const response=await fetch('../index.html',{cache:'no-store'});
 must(response.ok,'Cannot fetch production index.html: HTTP '+response.status);
 const html=await response.text();
 const version=html.match(/const VERSION='([^']+)',BUILD='([^']+)'/);
-must(version&&version[1]==='v0.19.38'&&version[2]==='204','Unexpected production version marker: '+JSON.stringify(version));
+must(version&&version[1]==='v0.19.39'&&version[2]==='205','Unexpected production version marker: '+JSON.stringify(version));
 function expression(name,endMarker){
  const marker='const '+name+'=';
  const start=html.indexOf(marker);
@@ -799,7 +799,7 @@ const checks={
   vehicleReflectionIsStableWhenParkedAndSubtlyRipplesInMotion:vehicleReflectionMotionPixelFixturePass&&html.includes("vehicleReflectionMotion:gl.getUniformLocation(prog,'vehicleReflectionMotion')")&&html.includes('getVehicleSpeed()-2.0')&&html.includes('loc.vehicleReflectionMotion,garageMode?0.0:clamp('),
   vehicleReflectionPreservesLampMaterial:sources.mainFragment.includes('solidLamp=min(color.rgb*vec3(1.90,1.50,1.25)+vec3(0.03,0.06,0.15),vec3(1.35))'),
   asphaltEnvironmentReflectionReducedByHalf:sources.mainFragment.includes('clamp(0.06+roadFresnel*0.20,0.0,0.24)'),
-  vehicleReflectionMixIsClearlyVisible:sources.mainFragment.includes('reflectionCoverage*0.90')&&sources.mainFragment.includes('vec4 reflectionClip=vehicleReflectionVP*vec4(vWorldPos.x,0.005,vWorldPos.z,1.0)'),
+  vehicleReflectionIntensityIsHalved:sources.mainFragment.includes('reflectionCoverage*0.45')&&!sources.mainFragment.includes('reflectionCoverage*0.90')&&sources.mainFragment.includes('vec4 reflectionClip=vehicleReflectionVP*vec4(vWorldPos.x,0.005,vWorldPos.z,1.0)'),
   continuousRoadSurfaceHasNoSegmentBoxes:continuousRoadGeometryPixelFixturePass&&!html.includes('queueRoadCube(roadInstances,cx,-.105,z,9.4,.11,5,C.road,0,9)'),
   continuousRoadSurfaceUsesOneDynamicMesh:html.includes('const ROAD_SURFACE_SEGMENTS=108')&&html.includes('gl.bufferData(gl.ARRAY_BUFFER,geometry.data,gl.DYNAMIC_DRAW)')&&html.includes('buildRoadSurfaceGeometry(centerZ)'),
   neonGridIsSingleColourEmitter:html.includes('grid:[.18,.84,1,1]')&&html.includes('gridPlane,0,-.245')&&!html.includes('C.grid2')&&neonGridEmissionPixelPass,
@@ -813,7 +813,7 @@ const checks={
   vehicleReflectionHasF4ToggleAndDefault:html.includes('data-fx="vehicleReflections" checked')&&html.includes('vehicleReflections:true'),
   vehicleReflectionReportsF3:html.includes('CAR REFLECTION TARGET')&&html.includes('vehicleReflectionTarget.width')&&html.includes('MIRROR CAPTURE READY')&&html.includes('lastVehicleRoadReflectionMeshCount'),
   surfaceReflectionDoesNotCaptureEmissiveMaterialEight:sources.mainFragment.includes('resolvedMaterialMode>7.5&&resolvedMaterialMode<8.5')&&html.includes('fixtureYaw,8'),
-  productionVersionVisibleEverywhere:html.includes('id="version-label">v0.19.38 · BUILD 204</div>')&&html.includes('3D NEON HIGHWAY // BUILD 204')&&html.includes('ENGINE STARTUP // v0.19.38 · BUILD 204'),
+  productionVersionVisibleEverywhere:html.includes('id="version-label">v0.19.39 · BUILD 205</div>')&&html.includes('3D NEON HIGHWAY // BUILD 205')&&html.includes('ENGINE STARTUP // v0.19.39 · BUILD 205'),
  roadInstancingProductionVertexCompiled:!!roadProbeV.shader,
  roadInstancingProbeProgramLinked:!!roadProbeP.program,
  roadInstancingAttributesArePresent:['attribute vec3 instancePosition;','attribute vec3 instanceScale;','attribute vec2 instanceYaw;','attribute vec4 instanceColor;','attribute float instanceHeadlight;','attribute float instanceMaterial;'].every(token=>sources.mainVertex.includes(token)),
@@ -948,7 +948,7 @@ const result={pass:true,version:version[1],build:version[2],checks,gridDerivativ
 window.__GAME_SHADER_RESULT__=result;
 report.className='pass';
 report.textContent='PASS\\n'+JSON.stringify(result,null,2);
-document.title='PASS DRIVELLA BUILD 204 derivative grid + 16-point area light + end-to-end mirror reflection';
+document.title='PASS DRIVELLA BUILD 205 derivative grid + 16-point area light + end-to-end mirror reflection';
 })().catch(error=>{
  const report=document.getElementById('report');
  report.className='fail';
