@@ -2501,7 +2501,7 @@ function drawWorld(){
  // Asphalt is also fixed in world space; no phase-based repositioning or snapping.
  const rStart=Math.floor((distance-ROAD_SURFACE_BACK)/10),rEnd=Math.ceil((distance+ROAD_SURFACE_FORWARD)/10);
  for(let i=rStart;i<=rEnd;i++){
-  const z=i*10,road=roadSidePoint(z,0);
+  const z=i*10;
   if(i%2===0){
    const left=roadSidePoint(z,-2.55),right=roadSidePoint(z,2.55);
    queueRoadCube(roadInstances,left[0],.018,left[1],.045,.018,1.55,C.white,left[2]);
@@ -2521,11 +2521,7 @@ function drawWorld(){
  const curbs=updateRoadCurbsMesh(distance);
  bindMesh(curbs.shape,curbs.model,C.cyan,0,0);
  if(!shadowPass&&!outlinePass)lastRoadCurbSegments=ROAD_SURFACE_SEGMENTS;
- // Cross-fading procedural biomes now populate a symmetric 360-degree region. draw(gridPlane,0,-.245,distance+105,150,.001,145,C.ground,0,0,12);
- const asphalt=updateRoadSurfaceMesh(distance);
- bindMesh(asphalt.shape,asphalt.model,C.road,0,9);
- if(!shadowPass&&!outlinePass){lastRoadBatchCount++;lastRoadSurfaceSegments=ROAD_SURFACE_SEGMENTS;}
- // Cross-fading procedural biomes; no fixed roadside house/tree props.
+ // Cross-fading procedural biomes now populate a symmetric 360-degree region.
  const bw=biomeWeights(distance);
  gl.enable(gl.BLEND);gl.blendFunc(gl.SRC_ALPHA,gl.ONE_MINUS_SRC_ALPHA);gl.depthMask(false);
  drawBiome(distance,bw[0],0);drawBiome(distance,bw[1],1);drawBiome(distance,bw[2],2);
