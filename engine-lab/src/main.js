@@ -36,6 +36,7 @@ const labState = {
   physicsMode: "initializing",
   frames: 0,
   probeY: null,
+  probeStableFrames: 0,
   error: null,
   spatial: null
 };
@@ -247,6 +248,8 @@ let havokAttemptRunning = false;
 let havokInstance = null;
 let probeMesh = null;
 let frameCounter = 0;
+let lastProbeY = null;
+let probeStableFrames = 0;
 const dynamicMeshes = [];
 
 function spawnDynamicBox(x, y, z) {
@@ -364,7 +367,17 @@ async function boot() {
     scene.onAfterRenderObservable.add(() => {
       frameCounter += 1;
       labState.frames = frameCounter;
-      if (probeMesh) labState.probeY = Number(probeMesh.position.y.toFixed(3));
+      if (probeMesh) {
+        const currentY = probeMesh.position.y;
+        labState.probeY = Number(currentY.toFixed(3));
+        if (lastProbeY !== null && Math.abs(currentY - lastProbeY) < 0.05) {
+          probeStableFrames += 1;
+        } else {
+          probeStableFrames = 0;
+        }
+        lastProbeY = currentY;
+        labState.probeStableFrames = probeStableFrames;
+      }
       if (frameCounter % 18 === 0) fpsMeta.textContent = "FPS: " + engine.getFps().toFixed(0);
       if (frameCounter % 6 === 0 && chunkManager && camera) {
         const spatial = chunkManager.update(camera.target);
