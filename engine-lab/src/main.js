@@ -151,19 +151,19 @@ function createSpatialReference(scene, worldRadius) {
 function createEnvironment(scene) {
   const worldRadius = 420;
   const skyLight = new HemisphericLight("sky-fill", new Vector3(0, 1, 0), scene);
-  skyLight.intensity = 0.74;
+  skyLight.intensity = 1.18;
   skyLight.groundColor = new Color3(0.035, 0.055, 0.1);
 
   const sun = new DirectionalLight("sun", new Vector3(-0.45, -1, 0.3), scene);
   sun.position = new Vector3(70, 130, -40);
-  sun.intensity = 1.55;
+  sun.intensity = 2.1;
 
   const camera = new ArcRotateCamera(
     "world-orbit-camera",
     -Math.PI * 0.72,
     Math.PI * 0.34,
-    worldRadius * 1.34,
-    new Vector3(0, 8, 0),
+    worldRadius * 0.88,
+    new Vector3(0, 5, 0),
     scene
   );
   camera.attachControl(canvas, true);
@@ -177,10 +177,10 @@ function createEnvironment(scene) {
   scene.activeCamera = camera;
 
   const terrainMaterial = new StandardMaterial("terrain-material", scene);
-  terrainMaterial.diffuseColor = new Color3(0.055, 0.12, 0.16);
-  terrainMaterial.specularColor = new Color3(0.16, 0.26, 0.31);
+  terrainMaterial.diffuseColor = new Color3(0.22, 0.32, 0.42);
+  terrainMaterial.specularColor = new Color3(0.28, 0.38, 0.48);
   terrainMaterial.specularPower = 24;
-  terrainMaterial.emissiveColor = new Color3(0.018, 0.052, 0.061);
+  terrainMaterial.emissiveColor = new Color3(0.085, 0.13, 0.18);
   terrainMaterial.backFaceCulling = false;
   terrainMaterial.twoSidedLighting = true;
 
@@ -220,7 +220,7 @@ function createEnvironment(scene) {
 
   scene.clearColor = new Color4(0.018, 0.027, 0.052, 1);
   scene.fogMode = Scene.FOGMODE_EXP2;
-  scene.fogDensity = 0.00022;
+  scene.fogDensity = 0.000035;
   scene.fogColor = new Color3(0.018, 0.027, 0.052);
 
   return { camera, chunkManager, terrainMeshes, terrainBodies };
@@ -392,8 +392,8 @@ async function boot() {
     resetButton.addEventListener("click", () => {
       camera.alpha = -Math.PI * 0.72;
       camera.beta = Math.PI * 0.34;
-      camera.radius = chunkManager.radius * 1.34;
-      camera.target.set(0, 8, 0);
+      camera.radius = chunkManager.radius * 0.88;
+      camera.target.set(0, 5, 0);
     });
 
     dropButton.addEventListener("click", () => {
