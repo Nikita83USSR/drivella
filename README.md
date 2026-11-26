@@ -2,12 +2,12 @@
 
 A browser-based synthwave drift-racing prototype with a custom low-poly 3D car, a procedural neon environment, and a hand-built WebGL renderer.
 
-> **Status:** Playable prototype under active development. Current renderer reference: **v0.19.52 / BUILD 218**.
+> **Status:** Playable prototype under active development. Current renderer reference: **v0.19.53 / BUILD 219**.
 > **Release identification:** every published game change increments the visible BUILD number in the HUD and startup screen; README and rendering architecture are updated in the same release.
 
 - **BUILD 212:** add a clickable F3 diagnostics copy button. It copies the full diagnostic text, including the current CPU/GPU pass timings, and falls back to the legacy selection-based clipboard path when needed.
 
-- **BUILD 218 / v0.19.52:** reduce the road-car reflection blend to 0.225 and add a subtle vertical fade so the reflected vehicle image diminishes farther up the screen. Production shader and pixel regressions cover the intensity reduction and height fade.
+- **BUILD 219 / v0.19.53:** expand the active track world for 360° camera viewing; generate deterministic road/biome placement, extend the asphalt corridor behind the car, widen the ground and scenery region, add an eight-segment low-poly horizon ridge ring, and replace the misaligned segmented edge rails with continuous same-colour road curbs. Lane markings, roadside lights and the directional shadow focus follow the road tangent. Near scenery retains detail while distant repeated windows/palm accents use a lighter LOD. Existing car physics, wheels, reflection shaders and post-processing remain unchanged.
 
 - **BUILD 211:** preserve the original asphalt-reflection kernel and spatial resolution while skipping road-environment and vehicle-mirror shader work when their effects are disabled or the projected mirror is invalid. In races only, mirror capture refreshes every second frame below 62 FPS and returns to full rate above 70 FPS; the garage remains full-rate. F3 separates mirror capture CPU/GPU timing from the rest of the world pass.
 

@@ -1,5 +1,13 @@
 name: DRIVELLA renderer regression
 on:
+  pull_request:
+    branches: [main]
+    paths:
+      - 'index.html'
+      - 'assets/**'
+      - 'tools/game-shader-compile.html'
+      - 'tools/run-aura-regression.mjs'
+      - '.github/workflows/aura-regression.yml'
   push:
     branches: [main]
     paths:

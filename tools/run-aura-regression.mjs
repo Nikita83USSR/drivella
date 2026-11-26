@@ -60,11 +60,11 @@ try {
   await page.waitForFunction(() => Boolean(window.__GAME_SHADER_RESULT__) || document.title.startsWith('FAIL'), null, { timeout: 60000 });
   const result = await page.evaluate(() => window.__GAME_SHADER_RESULT__);
   assert(result, 'Browser test page reported failure without a result object: ' + await page.title());
-  await page.screenshot({ path: 'artifacts/derivative-grid-area-light-end-to-end-mirror-build218-regression.png', fullPage: true });
-  console.log('PRODUCTION BUILD218: DERIVATIVE GRID + 16-POINT RED AREA LIGHT + VEHICLE MIRROR CAPTURE-TO-ROAD PIXEL REGRESSION\n' + JSON.stringify(result, null, 2));
+  await page.screenshot({ path: 'artifacts/derivative-grid-area-light-end-to-end-mirror-build219-regression.png', fullPage: true });
+  console.log('PRODUCTION BUILD219: DERIVATIVE GRID + AREA LIGHT + VEHICLE MIRROR + 360-DEGREE ENVIRONMENT REGRESSION\n' + JSON.stringify(result, null, 2));
   assert(result.pass, 'Production shader regression failed: ' + JSON.stringify(result));
   assert(pageErrors.length === 0, 'Browser page errors: ' + pageErrors.join('\\n'));
-  console.log('ALL BUILD 218 DERIVATIVE GRID/16-POINT AREA LIGHT/REAL MIRROR-TO-ASPHALT PIXELS/SHADER/VEHICLE CHECKS PASSED');
+  console.log('ALL BUILD 219 SHADER/AREA LIGHT/MIRROR/ENVIRONMENT/VEHICLE CHECKS PASSED');
 
 
   // Release the shader-fixture WebGL context before the live game allocates its own renderer targets.
@@ -76,45 +76,53 @@ try {
     if (message.type() === 'error') console.error('GAME BROWSER CONSOLE:', message.text());
   });
   await gamePage.bringToFront();
-  await gamePage.goto(baseUrl + '/', { waitUntil: 'domcontentloaded', timeout: 20000 });
-  try {
-    await gamePage.waitForSelector('#main-menu.show', { timeout: 45000 });
-  } catch (error) {
-    let startupState = null;
-    try {
-      startupState = await gamePage.evaluate(() => ({
-        title: document.title,
-        bodyClass: document.body.className,
-        bootScreen: document.getElementById('boot-screen')?.className,
-        bootStatus: document.getElementById('boot-status')?.innerText,
-        bootPercent: document.getElementById('boot-percent')?.innerText,
-        menuClass: document.getElementById('main-menu')?.className
-      }));
-      await gamePage.screenshot({ path: 'artifacts/build218-live-game-startup-failure.png', fullPage: true });
-    } catch (_) {}
-    throw new Error('Live game boot diagnostics: ' + JSON.stringify({ startupState, pageErrors }) + ' // ' + error.message);
-  }
-  await gamePage.locator('#menu-start').click();
-  await gamePage.locator('#debug-toggle').click();
+  const gameResponse = await gamePage.goto(baseUrl + '/', { waitUntil: 'commit', timeout: 30000 });
+  assert(gameResponse && gameResponse.ok(), 'Game document request failed: ' + (gameResponse ? gameResponse.status() : 'no response'));
+  await gamePage.waitForFunction(() => {
+    const menu = document.getElementById('main-menu');
+    const style = menu ? getComputedStyle(menu) : null;
+    const rect = menu?.getBoundingClientRect();
+    return !!menu && menu.classList.contains('show') && style?.display !== 'none'
+      && style?.visibility !== 'hidden' && rect?.width > 0 && rect?.height > 0;
+  }, null, { timeout: 90000 });
+  const menuDiagnostics = await gamePage.evaluate(() => {
+    const menu = document.getElementById('main-menu'), style = getComputedStyle(menu), rect = menu.getBoundingClientRect();
+    return {display:style.display,visibility:style.visibility,opacity:style.opacity,width:rect.width,height:rect.height,
+      bootStatus:document.getElementById('boot-status')?.innerText,bootPercent:document.getElementById('boot-percent')?.innerText};
+  });
+  assert(menuDiagnostics.display === 'flex' && menuDiagnostics.visibility === 'visible'
+    && menuDiagnostics.width > 0 && menuDiagnostics.height > 0, 'Main menu did not become a visible layout surface: '+JSON.stringify(menuDiagnostics));
+  await gamePage.evaluate(() => document.getElementById('menu-start')?.click());
+  await gamePage.evaluate(() => document.getElementById('debug-toggle')?.click());
   await gamePage.waitForFunction(() => {
     const value = document.getElementById('debug-data')?.innerText || '';
-    return value.includes('CAR REFLECTION TARGET') && value.includes('MESHES');
+    return value.includes('CAR REFLECTION TARGET') && value.includes('MESHES') && value.includes('TRACK WORLD') && value.includes('ROAD CURBS') && value.includes('WORLD PANORAMA');
   }, null, { timeout: 45000 });
   await gamePage.waitForFunction(() => {
     const value = document.getElementById('debug-data')?.innerText || '';
-    return value.includes('MIRROR CAPTURE READY') && /\\b[1-9][0-9]* MESHES\\b/.test(value);
+    return value.includes('MIRROR CAPTURE READY') && /\b[1-9][0-9]* MESHES\b/.test(value);
   }, null, { timeout: 45000 });
-  await gamePage.screenshot({ path: 'artifacts/build218-live-game-reflection-capture-smoke.png', fullPage: true });
   await gamePage.context().grantPermissions(['clipboard-read', 'clipboard-write']);
-  await gamePage.locator('#debug-copy').click();
+  await gamePage.evaluate(() => document.getElementById('debug-copy')?.click());
   const copiedDiagnostics = await gamePage.evaluate(() => navigator.clipboard.readText());
-  assert(copiedDiagnostics.includes('CAR REFLECTION RATE') && copiedDiagnostics.includes('FRAME PACING P50 / P95 / MAX') && copiedDiagnostics.includes('RENDER TARGET MEMORY EST.') && copiedDiagnostics.includes('CPU FRAME / UPDATE / SHADOW / WORLD / MIRROR / BLOOM / POST') && copiedDiagnostics.includes('GPU SHADOW / WORLD / MIRROR / BLOOM / POST'), 'F3 copy button did not copy the complete renderer diagnostics: ' + copiedDiagnostics);
+  assert(copiedDiagnostics.includes('CAR REFLECTION RATE') && copiedDiagnostics.includes('FRAME PACING P50 / P95 / MAX') && copiedDiagnostics.includes('RENDER TARGET MEMORY EST.') && copiedDiagnostics.includes('CPU FRAME / UPDATE / SHADOW / WORLD / MIRROR / BLOOM / POST') && copiedDiagnostics.includes('GPU SHADOW / WORLD / MIRROR / BLOOM / POST') && copiedDiagnostics.includes('TRACK WORLD') && copiedDiagnostics.includes('ROAD CURBS') && copiedDiagnostics.includes('WORLD PANORAMA'), 'F3 copy button did not copy complete renderer/environment diagnostics: ' + copiedDiagnostics);
   assert((await gamePage.locator('#debug-copy').innerText()) === 'СКОПИРОВАНО', 'F3 copy button did not show its success state');
   const liveReflectionDiagnostics = await gamePage.locator('#debug-data').innerText();
   assert(/MIRROR CAPTURE READY/.test(liveReflectionDiagnostics), 'Live game did not produce a READY planar vehicle reflection: ' + liveReflectionDiagnostics);
-  assert(/\\b[1-9][0-9]* MESHES\\b/.test(liveReflectionDiagnostics), 'Live game mirror capture has no vehicle meshes: ' + liveReflectionDiagnostics);
+  assert(/ROAD CURBS.*CONTINUOUS CYAN · BOTH SIDES · 164 SEGMENTS/.test(liveReflectionDiagnostics), 'Live road curb diagnostics are incomplete: ' + liveReflectionDiagnostics);
+  assert(/WORLD PANORAMA.*8 LOW-POLY RIDGE SEGMENTS/.test(liveReflectionDiagnostics), '360-degree ridge horizon is missing from live diagnostics: ' + liveReflectionDiagnostics);
+  const viewCanvas=gamePage.locator('#scene'),viewBox=await viewCanvas.boundingBox();
+  assert(viewBox,'Main scene canvas has no visible bounds');
+  const lookX=viewBox.x+viewBox.width*.5,lookY=viewBox.y+viewBox.height*.52;
+  await gamePage.mouse.move(lookX,lookY);await gamePage.mouse.down();
+  await gamePage.mouse.move(lookX+262,lookY,{steps:10});
+  await gamePage.mouse.move(lookX,lookY,{steps:10});
+  await gamePage.mouse.move(lookX-262,lookY,{steps:10});
+  await gamePage.mouse.move(lookX-524,lookY,{steps:10});
+  await gamePage.mouse.up();
+  assert(/\b[1-9][0-9]* MESHES\b/.test(liveReflectionDiagnostics), 'Live game mirror capture has no vehicle meshes: ' + liveReflectionDiagnostics);
   assert(pageErrors.length === 0, 'Game browser page errors: ' + pageErrors.join('\\n'));
-  console.log('BUILD 218 LIVE GAME MIRROR CAPTURE // ' + liveReflectionDiagnostics.replace(/\s+/g, ' '));
+  console.log('BUILD 219 LIVE GAME WORLD + MIRROR CAPTURE // ' + liveReflectionDiagnostics.replace(/\s+/g, ' '));
 
   await gamePage.keyboard.press('Escape');
   await gamePage.waitForSelector('#main-menu.show', { timeout: 10000 });
@@ -132,8 +140,7 @@ try {
   assert(/11 SOURCES/.test(garageDiagnostics), 'Garage did not activate all 11 display light sources: ' + garageDiagnostics);
   assert(/2 REPLICAS ROTATING/.test(garageDiagnostics), 'Garage turntable replicas are not reported as rotating: ' + garageDiagnostics);
   assert(/GARAGE MIRROR READY · \d+ MESHES · 3 PLINTHS/.test(garageDiagnostics), 'Garage did not capture all showroom cars for the podium mirrors: ' + garageDiagnostics);
-  await gamePage.screenshot({ path: 'artifacts/build218-live-garage-car-reflections.png', fullPage: true });
-  console.log('BUILD 218 LIVE GARAGE MIRRORS + EFFECTS // ' + garageDiagnostics.replace(/\s+/g, ' '));
+  console.log('BUILD 219 LIVE GARAGE MIRRORS + EFFECTS // ' + garageDiagnostics.replace(/\s+/g, ' '));
   await gamePage.close();
 
   const metaScript = await readFile('assets/countach_model_0.js', 'utf8');

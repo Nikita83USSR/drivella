@@ -122,9 +122,9 @@
 <body>
 <canvas id="scene"></canvas><canvas id="sun"></canvas>
 <div id="hud">
- <div class="top"><div class="logo">DRIVELLA<small>3D SYNTHWAVE DRIFT RACING</small></div><div class="version-label" id="version-label">v0.19.52 · BUILD 218</div><div class="stat">DISTANCE<b id="distance">000.0 KM</b></div><div class="stat">LOCATION<b>VIOLET COAST</b></div></div>
+ <div class="top"><div class="logo">DRIVELLA<small>3D SYNTHWAVE DRIFT RACING</small></div><div class="version-label" id="version-label">v0.19.53 · BUILD 219</div><div class="stat">DISTANCE<b id="distance">000.0 KM</b></div><div class="stat">LOCATION<b>VIOLET COAST</b></div></div>
  <div class="right"><div id="speed">000 <span>KM/H</span></div><div id="direction">▶ FORWARD</div><div id="music">♫ MUSIC SCANNING…</div></div>
- <div class="bottom"><div class="hint"><strong>W / ↑</strong> ACCELERATE　<strong>S / ↓</strong> BRAKE / REVERSE<br><strong>A / ←　D / →</strong> STEER　<strong>SPACE</strong> HANDBRAKE　<strong>C</strong> CAMERA　<strong>HOLD + DRAG LMB</strong> LOOK　<strong>L</strong> LIGHTS　<strong>K</strong> WIREFRAME</div><div class="build-credit"><span>3D NEON HIGHWAY // BUILD 218</span><a class="asset-credit" href="https://sketchfab.com/3d-models/low-poly-lamborghini-countach-c9b28a4ad5c74649a09afa613dd3fae1" target="_blank" rel="noopener noreferrer">Original model: 3DShinobi · Sketchfab · CC BY · modified for DRIVELLA</a></div></div>
+ <div class="bottom"><div class="hint"><strong>W / ↑</strong> ACCELERATE　<strong>S / ↓</strong> BRAKE / REVERSE<br><strong>A / ←　D / →</strong> STEER　<strong>SPACE</strong> HANDBRAKE　<strong>C</strong> CAMERA　<strong>HOLD + DRAG LMB</strong> LOOK　<strong>L</strong> LIGHTS　<strong>K</strong> WIREFRAME</div><div class="build-credit"><span>3D NEON HIGHWAY // BUILD 219</span><a class="asset-credit" href="https://sketchfab.com/3d-models/low-poly-lamborghini-countach-c9b28a4ad5c74649a09afa613dd3fae1" target="_blank" rel="noopener noreferrer">Original model: 3DShinobi · Sketchfab · CC BY · modified for DRIVELLA</a></div></div>
 </div>
 <div id="fps-counter" aria-live="off">FPS --</div>
 <div id="effects-menu" aria-hidden="true">
@@ -170,7 +170,7 @@
 </div>
 <div id="tools-ui"><button id="cam-prev" aria-label="Previous camera">◀</button><span id="cam-label">CAM 2 · CLOSE</span><button id="cam-next" aria-label="Next camera">▶</button><button id="debug-toggle">DEBUG</button></div>
 <div id="debug-panel"><div class="debug-head"><div class="debug-title">DRIVELLA DIAGNOSTICS</div><button id="debug-copy" type="button" aria-label="Скопировать всю диагностику">КОПИРОВАТЬ</button></div><div id="debug-data">Initializing…</div></div>
-<div id="boot-screen"><div class="boot-content"><div class="boot-kicker">NIGHT DRIVE SYSTEMS // INITIALIZING</div><div class="boot-logo">DRIVELLA</div><div class="boot-subtitle">3D SYNTHWAVE DRIFT RACING</div><div class="boot-mark"></div><div class="boot-status" id="boot-status">BUILDING THE 3D WORLD</div><div class="boot-track"><div class="boot-progress" id="boot-progress"></div></div><div class="boot-meta"><span>3D ENGINE ONLINE</span><span id="boot-percent">00%</span></div><div class="boot-footer">ENGINE STARTUP // v0.19.52 · BUILD 218</div></div></div>
+<div id="boot-screen"><div class="boot-content"><div class="boot-kicker">NIGHT DRIVE SYSTEMS // INITIALIZING</div><div class="boot-logo">DRIVELLA</div><div class="boot-subtitle">3D SYNTHWAVE DRIFT RACING</div><div class="boot-mark"></div><div class="boot-status" id="boot-status">BUILDING THE 3D WORLD</div><div class="boot-track"><div class="boot-progress" id="boot-progress"></div></div><div class="boot-meta"><span>3D ENGINE ONLINE</span><span id="boot-percent">00%</span></div><div class="boot-footer">ENGINE STARTUP // v0.19.53 · BUILD 219</div></div></div>
 <div id="main-menu"><div class="menu-content"><div class="menu-brand">DRIVELLA GTS</div><div class="menu-sub">RIDE THE RETRO FUTURE</div><div class="menu-actions"><button class="menu-btn" id="menu-start">СТАРТ</button><button class="menu-btn" id="menu-garage">ГАРАЖ</button><button class="menu-btn" id="menu-options">НАСТРОЙКИ</button></div></div><div class="menu-footer">РАЗРАБОТЧИК — <b>НИКИТА МАРКИН</b></div></div>
 <div id="garage-screen"><div class="garage-head">ГАРАЖ // DRIVELLA GTS</div><div class="garage-copy">DRIVELLA GTS · SHOWROOM LAB<br>ТРИ COUNTACH ДЛЯ СРАВНЕНИЯ МАТЕРИАЛОВ И СВЕТА<br>ДОМА · ПАЛЬМЫ · SUN / BLOOM / GOD RAYS</div><div class="garage-controls"><button id="garage-back">← НАЗАД В МЕНЮ</button></div><div class="garage-tip">ЗАЖМИ И ТЯНИ — ВРАЩАЙ ВСЮ СЦЕНУ<br>КОЛЁСИКО — МАСШТАБ · F4 — ЭФФЕКТЫ · F3 — ДИАГНОСТИКА</div></div>
 <div id="options-screen"><div class="options-head">ОПЦИИ</div><div class="options-card"><div class="option-row"><span>МУЗЫКА</span><button id="option-music">ВКЛЮЧЕНА</button></div><div class="option-row"><span>ГРОМКОСТЬ</span><input id="option-volume" type="range" min="0" max="100" value="52"></div><div class="option-row"><span>ЗВУК ДВИГАТЕЛЯ</span><button id="option-sfx">ВКЛЮЧЁН</button></div><div class="option-row"><span>КАМЕРА</span><span>КЛАВИШИ 1–4</span></div><button id="options-back" style="width:100%;margin-top:18px">← НАЗАД В МЕНЮ</button></div></div>
@@ -189,7 +189,7 @@
 <script>
 (()=>{
 'use strict';
-const VERSION='v0.19.52',BUILD='218';
+const VERSION='v0.19.53',BUILD='219';
 const GPU_POWER_PREFERENCE='high-performance';
 const canvas=document.getElementById('scene'),gl=canvas.getContext('webgl',{antialias:true,alpha:true,powerPreference:GPU_POWER_PREFERENCE}),sun=document.getElementById('sun'),sctx=sun.getContext('2d');
 const $=id=>document.getElementById(id);
@@ -401,18 +401,16 @@ const GARAGE_LOCAL_LIGHTS=[
 ];
 // Four point sources stay attached to the existing pink/cyan roadside posts. Adjacent post pairs cross-fade over each 30 m segment.
 const TRACK_LOCAL_LIGHTS=[
- {id:'track-pink-a',position:[-9,.86,0],range:38,color:[1.0,.13,.60],power:0,castsShadow:false},
- {id:'track-cyan-a',position:[9,.86,0],range:38,color:[.20,.88,1.0],power:0,castsShadow:false},
- {id:'track-pink-b',position:[-9,.86,30],range:38,color:[1.0,.13,.60],power:0,castsShadow:false},
- {id:'track-cyan-b',position:[9,.86,30],range:38,color:[.20,.88,1.0],power:0,castsShadow:false}
+ {id:'track-pink-a',position:[-12,.86,0],range:38,color:[1.0,.13,.60],power:0,castsShadow:false},
+ {id:'track-cyan-a',position:[12,.86,0],range:38,color:[.20,.88,1.0],power:0,castsShadow:false},
+ {id:'track-pink-b',position:[-12,.86,30],range:38,color:[1.0,.13,.60],power:0,castsShadow:false},
+ {id:'track-cyan-b',position:[12,.86,30],range:38,color:[.20,.88,1.0],power:0,castsShadow:false}
 ];
 function updateTrackLocalLights(){
  const segmentStart=Math.floor(distance/30)*30,blendT=clamp((distance-segmentStart)/30,0,1),blend=blendT*blendT*(3-2*blendT);
- const zA=segmentStart,zB=segmentStart+30,roadA=roadX(zA),roadB=roadX(zB),powerA=2.8*(1-blend),powerB=2.8*blend;
- TRACK_LOCAL_LIGHTS[0].position[0]=roadA-9;TRACK_LOCAL_LIGHTS[0].position[2]=zA;TRACK_LOCAL_LIGHTS[0].power=powerA;
- TRACK_LOCAL_LIGHTS[1].position[0]=roadA+9;TRACK_LOCAL_LIGHTS[1].position[2]=zA;TRACK_LOCAL_LIGHTS[1].power=powerA;
- TRACK_LOCAL_LIGHTS[2].position[0]=roadB-9;TRACK_LOCAL_LIGHTS[2].position[2]=zB;TRACK_LOCAL_LIGHTS[2].power=powerB;
- TRACK_LOCAL_LIGHTS[3].position[0]=roadB+9;TRACK_LOCAL_LIGHTS[3].position[2]=zB;TRACK_LOCAL_LIGHTS[3].power=powerB;
+ const zA=segmentStart,zB=segmentStart+30,powerA=2.8*(1-blend),powerB=2.8*blend;
+ const aL=roadSidePoint(zA,-12),aR=roadSidePoint(zA,12),bL=roadSidePoint(zB,-12),bR=roadSidePoint(zB,12);
+ for(const [i,power,p] of [[0,powerA,aL],[1,powerA,aR],[2,powerB,bL],[3,powerB,bR]]){TRACK_LOCAL_LIGHTS[i].position[0]=p[0];TRACK_LOCAL_LIGHTS[i].position[1]=.86;TRACK_LOCAL_LIGHTS[i].position[2]=p[1];TRACK_LOCAL_LIGHTS[i].power=power;}
  return TRACK_LOCAL_LIGHTS;
 }
 const localLightPosRangeData=new Float32Array(LOCAL_LIGHT_CAPACITY*4);
@@ -746,7 +744,8 @@ function renderShadowMap(){
  const span=garageMode?clamp(garageZoom*1.55,15,30):38*modeScale;
  const halfWidth=span*Math.sqrt(aspect/1.78),halfDepth=garageMode?span*.92:span*.82;
  const ahead=garageMode?0:([9,15,24,19][cameraMode]||15);
- const focusX=carX+Math.sin(carYaw)*ahead*.42,focusZ=carZ+Math.cos(carYaw)*ahead;
+ const activeCamera=garageMode?null:cameraFor(carX,carZ),viewX=activeCamera?activeCamera.tx-activeCamera.x:0,viewZ=activeCamera?activeCamera.tz-activeCamera.z:1,viewLength=Math.hypot(viewX,viewZ)||1;
+ const focusX=carX+(viewX/viewLength)*ahead,focusZ=carZ+(viewZ/viewLength)*ahead;
  const lightDistance=garageMode?34:46;
  sunShadowVP=matMul(
   orthographic(-halfWidth,halfWidth,-halfDepth,halfDepth,.1,garageMode?105:142),
@@ -920,34 +919,77 @@ function mesh(data){
  const eb=gl.createBuffer();gl.bindBuffer(gl.ARRAY_BUFFER,eb);gl.bufferData(gl.ARRAY_BUFFER,new Float32Array(lineData),gl.STATIC_DRAW);
  return {b,nb,eb,n:data.length/3,en:lineData.length/3,boundsRadius};
 }
-const ROAD_SURFACE_SEGMENTS=108,ROAD_SURFACE_LENGTH=270,ROAD_SURFACE_BACK=40,ROAD_SURFACE_FORWARD=230,ROAD_SURFACE_CENTER_OFFSET=(ROAD_SURFACE_FORWARD-ROAD_SURFACE_BACK)*.5,ROAD_SURFACE_WIDTH=9.4,ROAD_SURFACE_TOP=.005;
-let roadSurfaceMesh=null,lastRoadSurfaceSegments=ROAD_SURFACE_SEGMENTS;
-function ensureRoadSurfaceMesh(){
- if(roadSurfaceMesh)return roadSurfaceMesh;
+const ROAD_SURFACE_SEGMENTS=164,ROAD_SURFACE_BACK=180,ROAD_SURFACE_FORWARD=230,ROAD_SURFACE_LENGTH=ROAD_SURFACE_BACK+ROAD_SURFACE_FORWARD,ROAD_SURFACE_CENTER_OFFSET=(ROAD_SURFACE_FORWARD-ROAD_SURFACE_BACK)*.5,ROAD_SURFACE_WIDTH=9.4,ROAD_SURFACE_TOP=.005;
+const ROAD_WORLD_HALF_EXTENT=420,ROAD_CURB_GAP=.18,ROAD_CURB_WIDTH=.48,ROAD_CURB_BEVEL=.075,ROAD_CURB_HEIGHT=.14;
+let roadSurfaceMesh=null,roadCurbMesh=null,lastRoadSurfaceSegments=ROAD_SURFACE_SEGMENTS,lastRoadCurbSegments=ROAD_SURFACE_SEGMENTS;
+let roadSurfaceCacheCenter=NaN,roadSurfaceCache=null,roadCurbCacheCenter=NaN,roadCurbCache=null;
+function createDynamicTrackMesh(boundsRadius){
  const b=gl.createBuffer(),nb=gl.createBuffer(),eb=gl.createBuffer();
- if(!b||!nb||!eb)throw new Error('Continuous asphalt mesh allocation failed');
- roadSurfaceMesh={b,nb,eb,n:0,en:0,boundsRadius:Math.hypot(ROAD_SURFACE_LENGTH*.5,ROAD_SURFACE_WIDTH)};
- return roadSurfaceMesh;
+ if(!b||!nb||!eb)throw new Error('Dynamic track mesh allocation failed');
+ return {b,nb,eb,n:0,en:0,boundsRadius};
 }
-function buildRoadSurfaceGeometry(centerZ){
- const data=new Float32Array(ROAD_SURFACE_SEGMENTS*6*9),normals=new Float32Array(data.length);
- const surfaceCenterZ=centerZ+ROAD_SURFACE_CENTER_OFFSET,centerX=roadX(surfaceCenterZ),step=ROAD_SURFACE_LENGTH/ROAD_SURFACE_SEGMENTS;
- let o=0;
- for(let i=0;i<ROAD_SURFACE_SEGMENTS;i++){
-  const z0=-ROAD_SURFACE_LENGTH*.5+i*step,z1=z0+step;
-  const x0=roadX(surfaceCenterZ+z0)-centerX,x1=roadX(surfaceCenterZ+z1)-centerX;
-  const left0=[x0-ROAD_SURFACE_WIDTH,ROAD_SURFACE_TOP,z0],right0=[x0+ROAD_SURFACE_WIDTH,ROAD_SURFACE_TOP,z0];
-  const left1=[x1-ROAD_SURFACE_WIDTH,ROAD_SURFACE_TOP,z1],right1=[x1+ROAD_SURFACE_WIDTH,ROAD_SURFACE_TOP,z1];
-  for(const v of [left0,right0,right1,left0,right1,left1]){data[o]=v[0];data[o+1]=v[1];data[o+2]=v[2];normals[o+1]=1;o+=3;}
- }
- return {data,normals,centerX,surfaceCenterZ};
+function writeTrackVertex(data,normals,offset,position,normal){
+ data[offset]=position[0];data[offset+1]=position[1];data[offset+2]=position[2];
+ normals[offset]=normal[0];normals[offset+1]=normal[1];normals[offset+2]=normal[2];
 }
-function updateRoadSurfaceMesh(centerZ){
- const shape=ensureRoadSurfaceMesh(),geometry=buildRoadSurfaceGeometry(centerZ);
+function uploadTrackGeometry(shape,geometry){
  gl.bindBuffer(gl.ARRAY_BUFFER,shape.b);gl.bufferData(gl.ARRAY_BUFFER,geometry.data,gl.DYNAMIC_DRAW);
  gl.bindBuffer(gl.ARRAY_BUFFER,shape.nb);gl.bufferData(gl.ARRAY_BUFFER,geometry.normals,gl.DYNAMIC_DRAW);
- shape.n=geometry.data.length/3;shape.boundsRadius=Math.hypot(ROAD_SURFACE_LENGTH*.5,ROAD_SURFACE_WIDTH);
- return {shape,model:translate(geometry.centerX,0,geometry.surfaceCenterZ)};
+ shape.n=geometry.data.length/3;shape.boundsRadius=geometry.boundsRadius;
+ return {shape,model:translate(geometry.anchorX,0,geometry.anchorZ)};
+}
+function buildRoadSurfaceGeometry(centerZ){
+ const data=new Float32Array(ROAD_SURFACE_SEGMENTS*18),normals=new Float32Array(data.length);
+ const surfaceCenterZ=centerZ+ROAD_SURFACE_CENTER_OFFSET,anchorX=roadX(surfaceCenterZ),anchorZ=surfaceCenterZ;
+ const step=ROAD_SURFACE_LENGTH/ROAD_SURFACE_SEGMENTS;let o=0;
+ for(let i=0;i<ROAD_SURFACE_SEGMENTS;i++){
+  const z0=surfaceCenterZ-ROAD_SURFACE_LENGTH*.5+i*step,z1=z0+step;
+  const l0=roadSidePoint(z0,-ROAD_SURFACE_WIDTH),r0=roadSidePoint(z0,ROAD_SURFACE_WIDTH);
+  const l1=roadSidePoint(z1,-ROAD_SURFACE_WIDTH),r1=roadSidePoint(z1,ROAD_SURFACE_WIDTH);
+  const vertices=[
+   [l0[0]-anchorX,ROAD_SURFACE_TOP,l0[1]-anchorZ],[r0[0]-anchorX,ROAD_SURFACE_TOP,r0[1]-anchorZ],
+   [r1[0]-anchorX,ROAD_SURFACE_TOP,r1[1]-anchorZ],[l0[0]-anchorX,ROAD_SURFACE_TOP,l0[1]-anchorZ],
+   [r1[0]-anchorX,ROAD_SURFACE_TOP,r1[1]-anchorZ],[l1[0]-anchorX,ROAD_SURFACE_TOP,l1[1]-anchorZ]
+  ];
+  for(const p of vertices){writeTrackVertex(data,normals,o,p,[0,1,0]);o+=3;}
+ }
+ return {data,normals,anchorX,anchorZ,boundsRadius:Math.hypot(ROAD_SURFACE_LENGTH*.5,ROAD_SURFACE_WIDTH)};
+}
+function updateRoadSurfaceMesh(centerZ){
+ if(roadSurfaceCache&&roadSurfaceCacheCenter===centerZ)return roadSurfaceCache;
+ if(!roadSurfaceMesh)roadSurfaceMesh=createDynamicTrackMesh(Math.hypot(ROAD_SURFACE_LENGTH*.5,ROAD_SURFACE_WIDTH));
+ roadSurfaceCache=uploadTrackGeometry(roadSurfaceMesh,buildRoadSurfaceGeometry(centerZ));roadSurfaceCacheCenter=centerZ;
+ return roadSurfaceCache;
+}
+function buildRoadCurbsGeometry(centerZ){
+ const data=new Float32Array(ROAD_SURFACE_SEGMENTS*108),normals=new Float32Array(data.length);
+ const anchorX=roadX(centerZ),anchorZ=centerZ,innerBase=ROAD_SURFACE_WIDTH+ROAD_CURB_GAP;
+ const innerTop=innerBase+ROAD_CURB_BEVEL,outerTop=innerBase+ROAD_CURB_WIDTH-ROAD_CURB_BEVEL,outerBase=innerBase+ROAD_CURB_WIDTH;
+ let o=0;
+ const point=(z,lateral,y)=>{const p=roadSidePoint(z,lateral);return [p[0]-anchorX,y,p[1]-anchorZ];};
+ const emitQuad=(a,b,c,d,normal)=>{
+  for(const p of [a,b,c,a,c,d]){writeTrackVertex(data,normals,o,p,normal);o+=3;}
+ };
+ for(let i=0;i<ROAD_SURFACE_SEGMENTS;i++){
+  const z0=centerZ-ROAD_SURFACE_BACK+i*ROAD_SURFACE_LENGTH/ROAD_SURFACE_SEGMENTS,z1=z0+ROAD_SURFACE_LENGTH/ROAD_SURFACE_SEGMENTS;
+  for(const side of [-1,1]){
+   const innerNormal=[-side*.88,.475,0],outerNormal=[side*.88,.475,0];
+   const pInner0=point(z0,side*innerBase,0),pInner1=point(z1,side*innerBase,0);
+   const pInnerTop0=point(z0,side*innerTop,ROAD_CURB_HEIGHT),pInnerTop1=point(z1,side*innerTop,ROAD_CURB_HEIGHT);
+   const pOuterTop0=point(z0,side*outerTop,ROAD_CURB_HEIGHT),pOuterTop1=point(z1,side*outerTop,ROAD_CURB_HEIGHT);
+   const pOuter0=point(z0,side*outerBase,0),pOuter1=point(z1,side*outerBase,0);
+   emitQuad(pInner0,pInner1,pInnerTop1,pInnerTop0,innerNormal);
+   emitQuad(pInnerTop0,pInnerTop1,pOuterTop1,pOuterTop0,[0,1,0]);
+   emitQuad(pOuterTop0,pOuterTop1,pOuter1,pOuter0,outerNormal);
+  }
+ }
+ return {data,normals,anchorX,anchorZ,boundsRadius:Math.hypot(ROAD_SURFACE_LENGTH*.5,outerBase,ROAD_CURB_HEIGHT)};
+}
+function updateRoadCurbsMesh(centerZ){
+ if(roadCurbCache&&roadCurbCacheCenter===centerZ)return roadCurbCache;
+ if(!roadCurbMesh)roadCurbMesh=createDynamicTrackMesh(Math.hypot(ROAD_SURFACE_LENGTH*.5,ROAD_SURFACE_WIDTH+ROAD_CURB_GAP+ROAD_CURB_WIDTH,ROAD_CURB_HEIGHT));
+ roadCurbCache=uploadTrackGeometry(roadCurbMesh,buildRoadCurbsGeometry(centerZ));roadCurbCacheCenter=centerZ;
+ return roadCurbCache;
 }
 function makeGlowDisk(){
  const out=[],segments=64;
@@ -1099,7 +1141,7 @@ function makeRidgeEdge(seed,count,width){
 }
 const ridgeFarEdge=makeRidgeEdge(713,42,280),ridgeMidEdge=makeRidgeEdge(991,34,250),ridgeNearEdge=makeRidgeEdge(1827,27,220);
 const pine=mesh([-.50,0,0,0,1,0,.50,0,0,-.43,.34,.015,0,1.34,.015,.43,.34,.015,-.34,.70,.03,0,1.65,.03,.34,.70,.03]);
-let biomeOrder=[0,1,2];for(let i=2;i>0;i--){const j=Math.floor(Math.random()*(i+1));[biomeOrder[i],biomeOrder[j]]=[biomeOrder[j],biomeOrder[i]];}
+let biomeSeed=0x53434e45,biomeOrder=[0,1,2];function biomeRand(){biomeSeed=(biomeSeed*1664525+1013904223)>>>0;return biomeSeed/4294967296;}for(let i=2;i>0;i--){const j=Math.floor(biomeRand()*(i+1));[biomeOrder[i],biomeOrder[j]]=[biomeOrder[j],biomeOrder[i]];}
 function biomeWeights(z){const span=1120,fade=210,cycle=Math.floor(Math.max(0,z)/span),local=Math.max(0,z)-cycle*span,current=biomeOrder[cycle%3],next=biomeOrder[(cycle+1)%3],t=clamp((local-(span-fade))/fade,0,1),u=t*t*(3-2*t),w=[0,0,0];w[current]=1-u;w[next]+=u;return w;}
 function hash01(n){let x=Math.imul(n^0x9e3779b9,0x85ebca6b);x^=x>>>13;x=Math.imul(x,0xc2b2ae35);x^=x>>>16;return (x>>>0)/4294967295;}
 function makeMountainSide(side,seed){
@@ -1142,23 +1184,26 @@ const garageHouseRoof=mesh([
 function drawBiome(z,weight,type){
  if(weight<.012)return;const a=weight;
  if(type===2){
-  draw(mountainL,0,0,z+125,1,1,1,[.095,.055,.22,a]);
-  draw(mountainR,0,0,z+125,1,1,1,[.095,.055,.22,a]);
+  const mountainX=roadX(z);
+  draw(mountainL,mountainX,0,z,1,1,1,[.095,.055,.22,a]);
+  draw(mountainR,mountainX,0,z,1,1,1,[.095,.055,.22,a]);
   return;
  }
  if(type===0){
   const cityCubes=[];
-  const start=Math.floor((z+30)/34),end=Math.ceil((z+245)/34);
+  const start=Math.floor((z-245)/34),end=Math.ceil((z+245)/34);
   for(let i=start;i<=end;i++){
    const side=i%2?-1:1,zz=i*34,cx=roadX(zz)+side*(36+hash01(i*19+5)*13),h=13+hash01(i*23+7)*22,w=6+hash01(i*37+3)*6,depth=9+hash01(i*41+9)*8;
    queueBiomeInstance(cityCubes,cx,h*.5,zz,w,h*.5,depth,[.045,.032,.095,a]);
    queueBiomeInstance(cityCubes,cx,h+.12,zz,w*1.04,.14,depth*1.04,[.18,.055,.30,a]);
-   const rows=Math.floor(h/2.5),cols=Math.max(2,Math.floor(depth/2.5));
-   for(let row=0;row<rows;row++)for(let col=0;col<cols;col++){
-    const n=i*131+row*17+col*7;if(hash01(n)<.39)continue;
-    const wz=zz-depth*.72+col*(depth*1.44/Math.max(1,cols-1)),wy=1.25+row*2.45;
-    const tint=hash01(n+91)>.72?[.95,.25,.53,a*.68]:[.12,.60,.88,a*.62];
-    queueBiomeInstance(cityCubes,cx-side*(w+.035),wy,wz,.045,.48,.38,tint,0,8);
+   if(Math.abs(zz-z)<135){
+    const rows=Math.floor(h/2.5),cols=Math.max(2,Math.floor(depth/2.5));
+    for(let row=0;row<rows;row++)for(let col=0;col<cols;col++){
+     const n=i*131+row*17+col*7;if(hash01(n)<.39)continue;
+     const wz=zz-depth*.72+col*(depth*1.44/Math.max(1,cols-1)),wy=1.25+row*2.45;
+     const tint=hash01(n+91)>.72?[.95,.25,.53,a*.68]:[.12,.60,.88,a*.62];
+     queueBiomeInstance(cityCubes,cx-side*(w+.035),wy,wz,.045,.48,.38,tint,0,8);
+    }
    }
    if(i%3===0)queueBiomeInstance(cityCubes,cx,h+.65,zz,.055,.55,.055,[.25,.65,.92,a*.65]);
    queueBiomeInstance(cityCubes,cx-side*(w+.02),h*.48,zz,.045,h*.48,depth*.78,[.62,.10,.38,a*.48]);
@@ -1167,23 +1212,25 @@ function drawBiome(z,weight,type){
  }else{
   const shorelineCubes=[],trunkOuter=[],trunkInner=[],leafMain=[[],[],[]],leafAccent=[[],[],[]];
   const leafShapes=[palmLeafA,palmLeafB,palmLeafC];
-  const start=Math.floor((z+25)/26),end=Math.ceil((z+230)/26);
+  const start=Math.floor((z-230)/26),end=Math.ceil((z+230)/26);
   for(let i=start;i<=end;i++){
    const zz=i*26;
    for(const side of [-1,1]){
-    const coastX=roadX(zz)+side*57;
-    queueBiomeInstance(shorelineCubes,coastX,-.22,zz,25,.18,13,[.66,.34,.48,a]);
-    queueBiomeInstance(shorelineCubes,coastX+side*34,-.48,zz,38,.12,13,[.018,.13,.27,a]);
-    queueBiomeInstance(shorelineCubes,coastX+side*34,-.34,zz,38,.035,13,[.025,.38,.70,a*.65]);
+    const coast=roadSidePoint(zz,side*57),outer=roadSidePoint(zz,side*91);
+    queueBiomeInstance(shorelineCubes,coast[0],-.22,coast[1],25,.18,13,[.66,.34,.48,a],coast[2]);
+    queueBiomeInstance(shorelineCubes,outer[0],-.48,outer[1],38,.12,13,[.018,.13,.27,a],outer[2]);
+    queueBiomeInstance(shorelineCubes,outer[0],-.34,outer[1],38,.035,13,[.025,.38,.70,a*.65],outer[2]);
    }
    if(i%2!==0)continue;
    for(const side of [-1,1]){
     const variant=Math.abs(i%3),size=variant===0?1:variant===1?1.15:.88;
-    const cx=roadX(zz)+side*(27+hash01(i*19+side*31)*7),h=5.8+hash01(i*23+side*7)*2.1;
-    queueBiomeInstance(trunkOuter,cx,h*.48,zz,.115*size,h*.48,.115*size,[.38,.19,.095,a]);
-    queueBiomeInstance(trunkInner,cx,h*.48,zz,.055*size,h*.48,.055*size,[.68,.36,.16,a]);
-    queueBiomeInstance(leafMain[variant],cx,h,zz,size,size,size,[.035,.42,.13,a]);
-    queueBiomeInstance(leafAccent[variant],cx,h,zz,size*.98,size*.98,size*.98,[.08,.68,.22,a*.85],.14);
+    const palm=roadSidePoint(zz,side*(27+hash01(i*19+side*31)*7)),cx=palm[0],pz=palm[1],yaw=palm[2],h=5.8+hash01(i*23+side*7)*2.1;
+    queueBiomeInstance(trunkOuter,cx,h*.48,pz,.115*size,h*.48,.115*size,[.38,.19,.095,a],yaw);
+    queueBiomeInstance(leafMain[variant],cx,h,pz,size,size,size,[.035,.42,.13,a],yaw);
+    if(Math.abs(zz-z)<135){
+     queueBiomeInstance(trunkInner,cx,h*.48,pz,.055*size,h*.48,.055*size,[.68,.36,.16,a],yaw);
+     queueBiomeInstance(leafAccent[variant],cx,h,pz,size*.98,size*.98,size*.98,[.08,.68,.22,a*.85],yaw+.14);
+    }
    }
   }
   drawBiomeInstances(cube,shorelineCubes);
@@ -1192,6 +1239,16 @@ function drawBiome(z,weight,type){
   for(let variant=0;variant<3;variant++)drawBiomeInstances(leafShapes[variant],leafMain[variant]);
   for(let variant=0;variant<3;variant++)drawBiomeInstances(leafShapes[variant],leafAccent[variant]);
  }
+}
+function drawDistantRidgeRing(centerZ){
+ const centerX=roadX(centerZ),shapes=[ridgeFarEdge,ridgeMidEdge,ridgeNearEdge],batches=[[],[],[]];
+ const heights=[34,29,38,31,36,30,39,32];
+ for(let i=0;i<8;i++){
+  const angle=i*Math.PI*.25,x=centerX+Math.sin(angle)*350,z=centerZ+Math.cos(angle)*350;
+  const tone=i%2?[.052,.026,.13,1]:[.042,.021,.11,1];
+  queueBiomeInstance(batches[i%3],x,0,z,1,heights[i],1.6,tone,angle);
+ }
+ for(let i=0;i<3;i++)drawBiomeInstances(shapes[i],batches[i]);
 }
 function quad(a,b,c,d){return mesh([...a,...b,...c,...a,...c,...d]);}
 function mirroredQuadPair(a,b,c,d){
@@ -1940,10 +1997,12 @@ function updateCarAudio(){
  roadFilter.frequency.setTargetAtTime(170+spd*2.2,now,.15);
 }
 // Seeded procedural road: linked waypoints form long, varied bends.
-const roadWaypoints=[0];let roadSeed=(Math.random()*4294967296)>>>0;
+const roadWaypoints=[0];let roadSeed=0x4452564c;
 function roadRand(){roadSeed=(roadSeed*1664525+1013904223)>>>0;return roadSeed/4294967296;}
 for(let i=1;i<=2400;i++)roadWaypoints.push(clamp(roadWaypoints[i-1]+(roadRand()-.5)*27,-34,34));
 function roadX(z){z=Math.max(0,z);const seg=Math.floor(z/170),t=(z-seg*170)/170,a=roadWaypoints[clamp(seg,0,roadWaypoints.length-1)]||0,b=roadWaypoints[clamp(seg+1,0,roadWaypoints.length-1)]||a,u=t*t*(3-2*t);return a+(b-a)*u;}
+// Unit road normal and tangent: used by asphalt, lane markings, posts, lights and both curbs.
+function roadSidePoint(z,lateral){const dx=(roadX(z+2)-roadX(z-2))*.25,inv=1/Math.hypot(1,dx);return [roadX(z)+lateral*inv,z-lateral*dx*inv,Math.atan2(dx,1)];}
 function normalMatrix3(m){
  const ax=m[0],ay=m[1],az=m[2],bx=m[4],by=m[5],bz=m[6],cx=m[8],cy=m[9],cz=m[10];
  const c0=[by*cz-bz*cy,bz*cx-bx*cz,bx*cy-by*cx];
@@ -2446,31 +2505,38 @@ function drawWorld(){
  // Repeated road geometry is submitted as one ordered instance batch.
  const roadInstances=[];
  // Continuous dark ground plane: it follows the world, not a snapped scrolling tile.
- queueRoadCube(roadInstances,0,-.56,distance+115,150,.30,185,C.ground);
+ queueRoadCube(roadInstances,0,-.56,distance,ROAD_WORLD_HALF_EXTENT,.30,ROAD_WORLD_HALF_EXTENT,C.ground);
  // One continuous ground-aligned grid surface; fragment derivatives filter 10 m cells
  // and transition to stable integrated line coverage at sub-pixel distances.
  // Asphalt is also fixed in world space; no phase-based repositioning or snapping.
- const rStart=Math.floor((distance-40)/10),rEnd=Math.ceil((distance+230)/10);
+ const rStart=Math.floor((distance-ROAD_SURFACE_BACK)/10),rEnd=Math.ceil((distance+ROAD_SURFACE_FORWARD)/10);
  for(let i=rStart;i<=rEnd;i++){
-  const z=i*10,cx=roadX(z);
-  queueRoadCube(roadInstances,cx-9.15,.015,z,.075,.10,5,C.pink);
-  queueRoadCube(roadInstances,cx+9.15,.015,z,.075,.10,5,C.cyan);
+  const z=i*10;
   if(i%2===0){
-   queueRoadCube(roadInstances,cx-2.55,.018,z,.045,.018,1.55,C.white);
-   queueRoadCube(roadInstances,cx+2.55,.018,z,.045,.018,1.55,C.white);
+   const left=roadSidePoint(z,-2.55),right=roadSidePoint(z,2.55);
+   queueRoadCube(roadInstances,left[0],.018,left[1],.045,.018,1.55,C.white,left[2]);
+   queueRoadCube(roadInstances,right[0],.018,right[1],.045,.018,1.55,C.white,right[2]);
   }
-  if(i%3===0){queueRoadCube(roadInstances,cx-9,.42,z,.075,.45,.075,C.pink);queueRoadCube(roadInstances,cx+9,.42,z,.075,.45,.075,C.cyan);}
+  if(i%3===0){
+   const left=roadSidePoint(z,-12),right=roadSidePoint(z,12);
+   queueRoadCube(roadInstances,left[0],.42,left[1],.075,.45,.075,C.pink,left[2]);
+   queueRoadCube(roadInstances,right[0],.42,right[1],.075,.45,.075,C.cyan,right[2]);
+  }
  }
  drawRoadCubeInstances(roadInstances);
- draw(gridPlane,0,-.245,distance+105,150,.001,145,C.ground,0,0,12);
+ draw(gridPlane,0,-.245,distance,360,.001,360,C.ground,0,0,12);
  const asphalt=updateRoadSurfaceMesh(distance);
  bindMesh(asphalt.shape,asphalt.model,C.road,0,9);
  if(!shadowPass&&!outlinePass){lastRoadBatchCount++;lastRoadSurfaceSegments=ROAD_SURFACE_SEGMENTS;}
- // Cross-fading procedural biomes; no fixed roadside house/tree props.
+ const curbs=updateRoadCurbsMesh(distance);
+ bindMesh(curbs.shape,curbs.model,C.cyan,0,0);
+ if(!shadowPass&&!outlinePass){lastRoadBatchCount++;lastRoadCurbSegments=ROAD_SURFACE_SEGMENTS;}
+ // Cross-fading procedural biomes now populate a symmetric 360-degree region.
  const bw=biomeWeights(distance);
  gl.enable(gl.BLEND);gl.blendFunc(gl.SRC_ALPHA,gl.ONE_MINUS_SRC_ALPHA);gl.depthMask(false);
  drawBiome(distance,bw[0],0);drawBiome(distance,bw[1],1);drawBiome(distance,bw[2],2);
  gl.depthMask(true);gl.disable(gl.BLEND);
+ drawDistantRidgeRing(distance);
  }
  }
  // DRIVELLA GTS — original angular GT, now with a squared rear and real light mounting planes.
@@ -2835,6 +2901,9 @@ function updateDebug(dt){
    '<strong>TARGETS</strong> '+targetDetails+'<br>'+
    '<strong>SHADOW MAPS</strong> MAIN '+(shadowTarget?shadowTarget.size+'²':'OFF')+' · VEHICLE '+(vehicleShadowTarget?vehicleShadowTarget.size+'²':'OFF')+' · LOCAL '+localShadowTargets.filter(Boolean).length+' / 2<br>'+
    '<strong>SCENE</strong> '+(garageMode?'GARAGE':'ROAD')+' · DRAW CALLS '+drawCalls+'<br>'+
+   '<strong>TRACK WORLD</strong> '+(garageMode?'GARAGE':('360° · ROAD '+ROAD_SURFACE_BACK+' M REAR / '+ROAD_SURFACE_FORWARD+' M FRONT · TERRAIN ±'+ROAD_WORLD_HALF_EXTENT+' M'))+'<br>'+
+   '<strong>ROAD CURBS</strong> '+(garageMode?'N/A':('CONTINUOUS CYAN · BOTH SIDES · '+lastRoadCurbSegments+' SEGMENTS · '+ROAD_CURB_WIDTH.toFixed(2)+' M WIDE · '+ROAD_CURB_GAP.toFixed(2)+' M GAP'))+'<br>'+
+   '<strong>WORLD PANORAMA</strong> '+(garageMode?'GARAGE':'8 LOW-POLY RIDGE SEGMENTS · 360° HORIZON')+'<br>'+
    '<strong>GARAGE TURNTABLE</strong> '+(garageMode?'2 REPLICAS ROTATING · 0.11 RAD/S':'OFF')+'<br>'+
    '<strong>GARAGE LIGHTS</strong> '+(garageMode?lastGarageLocalLightCount+' SOURCES · '+lastGarageHeadlightSources+' HEADLIGHTS · '+lastGarageUnderbodySources+' UNDERGLOW':'OFF')+'<br>'+
    '<strong>GARAGE MIRROR</strong> '+(garageMode?(vehicleReflectionReady?'READY · '+lastVehicleRoadReflectionMeshCount+' MESHES · 3 PLINTHS':'WAITING FOR CAPTURE'):'OFF')+'<br>'+
