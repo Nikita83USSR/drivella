@@ -1,6 +1,6 @@
 # DRIVELLA — Rendering Architecture
 
-Current reference: **v0.19.33 / BUILD 199**  
+Current reference: **v0.19.34 / BUILD 200**  
 Main renderer: `index.html` — custom WebGL 1 renderer, no external rendering engine.
 
 **Release marker policy:** every published renderer/game change increments `BUILD` in `index.html` and updates the visible HUD, boot screen, README, and this document in the same release. Increment the patch version with the build when appropriate. Never publish a renderer change while leaving the visible build number unchanged.
@@ -917,3 +917,25 @@ The asphalt projects the captured image through the active camera view-projectio
 The 28 separately instanced asphalt boxes have been removed from the road batch. Their replacement is one dynamic ribbon mesh with 108 longitudinal segments covering the current road span from 40 m behind to 230 m ahead. Adjacent cells use identical shared boundary vertices and are submitted in one mesh draw, avoiding independent box faces and T-junctions at segment joins. The centreline is sampled from the same roadX curve at both ends of every cell. The ribbon remains material mode 9, so the existing solar-shadow, AO/scene-mask, headlight and four-slot local-light paths continue to apply.
 
 F3 reports the half-resolution capture target size and ribbon segment count; F4 controls the car reflection. The BUILD 199 regression compiles the production material shader, pixel-tests the opaque capture branch for glass and lamp materials, checks the mirrored surface transform, checks the production headlight helper, and compares shared vertices along the dynamic ribbon. CI's Chromium WebGL backend uses SwiftShader: the target GPU's visual quality and the additional reflection redraw cost still need validation on the GTX 1650.
+
+## BUILD 200 — Shared mirror projection and unified emissive neon sources
+
+### Vehicle reflection capture
+
+The reflected vehicle no longer relies on two separate coordinate descriptions (mirrored per-mesh models for the capture and the ordinary camera matrix for the asphalt lookup). `buildVehicleRoadReflectionVP(vp, planeY)` now constructs `vp * mirrorMatrix`. The opaque capture draws the retained original vehicle transforms through that reflected camera matrix, and the same exact matrix is stored in `vehicleReflectionVP` for road sampling. The road fragment projects a point fixed to the mirror plane height `y = 0.005`, then applies the existing animated two-axis distortion and five-tap softening. This makes capture and lookup share the same projection convention. Reflection blend coverage is increased from 0.62 to 0.90; painted panels and emissive lamp surfaces receive stronger capture tints, while glass remains opaque. Capture explicitly resets depth, colour writes and culling state before drawing.
+
+This is a projective planar reflection rendered into a dedicated half-resolution texture. It is not screen-space reflection or ray tracing. The source mesh pose is captured from the prior visible vehicle draw and reprojected through the current camera matrix, so there can be a one-frame pose lag during rapid motion.
+
+### Main cyan grid emitter
+
+Both world-grid directions now use the same solid cyan RGBA source colour and per-instance material mode 10. This branch writes an overbright emissive value directly and does not depend on the vehicle headlamp-emission toggle. The existing full-scene bright-pass therefore extracts the grid and sends it through both Scene Bloom blur scales.
+
+### One-piece Countach underbody emitter
+
+The previous stack of overlapping red/blue elliptical disks, side strips and end spots is removed. A single connected underside mesh is generated from the Countach's own body-profile floor widths, so it follows the complete chassis silhouette and is submitted as one emissive material-11 mesh. Its fragment response has a smooth cross-body profile and tapered front/rear ends, uses a uniform cool-blue colour, and is drawn additively just above the asphalt with depth writes disabled. It remains controlled by the existing F4 underglow switch, but is independent of the headlamp emission setting. The same material is captured as an emissive surface in the vehicle mirror target.
+
+### Compact Scene Bloom
+
+The full-scene Bloom path is retained, but its wide separable blur radius is reduced from 8.0 to 5.2 quarter-resolution texels. The tight 2.2-tap-radius core and composite gains are unchanged. This produces a shorter general-purpose aura for the grid, underbody and other bright emitters without allocating another post-process target.
+
+The BUILD 200 regression compiles the complete production material shader, pixel-tests the material-10 grid and material-11 underbody branches, compares the underbody centre and edge alpha, validates the single connected geometry strip, verifies that one mirror view-projection matrix is used by both capture and road sampling, and retains the previous road, lamp, Countach and Bloom checks. CI runs Chromium WebGL on SwiftShader; target-GPU visual quality and GTX 1650 frame time still require local confirmation.
