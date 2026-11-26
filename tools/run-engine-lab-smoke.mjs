@@ -81,7 +81,14 @@ try {
   if (!state.physicsMode.startsWith("havok")) throw new Error("Havok Physics V2 was not initialized.");
   if (externalRequests.length) throw new Error("Third-party runtime requests detected: " + externalRequests.join(", "));
   if (pageErrors.length) throw new Error("Browser page errors: " + pageErrors.join(" | "));
-  if (browserConsoleErrors.length) throw new Error("Browser console errors: " + browserConsoleErrors.join(" | "));
+  const unexpectedConsoleErrors = browserConsoleErrors.filter((message) => {
+    const expectedWebGpuFallback = state.renderer.startsWith("WebGL")
+      && message.includes("A fatal error occurred during WebGPU creation/initialization");
+    return !expectedWebGpuFallback;
+  });
+  if (unexpectedConsoleErrors.length) {
+    throw new Error("Unexpected browser console errors: " + unexpectedConsoleErrors.join(" | "));
+  }
 
   console.log("ENGINE LAB PASS", JSON.stringify(state));
   console.log("RUNTIME NETWORK PASS: same-origin requests only.");
