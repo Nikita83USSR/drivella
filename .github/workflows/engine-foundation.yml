@@ -19,6 +19,7 @@ on:
       - 'package.json'
       - 'engine-lab/**'
       - 'tools/run-engine-lab-smoke.mjs'
+      - 'tools/test-spatial-chunks.mjs'
       - '.github/workflows/engine-foundation.yml'
 
 permissions:
