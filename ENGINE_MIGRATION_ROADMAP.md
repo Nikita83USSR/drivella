@@ -66,13 +66,18 @@ Implemented and covered by automated tests:
 - [x] Symmetric coverage tests for all six cardinal directions and diagonal chunks.
 - [x] Stable coordinate-derived seeds and high/medium/low distance tiers.
 - [x] Chunk lifetime independent of the camera frustum; looking away cannot evict nearby chunks.
-- [x] Height-field terrain split into reusable 128 m patches with continuous world-space height sampling.
+- [x] Continuous world-space terrain height field with deterministic multi-octave value-noise, domain warp, ridges and a valley profile.
+- [x] Flat central start/garage area with broad relief beyond it.
+- [x] Terrain patches assigned to vertical Y layers from their sampled average height (tested in positive and negative layers).
+- [x] Vertex colours vary by elevation and slope, giving lowlands, slopes and high ridges different material response.
 - [x] Havok static collision attached to streamed terrain patches and disposed with their chunks.
+- [x] Automated test verifies terrain height determinism, non-flat relief, elevation thresholds and Y-layer assignment.
 
 Still required:
-- Expand relief into broad, high-elevation terrain and assign terrain patches to the correct vertical chunk layers.
-- Add coherent biomes, cliff faces, valleys, ravines, coastlines, underground spaces and caves.
-- Generate vertical structures, bridges, overpasses and tunnels as XYZ-streamed content.
+- Replace the current analytic terrain field with a full biome-aware landscape composition: mountain ranges, distinct valleys, plateaus, cliff bands, ravines and coastlines.
+- Add 3D surface materials, rock/soil/vegetation transitions, texture detail and atmosphere that remain readable across LODs.
+- Build real road geometry that conforms to the terrain, with curves, banking, bridges and tunnels.
+- Generate vertical structures, buildings, vegetation, traffic and breakable props as XYZ-streamed content.
 - Move chunk generation and asset preparation off the render-critical path; add worker-backed asynchronous generation and bounded queues.
 - Tie the chunk-manager center to the actual vehicle physics body rather than the current lab camera target.
 - Add performance budgets, frustum/occlusion rendering (without coupling it to chunk lifetime), and further seam/collision regression tests.
@@ -102,4 +107,4 @@ Still required:
 
 ## Current status
 
-The current branch contains the self-hosted engine, Havok runtime, isolated browser lab and the first tested XYZ chunk/terrain layer. It does not replace the original game, does not alter the existing car physics, and does not claim that a populated open world, production vehicle simulation or ragdolls are complete.
+The current branch contains the self-hosted engine, Havok runtime, isolated browser lab, tested XYZ chunk manager and the first elevation-aware terrain system with Havok collision. It does not replace the original game, does not alter the existing car physics, and does not claim that a populated open world, production vehicle simulation or ragdolls are complete.
