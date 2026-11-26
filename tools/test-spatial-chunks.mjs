@@ -108,8 +108,8 @@ const roadStats = getRoadStats(roadSamplesA);
 assert.ok(roadStats.length > 1200 && roadStats.length < 4000, "main route length must be a coherent closed circuit");
 const roadProfileStats = getMainRoadElevationStats();
 console.log("ROAD GRADE METRICS", JSON.stringify({ ...roadStats, profile: roadProfileStats }));
-assert.ok(roadProfileStats.maxGrade <= 0.3201, "terrain corridor must enforce the 32% max road grade");
-assert.ok(roadStats.maxGrade <= 0.321, "the asphalt profile must follow the grade-limited terrain corridor");
+assert.ok(roadProfileStats.maxGrade <= 0.2001, "terrain corridor must enforce the 20% max road grade");
+assert.ok(roadStats.maxGrade <= 0.201, "the asphalt profile must follow the grade-limited terrain corridor");
 assert.ok(distanceToMainRoute(0, 0) < 0.1, "start/finish must match the shared world route layout");
 assert.ok(roadStats.chunkKeys.length >= 8, "the circuit must traverse several world chunks");
 assert.ok(Math.abs(nearestRoadSurfaceHeight(0, 0, roadSamplesA) - 1.05) < 0.001,
