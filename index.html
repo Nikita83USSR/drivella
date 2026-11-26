@@ -189,8 +189,9 @@
 <script>
 (()=>{
 'use strict';
-const VERSION='v0.19.47',BUILD='213';
-const canvas=document.getElementById('scene'),gl=canvas.getContext('webgl',{antialias:true,alpha:true}),sun=document.getElementById('sun'),sctx=sun.getContext('2d');
+const VERSION='v0.19.48',BUILD='214';
+const GPU_POWER_PREFERENCE='high-performance';
+const canvas=document.getElementById('scene'),gl=canvas.getContext('webgl',{antialias:true,alpha:true,powerPreference:GPU_POWER_PREFERENCE}),sun=document.getElementById('sun'),sctx=sun.getContext('2d');
 const $=id=>document.getElementById(id);
 let countachModel=null,countachModelReady=false;
 const clamp=(v,a,b)=>Math.max(a,Math.min(b,v));
@@ -201,9 +202,9 @@ function reportStartupError(message){
 window.addEventListener('error',e=>reportStartupError(e.message||'JavaScript error'));
 window.addEventListener('unhandledrejection',e=>reportStartupError(e.reason&&e.reason.message||e.reason||'Promise rejected'));
 
-let W=innerWidth,H=innerHeight,DPR=1,outlinePass=false,shadowPass=false,shadowCasterMode='all',aoScenePass=false,outlineTarget=null,aoTarget=null,sceneColorTarget=null,sceneBloomTargets=null,sunBloomTargets=null,godRaysTarget=null,shadowTarget=null,vehicleShadowTarget=null,localShadowTargets=[null,null],localShadowVPs=[null,null],localShadowSignatures=['',''],shadowVP=null,sunShadowVP=null,shadowSceneRevision=1,outlineCabinEdge=null,vehicleReflectionTarget=null,vehicleReflectionReady=false;
+let W=innerWidth,H=innerHeight,DPR=1,renderScale=1,adaptiveScaleCheckAt=0,adaptiveScaleCooldownUntil=0,adaptiveScaleGoodSince=0,adaptiveScaleStatus='NATIVE',outlinePass=false,shadowPass=false,shadowCasterMode='all',aoScenePass=false,outlineTarget=null,aoTarget=null,sceneColorTarget=null,sceneBloomTargets=null,sunBloomTargets=null,godRaysTarget=null,shadowTarget=null,vehicleShadowTarget=null,localShadowTargets=[null,null],localShadowVPs=[null,null],localShadowSignatures=['',''],shadowVP=null,sunShadowVP=null,shadowSceneRevision=1,outlineCabinEdge=null,vehicleReflectionTarget=null,vehicleReflectionReady=false;
 function resize(){
- DPR=Math.min(devicePixelRatio||1,2);W=innerWidth;H=innerHeight;
+ DPR=Math.max(.6,Math.min(devicePixelRatio||1,2)*renderScale);W=innerWidth;H=innerHeight;
  for(const c of [canvas,sun]){c.width=Math.round(W*DPR);c.height=Math.round(H*DPR);c.style.width=W+'px';c.style.height=H+'px';}
  if(gl)gl.viewport(0,0,canvas.width,canvas.height);
  sctx.setTransform(DPR,0,0,DPR,0,0);
@@ -2801,7 +2802,7 @@ function updateDebug(dt){
   const gpuText=gpuTimerExt?gpuKeys.map(k=>gpuPassMs[k]===null?'--':gpuPassMs[k].toFixed(2)).join(' / ')+' ms':'TIMER UNSUPPORTED';
   const captureInterval=vehicleReflectionCaptureIntervalMs>0?vehicleReflectionCaptureIntervalMs.toFixed(1)+' ms':'COLLECTING';
   const targetDetails=targets.sizes.length?targets.sizes.join(' · '):'ALLOCATING';
-  const dpr=(devicePixelRatio||1).toFixed(2),rafHz=pacing.p50>0?(1000/pacing.p50).toFixed(1):'--';
+  const dpr=(devicePixelRatio||1).toFixed(2),renderDpr=DPR.toFixed(2),rafHz=pacing.p50>0?(1000/pacing.p50).toFixed(1):'--';
   $('debug-data').innerHTML=
    '<strong>VERSION</strong> '+VERSION+' / BUILD '+BUILD+'<br>'+
    '<strong>FPS / RAF MEDIAN</strong> '+fps.toFixed(1)+' / '+rafHz+' Hz<br>'+
@@ -2810,7 +2811,8 @@ function updateDebug(dt){
    '<strong>CPU FRAME / UPDATE / SHADOW / WORLD / MIRROR / BLOOM / POST</strong> '+[cpuPassMs.frame,cpuPassMs.update,cpuPassMs.shadow,cpuPassMs.world,cpuPassMs.mirror,cpuPassMs.sceneBloom,cpuPassMs.post].map(v=>v.toFixed(2)).join(' / ')+' ms<br>'+
    '<strong>GPU SHADOW / WORLD / MIRROR / BLOOM / POST</strong> '+gpuText+'<br>'+
    '<strong>GPU SUM / RAF P50</strong> '+(gpuSum===null?'--':gpuSum.toFixed(2)+' ms')+' / '+(pacing.p50?pacing.p50.toFixed(2):'--')+' ms<br>'+
-   '<strong>DEVICE / VIEWPORT / DPR</strong> '+innerWidth+'x'+innerHeight+' / '+canvas.width+'x'+canvas.height+' / '+dpr+' · '+(document.visibilityState||'VISIBLE').toUpperCase()+'<br>'+
+   '<strong>GPU REQUEST / AUTO SCALE</strong> '+GPU_POWER_PREFERENCE.toUpperCase()+' · '+adaptiveScaleStatus+'<br>'+
+   '<strong>DEVICE / VIEWPORT / DPR</strong> '+innerWidth+'x'+innerHeight+' / '+canvas.width+'x'+canvas.height+' / '+dpr+' → '+renderDpr+' · '+(document.visibilityState||'VISIBLE').toUpperCase()+'<br>'+
    '<strong>GPU</strong> '+gpuVendorName.slice(0,32)+' · '+gpuRendererName.slice(0,76)+'<br>'+
    '<strong>WEBGL CAPS</strong> TEX '+gpuCapabilities.maxTexture+' · UNITS '+gpuCapabilities.textureUnits+' · ATTR '+gpuCapabilities.vertexAttribs+' · VARY '+gpuCapabilities.varyingVectors+' · AA '+(gpuCapabilities.antialias?'ON':'OFF')+'<br>'+
    '<strong>EXTENSIONS</strong> INSTANCING '+(instancingExt?'YES':'NO')+' · DERIVATIVES '+(standardDerivativesExt?'YES':'NO')+' · GPU TIMER '+(gpuTimerExt?'YES':'NO')+'<br>'+
@@ -2847,6 +2849,35 @@ function updateDebug(dt){
    '<strong>WEBGL</strong> '+(gl.getParameter(gl.VERSION)||'OK')+'<br>'+
    '<strong>RESOLUTION</strong> '+canvas.width+' × '+canvas.height;
  }
+}
+function applyAdaptiveRenderScale(nextScale,now){
+ const next=Math.max(.72,Math.min(1,Math.round(nextScale*100)/100));
+ if(Math.abs(next-renderScale)<.015)return false;
+ renderScale=next;
+ adaptiveScaleStatus=renderScale>=.995?'NATIVE':'AUTO '+Math.round(renderScale*100)+'%';
+ resize();
+ frameIntervalWrite=0;frameIntervalCount=0;lastRafTimestamp=0;
+ fps=0;fpsFrames=0;fpsTime=performance.now();
+ adaptiveScaleCooldownUntil=now+4500;adaptiveScaleGoodSince=0;
+ console.info('[DRIVELLA] Adaptive render scale '+Math.round(renderScale*100)+'%');
+ return true;
+}
+function updateAdaptiveRenderScale(now){
+ if(!started||paused||garageMode||document.visibilityState!=='visible'){adaptiveScaleGoodSince=0;return;}
+ if(now<adaptiveScaleCheckAt||now<adaptiveScaleCooldownUntil)return;
+ adaptiveScaleCheckAt=now+1500;
+ if(frameIntervalCount<120)return;
+ const pacing=getFramePacingStats(),cpuFrame=cpuPassMs.frame;
+ // Only lower resolution for sustained slow presentation when CPU work is light.
+ if(pacing.p50>25&&cpuFrame<10&&renderScale>.72){
+  applyAdaptiveRenderScale(Math.max(.72,renderScale-.08),now);
+  return;
+ }
+ // Recover conservatively after several seconds of stable headroom to avoid oscillation.
+ if(pacing.p50<17.5&&cpuFrame<8&&renderScale<1){
+  if(!adaptiveScaleGoodSince)adaptiveScaleGoodSince=now;
+  if(now-adaptiveScaleGoodSince>=8000)applyAdaptiveRenderScale(Math.min(1,renderScale+.03),now);
+ }else adaptiveScaleGoodSince=0;
 }
 function frame(now){
  recordRafInterval(now);
@@ -3015,6 +3046,7 @@ function frame(now){
  $('direction').textContent=speed< -1?'◀ REVERSE':driftState===DRIFT_STATE.DRIFT?'✦ DRIFT':driftState===DRIFT_STATE.INITIATION?'✦ INITIATION':driftState===DRIFT_STATE.RECOVERY?'↗ RECOVERY':driftIntensity>.18?'✦ SLIDE':'▶ FORWARD';$('direction').style.color=speed< -1?'#ffb56f':driftState!==DRIFT_STATE.GRIP||driftIntensity>.18?'#ff70dc':'#ff8de9';
  $('distance').textContent=travelDistance.toFixed(1).padStart(5,'0')+' KM';
  cpuPassMs.frame=performance.now()-frameCpuStart;
+ updateAdaptiveRenderScale(now);
  requestAnimationFrame(frame);
 }
 resize();setCamera(1);loadCountachModel();requestAnimationFrame(frame);
