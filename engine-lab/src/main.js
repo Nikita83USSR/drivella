@@ -18,6 +18,7 @@ import {
 } from "@babylonjs/core";
 import HavokPhysics from "@babylonjs/havok";
 import { SpatialChunkManager } from "./SpatialChunkManager.mjs";
+import { terrainChunkLayer, terrainHeight } from "./TerrainField.mjs";
 
 const canvas = document.getElementById("renderCanvas");
 const statusText = document.getElementById("engineStatus");
@@ -50,14 +51,7 @@ function setStatus(message, state = "warn") {
   statusDot.className = "status-dot " + state;
 }
 
-function terrainHeight(x, z) {
-  return Math.sin(x * 0.024) * Math.cos(z * 0.019) * 5.2
-    + Math.sin((x + z) * 0.043) * 2.1
-    + Math.cos((x - z) * 0.031) * 1.6
-    + Math.sin(z * 0.071) * Math.cos(x * 0.058) * 0.8;
-}
-
-function createTerrainChunk(scene, chunkX, chunkZ, chunkSize, material) {
+function createTerrainChunk(scene, chunkX, chunkY, chunkZ, chunkSize, material) {
   const segments = 32;
   const half = chunkSize * 0.5;
   const step = chunkSize / segments;
@@ -72,7 +66,7 @@ function createTerrainChunk(scene, chunkX, chunkZ, chunkSize, material) {
       const localZ = -half + iz * step;
       const worldX = chunkX * chunkSize + localX;
       const worldZ = chunkZ * chunkSize + localZ;
-      positions.push(localX, terrainHeight(worldX, worldZ), localZ);
+      positions.push(localX, terrainHeight(worldX, worldZ) - chunkY * chunkSize, localZ);
       uvs.push(ix / segments, iz / segments);
     }
   }
@@ -87,7 +81,16 @@ function createTerrainChunk(scene, chunkX, chunkZ, chunkSize, material) {
     }
   }
 
-  VertexData.ComputeNormals(positions, indices, normals);
+  for (let iz = 0; iz <= segments; iz += 1) {
+    for (let ix = 0; ix <= segments; ix += 1) {
+      const worldX = chunkX * chunkSize - half + ix * step;
+      const worldZ = chunkZ * chunkSize - half + iz * step;
+      const slopeX = (terrainHeight(worldX + 1, worldZ) - terrainHeight(worldX - 1, worldZ)) * 0.5;
+      const slopeZ = (terrainHeight(worldX, worldZ + 1) - terrainHeight(worldX, worldZ - 1)) * 0.5;
+      const length = Math.sqrt(slopeX * slopeX + 1 + slopeZ * slopeZ);
+      normals.push(-slopeX / length, 1 / length, -slopeZ / length);
+    }
+  }
   const vertexData = new VertexData();
   vertexData.positions = positions;
   vertexData.indices = indices;
@@ -96,10 +99,10 @@ function createTerrainChunk(scene, chunkX, chunkZ, chunkSize, material) {
 
   const terrain = new Mesh(`terrain-chunk-${chunkX}-${chunkZ}`, scene);
   vertexData.applyToMesh(terrain, true);
-  terrain.position.set(chunkX * chunkSize, 0, chunkZ * chunkSize);
+  terrain.position.set(chunkX * chunkSize, chunkY * chunkSize, chunkZ * chunkSize);
   terrain.isPickable = false;
   terrain.material = material;
-  terrain.metadata = { spatialChunk: true, chunkX, chunkY: 0, chunkZ };
+  terrain.metadata = { spatialChunk: true, chunkX, chunkY, chunkZ };
   return terrain;
 }
 
@@ -189,8 +192,8 @@ function createEnvironment(scene) {
     maxActiveChunks: 512,
     onCreate: (chunk) => {
       const payload = { terrainMesh: null };
-      if (chunk.y === 0) {
-        const mesh = createTerrainChunk(scene, chunk.x, chunk.z, 128, terrainMaterial);
+      if (chunk.y === terrainChunkLayer(chunk.x, chunk.z, 128)) {
+        const mesh = createTerrainChunk(scene, chunk.x, chunk.y, chunk.z, 128, terrainMaterial);
         payload.terrainMesh = mesh;
         terrainMeshes.set(chunk.key, mesh);
         if (scene.getPhysicsEngine()) {
@@ -378,7 +381,8 @@ async function boot() {
       if (frameCounter % 6 === 0 && chunkManager && camera) {
         const spatial = chunkManager.update(camera.target);
         labState.spatial = spatial;
-        worldMeta.textContent = `XYZ chunks: ${spatial.activeCount} · radius ${spatial.radius} m · ${Object.values(spatial.axisCoverage).every(Boolean) ? "6/6 directions" : "coverage check pending"}`;
+        const terrainLayers = [...new Set([...terrainMeshes.values()].map((mesh) => mesh.metadata.chunkY))].sort((a, b) => a - b);
+        worldMeta.textContent = `XYZ chunks: ${spatial.activeCount} · terrain: ${terrainMeshes.size} patches · Y layers ${terrainLayers.join("/") || "—"} · ${Object.values(spatial.axisCoverage).every(Boolean) ? "6/6 directions" : "coverage check pending"}`;
       }
     });
 
