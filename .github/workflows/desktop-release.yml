@@ -1,12 +1,9 @@
 name: DRIVELLA Windows desktop package
 
+# Manual only while the desktop edition is deferred. This prevents documentation
+# commits and unrelated prototype edits from downloading/building the large CEF SDK.
 on:
   workflow_dispatch:
-  push:
-    branches:
-      - desktop-prototype
-    tags:
-      - "desktop-v*"
 
 permissions:
   contents: write
