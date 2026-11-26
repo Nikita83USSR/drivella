@@ -60,11 +60,11 @@ try {
   await page.waitForFunction(() => Boolean(window.__GAME_SHADER_RESULT__) || document.title.startsWith('FAIL'), null, { timeout: 60000 });
   const result = await page.evaluate(() => window.__GAME_SHADER_RESULT__);
   assert(result, 'Browser test page reported failure without a result object: ' + await page.title());
-  await page.screenshot({ path: 'artifacts/derivative-grid-area-light-end-to-end-mirror-build206-regression.png', fullPage: true });
-  console.log('PRODUCTION BUILD206: DERIVATIVE GRID + 16-POINT RED AREA LIGHT + VEHICLE MIRROR CAPTURE-TO-ROAD PIXEL REGRESSION\n' + JSON.stringify(result, null, 2));
+  await page.screenshot({ path: 'artifacts/derivative-grid-area-light-end-to-end-mirror-build207-regression.png', fullPage: true });
+  console.log('PRODUCTION BUILD207: DERIVATIVE GRID + 16-POINT RED AREA LIGHT + VEHICLE MIRROR CAPTURE-TO-ROAD PIXEL REGRESSION\n' + JSON.stringify(result, null, 2));
   assert(result.pass, 'Production shader regression failed: ' + JSON.stringify(result));
   assert(pageErrors.length === 0, 'Browser page errors: ' + pageErrors.join('\\n'));
-  console.log('ALL BUILD 206 DERIVATIVE GRID/16-POINT AREA LIGHT/REAL MIRROR-TO-ASPHALT PIXELS/SHADER/VEHICLE CHECKS PASSED');
+  console.log('ALL BUILD 207 DERIVATIVE GRID/16-POINT AREA LIGHT/REAL MIRROR-TO-ASPHALT PIXELS/SHADER/VEHICLE CHECKS PASSED');
 
 
   // Release the shader-fixture WebGL context before the live game allocates its own renderer targets.
@@ -90,7 +90,7 @@ try {
         bootPercent: document.getElementById('boot-percent')?.innerText,
         menuClass: document.getElementById('main-menu')?.className
       }));
-      await gamePage.screenshot({ path: 'artifacts/build206-live-game-startup-failure.png', fullPage: true });
+      await gamePage.screenshot({ path: 'artifacts/build207-live-game-startup-failure.png', fullPage: true });
     } catch (_) {}
     throw new Error('Live game boot diagnostics: ' + JSON.stringify({ startupState, pageErrors }) + ' // ' + error.message);
   }
@@ -104,12 +104,12 @@ try {
     const value = document.getElementById('debug-data')?.innerText || '';
     return value.includes('MIRROR CAPTURE READY') && /\\b[1-9][0-9]* MESHES\\b/.test(value);
   }, null, { timeout: 45000 });
-  await gamePage.screenshot({ path: 'artifacts/build206-live-game-reflection-capture-smoke.png', fullPage: true });
+  await gamePage.screenshot({ path: 'artifacts/build207-live-game-reflection-capture-smoke.png', fullPage: true });
   const liveReflectionDiagnostics = await gamePage.locator('#debug-data').innerText();
   assert(/MIRROR CAPTURE READY/.test(liveReflectionDiagnostics), 'Live game did not produce a READY planar vehicle reflection: ' + liveReflectionDiagnostics);
   assert(/\\b[1-9][0-9]* MESHES\\b/.test(liveReflectionDiagnostics), 'Live game mirror capture has no vehicle meshes: ' + liveReflectionDiagnostics);
   assert(pageErrors.length === 0, 'Game browser page errors: ' + pageErrors.join('\\n'));
-  console.log('BUILD 206 LIVE GAME MIRROR CAPTURE // ' + liveReflectionDiagnostics.replace(/\\s+/g, ' '));
+  console.log('BUILD 207 LIVE GAME MIRROR CAPTURE // ' + liveReflectionDiagnostics.replace(/\\s+/g, ' '));
   await gamePage.close();
 
   const metaScript = await readFile('assets/countach_model_0.js', 'utf8');
