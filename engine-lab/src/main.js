@@ -19,7 +19,7 @@ import {
 import HavokPhysics from "@babylonjs/havok";
 import { SpatialChunkManager } from "./SpatialChunkManager.mjs";
 import { terrainChunkLayer, terrainHeight } from "./TerrainField.mjs";
-import { generateBiomePlacements, sampleBiome } from "./BiomeField.mjs";
+import { generateBiomePlacements } from "./BiomeField.mjs";
 
 const canvas = document.getElementById("renderCanvas");
 const statusText = document.getElementById("engineStatus");
@@ -194,7 +194,6 @@ function appendRock(geometry, x, y, z, size, seed) {
   const rings = [];
   const baseRadius = size * (0.72 + random() * 0.2);
   for (let ring = 0; ring < 3; ring += 1) {
-    const t = ring / 2;
     const radius = ring === 1 ? baseRadius * (0.8 + random() * 0.28) : baseRadius * (ring === 0 ? 0.78 : 0.2);
     const ringY = ring === 0 ? 0 : ring === 1 ? size * (0.38 + random() * 0.18) : size * (0.82 + random() * 0.22);
     const points = [];
@@ -242,7 +241,6 @@ function createCombinedPropMesh(scene, name, geometry, material, position) {
   mesh.position.copyFrom(position);
   mesh.material = material;
   mesh.isPickable = false;
-  mesh.alwaysSelectAsActiveMesh = true;
   return mesh;
 }
 
@@ -665,12 +663,19 @@ async function boot() {
         labState.spatial = spatial;
         const terrainLayers = [...new Set([...terrainMeshes.values()].map((mesh) => mesh.metadata.chunkY))].sort((a, b) => a - b);
         const biomeTotals = { trees: 0, grass: 0, reeds: 0, rocks: 0 };
+        const biomeDistribution = {};
         for (const props of biomeMeshes.values()) {
           for (const key of Object.keys(biomeTotals)) biomeTotals[key] += props.counts[key];
+          for (const [id, count] of Object.entries(props.biomeCounts)) {
+            biomeDistribution[id] = (biomeDistribution[id] || 0) + count;
+          }
         }
+        const biomeTypes = Object.keys(biomeDistribution).filter((id) => biomeDistribution[id] > 0);
         labState.biomes = biomeTotals;
+        labState.biomeTypes = biomeTypes;
+        labState.biomeDistribution = biomeDistribution;
         worldMeta.textContent = `XYZ chunks: ${spatial.activeCount} · terrain: ${terrainMeshes.size} patches · Y layers ${terrainLayers.join("/") || "—"} · ${Object.values(spatial.axisCoverage).every(Boolean) ? "6/6 directions" : "coverage check pending"}`;
-        biomeMeta.textContent = `Biomes: ${biomeTotals.trees} trees · ${biomeTotals.rocks} rocks · ${biomeTotals.grass} grass · ${biomeTotals.reeds} reeds`;
+        biomeMeta.textContent = `Biomes: ${biomeTypes.slice(0, 4).join("/") || "preparing"} · ${biomeTotals.trees} trees · ${biomeTotals.rocks} rocks`;
       }
     });
 
