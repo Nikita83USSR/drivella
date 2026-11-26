@@ -27,7 +27,7 @@ const response=await fetch('../index.html',{cache:'no-store'});
 must(response.ok,'Cannot fetch production index.html: HTTP '+response.status);
 const html=await response.text();
 const version=html.match(/const VERSION='([^']+)',BUILD='([^']+)'/);
-must(version&&version[1]==='v0.19.35'&&version[2]==='201','Unexpected production version marker: '+JSON.stringify(version));
+must(version&&version[1]==='v0.19.36'&&version[2]==='202','Unexpected production version marker: '+JSON.stringify(version));
 function expression(name,endMarker){
  const marker='const '+name+'=';
  const start=html.indexOf(marker);
@@ -598,11 +598,37 @@ const neonGridPixel=neonGridProbe();
 const neonGridEmissionPixelPass=neonGridTarget.status===gl.FRAMEBUFFER_COMPLETE&&neonGridPixel[1]>200&&neonGridPixel[2]>230&&neonGridPixel[3]===255;
 gl.bindFramebuffer(gl.FRAMEBUFFER,null);gl.viewport(0,0,W,H);gl.depthMask(true);gl.enable(gl.DEPTH_TEST);
 
-// Test distance-stable screen-space grid geometry. The production VS expands only the thin line axis.
-const gridLodPixelScale=2*Math.tan(68*Math.PI/360)/540;
-const gridLodNearHalfWidth=Math.max(.012,Math.min(.16,25*gridLodPixelScale*.88*.5));
-const gridLodFarHalfWidth=Math.max(.012,Math.min(.16,180*gridLodPixelScale*.88*.5));
-const gridLodGeometryPixelFixturePass=!!mainV.shader&&sources.mainVertex.includes('instanceMaterial>9.5&&instanceMaterial<10.5')&&sources.mainVertex.includes('materialMode>9.5&&materialMode<10.5')&&sources.mainVertex.includes('effectiveScale.x=max(effectiveScale.x,halfPixelWidth)')&&sources.mainVertex.includes('effectiveScale.z=max(effectiveScale.z,halfPixelWidth)')&&html.includes('loc.gridPixelScale,2*Math.tan(cam.fov*Math.PI/360)')&&gridLodFarHalfWidth>gridLodNearHalfWidth;
+// Compile and pixel-test the exact production derivative-filtered procedural ground grid.
+const gridAAStart=sources.mainFragment.indexOf('float filteredGridLine(float coordinate,float spacing,float halfWidth){');
+const gridAAEnd=sources.mainFragment.indexOf('\nvec3 evalSynthwaveEnvironment(',gridAAStart);
+must(gridAAStart>=0&&gridAAEnd>gridAAStart,'Production filtered grid function is missing');
+const gridAAFunctions=sources.mainFragment.slice(gridAAStart,gridAAEnd);
+const gridDerivativeExt=gl.getExtension('OES_standard_derivatives');
+must(!!gridDerivativeExt&&gridAAFunctions.includes('fwidth(coordinate)'),'OES_standard_derivatives/fwidth is unavailable');
+const gridAAVs='attribute vec2 aPosition;uniform vec2 uSpan;uniform vec2 uOffset;varying vec3 vWorldPos;void main(){vWorldPos=vec3(aPosition.x*uSpan.x+uOffset.x,0.0,aPosition.y*uSpan.y+uOffset.y);gl_Position=vec4(aPosition,0.0,1.0);}';
+const gridAAFs='#extension GL_OES_standard_derivatives : enable\nprecision highp float;varying vec3 vWorldPos;uniform vec4 baseColor;'+gridAAFunctions+'void main(){float fine=max(filteredGridLine(vWorldPos.x,10.0,0.018),filteredGridLine(vWorldPos.z,10.0,0.018));float major=max(filteredGridLine(vWorldPos.x,50.0,0.045),filteredGridLine(vWorldPos.z,50.0,0.045));float energy=clamp(fine+0.70*major,0.0,1.0);gl_FragColor=vec4(baseColor.rgb+vec3(0.18,0.84,1.0)*(2.35*energy),1.0);}';
+const gridAAProgram=makeProgram(gridAAVs,gridAAFs,'Production derivative-filtered ground grid');
+const gridAATarget=makeTarget(32,32);
+must(gridAATarget.status===gl.FRAMEBUFFER_COMPLETE,'Procedural grid pixel fixture framebuffer incomplete');
+function gridAAProbe(span,offset){
+ gl.bindFramebuffer(gl.FRAMEBUFFER,gridAATarget.framebuffer);gl.viewport(0,0,32,32);
+ gl.disable(gl.DEPTH_TEST);gl.disable(gl.BLEND);gl.depthMask(false);gl.clearColor(0,0,0,0);gl.clear(gl.COLOR_BUFFER_BIT);
+ gl.useProgram(gridAAProgram);
+ gl.uniform4f(location(gridAAProgram,'baseColor'),.025,.025,.065,1);
+ gl.uniform2f(location(gridAAProgram,'uSpan'),span,span);gl.uniform2f(location(gridAAProgram,'uOffset'),offset,offset);
+ drawGeometry(gridAAProgram,'aPosition',fullscreenVertices,gl.TRIANGLES);gl.finish();
+ const pixels=new Uint8Array(32*32*4);gl.readPixels(0,0,32,32,gl.RGBA,gl.UNSIGNED_BYTE,pixels);
+ let green=0;for(let i=1;i<pixels.length;i+=4)green+=pixels[i];
+ return {pixels,averageGreen:green/(32*32)};
+}
+const gridNearProbe=gridAAProbe(8,0);
+const gridFarProbeA=gridAAProbe(1200,0);
+const gridFarProbeB=gridAAProbe(1200,23.4);
+let gridFarMeanDifference=0;
+for(let i=0;i<gridFarProbeA.pixels.length;i+=4)gridFarMeanDifference+=Math.abs(gridFarProbeA.pixels[i+1]-gridFarProbeB.pixels[i+1]);
+gridFarMeanDifference/=32*32;
+const gridDerivativeFilterPixelFixturePass=!!gridAAProgram&&gridAAFunctions.includes('integratedCoverage')&&gridFarProbeA.averageGreen>6.5&&gridFarMeanDifference<0.25;
+gl.bindFramebuffer(gl.FRAMEBUFFER,null);gl.viewport(0,0,W,H);gl.depthMask(true);gl.enable(gl.DEPTH_TEST);
 
 // Compile and pixel-test the production red underbody area-light function on the main WebGL context.
 const underbodyAreaStart=sources.mainFragment.indexOf('float calcUnderbodyAreaSample(vec3 source,vec3 surfaceNormal){');
@@ -611,7 +637,7 @@ must(underbodyAreaStart>=0&&underbodyAreaEnd>underbodyAreaStart,'Production red 
 const underbodyAreaFunctions=sources.mainFragment.slice(underbodyAreaStart,underbodyAreaEnd);
 const underbodyAreaVs='attribute vec2 aPosition;uniform vec3 uWorldPos;varying vec3 vWorldPos;varying vec3 vNormal;void main(){vWorldPos=uWorldPos;vNormal=vec3(0.0,1.0,0.0);gl_Position=vec4(aPosition,0.0,1.0);}';
 const underbodyAreaFs='precision highp float;varying vec3 vWorldPos;varying vec3 vNormal;uniform vec3 underbodyLightCenter;uniform vec3 underbodyLightRight;uniform vec3 underbodyLightForward;uniform vec3 underbodyLightDown;uniform float underbodyLightIntensity;'+underbodyAreaFunctions+'void main(){float energy=calcUnderbodyAreaLight(normalize(vNormal));gl_FragColor=vec4(vec3(energy,0.0,0.0),1.0);}';
-const underbodyAreaProgram=makeProgram(underbodyAreaVs,underbodyAreaFs,'Production red underbody area-light pixel fixture');
+const underbodyAreaProgram=makeProgram(underbodyAreaVs,underbodyAreaFs,'Production red 16-point underbody area-light pixel fixture');
 const underbodyAreaTarget=makeTarget(1,1);
 must(underbodyAreaTarget.status===gl.FRAMEBUFFER_COMPLETE,'Underbody area-light fixture framebuffer incomplete');
 function underbodyAreaProbe(x,z){
@@ -622,16 +648,19 @@ function underbodyAreaProbe(x,z){
  gl.uniform3f(location(underbodyAreaProgram,'underbodyLightRight'),1,0,0);
  gl.uniform3f(location(underbodyAreaProgram,'underbodyLightForward'),0,0,1);
  gl.uniform3f(location(underbodyAreaProgram,'underbodyLightDown'),0,-1,0);
- gl.uniform1f(location(underbodyAreaProgram,'underbodyLightIntensity'),3.8);
+ gl.uniform1f(location(underbodyAreaProgram,'underbodyLightIntensity'),9.0);
  gl.uniform3f(location(underbodyAreaProgram,'uWorldPos'),x,.005,z);
  drawGeometry(underbodyAreaProgram,'aPosition',fullscreenVertices,gl.TRIANGLES);gl.finish();
  const pixel=new Uint8Array(4);gl.readPixels(0,0,1,1,gl.RGBA,gl.UNSIGNED_BYTE,pixel);return Array.from(pixel);
 }
 const underbodyAreaCorePixel=underbodyAreaProbe(0,0);
-const underbodyAreaEdgePixel=underbodyAreaProbe(2.8,0);
+const underbodyAreaEdgePixel=underbodyAreaProbe(.95,0);
+const underbodyAreaFrontPixel=underbodyAreaProbe(0,2.0);
+const underbodyAreaOutsideXPixel=underbodyAreaProbe(1.2,0);
+const underbodyAreaOutsideZPixel=underbodyAreaProbe(0,2.6);
 const underbodyAreaFarPixel=underbodyAreaProbe(0,8);
-const underbodyAreaPixelFixturePass=underbodyAreaCorePixel[0]>80&&underbodyAreaCorePixel[1]<4&&underbodyAreaCorePixel[2]<4&&underbodyAreaEdgePixel[0]>0&&underbodyAreaEdgePixel[0]<underbodyAreaCorePixel[0]&&underbodyAreaFarPixel[0]<3;
-const underbodyAreaHasFiveGeometricSamples=underbodyAreaFunctions.split('calcUnderbodyAreaSample(').length>=7&&underbodyAreaFunctions.includes('underbodyLightRight*0.92')&&underbodyAreaFunctions.includes('underbodyLightForward*2.25')&&underbodyAreaFunctions.includes('rangeFade=1.0-smoothstep(4.0,5.8,dist)');
+const underbodyAreaPixelFixturePass=underbodyAreaCorePixel[0]>60&&underbodyAreaCorePixel[1]<4&&underbodyAreaCorePixel[2]<4&&underbodyAreaEdgePixel[0]>0&&underbodyAreaEdgePixel[0]<underbodyAreaCorePixel[0]&&underbodyAreaFrontPixel[0]>0&&underbodyAreaOutsideXPixel[0]<3&&underbodyAreaOutsideZPixel[0]<3&&underbodyAreaFarPixel[0]<3;
+const underbodyAreaHasSixteenGeometricSamples=underbodyAreaFunctions.includes('for(int iz=0;iz<4;iz++)')&&underbodyAreaFunctions.includes('for(int ix=0;ix<4;ix++)')&&underbodyAreaFunctions.includes('energy+=calcUnderbodyAreaSample(source,surfaceNormal)*0.0625')&&underbodyAreaFunctions.includes('footprintX')&&underbodyAreaFunctions.includes('footprintZ')&&underbodyAreaFunctions.includes('smoothstep(0.88,1.08,abs(localX))');
 gl.bindFramebuffer(gl.FRAMEBUFFER,null);gl.viewport(0,0,W,H);gl.depthMask(true);gl.enable(gl.DEPTH_TEST);
 
 // Confirm the vehicle reflection capture explicitly activates the production program and now spreads its reflected image along the road.
@@ -640,6 +669,39 @@ const reflectionCaptureEnd=html.indexOf('\nfunction bindMesh(',reflectionCapture
 must(reflectionCaptureStart>=0&&reflectionCaptureEnd>reflectionCaptureStart,'Production vehicle reflection capture function missing');
 const reflectionCaptureSource=html.slice(reflectionCaptureStart,reflectionCaptureEnd);
 const reflectionNineTapPixelFixturePass=sources.mainFragment.split('texture2D(vehicleReflectionTexture').length>=10&&sources.mainFragment.includes('blurStep.y*24.0')&&reflectionCaptureSource.includes('gl.useProgram(prog)')&&reflectionCaptureSource.indexOf('gl.useProgram(prog)')<reflectionCaptureSource.indexOf('gl.uniformMatrix4fv(loc.vp,false,new Float32Array(reflectionVP))');
+
+// The list must be reset only by the guarded main pass, never by outline/SSAO draws.
+const mainWorldStart=html.indexOf('function drawWorld(){'),mainWorldEnd=html.indexOf('\nfunction ',mainWorldStart+10);
+const mainWorldSource=html.slice(mainWorldStart,mainWorldEnd);
+const reflectionCollectionPreservedAcrossOutlinePass=(mainWorldSource.match(/vehicleRoadReflectionCount=0;/g)||[]).length===1&&mainWorldSource.includes('if(!shadowPass&&!outlinePass&&!aoScenePass&&!garageMode){')&&mainWorldSource.includes('vehicleRoadReflectionCapture=FX.vehicleReflections&&!wireframeMode;')&&html.includes('if(vehicleRoadReflectionCapture&&!shadowPass&&!outlinePass&&toon>0.5');
+const reflectionTargetStart=html.indexOf('function ensureVehicleReflectionTarget(){'),reflectionTargetEnd=html.indexOf('\nfunction disposeSceneBloomTargets()',reflectionTargetStart);
+const reflectionTargetSource=html.slice(reflectionTargetStart,reflectionTargetEnd);
+const reflectionTargetPreservesActiveFramebuffer=reflectionTargetSource.includes('previousFramebuffer=gl.getParameter(gl.FRAMEBUFFER_BINDING)')&&reflectionTargetSource.includes('gl.bindFramebuffer(gl.FRAMEBUFFER,previousFramebuffer)');
+
+// End-to-end GPU proof: rasterize a reflected vehicle triangle into a mirror texture, then run the exact production asphalt sampling code.
+const mirrorFixtureCamera=[1,0,0,0,0,1,0,0,0,1,1,0,0,0,0,1];
+const endToEndReflectionVP=reflectionMath(mirrorFixtureCamera,vehicleReflectionMatrix);
+const capture3Vs='attribute vec3 aPosition;uniform mat4 uReflectionVP;void main(){gl_Position=uReflectionVP*vec4(aPosition,1.0);}';
+const capture3Program=makeProgram(capture3Vs,reflectionCaptureFs,'End-to-end planar vehicle capture');
+const capture3Target=makeTarget(64,64);
+must(capture3Target.status===gl.FRAMEBUFFER_COMPLETE,'End-to-end mirror capture framebuffer incomplete');
+gl.bindFramebuffer(gl.FRAMEBUFFER,capture3Target.framebuffer);gl.viewport(0,0,64,64);gl.disable(gl.DEPTH_TEST);gl.disable(gl.BLEND);gl.depthMask(false);gl.clearColor(0,0,0,0);gl.clear(gl.COLOR_BUFFER_BIT);
+gl.useProgram(capture3Program);gl.uniform4f(location(capture3Program,'baseColor'),.82,.12,.08,1);gl.uniform1f(location(capture3Program,'resolvedMaterialMode'),1);gl.uniform1f(location(capture3Program,'vehicleReflectionPass'),1);gl.uniformMatrix4fv(location(capture3Program,'uReflectionVP'),false,new Float32Array(endToEndReflectionVP));
+const capture3Vertices=new Float32Array([-.8,.5,0,.8,.5,0,0,1.1,0]);const capture3Buffer=gl.createBuffer();gl.bindBuffer(gl.ARRAY_BUFFER,capture3Buffer);gl.bufferData(gl.ARRAY_BUFFER,capture3Vertices,gl.STATIC_DRAW);const capture3Position=gl.getAttribLocation(capture3Program,'aPosition');must(capture3Position>=0,'Missing 3D capture attribute');gl.enableVertexAttribArray(capture3Position);gl.vertexAttribPointer(capture3Position,3,gl.FLOAT,false,0,0);gl.drawArrays(gl.TRIANGLES,0,3);gl.disableVertexAttribArray(capture3Position);gl.deleteBuffer(capture3Buffer);gl.finish();
+const reflectedVehicleCapturePixels=new Uint8Array(64*64*4);gl.readPixels(0,0,64,64,gl.RGBA,gl.UNSIGNED_BYTE,reflectedVehicleCapturePixels);let reflectedVehicleCoveredPixels=0;for(let i=3;i<reflectedVehicleCapturePixels.length;i+=4)if(reflectedVehicleCapturePixels[i]>240)reflectedVehicleCoveredPixels++;
+const roadSampleStart=sources.mainFragment.indexOf('vec4 reflectionClip=vehicleReflectionVP*vec4(vWorldPos.x,0.005,vWorldPos.z,1.0);');
+const roadSampleEnd=sources.mainFragment.indexOf('\nroadColor+=vec3(0.58,0.78,1.0)',roadSampleStart);
+must(roadSampleStart>=0&&roadSampleEnd>roadSampleStart,'Production road reflection sample block missing');
+const productionRoadSampleBlock=sources.mainFragment.slice(roadSampleStart,roadSampleEnd);
+const roadSampleVs='attribute vec2 aPosition;uniform vec3 uWorldPos;varying vec3 vWorldPos;void main(){vWorldPos=uWorldPos;gl_Position=vec4(aPosition,0.0,1.0);}';
+const roadSampleFs='precision highp float;varying vec3 vWorldPos;uniform sampler2D vehicleReflectionTexture;uniform mat4 vehicleReflectionVP;uniform vec2 vehicleReflectionTexel;uniform float time;uniform float vehicleReflectionEnabled;void main(){vec3 roadColor=vec3(0.02,0.015,0.035);'+productionRoadSampleBlock+'gl_FragColor=vec4(roadColor,1.0);}';
+const roadSampleProgram=makeProgram(roadSampleVs,roadSampleFs,'Production asphalt projected mirror sample');const roadSampleTarget=makeTarget(1,1);must(roadSampleTarget.status===gl.FRAMEBUFFER_COMPLETE,'Road reflection sample framebuffer incomplete');
+gl.bindFramebuffer(gl.FRAMEBUFFER,roadSampleTarget.framebuffer);gl.viewport(0,0,1,1);gl.disable(gl.DEPTH_TEST);gl.disable(gl.BLEND);gl.depthMask(false);gl.clearColor(0,0,0,0);gl.clear(gl.COLOR_BUFFER_BIT);gl.useProgram(roadSampleProgram);
+gl.activeTexture(gl.TEXTURE0);gl.bindTexture(gl.TEXTURE_2D,capture3Target.texture);gl.uniform1i(location(roadSampleProgram,'vehicleReflectionTexture'),0);gl.uniformMatrix4fv(location(roadSampleProgram,'vehicleReflectionVP'),false,new Float32Array(endToEndReflectionVP));gl.uniform2f(location(roadSampleProgram,'vehicleReflectionTexel'),1/64,1/64);gl.uniform1f(location(roadSampleProgram,'time'),0);gl.uniform1f(location(roadSampleProgram,'vehicleReflectionEnabled'),1);gl.uniform3f(location(roadSampleProgram,'uWorldPos'),0,.005,-.795);drawGeometry(roadSampleProgram,'aPosition',fullscreenVertices,gl.TRIANGLES);gl.finish();
+const vehicleReflectionRoadSamplePixel=new Uint8Array(4);gl.readPixels(0,0,1,1,gl.RGBA,gl.UNSIGNED_BYTE,vehicleReflectionRoadSamplePixel);
+const vehicleReflectionEndToEndPixelFixturePass=reflectedVehicleCoveredPixels>80&&vehicleReflectionRoadSamplePixel[0]>25&&vehicleReflectionRoadSamplePixel[3]===255;
+gl.bindFramebuffer(gl.FRAMEBUFFER,null);gl.viewport(0,0,W,H);gl.depthMask(true);gl.enable(gl.DEPTH_TEST);
+
 // Test exact shared-edge vertices from the production continuous asphalt ribbon geometry.
 const roadGeometryStart=html.indexOf('function buildRoadSurfaceGeometry(centerZ){');
 const roadGeometryEnd=html.indexOf('\nfunction updateRoadSurfaceMesh(',roadGeometryStart);
@@ -699,6 +761,9 @@ const checks={
   vehicleReflectionUsesDepthTestedFramebufferCapture:html.includes('vehicleReflectionTarget={texture,depth,framebuffer,width,height}')&&html.includes('gl.framebufferRenderbuffer(gl.FRAMEBUFFER,gl.DEPTH_ATTACHMENT,gl.RENDERBUFFER,depth)')&&html.includes('renderVehicleReflectionCapture(vp)'),
   vehicleReflectionCaptureUsesOpaqueDepthMaterial:vehicleReflectionOpaqueCapturePixelFixturePass&&reflectionCaptureBranch.includes('gl_FragColor=vec4(reflectionTint,1.0)'),
   vehicleReflectionCaptureExplicitlyBindsMainProgram:reflectionNineTapPixelFixturePass,
+  vehicleReflectionCollectionPreservedAcrossOutlinePass:reflectionCollectionPreservedAcrossOutlinePass,
+  vehicleReflectionTargetPreservesActiveFramebuffer:reflectionTargetPreservesActiveFramebuffer,
+  vehicleReflectionCapturedPixelsReachAsphalt:vehicleReflectionEndToEndPixelFixturePass,
   vehicleReflectionCaptureIsNotBlendedMeshCopy:html.includes('gl.disable(gl.BLEND);gl.disable(gl.STENCIL_TEST)')&&html.includes('gl.uniform1f(loc.vehicleReflectionPass,1.0)')&&!html.includes('drawVehicleRoadReflection()'),
   vehicleReflectionDistortsAndSoftensRoadImage:sources.mainFragment.includes('float waveA=sin(vWorldPos.z*0.92')&&sources.mainFragment.includes('blurStep.y*24.0')&&reflectionNineTapPixelFixturePass,
   vehicleReflectionPreservesLampMaterial:sources.mainFragment.includes('solidLamp=min(color.rgb*vec3(1.90,1.50,1.25)+vec3(0.03,0.06,0.15),vec3(1.35))'),
@@ -706,17 +771,17 @@ const checks={
   vehicleReflectionMixIsClearlyVisible:sources.mainFragment.includes('reflectionCoverage*0.90')&&sources.mainFragment.includes('vec4 reflectionClip=vehicleReflectionVP*vec4(vWorldPos.x,0.005,vWorldPos.z,1.0)'),
   continuousRoadSurfaceHasNoSegmentBoxes:continuousRoadGeometryPixelFixturePass&&!html.includes('queueRoadCube(roadInstances,cx,-.105,z,9.4,.11,5,C.road,0,9)'),
   continuousRoadSurfaceUsesOneDynamicMesh:html.includes('const ROAD_SURFACE_SEGMENTS=108')&&html.includes('gl.bufferData(gl.ARRAY_BUFFER,geometry.data,gl.DYNAMIC_DRAW)')&&html.includes('buildRoadSurfaceGeometry(centerZ)'),
-  neonGridIsSingleColourEmitter:html.includes('grid:[.18,.84,1,1]')&&html.includes('C.grid,0,10')&&!html.includes('C.grid2')&&neonGridEmissionPixelPass,
-  neonGridUsesDistanceStableGeometryLOD:gridLodGeometryPixelFixturePass,
-  underbodyIsCalculatedRedAreaLight:underbodyAreaPixelFixturePass&&underbodyAreaHasFiveGeometricSamples&&['underbodyLightCenter','underbodyLightRight','underbodyLightForward','underbodyLightDown','underbodyLightIntensity'].every(name=>sources.mainFragment.includes('uniform '+(name==='underbodyLightIntensity'?'float ':'vec3 ')+name))&&html.includes('calcUnderbodyAreaLight(roadN)')&&html.includes('underbodyLightIntensity,!garageMode&&!shadowPass&&!outlinePass&&!aoScenePass&&FX.underglow?3.8:0.0')&&!html.includes('underbodyGlowMesh')&&!html.includes('drawUnderbodyGlow'),
+  neonGridIsSingleColourEmitter:html.includes('grid:[.18,.84,1,1]')&&html.includes('gridPlane,0,-.245')&&!html.includes('C.grid2')&&neonGridEmissionPixelPass,
+  neonGridUsesDerivativeFilteredGroundPlane:gridAAProgram&&gridDerivativeFilterPixelFixturePass&&html.includes('materialMode>11.5&&resolvedMaterialMode<12.5'),
+  underbodyIsCalculatedRedAreaLight:underbodyAreaPixelFixturePass&&underbodyAreaHasSixteenGeometricSamples&&['underbodyLightCenter','underbodyLightRight','underbodyLightForward','underbodyLightDown','underbodyLightIntensity'].every(name=>sources.mainFragment.includes('uniform '+(name==='underbodyLightIntensity'?'float ':'vec3 ')+name))&&html.includes('calcUnderbodyAreaLight(roadN)')&&html.includes('underbodyLightIntensity,!garageMode&&!shadowPass&&!outlinePass&&!aoScenePass&&FX.underglow?9.0:0.0')&&!html.includes('underbodyGlowMesh')&&!html.includes('drawUnderbodyGlow'),
   underbodyHasNoFakeBlueGeometry:!html.includes('underbodyGlowMesh')&&!html.includes('drawUnderbodyGlow')&&!sources.mainFragment.includes('resolvedMaterialMode>10.5&&resolvedMaterialMode<11.5'),
   vehicleHeadlightReflectionPixelFramebufferComplete:headlightReflectionTarget.status===gl.FRAMEBUFFER_COMPLETE,
   vehicleHeadlightReflectionUsesProductionShaderFunction:sources.mainFragment.includes('float calcHeadlightReflection(float roughnessPower){')&&!!headlightReflectionProgram,
   vehicleHeadlightReflectionAppearsInsideBeamAndRange:headlightReflectionPixelFixturePass,
   vehicleReflectionHasF4ToggleAndDefault:html.includes('data-fx="vehicleReflections" checked')&&html.includes('vehicleReflections:true'),
-  vehicleReflectionReportsF3:html.includes('CAR REFLECTION TARGET')&&html.includes('vehicleReflectionTarget.width')&&html.includes('OPAQUE / MIRROR-VP / 9-TAP / READY')&&html.includes('OPAQUE / MIRROR-VP / WAITING'),
+  vehicleReflectionReportsF3:html.includes('CAR REFLECTION TARGET')&&html.includes('vehicleReflectionTarget.width')&&html.includes('MIRROR CAPTURE READY')&&html.includes('lastVehicleRoadReflectionMeshCount'),
   surfaceReflectionDoesNotCaptureEmissiveMaterialEight:sources.mainFragment.includes('resolvedMaterialMode>7.5&&resolvedMaterialMode<8.5')&&html.includes('fixtureYaw,8'),
-  productionVersionVisibleEverywhere:html.includes('id="version-label">v0.19.35 · BUILD 201</div>')&&html.includes('3D NEON HIGHWAY // BUILD 201')&&html.includes('ENGINE STARTUP // v0.19.35 · BUILD 201'),
+  productionVersionVisibleEverywhere:html.includes('id="version-label">v0.19.36 · BUILD 202</div>')&&html.includes('3D NEON HIGHWAY // BUILD 202')&&html.includes('ENGINE STARTUP // v0.19.36 · BUILD 202'),
  roadInstancingProductionVertexCompiled:!!roadProbeV.shader,
  roadInstancingProbeProgramLinked:!!roadProbeP.program,
  roadInstancingAttributesArePresent:['attribute vec3 instancePosition;','attribute vec3 instanceScale;','attribute vec2 instanceYaw;','attribute vec4 instanceColor;','attribute float instanceHeadlight;','attribute float instanceMaterial;'].every(token=>sources.mainVertex.includes(token)),
@@ -847,11 +912,11 @@ const checks={
 };
 must(Object.values(checks).every(Boolean),'One or more production checks failed: '+JSON.stringify(Object.entries(checks).filter(([,ok])=>!ok).map(([name])=>name)));
 const glError=gl.getError();must(glError===gl.NO_ERROR,'WebGL error after production shader pixel test: '+glError);
-const result={pass:true,version:version[1],build:version[2],checks,surfaceReflectionPixels:{sharp:surfaceReflectionSharpPixel,rough:surfaceReflectionRoughPixel,roughnessDelta:surfaceReflectionRoughnessDelta,fixturePass:surfaceReflectionPixelFixturePass},probes:{...probes,roadInstancing:{extensionAvailable:!!roadInstancingExt,framebufferStatus:roadProbeFramebufferStatus,pixels:roadProbePixels,fixturePass:roadInstancingPixelFixturePass},vehicleReflection:{mirrorVertex:reflectedVertexWorld,opaqueGlassPixel:opaqueGlassReflectionPixel,opaqueLampPixel:opaqueLampReflectionPixel,nineTap:reflectionNineTapPixelFixturePass,headlightNear:headlightReflectionNearPixel,headlightFar:headlightReflectionFarPixel,roadSharedEdgeFixture:continuousRoadGeometryPixelFixturePass,fixturePass:vehicleReflectionProjectionPixelFixturePass&&vehicleReflectionOpaqueCapturePixelFixturePass&&reflectionNineTapPixelFixturePass&&headlightReflectionPixelFixturePass&&continuousRoadGeometryPixelFixturePass},neonEmitters:{grid:neonGridPixel,gridLod:{nearHalfWidth:gridLodNearHalfWidth,farHalfWidth:gridLodFarHalfWidth},redUnderbody:{core:underbodyAreaCorePixel,edge:underbodyAreaEdgePixel,far:underbodyAreaFarPixel,fixturePass:underbodyAreaPixelFixturePass&&underbodyAreaHasFiveGeometricSamples},fixturePass:neonGridEmissionPixelPass&&gridLodGeometryPixelFixturePass&&underbodyAreaPixelFixturePass&&underbodyAreaHasFiveGeometricSamples}},brightness:{edge:edgeStrength,shoulder:shoulderStrength,mid:midStrength,deep:deepStrength,blockedSun:brightness(probes.blockedSun),visibleSun:brightness(probes.visibleSun)},glVersion:gl.getParameter(gl.VERSION),renderer:gl.getParameter(gl.RENDERER),glError};
+const result={pass:true,version:version[1],build:version[2],checks,gridDerivative:{nearAverageGreen:gridNearProbe.averageGreen,farAverageGreen:gridFarProbeA.averageGreen,farMeanDifference:gridFarMeanDifference,fixturePass:gridDerivativeFilterPixelFixturePass},surfaceReflectionPixels:{sharp:surfaceReflectionSharpPixel,rough:surfaceReflectionRoughPixel,roughnessDelta:surfaceReflectionRoughnessDelta,fixturePass:surfaceReflectionPixelFixturePass},probes:{...probes,roadInstancing:{extensionAvailable:!!roadInstancingExt,framebufferStatus:roadProbeFramebufferStatus,pixels:roadProbePixels,fixturePass:roadInstancingPixelFixturePass},vehicleReflection:{mirrorVertex:reflectedVertexWorld,opaqueGlassPixel:opaqueGlassReflectionPixel,opaqueLampPixel:opaqueLampReflectionPixel,nineTap:reflectionNineTapPixelFixturePass,collectionPreserved:reflectionCollectionPreservedAcrossOutlinePass,capturedPixels:reflectedVehicleCoveredPixels,roadSample:vehicleReflectionRoadSamplePixel,endToEnd:vehicleReflectionEndToEndPixelFixturePass,headlightNear:headlightReflectionNearPixel,headlightFar:headlightReflectionFarPixel,roadSharedEdgeFixture:continuousRoadGeometryPixelFixturePass,fixturePass:vehicleReflectionProjectionPixelFixturePass&&vehicleReflectionOpaqueCapturePixelFixturePass&&reflectionNineTapPixelFixturePass&&headlightReflectionPixelFixturePass&&continuousRoadGeometryPixelFixturePass},neonEmitters:{grid:neonGridPixel,gridDerivative:{nearAverageGreen:gridNearProbe.averageGreen,farAverageGreen:gridFarProbeA.averageGreen,farMeanDifference:gridFarMeanDifference},redUnderbody:{core:underbodyAreaCorePixel,edge:underbodyAreaEdgePixel,front:underbodyAreaFrontPixel,outsideX:underbodyAreaOutsideXPixel,outsideZ:underbodyAreaOutsideZPixel,far:underbodyAreaFarPixel,fixturePass:underbodyAreaPixelFixturePass&&underbodyAreaHasSixteenGeometricSamples},fixturePass:neonGridEmissionPixelPass&&gridDerivativeFilterPixelFixturePass&&underbodyAreaPixelFixturePass&&underbodyAreaHasSixteenGeometricSamples}},brightness:{edge:edgeStrength,shoulder:shoulderStrength,mid:midStrength,deep:deepStrength,blockedSun:brightness(probes.blockedSun),visibleSun:brightness(probes.visibleSun)},glVersion:gl.getParameter(gl.VERSION),renderer:gl.getParameter(gl.RENDERER),glError};
 window.__GAME_SHADER_RESULT__=result;
 report.className='pass';
 report.textContent='PASS\\n'+JSON.stringify(result,null,2);
-document.title='PASS DRIVELLA BUILD 201 pixel-stable neon grid + red underbody area light + mirror reflection regression';
+document.title='PASS DRIVELLA BUILD 202 derivative grid + 16-point area light + end-to-end mirror reflection';
 })().catch(error=>{
  const report=document.getElementById('report');
  report.className='fail';
