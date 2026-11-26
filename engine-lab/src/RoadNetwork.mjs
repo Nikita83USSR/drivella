@@ -205,22 +205,28 @@ export function buildRoadChunkGeometry(samples, chunkX, chunkY, chunkZ, chunkSiz
   return geometry;
 }
 
-export function nearestRoadSurfaceHeight(x, z, samples) {
+export function nearestRoadSurfaceInfo(x, z, samples) {
   if (!Number.isFinite(x) || !Number.isFinite(z) || !Array.isArray(samples) || !samples.length) {
     return null;
   }
   let nearest = null;
-  let nearestDistance = Infinity;
+  let nearestDistanceSquared = Infinity;
   for (const sample of samples) {
     const dx = sample.x - x;
     const dz = sample.z - z;
-    const distance = dx * dx + dz * dz;
-    if (distance < nearestDistance) {
-      nearestDistance = distance;
+    const distanceSquared = dx * dx + dz * dz;
+    if (distanceSquared < nearestDistanceSquared) {
+      nearestDistanceSquared = distanceSquared;
       nearest = sample;
     }
   }
-  return nearest ? nearest.y : null;
+  return nearest
+    ? { y: nearest.y, distance: Math.sqrt(nearestDistanceSquared), sample: nearest }
+    : null;
+}
+
+export function nearestRoadSurfaceHeight(x, z, samples) {
+  return nearestRoadSurfaceInfo(x, z, samples)?.y ?? null;
 }
 
 export function getRoadStats(samples, chunkSize = ROAD_CHUNK_SIZE) {
