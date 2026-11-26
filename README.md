@@ -2,10 +2,12 @@
 
 A browser-based synthwave drift-racing prototype with a custom low-poly 3D car, a procedural neon environment, and a hand-built WebGL renderer.
 
-> **Status:** Playable prototype under active development. Current renderer reference: **v0.19.46 / BUILD 212**.
+> **Status:** Playable prototype under active development. Current renderer reference: **v0.19.52 / BUILD 218**.
 > **Release identification:** every published game change increments the visible BUILD number in the HUD and startup screen; README and rendering architecture are updated in the same release.
 
 - **BUILD 212:** add a clickable F3 diagnostics copy button. It copies the full diagnostic text, including the current CPU/GPU pass timings, and falls back to the legacy selection-based clipboard path when needed.
+
+- **BUILD 218 / v0.19.52:** reduce the road-car reflection blend to 0.225 and add a subtle vertical fade so the reflected vehicle image diminishes farther up the screen. Production shader and pixel regressions cover the intensity reduction and height fade.
 
 - **BUILD 211:** preserve the original asphalt-reflection kernel and spatial resolution while skipping road-environment and vehicle-mirror shader work when their effects are disabled or the projected mirror is invalid. In races only, mirror capture refreshes every second frame below 62 FPS and returns to full rate above 70 FPS; the garage remains full-rate. F3 separates mirror capture CPU/GPU timing from the rest of the world pass.
 
@@ -91,6 +93,18 @@ Place up to four MP3 tracks in `assets/music/` and name them `1.mp3`, `2.mp3`, `
 ## GitHub Pages
 
 The project is designed to publish directly from the `main` branch and repository root using GitHub Pages.
+
+## Optional Windows edition (deferred)
+
+A separate technical prototype for an optional Windows desktop edition exists on the `desktop-prototype` branch. The browser game remains the default and active way to play.
+
+- The prototype contains a CEF window host, NVIDIA Optimus / AMD high-performance-GPU exports, a loopback-only local file server, and a .NET launcher/updater for the game files in `main`.
+- **Not tested:** no successful Windows build or validated installer package has been produced. The CEF build workflow is experimental and has not completed successfully.
+- **Not integrated into the active menu:** the current `main` branch and published browser game do not offer a working PC download/install action. The prototype branch contains only a test link; no corresponding published installer release exists.
+- **Not ready for distribution:** the current CEF host has its sandbox disabled for preliminary GPU investigation. Do not treat it as a public installer or merge it into the live game.
+- Deferred follow-up: finish supported CEF sandbox/bootstrap packaging and signing, produce a reproducible Windows installer, test launch and update/rollback paths, and verify actual GPU selection and performance on Optimus hardware.
+
+Return to this branch later after the track/environment work. Keep browser-first play unchanged until the desktop version is built and tested.
 
 ## Roadmap
 
