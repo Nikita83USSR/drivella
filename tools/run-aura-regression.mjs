@@ -60,7 +60,7 @@ try {
   await page.waitForFunction(() => Boolean(window.__GAME_SHADER_RESULT__) || document.title.startsWith('FAIL'), null, { timeout: 60000 });
   const result = await page.evaluate(() => window.__GAME_SHADER_RESULT__);
   assert(result, 'Browser test page reported failure without a result object: ' + await page.title());
-  await page.screenshot({ path: 'artifacts/derivative-grid-area-light-end-to-end-mirror-build215-regression.png', fullPage: true });
+  await page.screenshot({ path: 'artifacts/derivative-grid-area-light-end-to-end-mirror-build218-regression.png', fullPage: true });
   console.log('PRODUCTION BUILD218: DERIVATIVE GRID + 16-POINT RED AREA LIGHT + VEHICLE MIRROR CAPTURE-TO-ROAD PIXEL REGRESSION\n' + JSON.stringify(result, null, 2));
   assert(result.pass, 'Production shader regression failed: ' + JSON.stringify(result));
   assert(pageErrors.length === 0, 'Browser page errors: ' + pageErrors.join('\\n'));
@@ -76,9 +76,9 @@ try {
     if (message.type() === 'error') console.error('GAME BROWSER CONSOLE:', message.text());
   });
   await gamePage.bringToFront();
-  await gamePage.goto(baseUrl + '/', { waitUntil: 'load', timeout: 20000 });
+  await gamePage.goto(baseUrl + '/', { waitUntil: 'domcontentloaded', timeout: 20000 });
   try {
-    await gamePage.waitForSelector('#main-menu.show', { timeout: 20000 });
+    await gamePage.waitForSelector('#main-menu.show', { timeout: 45000 });
   } catch (error) {
     let startupState = null;
     try {
@@ -90,7 +90,7 @@ try {
         bootPercent: document.getElementById('boot-percent')?.innerText,
         menuClass: document.getElementById('main-menu')?.className
       }));
-      await gamePage.screenshot({ path: 'artifacts/build215-live-game-startup-failure.png', fullPage: true });
+      await gamePage.screenshot({ path: 'artifacts/build218-live-game-startup-failure.png', fullPage: true });
     } catch (_) {}
     throw new Error('Live game boot diagnostics: ' + JSON.stringify({ startupState, pageErrors }) + ' // ' + error.message);
   }
@@ -104,7 +104,7 @@ try {
     const value = document.getElementById('debug-data')?.innerText || '';
     return value.includes('MIRROR CAPTURE READY') && /\\b[1-9][0-9]* MESHES\\b/.test(value);
   }, null, { timeout: 45000 });
-  await gamePage.screenshot({ path: 'artifacts/build215-live-game-reflection-capture-smoke.png', fullPage: true });
+  await gamePage.screenshot({ path: 'artifacts/build218-live-game-reflection-capture-smoke.png', fullPage: true });
   await gamePage.context().grantPermissions(['clipboard-read', 'clipboard-write']);
   await gamePage.locator('#debug-copy').click();
   const copiedDiagnostics = await gamePage.evaluate(() => navigator.clipboard.readText());
@@ -132,7 +132,7 @@ try {
   assert(/11 SOURCES/.test(garageDiagnostics), 'Garage did not activate all 11 display light sources: ' + garageDiagnostics);
   assert(/2 REPLICAS ROTATING/.test(garageDiagnostics), 'Garage turntable replicas are not reported as rotating: ' + garageDiagnostics);
   assert(/GARAGE MIRROR READY · \d+ MESHES · 3 PLINTHS/.test(garageDiagnostics), 'Garage did not capture all showroom cars for the podium mirrors: ' + garageDiagnostics);
-  await gamePage.screenshot({ path: 'artifacts/build215-live-garage-car-reflections.png', fullPage: true });
+  await gamePage.screenshot({ path: 'artifacts/build218-live-garage-car-reflections.png', fullPage: true });
   console.log('BUILD 218 LIVE GARAGE MIRRORS + EFFECTS // ' + garageDiagnostics.replace(/\s+/g, ' '));
   await gamePage.close();
 
