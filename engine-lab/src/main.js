@@ -18,7 +18,7 @@ import {
 } from "@babylonjs/core";
 import HavokPhysics from "@babylonjs/havok";
 import { SpatialChunkManager } from "./SpatialChunkManager.mjs";
-import { terrainChunkLayer, terrainHeight } from "./TerrainField.mjs";
+import { terrainChunkLayer, terrainHeight, terrainMoisture } from "./TerrainField.mjs";
 import { generateBiomePlacements } from "./BiomeField.mjs";
 
 const canvas = document.getElementById("renderCanvas");
@@ -52,37 +52,33 @@ function setStatus(message, state = "warn") {
   statusDot.className = "status-dot " + state;
 }
 
-function terrainColorAt(height, slopeAmount) {
-  const stops = [
-    [-180, [0.035, 0.07, 0.18]],
-    [-70, [0.055, 0.16, 0.31]],
-    [-8, [0.045, 0.27, 0.29]],
-    [38, [0.16, 0.14, 0.34]],
-    [100, [0.24, 0.31, 0.52]],
-    [180, [0.52, 0.68, 0.78]]
-  ];
-  let lower = stops[0];
-  let upper = stops[stops.length - 1];
-  for (let index = 0; index < stops.length - 1; index += 1) {
-    if (height >= stops[index][0] && height <= stops[index + 1][0]) {
-      lower = stops[index];
-      upper = stops[index + 1];
-      break;
-    }
+function terrainColorAt(height, slopeAmount, moisture, distanceFromStart) {
+  if (distanceFromStart < 112) {
+    return [0.22, 0.28, 0.31];
   }
-  const range = upper[0] - lower[0] || 1;
-  const blend = Math.max(0, Math.min(1, (height - lower[0]) / range));
-  const base = [
-    lower[1][0] + (upper[1][0] - lower[1][0]) * blend,
-    lower[1][1] + (upper[1][1] - lower[1][1]) * blend,
-    lower[1][2] + (upper[1][2] - lower[1][2]) * blend
-  ];
-  const ridgeMix = Math.max(0, Math.min(0.68, slopeAmount * 0.82));
-  const ridgeColor = [0.27, 0.49, 0.65];
+
+  let base;
+  if (height > 138) {
+    base = [0.62, 0.68, 0.73];
+  } else if (slopeAmount > 0.58) {
+    base = [0.39, 0.43, 0.46];
+  } else if (height < -82) {
+    base = moisture > 0.52 ? [0.19, 0.36, 0.29] : [0.27, 0.36, 0.31];
+  } else if (moisture > 0.555) {
+    base = [0.17, 0.34, 0.22];
+  } else if (moisture < 0.315) {
+    base = [0.47, 0.39, 0.24];
+  } else {
+    base = [0.35, 0.45, 0.25];
+  }
+
+  const slopeBlend = Math.max(0, Math.min(0.58, (slopeAmount - 0.2) * 0.68));
+  const rockTint = [0.48, 0.53, 0.57];
+  const variation = (moisture - 0.5) * 0.045;
   return [
-    base[0] + (ridgeColor[0] - base[0]) * ridgeMix,
-    base[1] + (ridgeColor[1] - base[1]) * ridgeMix,
-    base[2] + (ridgeColor[2] - base[2]) * ridgeMix
+    Math.max(0, Math.min(1, base[0] * (1 - slopeBlend) + rockTint[0] * slopeBlend + variation)),
+    Math.max(0, Math.min(1, base[1] * (1 - slopeBlend) + rockTint[1] * slopeBlend + variation)),
+    Math.max(0, Math.min(1, base[2] * (1 - slopeBlend) + rockTint[2] * slopeBlend + variation))
   ];
 }
 
@@ -130,7 +126,7 @@ function createTerrainChunk(scene, chunkX, chunkY, chunkZ, chunkSize, material) 
       const normalY = 1 / length;
       const normalZ = -slopeZ / length;
       normals.push(normalX, normalY, normalZ);
-      const rgb = terrainColorAt(worldHeight, 1 - normalY);
+      const rgb = terrainColorAt(worldHeight, 1 - normalY, terrainMoisture(worldX, worldZ), Math.hypot(worldX, worldZ));
       colors.push(rgb[0], rgb[1], rgb[2], 1);
     }
   }
@@ -364,37 +360,18 @@ function createSpatialReference(scene, worldRadius) {
   createAxisBeacon(scene, "axis-positive-z", new Vector3(0, 0, axisLength), new Color3(0.25, 0.64, 1));
   createAxisBeacon(scene, "axis-negative-z", new Vector3(0, 0, -axisLength), new Color3(0.12, 0.28, 0.62));
 
-  const bridgeMaterial = new StandardMaterial("elevated-platform-material", scene);
-  bridgeMaterial.diffuseColor = new Color3(0.12, 0.23, 0.3);
-  bridgeMaterial.emissiveColor = new Color3(0.015, 0.04, 0.06);
-  const bridge = MeshBuilder.CreateBox("elevated-3d-platform", {
-    width: 72,
-    height: 2,
-    depth: 18
-  }, scene);
-  bridge.position.set(0, 62, 0);
-  bridge.material = bridgeMaterial;
 
-  for (const x of [-30, -10, 10, 30]) {
-    const support = MeshBuilder.CreateBox("elevated-platform-support", {
-      width: 1.8,
-      height: 62,
-      depth: 1.8
-    }, scene);
-    support.position.set(x, 30, 0);
-    support.material = bridgeMaterial;
-  }
 }
 
 function createEnvironment(scene) {
   const worldRadius = 420;
   const skyLight = new HemisphericLight("sky-fill", new Vector3(0, 1, 0), scene);
-  skyLight.intensity = 1.18;
+  skyLight.intensity = 1.42;
   skyLight.groundColor = new Color3(0.035, 0.055, 0.1);
 
   const sun = new DirectionalLight("sun", new Vector3(-0.45, -1, 0.3), scene);
   sun.position = new Vector3(70, 130, -40);
-  sun.intensity = 2.1;
+  sun.intensity = 2.3;
 
   const camera = new ArcRotateCamera(
     "world-orbit-camera",
@@ -418,7 +395,7 @@ function createEnvironment(scene) {
   terrainMaterial.diffuseColor = Color3.White();
   terrainMaterial.specularColor = new Color3(0.28, 0.38, 0.48);
   terrainMaterial.specularPower = 24;
-  terrainMaterial.emissiveColor = new Color3(0.085, 0.13, 0.18);
+  terrainMaterial.emissiveColor = new Color3(0.12, 0.15, 0.095);
   terrainMaterial.backFaceCulling = false;
   terrainMaterial.twoSidedLighting = true;
   terrainMaterial.useVertexColors = true;
@@ -491,7 +468,9 @@ function createEnvironment(scene) {
   scene.clearColor = new Color4(0.018, 0.027, 0.052, 1);
   scene.fogMode = Scene.FOGMODE_EXP2;
   scene.fogDensity = 0.000035;
-  scene.fogColor = new Color3(0.018, 0.027, 0.052);
+  scene.fogColor = new Color3(0.055, 0.075, 0.09);
+  scene.imageProcessingConfiguration.exposure = 1.18;
+  scene.imageProcessingConfiguration.contrast = 1.12;
 
   return { camera, chunkManager, terrainMeshes, terrainBodies, biomeMeshes, rockBodies };
 }
