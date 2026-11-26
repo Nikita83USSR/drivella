@@ -597,7 +597,7 @@ const vehicleReflectionOpaqueCapturePixelFixturePass=opaqueGlassReflectionPixel[
 
 // Compile and pixel-test the actual production cyan grid-emitter branch.
 const neonGridStart=sources.mainFragment.indexOf('if(resolvedMaterialMode>9.5&&resolvedMaterialMode<10.5){');
-const neonGridEnd=sources.mainFragment.indexOf('if(resolvedMaterialMode>11.5&&resolvedMaterialMode<12.5)',neonGridStart);
+const neonGridEnd=sources.mainFragment.indexOf('if((resolvedMaterialMode>10.5&&resolvedMaterialMode<11.5)',neonGridStart);
 must(neonGridStart>=0&&neonGridEnd>neonGridStart,'Production neon grid emissive branch is missing');
 const neonGridBranch=sources.mainFragment.slice(neonGridStart,neonGridEnd);
 const neonGridVs='attribute vec2 aPosition;void main(){gl_Position=vec4(aPosition,0.0,1.0);}';
