@@ -100,7 +100,7 @@ try {
   }, null, { timeout: 45000 });
   await gamePage.waitForFunction(() => {
     const value = document.getElementById('debug-data')?.innerText || '';
-    return value.includes('MIRROR CAPTURE READY') && /\\b[1-9][0-9]* MESHES\\b/.test(value);
+    return value.includes('MIRROR CAPTURE READY') && /\b[1-9][0-9]* MESHES\b/.test(value);
   }, null, { timeout: 45000 });
   await gamePage.context().grantPermissions(['clipboard-read', 'clipboard-write']);
   await gamePage.evaluate(() => document.getElementById('debug-copy')?.click());
@@ -120,7 +120,7 @@ try {
   await gamePage.mouse.move(lookX-262,lookY,{steps:10});
   await gamePage.mouse.move(lookX-524,lookY,{steps:10});
   await gamePage.mouse.up();
-  assert(/\\b[1-9][0-9]* MESHES\\b/.test(liveReflectionDiagnostics), 'Live game mirror capture has no vehicle meshes: ' + liveReflectionDiagnostics);
+  assert(/\b[1-9][0-9]* MESHES\b/.test(liveReflectionDiagnostics), 'Live game mirror capture has no vehicle meshes: ' + liveReflectionDiagnostics);
   assert(pageErrors.length === 0, 'Game browser page errors: ' + pageErrors.join('\\n'));
   console.log('BUILD 219 LIVE GAME WORLD + MIRROR CAPTURE // ' + liveReflectionDiagnostics.replace(/\s+/g, ' '));
 
