@@ -603,14 +603,14 @@ const underbodyEmissionPixelPass=underbodyCorePixel[1]>220&&underbodyCorePixel[2
 gl.bindFramebuffer(gl.FRAMEBUFFER,null);gl.viewport(0,0,W,H);gl.depthMask(true);gl.enable(gl.DEPTH_TEST);
 
 // Verify the unified underbody geometry is a single connected strip derived from the imported Countach floor width.
-const bodyProfileMatch=html.match(/const bodyProfile=(\\[[\\s\\S]*?\\n \\]);/);
+const bodyProfileMatch=html.match(/const bodyProfile=(\[[\s\S]*?\n \]);/);
 must(bodyProfileMatch,'Countach underside profile is missing');
 const bodyProfileFixture=new Function('return '+bodyProfileMatch[1])();
 const underbodyGeometryStart=html.indexOf('function makeUnderbodyGlowMesh(){');
-const underbodyGeometryEnd=html.indexOf('\\nconst underbodyGlowMesh=',underbodyGeometryStart);
+const underbodyGeometryEnd=html.indexOf('\nconst underbodyGlowMesh=',underbodyGeometryStart);
 must(underbodyGeometryStart>=0&&underbodyGeometryEnd>underbodyGeometryStart,'Unified underbody geometry builder is missing');
 const underbodyGeometrySource=html.slice(underbodyGeometryStart,underbodyGeometryEnd);
-const buildUnderbodyGeometry=new Function('ROAD_SURFACE_TOP','bodyProfile','mesh',underbodyGeometrySource+'\\nreturn makeUnderbodyGlowMesh;')(0.005,bodyProfileFixture,data=>data);
+const buildUnderbodyGeometry=new Function('ROAD_SURFACE_TOP','bodyProfile','mesh',underbodyGeometrySource+'\nreturn makeUnderbodyGlowMesh;')(0.005,bodyProfileFixture,data=>data);
 const underbodyGeometry=buildUnderbodyGeometry();
 const underbodyGeometryPixelFixturePass=underbodyGeometry.length===(bodyProfileFixture.length-1)*18&&underbodyGeometry.every((v,i)=>i%3!==1||Math.abs(v-.029)<1e-6);
 
@@ -668,15 +668,20 @@ const checks={
   surfaceReflectionRoadPreservesShadowAndLighting:sources.mainFragment.includes('(resolvedMaterialMode<4.5||(resolvedMaterialMode>8.5&&resolvedMaterialMode<9.5))')&&sources.mainFragment.includes('calcLocalLighting(roadN,roadV,roadColor,14.0)')&&html.includes('(material<4.5||(material>8.5&&material<9.5))'),
   surfaceReflectionHasIndependentF4Toggles:html.includes('data-fx="paintReflections" checked')&&html.includes('data-fx="roadReflections" checked')&&html.includes('paintReflections:true,roadReflections:true'),
   surfaceReflectionF3ReportsBothMaterials:html.includes('PAINT / ROAD REFLECTIONS')&&html.includes('FX.paintReflections')&&html.includes('FX.roadReflections'),
-  vehicleReflectionMirrorPlacesOpaqueCarBelowRoadPlane:vehicleReflectionProjectionPixelFixturePass,\n  vehicleReflectionUsesOneSharedMirrorViewProjection:vehicleReflectionProjectionPixelFixturePass,
+  vehicleReflectionMirrorPlacesOpaqueCarBelowRoadPlane:vehicleReflectionProjectionPixelFixturePass,
+  vehicleReflectionUsesOneSharedMirrorViewProjection:vehicleReflectionProjectionPixelFixturePass,
   vehicleReflectionUsesDepthTestedFramebufferCapture:html.includes('vehicleReflectionTarget={texture,depth,framebuffer,width,height}')&&html.includes('gl.framebufferRenderbuffer(gl.FRAMEBUFFER,gl.DEPTH_ATTACHMENT,gl.RENDERBUFFER,depth)')&&html.includes('renderVehicleReflectionCapture(vp)'),
   vehicleReflectionCaptureUsesOpaqueDepthMaterial:vehicleReflectionOpaqueCapturePixelFixturePass&&reflectionCaptureBranch.includes('gl_FragColor=vec4(reflectionTint,1.0)'),
   vehicleReflectionCaptureIsNotBlendedMeshCopy:html.includes('gl.disable(gl.BLEND);gl.disable(gl.STENCIL_TEST)')&&html.includes('gl.uniform1f(loc.vehicleReflectionPass,1.0)')&&!html.includes('drawVehicleRoadReflection()'),
   vehicleReflectionDistortsAndSoftensRoadImage:sources.mainFragment.includes('float waveA=sin(vWorldPos.z*0.92')&&sources.mainFragment.includes('vec2 blurStep=vehicleReflectionTexel*vec2(1.8,1.15)')&&sources.mainFragment.split('texture2D(vehicleReflectionTexture').length>=6,
   vehicleReflectionPreservesLampMaterial:sources.mainFragment.includes('solidLamp=min(color.rgb*2.20+vec3(0.06,0.15,0.28),vec3(1.75))'),
-  asphaltEnvironmentReflectionReducedByHalf:sources.mainFragment.includes('clamp(0.06+roadFresnel*0.20,0.0,0.24)'),\n  vehicleReflectionMixIsClearlyVisible:sources.mainFragment.includes('reflectionCoverage*0.90')&&sources.mainFragment.includes('vec4 reflectionClip=vehicleReflectionVP*vec4(vWorldPos.x,0.005,vWorldPos.z,1.0)'),
+  asphaltEnvironmentReflectionReducedByHalf:sources.mainFragment.includes('clamp(0.06+roadFresnel*0.20,0.0,0.24)'),
+  vehicleReflectionMixIsClearlyVisible:sources.mainFragment.includes('reflectionCoverage*0.90')&&sources.mainFragment.includes('vec4 reflectionClip=vehicleReflectionVP*vec4(vWorldPos.x,0.005,vWorldPos.z,1.0)'),
   continuousRoadSurfaceHasNoSegmentBoxes:continuousRoadGeometryPixelFixturePass&&!html.includes('queueRoadCube(roadInstances,cx,-.105,z,9.4,.11,5,C.road,0,9)'),
-  continuousRoadSurfaceUsesOneDynamicMesh:html.includes('const ROAD_SURFACE_SEGMENTS=108')&&html.includes('gl.bufferData(gl.ARRAY_BUFFER,geometry.data,gl.DYNAMIC_DRAW)')&&html.includes('buildRoadSurfaceGeometry(centerZ)'),\n  neonGridIsSingleColourEmitter:html.includes('grid:[.18,.84,1,1]')&&html.includes('C.grid,0,10')&&!html.includes('C.grid2')&&neonGridEmissionPixelPass,\n  underbodyIsOneConnectedProfileMesh:underbodyGeometryPixelFixturePass&&html.includes('drawCarMesh(underbodyGlowMesh,cx,cz')&&!html.includes('draw(underglowDisk,carX')&&!html.includes('draw(underglowDisk,cx'),\n  underbodyUsesIndependentEmissiveBloomSource:underbodyEmissionPixelPass&&neonEmitterBranch.includes('resolvedMaterialMode>10.5&&resolvedMaterialMode<11.5')&&html.includes('drawUnderbodyGlow(carX,carZ,yaw)'),
+  continuousRoadSurfaceUsesOneDynamicMesh:html.includes('const ROAD_SURFACE_SEGMENTS=108')&&html.includes('gl.bufferData(gl.ARRAY_BUFFER,geometry.data,gl.DYNAMIC_DRAW)')&&html.includes('buildRoadSurfaceGeometry(centerZ)'),
+  neonGridIsSingleColourEmitter:html.includes('grid:[.18,.84,1,1]')&&html.includes('C.grid,0,10')&&!html.includes('C.grid2')&&neonGridEmissionPixelPass,
+  underbodyIsOneConnectedProfileMesh:underbodyGeometryPixelFixturePass&&html.includes('drawCarMesh(underbodyGlowMesh,cx,cz')&&!html.includes('draw(underglowDisk,carX')&&!html.includes('draw(underglowDisk,cx'),
+  underbodyUsesIndependentEmissiveBloomSource:underbodyEmissionPixelPass&&neonEmitterBranch.includes('resolvedMaterialMode>10.5&&resolvedMaterialMode<11.5')&&html.includes('drawUnderbodyGlow(carX,carZ,yaw)')&&!neonEmitterBranch.includes('lampEmissionEnabled'),
   vehicleHeadlightReflectionPixelFramebufferComplete:headlightReflectionTarget.status===gl.FRAMEBUFFER_COMPLETE,
   vehicleHeadlightReflectionUsesProductionShaderFunction:sources.mainFragment.includes('float calcHeadlightReflection(float roughnessPower){')&&!!headlightReflectionProgram,
   vehicleHeadlightReflectionAppearsInsideBeamAndRange:headlightReflectionPixelFixturePass,
@@ -758,7 +763,8 @@ const checks={
   garageHasThreeDimensionalHomesAndPalms:html.includes('function drawGarageHouse(')&&html.includes('function queueGaragePalm(')&&html.includes('drawGarageHouse(-19.8,-18')&&html.includes('queueGaragePalm(garagePalmTrunks,garagePalmRings,garagePalmLeaves,-14.4,-9.8'),
  garageCameraCanFrameTheShowroom:html.includes('garageZoom=22')&&html.includes('garageZoom+Math.sign(e.deltaY)*.8,7,36'),
  sceneBloomF3ReportsGarageGodRays:html.includes("'<strong>GOD RAYS</strong> '+(FX.sunGodRays&&gpuSunReady?'ON · 25% RES':'OFF')+'<br>'+"),
- sceneBloomF3ReportsFallbackState:html.includes("sceneBloomTargets?'ON · 25% RES / 2 SCALES':'FALLBACK · COPY ONLY'"),\n  sceneBloomIncludesGridAndUnderbodyEmitters:html.includes('NEON GRID / UNDERBODY')&&html.includes('FX.sceneBloom')&&html.includes('wideHorizontal,[1,0],5.2'),
+ sceneBloomF3ReportsFallbackState:html.includes("sceneBloomTargets?'ON · 25% RES / 2 SCALES':'FALLBACK · COPY ONLY'"),
+  sceneBloomIncludesGridAndUnderbodyEmitters:html.includes('NEON GRID / UNDERBODY')&&html.includes('FX.sceneBloom')&&html.includes('wideHorizontal,[1,0],5.2'),
  sceneBloomExtractionShaderCompiled:true,
  sceneBloomCompositeShaderCompiled:true,
  sceneColourFallbackShaderCompiled:true,
