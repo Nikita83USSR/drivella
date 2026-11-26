@@ -57,7 +57,12 @@
 #debug-panel{position:fixed;left:18px;bottom:65px;z-index:9;display:none;min-width:235px;padding:12px 14px;background:#080c1deF;border:1px solid #6bf2ff80;box-shadow:0 0 22px #00d9ff1c;color:#9db6d8;font-size:10px;line-height:1.7;letter-spacing:.06em;pointer-events:none}
 #debug-panel.visible{display:block}
 #debug-panel strong{color:#82f6ff;font-weight:700}
-#debug-panel .debug-title{color:#ff83df;letter-spacing:.2em;margin-bottom:5px}
+#debug-panel .debug-head{display:flex;align-items:center;justify-content:space-between;gap:12px;margin-bottom:7px}
+#debug-panel .debug-title{color:#ff83df;letter-spacing:.2em;margin:0}
+#debug-copy{pointer-events:auto;touch-action:manipulation;cursor:pointer;border:1px solid #65eaff88;background:#101a32;color:#aaf8ff;padding:5px 8px;font:700 8px Consolas,monospace;letter-spacing:.08em;white-space:nowrap}
+#debug-copy:hover{background:#18324b;border-color:#9bf5ff}
+#debug-copy:active{transform:translateY(1px)}
+#debug-copy.copied{border-color:#8dffc3;color:#8dffc3}
 /* DRIVELLA front end */
 #main-menu{position:fixed;inset:0;z-index:12;display:none;align-items:flex-end;justify-content:center;padding:0 18px 7.5vh;background:linear-gradient(180deg,rgba(4,5,19,.08),rgba(4,5,19,.12)),url('assets/menu-background.svg') center/cover no-repeat;}
 #main-menu.show{display:flex;animation:menuIn .65s ease both}
@@ -117,9 +122,9 @@
 <body>
 <canvas id="scene"></canvas><canvas id="sun"></canvas>
 <div id="hud">
- <div class="top"><div class="logo">DRIVELLA<small>3D SYNTHWAVE DRIFT RACING</small></div><div class="version-label" id="version-label">v0.19.42 · BUILD 208</div><div class="stat">DISTANCE<b id="distance">000.0 KM</b></div><div class="stat">LOCATION<b>VIOLET COAST</b></div></div>
+ <div class="top"><div class="logo">DRIVELLA<small>3D SYNTHWAVE DRIFT RACING</small></div><div class="version-label" id="version-label">v0.19.46 · BUILD 212</div><div class="stat">DISTANCE<b id="distance">000.0 KM</b></div><div class="stat">LOCATION<b>VIOLET COAST</b></div></div>
  <div class="right"><div id="speed">000 <span>KM/H</span></div><div id="direction">▶ FORWARD</div><div id="music">♫ MUSIC SCANNING…</div></div>
- <div class="bottom"><div class="hint"><strong>W / ↑</strong> ACCELERATE　<strong>S / ↓</strong> BRAKE / REVERSE<br><strong>A / ←　D / →</strong> STEER　<strong>SPACE</strong> HANDBRAKE　<strong>C</strong> CAMERA　<strong>HOLD + DRAG LMB</strong> LOOK　<strong>L</strong> LIGHTS　<strong>K</strong> WIREFRAME</div><div class="build-credit"><span>3D NEON HIGHWAY // BUILD 208</span><a class="asset-credit" href="https://sketchfab.com/3d-models/low-poly-lamborghini-countach-c9b28a4ad5c74649a09afa613dd3fae1" target="_blank" rel="noopener noreferrer">Original model: 3DShinobi · Sketchfab · CC BY · modified for DRIVELLA</a></div></div>
+ <div class="bottom"><div class="hint"><strong>W / ↑</strong> ACCELERATE　<strong>S / ↓</strong> BRAKE / REVERSE<br><strong>A / ←　D / →</strong> STEER　<strong>SPACE</strong> HANDBRAKE　<strong>C</strong> CAMERA　<strong>HOLD + DRAG LMB</strong> LOOK　<strong>L</strong> LIGHTS　<strong>K</strong> WIREFRAME</div><div class="build-credit"><span>3D NEON HIGHWAY // BUILD 212</span><a class="asset-credit" href="https://sketchfab.com/3d-models/low-poly-lamborghini-countach-c9b28a4ad5c74649a09afa613dd3fae1" target="_blank" rel="noopener noreferrer">Original model: 3DShinobi · Sketchfab · CC BY · modified for DRIVELLA</a></div></div>
 </div>
 <div id="fps-counter" aria-live="off">FPS --</div>
 <div id="effects-menu" aria-hidden="true">
@@ -164,8 +169,8 @@
  </aside>
 </div>
 <div id="tools-ui"><button id="cam-prev" aria-label="Previous camera">◀</button><span id="cam-label">CAM 2 · CLOSE</span><button id="cam-next" aria-label="Next camera">▶</button><button id="debug-toggle">DEBUG</button></div>
-<div id="debug-panel"><div class="debug-title">DRIVELLA DIAGNOSTICS</div><div id="debug-data">Initializing…</div></div>
-<div id="boot-screen"><div class="boot-content"><div class="boot-kicker">NIGHT DRIVE SYSTEMS // INITIALIZING</div><div class="boot-logo">DRIVELLA</div><div class="boot-subtitle">3D SYNTHWAVE DRIFT RACING</div><div class="boot-mark"></div><div class="boot-status" id="boot-status">BUILDING THE 3D WORLD</div><div class="boot-track"><div class="boot-progress" id="boot-progress"></div></div><div class="boot-meta"><span>3D ENGINE ONLINE</span><span id="boot-percent">00%</span></div><div class="boot-footer">ENGINE STARTUP // v0.19.43 · BUILD 209</div></div></div>
+<div id="debug-panel"><div class="debug-head"><div class="debug-title">DRIVELLA DIAGNOSTICS</div><button id="debug-copy" type="button" aria-label="Скопировать всю диагностику">КОПИРОВАТЬ</button></div><div id="debug-data">Initializing…</div></div>
+<div id="boot-screen"><div class="boot-content"><div class="boot-kicker">NIGHT DRIVE SYSTEMS // INITIALIZING</div><div class="boot-logo">DRIVELLA</div><div class="boot-subtitle">3D SYNTHWAVE DRIFT RACING</div><div class="boot-mark"></div><div class="boot-status" id="boot-status">BUILDING THE 3D WORLD</div><div class="boot-track"><div class="boot-progress" id="boot-progress"></div></div><div class="boot-meta"><span>3D ENGINE ONLINE</span><span id="boot-percent">00%</span></div><div class="boot-footer">ENGINE STARTUP // v0.19.46 · BUILD 212</div></div></div>
 <div id="main-menu"><div class="menu-content"><div class="menu-brand">DRIVELLA GTS</div><div class="menu-sub">RIDE THE RETRO FUTURE</div><div class="menu-actions"><button class="menu-btn" id="menu-start">СТАРТ</button><button class="menu-btn" id="menu-garage">ГАРАЖ</button><button class="menu-btn" id="menu-options">НАСТРОЙКИ</button></div></div><div class="menu-footer">РАЗРАБОТЧИК — <b>НИКИТА МАРКИН</b></div></div>
 <div id="garage-screen"><div class="garage-head">ГАРАЖ // DRIVELLA GTS</div><div class="garage-copy">DRIVELLA GTS · SHOWROOM LAB<br>ТРИ COUNTACH ДЛЯ СРАВНЕНИЯ МАТЕРИАЛОВ И СВЕТА<br>ДОМА · ПАЛЬМЫ · SUN / BLOOM / GOD RAYS</div><div class="garage-controls"><button id="garage-back">← НАЗАД В МЕНЮ</button></div><div class="garage-tip">ЗАЖМИ И ТЯНИ — ВРАЩАЙ ВСЮ СЦЕНУ<br>КОЛЁСИКО — МАСШТАБ · F4 — ЭФФЕКТЫ · F3 — ДИАГНОСТИКА</div></div>
 <div id="options-screen"><div class="options-head">ОПЦИИ</div><div class="options-card"><div class="option-row"><span>МУЗЫКА</span><button id="option-music">ВКЛЮЧЕНА</button></div><div class="option-row"><span>ГРОМКОСТЬ</span><input id="option-volume" type="range" min="0" max="100" value="52"></div><div class="option-row"><span>ЗВУК ДВИГАТЕЛЯ</span><button id="option-sfx">ВКЛЮЧЁН</button></div><div class="option-row"><span>КАМЕРА</span><span>КЛАВИШИ 1–4</span></div><button id="options-back" style="width:100%;margin-top:18px">← НАЗАД В МЕНЮ</button></div></div>
@@ -184,7 +189,7 @@
 <script>
 (()=>{
 'use strict';
-const VERSION='v0.19.45',BUILD='211';
+const VERSION='v0.19.46',BUILD='212';
 const canvas=document.getElementById('scene'),gl=canvas.getContext('webgl',{antialias:true,alpha:true}),sun=document.getElementById('sun'),sctx=sun.getContext('2d');
 const $=id=>document.getElementById(id);
 let countachModel=null,countachModelReady=false;
@@ -1753,6 +1758,21 @@ function resetVisualEffects(){Object.assign(FX,FX_DEFAULTS);wireframeMode=FX.wir
 const CAMERA_NAMES=['HOOD / FIRST PERSON','CLOSE CHASE','WIDE CHASE','LOW CHASE'];
 function setCamera(n){cameraMode=(n+4)%4;$('cam-label').textContent='CAM '+(cameraMode+1)+' · '+['HOOD','CLOSE','WIDE','LOW'][cameraMode];}
 function toggleDebug(){debugVisible=!debugVisible;$('debug-panel').classList.toggle('visible',debugVisible);$('debug-toggle').textContent=debugVisible?'DEBUG ON':'DEBUG';}
+async function copyDebugDiagnostics(){
+ const button=$('debug-copy'),content=$('debug-data').innerText.trim();
+ if(!content){button.textContent='НЕТ ДАННЫХ';return;}
+ let copied=false;
+ try{if(navigator.clipboard&&navigator.clipboard.writeText){await navigator.clipboard.writeText(content);copied=true;}}catch(error){}
+ if(!copied){
+  const field=document.createElement('textarea');field.value=content;field.setAttribute('readonly','');
+  field.style.position='fixed';field.style.left='-9999px';field.style.top='0';field.style.opacity='0';
+  document.body.appendChild(field);field.focus();field.select();
+  try{copied=!!document.execCommand('copy');}catch(error){copied=false;}
+  field.remove();
+ }
+ button.textContent=copied?'СКОПИРОВАНО':'НЕ СКОПИРОВАНО';button.classList.toggle('copied',copied);
+ if(!copied)console.warn('DRIVELLA diagnostics could not be copied to clipboard.');
+}
 $('effects-menu').querySelectorAll('[data-fx]').forEach(input=>input.addEventListener('change',()=>setVisualEffect(input.dataset.fx,input.checked)));
 $('effects-menu').querySelectorAll('[data-fx-quality]').forEach(select=>select.addEventListener('change',()=>setSunBloomQuality(select.dataset.fxQuality,select.value)));
  
@@ -1787,6 +1807,7 @@ addEventListener('pointerdown',()=>{if(bootDone){initAudio();if(musicPending&&mu
 $('cam-prev').addEventListener('click',()=>setCamera(cameraMode-1));
 $('cam-next').addEventListener('click',()=>setCamera(cameraMode+1));
 $('debug-toggle').addEventListener('click',toggleDebug);
+$('debug-copy').addEventListener('click',copyDebugDiagnostics);
 canvas.addEventListener('pointerdown',e=>{if(!started||paused||garageMode||e.button!==0)return;if(!mouseLookReturning){mouseLookYaw=0;mouseLookPitch=0;}mouseLookReturning=false;mouseLookActive=true;mouseLookPointerId=e.pointerId;mouseLookX=e.clientX;mouseLookY=e.clientY;canvas.style.cursor='grabbing';try{canvas.setPointerCapture(e.pointerId);}catch{}e.preventDefault();});
 canvas.addEventListener('pointermove',e=>{if(!mouseLookActive||e.pointerId!==mouseLookPointerId)return;const dx=e.clientX-mouseLookX,dy=e.clientY-mouseLookY;mouseLookX=e.clientX;mouseLookY=e.clientY;mouseLookYaw=clamp(mouseLookYaw+dx*.006,-Math.PI,Math.PI);mouseLookPitch=clamp(mouseLookPitch+dy*.0045,-.62,.62);});
 const endMouseLook=e=>{if(!mouseLookActive||(e&&e.pointerId!==undefined&&e.pointerId!==mouseLookPointerId))return;const id=mouseLookPointerId;mouseLookActive=false;mouseLookPointerId=null;mouseLookReturning=Math.abs(mouseLookYaw)>.004||Math.abs(mouseLookPitch)>.004;canvas.style.cursor='';try{if(id!==null&&canvas.hasPointerCapture(id))canvas.releasePointerCapture(id);}catch{}};
