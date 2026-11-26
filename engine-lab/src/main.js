@@ -53,8 +53,8 @@ function setStatus(message, state = "warn") {
 }
 
 function terrainColorAt(height, slopeAmount, moisture, distanceFromStart) {
-  if (distanceFromStart < 112) {
-    return [0.22, 0.28, 0.31];
+  if (distanceFromStart < 80) {
+    return [0.45, 0.48, 0.47];
   }
 
   let base;
