@@ -14,7 +14,7 @@ canvas{display:block;width:100%;height:auto;border:1px solid #58eaff55;margin:14
 </style>
 </head>
 <body><main>
-<h1>DRIVELLA // BUILD 214 HIGH-PERFORMANCE GPU REQUEST + ADAPTIVE RENDER RESOLUTION + PRODUCTION GLSL</h1>
+<h1>DRIVELLA // BUILD 215 ADAPTIVE SHADOW RESOLUTION + HIGH-PERFORMANCE GPU + ADAPTIVE RENDER RESOLUTION + PRODUCTION GLSL</h1>
 <canvas id="gl" width="960" height="540"></canvas>
 <pre id="report">Extracting production shaders…</pre>
 </main>
@@ -27,7 +27,7 @@ const response=await fetch('../index.html',{cache:'no-store'});
 must(response.ok,'Cannot fetch production index.html: HTTP '+response.status);
 const html=await response.text();
 const version=html.match(/const VERSION='([^']+)',BUILD='([^']+)'/);
-must(version&&version[1]==='v0.19.48'&&version[2]==='214','Unexpected production version marker: '+JSON.stringify(version));
+must(version&&version[1]==='v0.19.49'&&version[2]==='215','Unexpected production version marker: '+JSON.stringify(version));
 must(html.includes("const GPU_POWER_PREFERENCE='high-performance'")&&html.includes('powerPreference:GPU_POWER_PREFERENCE'),'Production WebGL context does not request a high-performance GPU');
 must(html.includes('function updateAdaptiveRenderScale(now)'),'Production adaptive render-resolution controller is missing');
 function expression(name,endMarker){
@@ -571,7 +571,7 @@ const correctedWorldModel=reflectionMath(captureCorrection,previousWorldModel);
 const expectedWorldModel=reflectionMath(currentVehiclePose,localVehiclePart);
 const vehicleReflectionPoseCorrectionError=Math.max(...correctedWorldModel.map((value,index)=>Math.abs(value-expectedWorldModel[index])));
 const vehicleReflectionCurrentFramePoseFixturePass=vehicleReflectionPoseCorrectionError<0.00001&&html.includes('renderTimedVehicleReflectionCapture(vp,vehicleFrame,.005)')&&html.includes('vehicleRoadReflectionPose=vehicleFrame.slice()')&&html.includes('sourceModel=matMul(poseCorrection,vehicleRoadReflectionModels[i])')&&!html.includes('renderVehicleReflectionCapture(vp);');
-const vehicleReflectionProjectionPixelFixturePass=Math.abs(reflectedVertexWorld[1]+.79)<0.00001&&Math.abs(reflectedRoadPoint[1]-.005)<0.00001&&html.includes('gl.uniformMatrix4fv(loc.vp,false,new Float32Array(reflectionVP))')&&html.includes('loc.vehicleReflectionVP,false,new Float32Array(reflectionVP)')&&html.includes('vehicleReflectionVP*vec4(vWorldPos.x,0.005,vWorldPos.z,1.0)');
+const vehicleReflectionProjectionPixelFixturePass=Math.abs(reflectedVertexWorld[1]+.79)<0.00001&&Math.abs(reflectedRoadPoint[1]-.005)<0.00001&&html.includes('gl.uniformMatrix4fv(loc.vp,false,new Float32Array(reflectionVP))')&&html.includes('loc.vehicleReflectionVP,false,new Float32Array(reflectionVP)')&&html.includes('vehicleReflectionVP*vec4(vWorldPos.x,vehicleReflectionPlaneY,vWorldPos.z,1.0)');
 
 // Build the actual opaque reflection fragment branch as an isolated GPU pixel fixture.
 const reflectionCaptureBranchStart=sources.mainFragment.indexOf('if(vehicleReflectionPass>0.5){');
@@ -697,7 +697,7 @@ const reflectionNineTapPixelFixturePass=sources.mainFragment.split('texture2D(ve
 // The list must be reset only by the guarded main pass, never by outline/SSAO draws.
 const mainWorldStart=html.indexOf('function drawWorld(){'),mainWorldEnd=html.indexOf('\nfunction ',mainWorldStart+10);
 const mainWorldSource=html.slice(mainWorldStart,mainWorldEnd);
-const reflectionCollectionPreservedAcrossOutlinePass=(mainWorldSource.match(/vehicleRoadReflectionCount=0;/g)||[]).length===2&&mainWorldSource.includes('if(!shadowPass&&!outlinePass&&!aoScenePass&&!garageMode){')&&mainWorldSource.includes('else if(!shadowPass&&!outlinePass&&!aoScenePass&&garageMode){')&&mainWorldSource.includes('renderVehicleReflectionCapture(vp,null,GARAGE_REFLECTION_PLANE_Y)')&&mainWorldSource.includes('vehicleRoadReflectionPose=null;')&&mainWorldSource.includes('vehicleRoadReflectionCapture=FX.vehicleReflections&&!wireframeMode;')&&mainWorldSource.indexOf('drawGarageReplica(-10.2')<mainWorldSource.lastIndexOf('vehicleRoadReflectionCapture=false;')&&html.includes('if(vehicleRoadReflectionCapture&&!shadowPass&&!outlinePass&&toon>0.5&&vehicleRoadReflectionCount<256')&&html.includes('draw(cube,0,-.052,0,6.9,.018,6.9,[.055,.065,.11,1],0,0,11)')&&html.includes('draw(cube,pad.x,-.046,0,2.92,.012,2.92,pad.edge,0,0,13)');
+const reflectionCollectionPreservedAcrossOutlinePass=(mainWorldSource.match(/vehicleRoadReflectionCount=0;/g)||[]).length===2&&mainWorldSource.includes('if(!shadowPass&&!outlinePass&&!aoScenePass&&!garageMode){')&&mainWorldSource.includes('else if(!shadowPass&&!outlinePass&&!aoScenePass&&garageMode){')&&mainWorldSource.includes('renderTimedVehicleReflectionCapture(vp,null,GARAGE_REFLECTION_PLANE_Y)')&&mainWorldSource.includes('vehicleRoadReflectionPose=null;')&&mainWorldSource.includes('vehicleRoadReflectionCapture=FX.vehicleReflections&&!wireframeMode;')&&mainWorldSource.indexOf('drawGarageReplica(-10.2')<mainWorldSource.lastIndexOf('vehicleRoadReflectionCapture=false;')&&html.includes('if(vehicleRoadReflectionCapture&&!shadowPass&&!outlinePass&&toon>0.5&&vehicleRoadReflectionCount<256')&&html.includes('draw(cube,0,-.052,0,6.9,.018,6.9,[.055,.065,.11,1],0,0,11)')&&html.includes('draw(cube,pad.x,-.046,0,2.92,.012,2.92,pad.edge,0,0,13)');
 const reflectionTargetStart=html.indexOf('function ensureVehicleReflectionTarget(){'),reflectionTargetEnd=html.indexOf('\nfunction disposeSceneBloomTargets()',reflectionTargetStart);
 const reflectionTargetSource=html.slice(reflectionTargetStart,reflectionTargetEnd);
 const reflectionTargetPreservesActiveFramebuffer=reflectionTargetSource.includes('previousFramebuffer=gl.getParameter(gl.FRAMEBUFFER_BINDING)')&&reflectionTargetSource.includes('gl.bindFramebuffer(gl.FRAMEBUFFER,previousFramebuffer)');
@@ -847,6 +847,7 @@ const garageProjectorLocalLightPixelFixturePass=garageProjectorLightNearPixel[0]
 gl.bindFramebuffer(gl.FRAMEBUFFER,null);gl.viewport(0,0,W,H);gl.depthMask(true);gl.enable(gl.DEPTH_TEST);
 
 const checks={
+  adaptiveShadowResolutionTracksRenderScale:html.includes('function getAdaptiveShadowMapSize(){')&&html.includes('if(garageMode||renderScale>=.96)return SHADOW_MAP_SIZE;')&&html.includes('if(renderScale>=.84)return 1536;')&&html.includes('return 1024;')&&html.includes('const desiredSize=getAdaptiveShadowMapSize();')&&html.includes('shadowTarget.size!==desiredSize'),
   surfaceReflectionEnvironmentFramebufferComplete:surfaceReflectionTarget.status===gl.FRAMEBUFFER_COMPLETE,
   surfaceReflectionEnvironmentUsesProductionFunction:sources.mainFragment.includes('vec3 evalSynthwaveEnvironment(')&&!!surfaceReflectionProgram,
   surfaceReflectionRoughnessChangesPixelOutput:surfaceReflectionPixelFixturePass,
@@ -869,14 +870,14 @@ const checks={
   vehicleReflectionIsStableWhenParkedAndSubtlyRipplesInMotion:vehicleReflectionMotionPixelFixturePass&&html.includes("vehicleReflectionMotion:gl.getUniformLocation(prog,'vehicleReflectionMotion')")&&html.includes('getVehicleSpeed()-2.0')&&html.includes('loc.vehicleReflectionMotion,garageMode?0.0:clamp('),
   vehicleReflectionPreservesLampMaterial:sources.mainFragment.includes('solidLamp=min(color.rgb*vec3(1.90,1.50,1.25)+vec3(0.03,0.06,0.15),vec3(1.35))'),
   asphaltEnvironmentReflectionReducedByHalf:sources.mainFragment.includes('clamp(0.06+roadFresnel*0.20,0.0,0.24)'),
-  vehicleReflectionIntensityIsHalved:sources.mainFragment.includes('reflectionCoverage*0.45')&&!sources.mainFragment.includes('reflectionCoverage*0.90')&&sources.mainFragment.includes('vec4 reflectionClip=vehicleReflectionVP*vec4(vWorldPos.x,0.005,vWorldPos.z,1.0)'),
+  vehicleReflectionIntensityIsHalved:sources.mainFragment.includes('reflectionCoverage*0.45')&&!sources.mainFragment.includes('reflectionCoverage*0.90')&&sources.mainFragment.includes('vec4 reflectionClip=vehicleReflectionVP*vec4(vWorldPos.x,vehicleReflectionPlaneY,vWorldPos.z,1.0)'),
   continuousRoadSurfaceHasNoSegmentBoxes:continuousRoadGeometryPixelFixturePass&&!html.includes('queueRoadCube(roadInstances,cx,-.105,z,9.4,.11,5,C.road,0,9)'),
   continuousRoadSurfaceUsesOneDynamicMesh:html.includes('const ROAD_SURFACE_SEGMENTS=108')&&html.includes('gl.bufferData(gl.ARRAY_BUFFER,geometry.data,gl.DYNAMIC_DRAW)')&&html.includes('buildRoadSurfaceGeometry(centerZ)'),
   neonGridIsSingleColourEmitter:html.includes('grid:[.18,.84,1,1]')&&html.includes('gridPlane,0,-.245')&&!html.includes('C.grid2')&&neonGridEmissionPixelPass,
   neonGridUsesDerivativeFilteredGroundPlane:gridAAProgram&&html.includes('resolvedMaterialMode>11.5&&resolvedMaterialMode<12.5'),
   neonGridFarPatternIsStable:gridDerivativeFilterPixelFixturePass,
   underbodyIsCalculatedRedAreaLight:underbodyAreaPixelFixturePass&&underbodyAreaHasSixteenGeometricSamples&&['underbodyLightCenter','underbodyLightRight','underbodyLightForward','underbodyLightDown','underbodyLightIntensity'].every(name=>sources.mainFragment.includes('uniform '+(name==='underbodyLightIntensity'?'float ':'vec3 ')+name))&&html.includes('calcUnderbodyAreaLight(roadN)')&&html.includes('underbodyLightIntensity,!garageMode&&!shadowPass&&!outlinePass&&!aoScenePass&&FX.underglow?30.0:0.0')&&!html.includes('underbodyGlowMesh')&&!html.includes('drawUnderbodyGlow'),
-  underbodyHasNoFakeBlueGeometry:!html.includes('underbodyGlowMesh')&&!html.includes('drawUnderbodyGlow')&&!sources.mainFragment.includes('resolvedMaterialMode>10.5&&resolvedMaterialMode<11.5'),
+  underbodyHasNoFakeBlueGeometry:!html.includes('underbodyGlowMesh')&&!html.includes('drawUnderbodyGlow'),
   vehicleHeadlightReflectionPixelFramebufferComplete:headlightReflectionTarget.status===gl.FRAMEBUFFER_COMPLETE,
   vehicleHeadlightReflectionUsesProductionShaderFunction:sources.mainFragment.includes('float calcHeadlightReflection(float roughnessPower){')&&!!headlightReflectionProgram,
   vehicleHeadlightReflectionAppearsInsideBeamAndRange:headlightReflectionPixelFixturePass,
@@ -888,7 +889,7 @@ const checks={
   asphaltEnvironmentReflectionSkipsWorkWhenDisabled:sources.mainFragment.includes('if(roadReflectionEnabled>0.5){vec3 roadReflected=evalSynthwaveEnvironment(reflect(-roadV,roadN),0.82)'),
   asphaltVehicleMirrorSkipsTextureReadsWhenUnavailable:sources.mainFragment.includes('if(vehicleReflectionEnabled>0.5&&reflectionInFrame>0.5){')&&sources.mainFragment.includes('blurStep.y*24.0'),
   surfaceReflectionDoesNotCaptureEmissiveMaterialEight:sources.mainFragment.includes('resolvedMaterialMode>7.5&&resolvedMaterialMode<8.5')&&html.includes('fixtureYaw,8'),
-  productionVersionVisibleEverywhere:html.includes('id="version-label">v0.19.47 · BUILD 213</div>')&&html.includes('3D NEON HIGHWAY // BUILD 213')&&html.includes('ENGINE STARTUP // v0.19.47 · BUILD 213'),
+  productionVersionVisibleEverywhere:html.includes('id="version-label">v0.19.49 · BUILD 215</div>')&&html.includes('3D NEON HIGHWAY // BUILD 215')&&html.includes('ENGINE STARTUP // v0.19.49 · BUILD 215'),
  roadInstancingProductionVertexCompiled:!!roadProbeV.shader,
  roadInstancingProbeProgramLinked:!!roadProbeP.program,
  roadInstancingAttributesArePresent:['attribute vec3 instancePosition;','attribute vec3 instanceScale;','attribute vec2 instanceYaw;','attribute vec4 instanceColor;','attribute float instanceHeadlight;','attribute float instanceMaterial;'].every(token=>sources.mainVertex.includes(token)),
