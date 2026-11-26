@@ -78,35 +78,29 @@ Still required:
 - Add performance budgets, frustum/occlusion rendering (without coupling it to chunk lifetime), and further seam/collision regression tests.
 
 ### 3 — Vehicle and driving physics
-- Replace the current custom game car with a rigid-body chassis and a physically coherent centre of mass.
-- Use one consistent spherical availability radius measured in 3D distance; support all six cardinal directions and diagonal directions.
-- Keep simulation/chunk lifetime separate from camera-frustum visibility: looking away must not delete nearby world content.
-- Add deterministic chunk seeds, asynchronous loading, LOD, occlusion and safe fallback geometry.
-- Build continuous terrain with real elevation, depth, cutaways, caves/tunnels, bridges and overpasses—not a flat slab with vertical wall props.
-- Validate equal world coverage in +X/-X/+Y/-Y/+Z/-Z and diagonal sweeps.
+- Port the existing DRIVELLA GTS visual model into the new Babylon scene while preserving its established silhouette and details.
+- Build the car as a rigid-body chassis with a physically coherent centre of mass.
+- Implement four independent suspension units, wheel contact, steering geometry, tire forces, braking, drivetrain and handbrake.
+- Add controlled drift behaviour, countersteer response, collisions and recoverable rollovers.
+- Keep visual wheels, physics wheels, shadows and road contact aligned.
 
-Acceptance:
-- World availability is symmetric around the player in 3D.
-- No nearby chunk disappears merely because it moves behind the camera.
-- Chunk streaming remains stable during driving, jumping and camera rotation.
-
-### 4 — Vehicle and driving physics
+### 4 — World interaction and characters
 - Build the DRIVELLA GTS as a rigid chassis with a physically coherent centre of mass.
 - Implement four independent suspension units, wheel contact, steering geometry, tire forces, braking, drivetrain and handbrake.
 - Add controlled drift behaviour, countersteer response, collisions and recoverable rollovers.
 - Keep visual wheels, physics wheels, shadows and road contact aligned.
 
-### 5 — World interaction and characters
+### 4 — World interaction and characters
 - Add reusable rigid-body props, breakable objects, traffic and physical obstacles.
 - Add character controllers, skeleton-linked ragdoll bodies and joint constraints.
 - Ensure physics LOD and object budgets keep simulation cost predictable.
 
-### 6 — Content and visual migration
+### 5 — Content and visual migration
 - Port the existing Countach-inspired car, garage, UI, music and effects into the new scene architecture.
 - Rebuild materials, reflections, shadows, bloom, lighting and atmosphere on the new render path.
 - Keep the existing game available until the new version passes functional and performance gates.
 
-### 7 — Production cutover
+### 6 — Production cutover
 - Test Chrome, Edge and Firefox, desktop and mobile, WebGPU and WebGL fallback.
 - Profile representative low-, mid- and high-end GPUs.
 - Confirm offline/cache behaviour, interrupted downloads, retry, version changes and rollback.
