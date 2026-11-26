@@ -44,7 +44,7 @@ const gl=canvas.getContext('webgl',{alpha:true,antialias:false,preserveDrawingBu
 must(gl,'WebGL context unavailable');
 const glExpression={getShaderPrecisionFormat:()=>gl.getShaderPrecisionFormat(gl.FRAGMENT_SHADER,gl.HIGH_FLOAT),getExtension:name=>gl.getExtension(name)};
 const sources={
- mainVertex:new Function('gl','return ('+expression('vs',';\nconst fs=')+');')(glExpression),
+ mainVertex:new Function('gl','return ('+expression('vs',';\nconst gridAntiAliasSource=')+');')(glExpression),
  mainFragment:new Function('gl','return ('+expression('fs',';\nfunction shader')+');')(glExpression),
  outlineVertex:new Function('gl','return ('+expression('outlineVs',';\nconst outlineFs=')+');')(glExpression),
  outlineFragment:new Function('gl','return ('+expression('outlineFs',';const outlineProgram=')+');')(glExpression),
