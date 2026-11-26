@@ -19,6 +19,7 @@ import {
 import HavokPhysics from "@babylonjs/havok";
 import { SpatialChunkManager } from "./SpatialChunkManager.mjs";
 import { terrainChunkLayer, terrainHeight } from "./TerrainField.mjs";
+import { generateBiomePlacements, sampleBiome } from "./BiomeField.mjs";
 
 const canvas = document.getElementById("renderCanvas");
 const statusText = document.getElementById("engineStatus");
@@ -150,6 +151,201 @@ function createTerrainChunk(scene, chunkX, chunkY, chunkZ, chunkSize, material) 
   return terrain;
 }
 
+function pushFlatTriangle(positions, colors, indices, a, b, c, color) {
+  const base = positions.length / 3;
+  positions.push(...a, ...b, ...c);
+  for (let i = 0; i < 3; i += 1) colors.push(color[0], color[1], color[2], 1);
+  indices.push(base, base + 1, base + 2);
+}
+
+function appendCone(geometry, x, y, z, radius, height, sides, color, rotation = 0) {
+  const tip = [x, y + height, z];
+  for (let side = 0; side < sides; side += 1) {
+    const a0 = rotation + (side / sides) * Math.PI * 2;
+    const a1 = rotation + ((side + 1) / sides) * Math.PI * 2;
+    const p0 = [x + Math.cos(a0) * radius, y, z + Math.sin(a0) * radius];
+    const p1 = [x + Math.cos(a1) * radius, y, z + Math.sin(a1) * radius];
+    pushFlatTriangle(geometry.positions, geometry.colors, geometry.indices, p0, p1, tip, color);
+  }
+}
+
+function appendCylinder(geometry, x, y, z, bottomRadius, topRadius, height, sides, color, rotation = 0) {
+  for (let side = 0; side < sides; side += 1) {
+    const a0 = rotation + (side / sides) * Math.PI * 2;
+    const a1 = rotation + ((side + 1) / sides) * Math.PI * 2;
+    const b0 = [x + Math.cos(a0) * bottomRadius, y, z + Math.sin(a0) * bottomRadius];
+    const b1 = [x + Math.cos(a1) * bottomRadius, y, z + Math.sin(a1) * bottomRadius];
+    const t0 = [x + Math.cos(a0) * topRadius, y + height, z + Math.sin(a0) * topRadius];
+    const t1 = [x + Math.cos(a1) * topRadius, y + height, z + Math.sin(a1) * topRadius];
+    pushFlatTriangle(geometry.positions, geometry.colors, geometry.indices, b0, b1, t1, color);
+    pushFlatTriangle(geometry.positions, geometry.colors, geometry.indices, b0, t1, t0, color);
+  }
+}
+
+function appendRock(geometry, x, y, z, size, seed) {
+  const random = (() => {
+    let state = seed >>> 0;
+    return () => {
+      state = (state * 1664525 + 1013904223) >>> 0;
+      return state / 4294967296;
+    };
+  })();
+  const sides = 7;
+  const rings = [];
+  const baseRadius = size * (0.72 + random() * 0.2);
+  for (let ring = 0; ring < 3; ring += 1) {
+    const t = ring / 2;
+    const radius = ring === 1 ? baseRadius * (0.8 + random() * 0.28) : baseRadius * (ring === 0 ? 0.78 : 0.2);
+    const ringY = ring === 0 ? 0 : ring === 1 ? size * (0.38 + random() * 0.18) : size * (0.82 + random() * 0.22);
+    const points = [];
+    for (let side = 0; side < sides; side += 1) {
+      const angle = (side / sides) * Math.PI * 2 + random() * 0.16;
+      const wobble = 0.78 + random() * 0.42;
+      points.push([
+        x + Math.cos(angle) * radius * wobble,
+        y + ringY,
+        z + Math.sin(angle) * radius * wobble
+      ]);
+    }
+    rings.push(points);
+  }
+  const tones = [
+    [0.24, 0.31, 0.39],
+    [0.31, 0.39, 0.48],
+    [0.39, 0.47, 0.54]
+  ];
+  for (let ring = 0; ring < 2; ring += 1) {
+    for (let side = 0; side < sides; side += 1) {
+      const next = (side + 1) % sides;
+      const p00 = rings[ring][side];
+      const p01 = rings[ring][next];
+      const p10 = rings[ring + 1][side];
+      const p11 = rings[ring + 1][next];
+      const color = tones[(side + ring) % tones.length];
+      pushFlatTriangle(geometry.positions, geometry.colors, geometry.indices, p00, p01, p11, color);
+      pushFlatTriangle(geometry.positions, geometry.colors, geometry.indices, p00, p11, p10, color);
+    }
+  }
+}
+
+function createCombinedPropMesh(scene, name, geometry, material, position) {
+  if (!geometry.indices.length) return null;
+  const mesh = new Mesh(name, scene);
+  const normals = [];
+  VertexData.ComputeNormals(geometry.positions, geometry.indices, normals);
+  const data = new VertexData();
+  data.positions = geometry.positions;
+  data.indices = geometry.indices;
+  data.normals = normals;
+  data.colors = geometry.colors;
+  data.applyToMesh(mesh, true);
+  mesh.position.copyFrom(position);
+  mesh.material = material;
+  mesh.isPickable = false;
+  mesh.alwaysSelectAsActiveMesh = true;
+  return mesh;
+}
+
+function createBiomeChunk(scene, chunk, chunkSize, vegetationMaterial, rockMaterial) {
+  const placements = generateBiomePlacements(chunk.x, chunk.z, chunkSize, chunk.seed, chunk.lod);
+  const vegetation = { positions: [], colors: [], indices: [] };
+  const rocks = { positions: [], colors: [], indices: [] };
+  const baseY = chunk.y * chunkSize;
+
+  for (const tree of placements.trees) {
+    const worldX = chunk.x * chunkSize + tree.x;
+    const worldZ = chunk.z * chunkSize + tree.z;
+    const base = terrainHeight(worldX, worldZ) - baseY;
+    const scale = tree.scale;
+    const trunkHeight = tree.height * scale * 0.42;
+    appendCylinder(
+      vegetation,
+      tree.x, base, tree.z,
+      0.48 * scale, 0.22 * scale, trunkHeight, 6,
+      tree.variant === 2 ? [0.28, 0.18, 0.105] : [0.22, 0.15, 0.09],
+      tree.yaw
+    );
+
+    const crownBase = base + trunkHeight * 0.68;
+    const crown = tree.crown * scale;
+    const foliage = tree.variant === 2
+      ? [0.16, 0.32, 0.22]
+      : [0.055 + (tree.variant ? 0.025 : 0), 0.25 + (tree.variant ? 0.06 : 0), 0.18 + (tree.variant ? 0.035 : 0)];
+    appendCone(vegetation, tree.x, crownBase, tree.z, crown, tree.height * scale * 0.62, 7, foliage, tree.yaw);
+    if (tree.variant !== 2) {
+      appendCone(vegetation, tree.x, crownBase + tree.height * scale * 0.28, tree.z, crown * 0.7, tree.height * scale * 0.52, 7, [0.045, 0.2, 0.16], tree.yaw + 0.12);
+    }
+  }
+
+  for (const tuft of placements.grass) {
+    const worldX = chunk.x * chunkSize + tuft.x;
+    const worldZ = chunk.z * chunkSize + tuft.z;
+    const base = terrainHeight(worldX, worldZ) - baseY;
+    const height = tuft.height * tuft.scale;
+    const width = 0.22 * tuft.scale;
+    const colors = [[0.28, 0.43, 0.25], [0.36, 0.5, 0.27], [0.19, 0.37, 0.24]];
+    for (let blade = 0; blade < 3; blade += 1) {
+      const angle = tuft.yaw + blade * Math.PI / 3;
+      const dx = Math.cos(angle) * width;
+      const dz = Math.sin(angle) * width;
+      const lean = 0.3 + blade * 0.16;
+      pushFlatTriangle(
+        vegetation.positions, vegetation.colors, vegetation.indices,
+        [tuft.x - dx, base, tuft.z - dz],
+        [tuft.x + dx, base, tuft.z + dz],
+        [tuft.x + Math.cos(angle + lean) * width * 0.65, base + height, tuft.z + Math.sin(angle + lean) * width * 0.65],
+        colors[blade]
+      );
+    }
+  }
+
+  for (const reed of placements.reeds) {
+    const worldX = chunk.x * chunkSize + reed.x;
+    const worldZ = chunk.z * chunkSize + reed.z;
+    const base = terrainHeight(worldX, worldZ) - baseY;
+    const height = reed.height * reed.scale;
+    for (let stalk = 0; stalk < 3; stalk += 1) {
+      const angle = reed.yaw + stalk * Math.PI * 2 / 3;
+      const offsetX = Math.cos(angle) * 0.46;
+      const offsetZ = Math.sin(angle) * 0.46;
+      appendCylinder(vegetation, reed.x + offsetX, base, reed.z + offsetZ, 0.07, 0.035, height * (0.72 + stalk * 0.09), 5, [0.29, 0.39, 0.22], angle);
+      appendCone(vegetation, reed.x + offsetX, base + height * 0.58, reed.z + offsetZ, 0.16, 0.42, 5, [0.52, 0.34, 0.14], angle);
+    }
+  }
+
+  for (const rock of placements.rocks) {
+    const worldX = chunk.x * chunkSize + rock.x;
+    const worldZ = chunk.z * chunkSize + rock.z;
+    const base = terrainHeight(worldX, worldZ) - baseY;
+    appendRock(
+      rocks,
+      rock.x, base, rock.z,
+      rock.size * rock.scale,
+      chunk.seed ^ Math.imul(Math.round(rock.x * 10 + rock.z * 17), 0x45d9f3b)
+    );
+  }
+
+  const chunkOrigin = new Vector3(chunk.x * chunkSize, baseY, chunk.z * chunkSize);
+  const vegetationMesh = createCombinedPropMesh(
+    scene, `vegetation-${chunk.x}-${chunk.y}-${chunk.z}`, vegetation, vegetationMaterial, chunkOrigin
+  );
+  const rockMesh = createCombinedPropMesh(
+    scene, `rocks-${chunk.x}-${chunk.y}-${chunk.z}`, rocks, rockMaterial, chunkOrigin
+  );
+
+  return {
+    vegetationMesh,
+    rockMesh,
+    counts: {
+      trees: placements.trees.length,
+      grass: placements.grass.length,
+      reeds: placements.reeds.length,
+      rocks: placements.rocks.length
+    },
+    biomeCounts: placements.biomeCounts
+  };
+}
+
 function createAxisBeacon(scene, name, position, color) {
   const marker = MeshBuilder.CreateSphere(name, { diameter: 7, segments: 16 }, scene);
   marker.position.copyFrom(position);
@@ -231,16 +427,37 @@ function createEnvironment(scene) {
 
   const terrainMeshes = new Map();
   const terrainBodies = new Map();
+  const biomeMeshes = new Map();
+  const rockBodies = new Map();
+  const biomeMaterial = new StandardMaterial("biome-props-material", scene);
+  biomeMaterial.diffuseColor = Color3.White();
+  biomeMaterial.specularColor = new Color3(0.06, 0.08, 0.07);
+  biomeMaterial.specularPower = 8;
+  biomeMaterial.useVertexColors = true;
+  biomeMaterial.backFaceCulling = false;
+  const rockMaterial = new StandardMaterial("biome-rock-material", scene);
+  rockMaterial.diffuseColor = Color3.White();
+  rockMaterial.specularColor = new Color3(0.14, 0.17, 0.2);
+  rockMaterial.specularPower = 18;
+  rockMaterial.useVertexColors = true;
+  rockMaterial.backFaceCulling = false;
   const chunkManager = new SpatialChunkManager({
     chunkSize: 128,
     radius: worldRadius,
     maxActiveChunks: 512,
     onCreate: (chunk) => {
-      const payload = { terrainMesh: null };
+      const payload = { terrainMesh: null, biome: null };
       if (chunk.y === terrainChunkLayer(chunk.x, chunk.z, 128)) {
         const mesh = createTerrainChunk(scene, chunk.x, chunk.y, chunk.z, 128, terrainMaterial);
         payload.terrainMesh = mesh;
         terrainMeshes.set(chunk.key, mesh);
+        const biome = createBiomeChunk(scene, chunk, 128, biomeMaterial, rockMaterial);
+        payload.biome = biome;
+        if (biome.vegetationMesh || biome.rockMesh) biomeMeshes.set(chunk.key, biome);
+        if (biome.rockMesh && scene.getPhysicsEngine()) {
+          const rockBody = addPhysicalProbe(scene, biome.rockMesh, 0, PhysicsShapeType.MESH, { friction: 0.88, restitution: 0.04 });
+          rockBodies.set(chunk.key, rockBody);
+        }
         if (scene.getPhysicsEngine()) {
           const body = addPhysicalProbe(scene, mesh, 0, PhysicsShapeType.MESH, { friction: 0.96, restitution: 0.02 });
           terrainBodies.set(chunk.key, body);
@@ -253,6 +470,16 @@ function createEnvironment(scene) {
       if (body) {
         body.dispose();
         terrainBodies.delete(chunk.key);
+      }
+      const rockBody = rockBodies.get(chunk.key);
+      if (rockBody) {
+        rockBody.dispose();
+        rockBodies.delete(chunk.key);
+      }
+      if (payload?.biome) {
+        payload.biome.vegetationMesh?.dispose();
+        payload.biome.rockMesh?.dispose();
+        biomeMeshes.delete(chunk.key);
       }
       if (payload?.terrainMesh) {
         payload.terrainMesh.dispose();
@@ -268,7 +495,7 @@ function createEnvironment(scene) {
   scene.fogDensity = 0.000035;
   scene.fogColor = new Color3(0.018, 0.027, 0.052);
 
-  return { camera, chunkManager, terrainMeshes, terrainBodies };
+  return { camera, chunkManager, terrainMeshes, terrainBodies, biomeMeshes, rockBodies };
 }
 
 function addPhysicalProbe(scene, mesh, mass, shape, options = {}) {
@@ -285,6 +512,8 @@ let camera;
 let chunkManager;
 let terrainMeshes;
 let terrainBodies;
+let biomeMeshes;
+let rockBodies;
 let havokAttemptRunning = false;
 let havokInstance = null;
 let probeMesh = null;
@@ -316,6 +545,12 @@ function enableHavokPhysics() {
       if (!terrainBodies.has(key)) {
         const body = addPhysicalProbe(scene, mesh, 0, PhysicsShapeType.MESH, { friction: 0.96, restitution: 0.02 });
         terrainBodies.set(key, body);
+      }
+    }
+    for (const [key, props] of biomeMeshes) {
+      if (props.rockMesh && !rockBodies.has(key)) {
+        const body = addPhysicalProbe(scene, props.rockMesh, 0, PhysicsShapeType.MESH, { friction: 0.88, restitution: 0.04 });
+        rockBodies.set(key, body);
       }
     }
 
@@ -404,6 +639,8 @@ async function boot() {
     chunkManager = environment.chunkManager;
     terrainMeshes = environment.terrainMeshes;
     terrainBodies = environment.terrainBodies;
+    biomeMeshes = environment.biomeMeshes;
+    rockBodies = environment.rockBodies;
 
     scene.onAfterRenderObservable.add(() => {
       frameCounter += 1;
@@ -427,7 +664,13 @@ async function boot() {
         const spatial = chunkManager.update(camera.target);
         labState.spatial = spatial;
         const terrainLayers = [...new Set([...terrainMeshes.values()].map((mesh) => mesh.metadata.chunkY))].sort((a, b) => a - b);
+        const biomeTotals = { trees: 0, grass: 0, reeds: 0, rocks: 0 };
+        for (const props of biomeMeshes.values()) {
+          for (const key of Object.keys(biomeTotals)) biomeTotals[key] += props.counts[key];
+        }
+        labState.biomes = biomeTotals;
         worldMeta.textContent = `XYZ chunks: ${spatial.activeCount} · terrain: ${terrainMeshes.size} patches · Y layers ${terrainLayers.join("/") || "—"} · ${Object.values(spatial.axisCoverage).every(Boolean) ? "6/6 directions" : "coverage check pending"}`;
+        biomeMeta.textContent = `Biomes: ${biomeTotals.trees} trees · ${biomeTotals.rocks} rocks · ${biomeTotals.grass} grass · ${biomeTotals.reeds} reeds`;
       }
     });
 
