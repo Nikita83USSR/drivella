@@ -37,6 +37,9 @@ const labState = {
   frames: 0,
   probeY: null,
   probeStableFrames: 0,
+  probeX: null,
+  probeZ: null,
+  terrainYAtProbe: null,
   error: null,
   spatial: null
 };
@@ -370,6 +373,9 @@ async function boot() {
       if (probeMesh) {
         const currentY = probeMesh.position.y;
         labState.probeY = Number(currentY.toFixed(3));
+        labState.probeX = Number(probeMesh.position.x.toFixed(3));
+        labState.probeZ = Number(probeMesh.position.z.toFixed(3));
+        labState.terrainYAtProbe = Number(terrainHeight(probeMesh.position.x, probeMesh.position.z).toFixed(3));
         if (lastProbeY !== null && Math.abs(currentY - lastProbeY) < 0.05) {
           probeStableFrames += 1;
         } else {
