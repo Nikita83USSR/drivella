@@ -1,6 +1,6 @@
 # DRIVELLA — Rendering Architecture
 
-Current reference: **v0.19.34 / BUILD 200**  
+Current reference: **v0.19.35 / BUILD 201**  
 Main renderer: `index.html` — custom WebGL 1 renderer, no external rendering engine.
 
 **Release marker policy:** every published renderer/game change increments `BUILD` in `index.html` and updates the visible HUD, boot screen, README, and this document in the same release. Increment the patch version with the build when appropriate. Never publish a renderer change while leaving the visible build number unchanged.
@@ -939,3 +939,19 @@ The previous stack of overlapping red/blue elliptical disks, side strips and end
 The full-scene Bloom path is retained, but its wide separable blur radius is reduced from 8.0 to 5.2 quarter-resolution texels. The tight 2.2-tap-radius core and composite gains are unchanged. This produces a shorter general-purpose aura for the grid, underbody and other bright emitters without allocating another post-process target.
 
 The BUILD 200 regression compiles the complete production material shader, pixel-tests the material-10 grid and material-11 underbody branches, compares the underbody centre and edge alpha, validates the single connected geometry strip, verifies that one mirror view-projection matrix is used by both capture and road sampling, and retains the previous road, lamp, Countach and Bloom checks. CI runs Chromium WebGL on SwiftShader; target-GPU visual quality and GTX 1650 frame time still require local confirmation.
+
+## BUILD 201 — Pixel-stable road grid, red underbody area light and longitudinal vehicle reflection
+
+### Road-grid geometry LOD
+
+The main cyan grid remains a single material-10 emissive source and retains its original world-space 10 m spacing. Instead of blurring the grid image, the vertex shader calculates a minimum projected half-width from camera distance and the active vertical field of view. Only the thin X or Z scale of a material-10 instance is increased; the same test runs on ordinary non-instanced draws. The authored near width is retained (0.024 m total) while the far width grows toward a 0.32 m total cap, stabilising the line as it approaches one display pixel. The geometry remains emissive and continues through the existing scene bright-pass/Bloom. No extra framebuffer or blur pass is allocated.
+
+### Red underbody area light
+
+The blue emissive underside mesh is removed. The replacement is not a visible surface or translucent blob. The renderer places a downward-facing rectangular source at local chassis height and transforms its centre/right/forward/down axes by the current vehicle matrix, including yaw and body roll. The asphalt shader evaluates five source samples: one at the centre and four at the corners of a 1.84 m × 4.50 m footprint. Each sample applies source-facing cosine, receiver-facing diffuse response, inverse-square attenuation and a smooth distance fade from 4.0 to 5.8 m. Their weighted sum adds red light to material-9 asphalt. The existing F4 underglow switch controls the source; it does not depend on headlamp emission. This is a five-sample real-time area-light approximation on the receiving asphalt, not ray-traced visibility or a shadowmapped area-light solution.
+
+### Reflection visibility and capture state
+
+The reflection capture now explicitly selects the main production program after binding its framebuffer, before setting capture uniforms or submitting the stored vehicle meshes. The road sampler uses nine taps: a central image, a compact horizontal cross, and increasingly spread vertical taps along the road projection direction. This intentionally produces a longitudinal wet-road reflection streak, so the opaque body and lamp image can extend outside the actual vehicle silhouette that hides the road directly beneath the car. The original mirror view-projection, depth-tested capture, world-space waves and road blend remain. F3 displays whether the texture capture is READY or WAITING.
+
+The BUILD 201 regression compiles the production vertex and fragment shaders, checks distance-driven grid width growth for both instanced and fallback draws, pixel-tests the red area-light source at the centre, edge and outside its range, verifies nine production reflection samples and explicit FBO program binding, and retains all earlier asphalt, lamp, shadow, road-seam and vehicle fixtures. CI uses Chromium SwiftShader; visual quality and frame time on the user's GTX 1650 remain a separate in-game check.
