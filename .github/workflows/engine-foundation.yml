@@ -11,6 +11,7 @@ on:
       - 'engine-lab/build.mjs'
       - 'engine-lab/sw.js'
       - 'tools/run-engine-lab-smoke.mjs'
+      - 'tools/test-spatial-chunks.mjs'
       - '.github/workflows/engine-foundation.yml'
   pull_request:
     branches: [main]
@@ -34,6 +35,8 @@ jobs:
         uses: actions/setup-node@v4
         with:
           node-version: 22
+      - name: Verify symmetric XYZ chunk coverage
+        run: node tools/test-spatial-chunks.mjs
       - name: Install pinned engine and build dependencies
         run: npm install --no-audit --no-fund
       - name: Build repository-local runtime
