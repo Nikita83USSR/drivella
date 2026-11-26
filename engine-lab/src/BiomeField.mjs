@@ -91,7 +91,7 @@ export function generateBiomePlacements(chunkX, chunkZ, chunkSize, seed, lod = "
     const localZ = -half + margin + random() * (chunkSize - margin * 2);
     const worldX = chunkX * chunkSize + localX;
     const worldZ = chunkZ * chunkSize + localZ;
-    if (Math.hypot(worldX, worldZ) < 112) continue;
+    if (Math.hypot(worldX, worldZ) < 80) continue;
 
     const biome = sampleBiome(worldX, worldZ);
     result.biomeCounts[biome.id] += 1;
