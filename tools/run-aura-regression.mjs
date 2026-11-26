@@ -92,7 +92,6 @@ try {
   });
   assert(menuDiagnostics.display === 'flex' && menuDiagnostics.visibility === 'visible'
     && menuDiagnostics.width > 0 && menuDiagnostics.height > 0, 'Main menu did not become a visible layout surface: '+JSON.stringify(menuDiagnostics));
-  await gamePage.screenshot({path:'artifacts/build219-live-game-menu.png'});
   await gamePage.evaluate(() => document.getElementById('menu-start')?.click());
   await gamePage.evaluate(() => document.getElementById('debug-toggle')?.click());
   await gamePage.waitForFunction(() => {
@@ -103,7 +102,6 @@ try {
     const value = document.getElementById('debug-data')?.innerText || '';
     return value.includes('MIRROR CAPTURE READY') && /\\b[1-9][0-9]* MESHES\\b/.test(value);
   }, null, { timeout: 45000 });
-  await gamePage.screenshot({ path: 'artifacts/build219-live-game-reflection-capture-smoke.png', fullPage: true });
   await gamePage.context().grantPermissions(['clipboard-read', 'clipboard-write']);
   await gamePage.evaluate(() => document.getElementById('debug-copy')?.click());
   const copiedDiagnostics = await gamePage.evaluate(() => navigator.clipboard.readText());
@@ -117,14 +115,10 @@ try {
   assert(viewBox,'Main scene canvas has no visible bounds');
   const lookX=viewBox.x+viewBox.width*.5,lookY=viewBox.y+viewBox.height*.52;
   await gamePage.mouse.move(lookX,lookY);await gamePage.mouse.down();
-  await gamePage.screenshot({path:'artifacts/build219-world-view-front.png'});
   await gamePage.mouse.move(lookX+262,lookY,{steps:10});
-  await gamePage.screenshot({path:'artifacts/build219-world-view-right.png'});
   await gamePage.mouse.move(lookX,lookY,{steps:10});
   await gamePage.mouse.move(lookX-262,lookY,{steps:10});
-  await gamePage.screenshot({path:'artifacts/build219-world-view-left.png'});
   await gamePage.mouse.move(lookX-524,lookY,{steps:10});
-  await gamePage.screenshot({path:'artifacts/build219-world-view-rear.png'});
   await gamePage.mouse.up();
   assert(/\\b[1-9][0-9]* MESHES\\b/.test(liveReflectionDiagnostics), 'Live game mirror capture has no vehicle meshes: ' + liveReflectionDiagnostics);
   assert(pageErrors.length === 0, 'Game browser page errors: ' + pageErrors.join('\\n'));
@@ -146,7 +140,6 @@ try {
   assert(/11 SOURCES/.test(garageDiagnostics), 'Garage did not activate all 11 display light sources: ' + garageDiagnostics);
   assert(/2 REPLICAS ROTATING/.test(garageDiagnostics), 'Garage turntable replicas are not reported as rotating: ' + garageDiagnostics);
   assert(/GARAGE MIRROR READY · \d+ MESHES · 3 PLINTHS/.test(garageDiagnostics), 'Garage did not capture all showroom cars for the podium mirrors: ' + garageDiagnostics);
-  await gamePage.screenshot({ path: 'artifacts/build219-live-garage-car-reflections.png', fullPage: true });
   console.log('BUILD 219 LIVE GARAGE MIRRORS + EFFECTS // ' + garageDiagnostics.replace(/\s+/g, ' '));
   await gamePage.close();
 
