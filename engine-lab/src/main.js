@@ -17,6 +17,7 @@ import {
   WebGPUEngine
 } from "@babylonjs/core";
 import HavokPhysics from "@babylonjs/havok";
+import { SpatialChunkManager } from "./SpatialChunkManager.mjs";
 
 const canvas = document.getElementById("renderCanvas");
 const statusText = document.getElementById("engineStatus");
@@ -24,6 +25,7 @@ const statusDot = document.getElementById("statusDot");
 const physicsMeta = document.getElementById("physicsMeta");
 const renderMeta = document.getElementById("renderMeta");
 const fpsMeta = document.getElementById("fpsMeta");
+const worldMeta = document.getElementById("worldMeta");
 const dropButton = document.getElementById("dropButton");
 const resetButton = document.getElementById("resetButton");
 
@@ -34,7 +36,8 @@ const labState = {
   physicsMode: "initializing",
   frames: 0,
   probeY: null,
-  error: null
+  error: null,
+  spatial: null
 };
 window.__DRIVELLA_LAB__ = labState;
 
@@ -50,10 +53,10 @@ function terrainHeight(x, z) {
     + Math.sin(z * 0.071) * Math.cos(x * 0.058) * 0.8;
 }
 
-function createHeightField(scene) {
-  const segments = 112;
-  const extent = 210;
-  const step = (extent * 2) / segments;
+function createTerrainChunk(scene, chunkX, chunkZ, chunkSize, material) {
+  const segments = 32;
+  const half = chunkSize * 0.5;
+  const step = chunkSize / segments;
   const positions = [];
   const indices = [];
   const normals = [];
@@ -61,9 +64,11 @@ function createHeightField(scene) {
 
   for (let iz = 0; iz <= segments; iz += 1) {
     for (let ix = 0; ix <= segments; ix += 1) {
-      const x = -extent + ix * step;
-      const z = -extent + iz * step;
-      positions.push(x, terrainHeight(x, z), z);
+      const localX = -half + ix * step;
+      const localZ = -half + iz * step;
+      const worldX = chunkX * chunkSize + localX;
+      const worldZ = chunkZ * chunkSize + localZ;
+      positions.push(localX, terrainHeight(worldX, worldZ), localZ);
       uvs.push(ix / segments, iz / segments);
     }
   }
@@ -85,15 +90,12 @@ function createHeightField(scene) {
   vertexData.normals = normals;
   vertexData.uvs = uvs;
 
-  const terrain = new Mesh("drivella-full-3d-heightfield", scene);
+  const terrain = new Mesh(`terrain-chunk-${chunkX}-${chunkZ}`, scene);
   vertexData.applyToMesh(terrain, true);
+  terrain.position.set(chunkX * chunkSize, 0, chunkZ * chunkSize);
   terrain.isPickable = false;
-
-  const material = new StandardMaterial("terrain-material", scene);
-  material.diffuseColor = new Color3(0.055, 0.12, 0.16);
-  material.specularColor = new Color3(0.16, 0.26, 0.31);
-  material.specularPower = 48;
   terrain.material = material;
+  terrain.metadata = { spatialChunk: true, chunkX, chunkY: 0, chunkZ };
   return terrain;
 }
 
@@ -108,8 +110,8 @@ function createAxisBeacon(scene, name, position, color) {
   return marker;
 }
 
-function createSpatialReference(scene) {
-  const axisLength = 145;
+function createSpatialReference(scene, worldRadius) {
+  const axisLength = worldRadius * 0.92;
   const axisMaterial = new StandardMaterial("axis-lines", scene);
   axisMaterial.emissiveColor = new Color3(0.12, 0.34, 0.47);
   axisMaterial.alpha = 0.28;
@@ -117,7 +119,7 @@ function createSpatialReference(scene) {
   axisMaterial.backFaceCulling = false;
 
   const shell = MeshBuilder.CreateSphere("equal-distance-world-envelope", {
-    diameter: axisLength * 2,
+    diameter: worldRadius * 2,
     segments: 28
   }, scene);
   shell.material = axisMaterial;
@@ -165,13 +167,13 @@ function createEnvironment(scene) {
     "world-orbit-camera",
     -Math.PI * 0.72,
     Math.PI * 0.34,
-    285,
+    worldRadius * 1.34,
     new Vector3(0, 8, 0),
     scene
   );
   camera.attachControl(canvas, true);
   camera.lowerRadiusLimit = 28;
-  camera.upperRadiusLimit = 430;
+  camera.upperRadiusLimit = worldRadius * 2.2;
   camera.lowerBetaLimit = 0.015;
   camera.upperBetaLimit = Math.PI - 0.015;
   camera.wheelPrecision = 34;
@@ -179,15 +181,52 @@ function createEnvironment(scene) {
   camera.inertia = 0.78;
   scene.activeCamera = camera;
 
-  const terrain = createHeightField(scene);
-  createSpatialReference(scene);
+  const terrainMaterial = new StandardMaterial("terrain-material", scene);
+  terrainMaterial.diffuseColor = new Color3(0.055, 0.12, 0.16);
+  terrainMaterial.specularColor = new Color3(0.16, 0.26, 0.31);
+  terrainMaterial.specularPower = 48;
+
+  const terrainMeshes = new Map();
+  const terrainBodies = new Map();
+  const worldRadius = 420;
+  const chunkManager = new SpatialChunkManager({
+    chunkSize: 128,
+    radius: worldRadius,
+    maxActiveChunks: 512,
+    onCreate: (chunk) => {
+      const payload = { terrainMesh: null };
+      if (chunk.y === 0) {
+        const mesh = createTerrainChunk(scene, chunk.x, chunk.z, 128, terrainMaterial);
+        payload.terrainMesh = mesh;
+        terrainMeshes.set(chunk.key, mesh);
+        if (scene.getPhysicsEngine()) {
+          const body = addPhysicalProbe(scene, mesh, 0, PhysicsShapeType.MESH, { friction: 0.96, restitution: 0.02 });
+          terrainBodies.set(chunk.key, body);
+        }
+      }
+      return payload;
+    },
+    onDispose: (payload, chunk) => {
+      const body = terrainBodies.get(chunk.key);
+      if (body) {
+        body.dispose();
+        terrainBodies.delete(chunk.key);
+      }
+      if (payload?.terrainMesh) {
+        payload.terrainMesh.dispose();
+        terrainMeshes.delete(chunk.key);
+      }
+    }
+  });
+  chunkManager.update({ x: 0, y: 0, z: 0 });
+  createSpatialReference(scene, worldRadius);
 
   scene.clearColor = new Color4(0.018, 0.027, 0.052, 1);
   scene.fogMode = Scene.FOGMODE_EXP2;
   scene.fogDensity = 0.00062;
   scene.fogColor = new Color3(0.018, 0.027, 0.052);
 
-  return { camera, terrain };
+  return { camera, chunkManager, terrainMeshes, terrainBodies };
 }
 
 function addPhysicalProbe(scene, mesh, mass, shape, options = {}) {
@@ -201,7 +240,9 @@ function addPhysicalProbe(scene, mesh, mass, shape, options = {}) {
 let engine;
 let scene;
 let camera;
-let terrain;
+let chunkManager;
+let terrainMeshes;
+let terrainBodies;
 let havokAttemptRunning = false;
 let havokInstance = null;
 let probeMesh = null;
@@ -227,7 +268,12 @@ function enableHavokPhysics() {
 
   try {
     scene.enablePhysics(new Vector3(0, -9.81, 0), new HavokPlugin(true, havokInstance));
-    addPhysicalProbe(scene, terrain, 0, PhysicsShapeType.MESH, { friction: 0.96, restitution: 0.02 });
+    for (const [key, mesh] of terrainMeshes) {
+      if (!terrainBodies.has(key)) {
+        const body = addPhysicalProbe(scene, mesh, 0, PhysicsShapeType.MESH, { friction: 0.96, restitution: 0.02 });
+        terrainBodies.set(key, body);
+      }
+    }
 
     probeMesh = MeshBuilder.CreateSphere("falling-physics-probe", { diameter: 3, segments: 24 }, scene);
     probeMesh.position.set(0, 24, 0);
@@ -311,13 +357,20 @@ async function boot() {
     scene = new Scene(engine);
     const environment = createEnvironment(scene);
     camera = environment.camera;
-    terrain = environment.terrain;
+    chunkManager = environment.chunkManager;
+    terrainMeshes = environment.terrainMeshes;
+    terrainBodies = environment.terrainBodies;
 
     scene.onAfterRenderObservable.add(() => {
       frameCounter += 1;
       labState.frames = frameCounter;
       if (probeMesh) labState.probeY = Number(probeMesh.position.y.toFixed(3));
       if (frameCounter % 18 === 0) fpsMeta.textContent = "FPS: " + engine.getFps().toFixed(0);
+      if (frameCounter % 6 === 0 && chunkManager && camera) {
+        const spatial = chunkManager.update(camera.target);
+        labState.spatial = spatial;
+        worldMeta.textContent = `XYZ chunks: ${spatial.activeCount} · radius ${spatial.radius} m · ${Object.values(spatial.axisCoverage).every(Boolean) ? "6/6 directions" : "coverage check pending"}`;
+      }
     });
 
     engine.runRenderLoop(() => scene.render());
@@ -326,12 +379,12 @@ async function boot() {
     resetButton.addEventListener("click", () => {
       camera.alpha = -Math.PI * 0.72;
       camera.beta = Math.PI * 0.34;
-      camera.radius = 285;
+      camera.radius = chunkManager.radius * 1.34;
       camera.target.set(0, 8, 0);
     });
 
     dropButton.addEventListener("click", () => {
-      spawnDynamicBox(-12, 42, -8);
+      spawnDynamicBox(camera.target.x - 12, camera.target.y + 42, camera.target.z - 8);
     });
 
     labState.ready = true;
