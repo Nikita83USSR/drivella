@@ -1,0 +1,9 @@
+.vs/
+bin/
+obj/
+out/
+build/
+cef/
+*.user
+*.suo
+*.pdb
