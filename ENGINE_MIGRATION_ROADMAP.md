@@ -73,11 +73,24 @@ Implemented and covered by automated tests:
 - [x] Havok static collision attached to streamed terrain patches and disposed with their chunks.
 - [x] Automated test verifies terrain height determinism, non-flat relief, elevation thresholds and Y-layer assignment.
 
+Implemented and covered by automated tests:
+- [x] Deterministic XYZ chunk manager with a 420 m spherical availability radius and 128 m cells.
+- [x] Symmetric six-axis and diagonal chunk coverage; camera visibility does not control chunk lifetime.
+- [x] Continuous world-space elevation, vertical Y-layer assignment, ridges and valleys.
+- [x] Five biome classes currently present in the generated world: forest, meadow, rocky, alpine and wetland.
+- [x] Deterministic humidity/elevation/slope classification; repeated loads produce identical prop placements.
+- [x] Procedural conifer trees, grass tufts, wetland reeds and low-poly rocks.
+- [x] Per-chunk combined vegetation/rock geometry instead of a separate draw call for every plant or stone.
+- [x] Distance LOD reduces biome placement counts on remote chunks.
+- [x] Rock batches receive static Havok colliders; terrain retains its own static collider.
+- [x] Browser smoke test verifies that multiple biome types and hundreds of props are present, Havok contact is stable, and runtime requests remain same-origin.
+
 Still required:
-- Replace the current analytic terrain field with a full biome-aware landscape composition: mountain ranges, distinct valleys, plateaus, cliff bands, ravines and coastlines.
-- Add 3D surface materials, rock/soil/vegetation transitions, texture detail and atmosphere that remain readable across LODs.
-- Build real road geometry that conforms to the terrain, with curves, banking, bridges and tunnels.
-- Generate vertical structures, buildings, vegetation, traffic and breakable props as XYZ-streamed content.
+- Add more varied tree silhouettes, shrub types, ground cover, and biome-specific texture detail.
+- Add a water/coast system, rivers, lakes and proper wetland transitions.
+- Build a spline-based road network that follows height and grade, with banking, shoulders, lane markings and physically correct collision.
+- Add bridges and tunnels where road/terrain profiles require them.
+- Generate city districts, buildings, bridges, overpasses, industrial zones and other architecture as XYZ-streamed content.
 - Move chunk generation and asset preparation off the render-critical path; add worker-backed asynchronous generation and bounded queues.
 - Tie the chunk-manager center to the actual vehicle physics body rather than the current lab camera target.
 - Add performance budgets, frustum/occlusion rendering (without coupling it to chunk lifetime), and further seam/collision regression tests.
@@ -107,4 +120,4 @@ Still required:
 
 ## Current status
 
-The current branch contains the self-hosted engine, Havok runtime, isolated browser lab, tested XYZ chunk manager and the first elevation-aware terrain system with Havok collision. It does not replace the original game, does not alter the existing car physics, and does not claim that a populated open world, production vehicle simulation or ragdolls are complete.
+The current branch contains the self-hosted engine, Havok runtime, tested XYZ chunk manager, elevation-aware terrain and the first deterministic biome/prop generation layer. The production car, final open-world content, vehicle simulation, traffic and ragdolls are still future milestones.
