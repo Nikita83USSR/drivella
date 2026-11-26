@@ -109,3 +109,15 @@ export function terrainChunkHeightRange(chunkX, chunkZ, chunkSize = 128) {
   }
   return { min, max };
 }
+export function terrainSlope(x, z) {
+  const gradientX = (terrainHeight(x + 2, z) - terrainHeight(x - 2, z)) * 0.25;
+  const gradientZ = (terrainHeight(x, z + 2) - terrainHeight(x, z - 2)) * 0.25;
+  return Math.hypot(gradientX, gradientZ);
+}
+
+export function terrainMoisture(x, z) {
+  if (!Number.isFinite(x) || !Number.isFinite(z)) {
+    throw new TypeError("terrainMoisture expects finite world coordinates.");
+  }
+  return fbm(x * 0.0032 + 125.4, z * 0.0032 - 82.1, 5);
+}
