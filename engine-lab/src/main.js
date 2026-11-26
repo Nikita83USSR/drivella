@@ -116,19 +116,6 @@ function createAxisBeacon(scene, name, position, color) {
 
 function createSpatialReference(scene, worldRadius) {
   const axisLength = worldRadius * 0.92;
-  const axisMaterial = new StandardMaterial("axis-lines", scene);
-  axisMaterial.emissiveColor = new Color3(0.12, 0.34, 0.47);
-  axisMaterial.alpha = 0.28;
-  axisMaterial.wireframe = true;
-  axisMaterial.backFaceCulling = false;
-
-  const shell = MeshBuilder.CreateSphere("equal-distance-world-envelope", {
-    diameter: worldRadius * 2,
-    segments: 28
-  }, scene);
-  shell.material = axisMaterial;
-  shell.isPickable = false;
-
   createAxisBeacon(scene, "axis-positive-x", new Vector3(axisLength, 0, 0), new Color3(1, 0.2, 0.32));
   createAxisBeacon(scene, "axis-negative-x", new Vector3(-axisLength, 0, 0), new Color3(0.45, 0.08, 0.18));
   createAxisBeacon(scene, "axis-positive-y", new Vector3(0, axisLength, 0), new Color3(0.18, 1, 0.66));
@@ -189,7 +176,10 @@ function createEnvironment(scene) {
   const terrainMaterial = new StandardMaterial("terrain-material", scene);
   terrainMaterial.diffuseColor = new Color3(0.055, 0.12, 0.16);
   terrainMaterial.specularColor = new Color3(0.16, 0.26, 0.31);
-  terrainMaterial.specularPower = 48;
+  terrainMaterial.specularPower = 24;
+  terrainMaterial.emissiveColor = new Color3(0.018, 0.052, 0.061);
+  terrainMaterial.backFaceCulling = false;
+  terrainMaterial.twoSidedLighting = true;
 
   const terrainMeshes = new Map();
   const terrainBodies = new Map();
@@ -227,7 +217,7 @@ function createEnvironment(scene) {
 
   scene.clearColor = new Color4(0.018, 0.027, 0.052, 1);
   scene.fogMode = Scene.FOGMODE_EXP2;
-  scene.fogDensity = 0.00062;
+  scene.fogDensity = 0.00022;
   scene.fogColor = new Color3(0.018, 0.027, 0.052);
 
   return { camera, chunkManager, terrainMeshes, terrainBodies };
