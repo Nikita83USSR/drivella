@@ -1,27 +1,15 @@
 import { terrainHeight } from "./TerrainField.mjs";
+import {
+  MAIN_ROUTE_CONTROL_POINTS,
+  ROAD_SAMPLE_SPACING,
+  sampleClosedRoutePoints
+} from "./WorldLayout.mjs";
 
 export const ROAD_CHUNK_SIZE = 128;
 export const ROAD_HALF_WIDTH = 6.2;
 export const ROAD_SHOULDER_WIDTH = 2.4;
 export const ROAD_SURFACE_OFFSET = 1.05;
 export const ROAD_SHOULDER_OFFSET = 0.58;
-
-export const MAIN_ROUTE_CONTROL_POINTS = Object.freeze([
-  Object.freeze([0, 0]),
-  Object.freeze([34, -72]),
-  Object.freeze([112, -138]),
-  Object.freeze([218, -128]),
-  Object.freeze([292, -28]),
-  Object.freeze([262, 102]),
-  Object.freeze([164, 218]),
-  Object.freeze([24, 270]),
-  Object.freeze([-122, 244]),
-  Object.freeze([-260, 148]),
-  Object.freeze([-310, 0]),
-  Object.freeze([-250, -158]),
-  Object.freeze([-108, -228]),
-  Object.freeze([-20, -150])
-]);
 
 const ROAD_COLORS = Object.freeze({
   asphalt: Object.freeze([0.11, 0.13, 0.16]),
@@ -59,34 +47,9 @@ function catmullRom(p0, p1, p2, p3, t) {
 
 export function generateMainRoadSamples(
   controlPoints = MAIN_ROUTE_CONTROL_POINTS,
-  sampleSpacing = 3.2
+  sampleSpacing = ROAD_SAMPLE_SPACING
 ) {
-  if (!Array.isArray(controlPoints) || controlPoints.length < 4) {
-    throw new TypeError("A closed road route requires at least four control points.");
-  }
-  if (!Number.isFinite(sampleSpacing) || sampleSpacing <= 0) {
-    throw new RangeError("Road sample spacing must be a positive finite number.");
-  }
-  for (const point of controlPoints) {
-    if (!Array.isArray(point) || point.length !== 2 || !point.every(Number.isFinite)) {
-      throw new TypeError("Road control points must be finite [x, z] pairs.");
-    }
-  }
-
-  const raw = [];
-  const count = controlPoints.length;
-  for (let index = 0; index < count; index += 1) {
-    const p0 = controlPoints[(index - 1 + count) % count];
-    const p1 = controlPoints[index];
-    const p2 = controlPoints[(index + 1) % count];
-    const p3 = controlPoints[(index + 2) % count];
-    const segmentLength = Math.hypot(p2[0] - p1[0], p2[1] - p1[1]);
-    const steps = Math.max(4, Math.ceil(segmentLength / sampleSpacing));
-    for (let step = 0; step < steps; step += 1) {
-      raw.push(catmullRom(p0, p1, p2, p3, step / steps));
-    }
-  }
-
+  const raw = sampleClosedRoutePoints(controlPoints, sampleSpacing);
   const samples = [];
   const length = raw.length;
   for (let index = 0; index < length; index += 1) {
@@ -123,7 +86,6 @@ export function generateMainRoadSamples(
       bank
     });
   }
-
   return samples;
 }
 
