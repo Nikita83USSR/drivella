@@ -67,11 +67,33 @@ try {
   console.log('ALL BUILD 203 DERIVATIVE GRID/16-POINT AREA LIGHT/REAL MIRROR-TO-ASPHALT PIXELS/SHADER/VEHICLE CHECKS PASSED');
 
 
-  // Launch the actual production game and require a non-empty live mirror capture after the outline pass.
+  // Release the shader-fixture WebGL context before the live game allocates its own renderer targets.
+  await page.close();
+  // Launch the actual production game in the foreground and require a non-empty live mirror capture.
   const gamePage = await browser.newPage({ viewport: { width: 1280, height: 900 }, deviceScaleFactor: 1 });
   gamePage.on('pageerror', error => pageErrors.push(error.stack || error.message));
+  gamePage.on('console', message => {
+    if (message.type() === 'error') console.error('GAME BROWSER CONSOLE:', message.text());
+  });
+  await gamePage.bringToFront();
   await gamePage.goto(baseUrl + '/', { waitUntil: 'load', timeout: 20000 });
-  await gamePage.waitForSelector('#main-menu.show', { timeout: 20000 });
+  try {
+    await gamePage.waitForSelector('#main-menu.show', { timeout: 20000 });
+  } catch (error) {
+    let startupState = null;
+    try {
+      startupState = await gamePage.evaluate(() => ({
+        title: document.title,
+        bodyClass: document.body.className,
+        bootScreen: document.getElementById('boot-screen')?.className,
+        bootStatus: document.getElementById('boot-status')?.innerText,
+        bootPercent: document.getElementById('boot-percent')?.innerText,
+        menuClass: document.getElementById('main-menu')?.className
+      }));
+      await gamePage.screenshot({ path: 'artifacts/build203-live-game-startup-failure.png', fullPage: true });
+    } catch (_) {}
+    throw new Error('Live game boot diagnostics: ' + JSON.stringify({ startupState, pageErrors }) + ' // ' + error.message);
+  }
   await gamePage.locator('#menu-start').click();
   await gamePage.locator('#debug-toggle').click();
   await gamePage.waitForFunction(() => {
