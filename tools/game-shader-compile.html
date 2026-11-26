@@ -797,10 +797,14 @@ const roadCurbsStart=html.indexOf('function buildRoadCurbsGeometry(centerZ){');
 const roadCurbsEnd=html.indexOf('\nfunction updateRoadCurbsMesh(',roadCurbsStart);
 must(roadCurbsStart>=0&&roadCurbsEnd>roadCurbsStart,'Continuous curb geometry helper is missing');
 const roadCurbsSource=html.slice(roadCurbsStart,roadCurbsEnd);
+const trackVertexWriterStart=html.indexOf('function writeTrackVertex(data,normals,offset,position,normal){');
+const trackVertexWriterEnd=html.indexOf('\nfunction uploadTrackGeometry(',trackVertexWriterStart);
+must(trackVertexWriterStart>=0&&trackVertexWriterEnd>trackVertexWriterStart,'Dynamic track vertex writer helper is missing');
+const trackVertexWriterSource=html.slice(trackVertexWriterStart,trackVertexWriterEnd);
 const buildRoadCurbs=new Function(
  'roadX','ROAD_SURFACE_SEGMENTS','ROAD_SURFACE_BACK','ROAD_SURFACE_LENGTH','ROAD_SURFACE_WIDTH',
  'ROAD_CURB_GAP','ROAD_CURB_WIDTH','ROAD_CURB_BEVEL','ROAD_CURB_HEIGHT',
- roadFrameSource+'\n'+roadCurbsSource+'\nreturn buildRoadCurbsGeometry;'
+ roadFrameSource+'\n'+trackVertexWriterSource+'\n'+roadCurbsSource+'\nreturn buildRoadCurbsGeometry;'
 )(testRoadCurve,ROAD_TEST_SEGMENTS,ROAD_TEST_BACK,ROAD_TEST_LENGTH,9.4,.18,.48,.075,.14);
 const roadCurbsProbe=buildRoadCurbs(240);
 const curbSegmentStride=108,curbSideStride=54;
