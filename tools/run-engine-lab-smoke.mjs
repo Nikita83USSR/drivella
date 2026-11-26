@@ -66,6 +66,7 @@ try {
   await page.waitForFunction(() => window.__DRIVELLA_LAB__?.ready === true, { timeout: 60000 });
   await page.waitForFunction(() => window.__DRIVELLA_LAB__?.physicsReady === true, { timeout: 60000 });
   await page.waitForFunction(() => window.__DRIVELLA_LAB__?.probeStableFrames >= 30, { timeout: 30000 });
+  await page.waitForFunction(() => window.__DRIVELLA_LAB__?.roadProbeStableFrames >= 30, { timeout: 30000 });
 
   const state = await page.evaluate(() => ({
     renderer: window.__DRIVELLA_LAB__.renderer,
@@ -82,7 +83,15 @@ try {
     roadChunks: window.__DRIVELLA_LAB__.roadChunks,
     roadLength: window.__DRIVELLA_LAB__.roadLength,
     roadSampleCount: window.__DRIVELLA_LAB__.roadSampleCount,
-    roadYAtProbe: window.__DRIVELLA_LAB__.roadYAtProbe
+    roadYAtProbe: window.__DRIVELLA_LAB__.roadYAtProbe,
+    roadDistanceAtProbe: window.__DRIVELLA_LAB__.roadDistanceAtProbe,
+    roadProbeY: window.__DRIVELLA_LAB__.roadProbeY,
+    roadProbeX: window.__DRIVELLA_LAB__.roadProbeX,
+    roadProbeZ: window.__DRIVELLA_LAB__.roadProbeZ,
+    roadProbeYAtRoad: window.__DRIVELLA_LAB__.roadProbeYAtRoad,
+    roadProbeDistanceToRoad: window.__DRIVELLA_LAB__.roadProbeDistanceToRoad,
+    roadProbeStableFrames: window.__DRIVELLA_LAB__.roadProbeStableFrames,
+    roadProbeTargetGrade: window.__DRIVELLA_LAB__.roadProbeTargetGrade
   }));
 
   if (state.frames < 30) throw new Error("Render loop did not advance enough frames.");
@@ -100,9 +109,21 @@ try {
   if (!Number.isFinite(state.roadLength) || state.roadLength < 1200 || state.roadChunks < 8) {
     throw new Error("The spline road was not streamed into the world chunks: " + JSON.stringify(state));
   }
-  const roadClearance = state.probeY - 1.5 - state.roadYAtProbe;
-  if (!Number.isFinite(roadClearance) || roadClearance < -0.8 || roadClearance > 1.4) {
-    throw new Error("Physics probe is not resting on the streamed road surface: " + JSON.stringify({ roadClearance, state }));
+  if (state.roadProbeStableFrames < 30) {
+    throw new Error("Dedicated road probe did not settle on the asphalt collision mesh: " + JSON.stringify(state));
+  }
+  const roadProbeClearance = state.roadProbeY - 1 - state.roadProbeYAtRoad;
+  if (
+    !Number.isFinite(roadProbeClearance)
+    || !Number.isFinite(state.roadProbeDistanceToRoad)
+    || roadProbeClearance < -0.35
+    || roadProbeClearance > 0.35
+    || state.roadProbeDistanceToRoad > 2.5
+  ) {
+    throw new Error("Dedicated physics probe is not in contact with the asphalt surface: " + JSON.stringify({ roadProbeClearance, state }));
+  }
+  if (!Number.isFinite(state.roadProbeTargetGrade) || state.roadProbeTargetGrade > 0.20) {
+    throw new Error("Road contact test selected a route point above the target grade: " + JSON.stringify(state));
   }
   if (!state.spatial || Object.values(state.spatial.axisCoverage).some((covered) => !covered)) {
     throw new Error("Spatial chunk coverage is incomplete in one or more XYZ directions.");
