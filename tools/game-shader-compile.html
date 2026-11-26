@@ -674,7 +674,7 @@ const checks={
   vehicleReflectionCaptureUsesOpaqueDepthMaterial:vehicleReflectionOpaqueCapturePixelFixturePass&&reflectionCaptureBranch.includes('gl_FragColor=vec4(reflectionTint,1.0)'),
   vehicleReflectionCaptureIsNotBlendedMeshCopy:html.includes('gl.disable(gl.BLEND);gl.disable(gl.STENCIL_TEST)')&&html.includes('gl.uniform1f(loc.vehicleReflectionPass,1.0)')&&!html.includes('drawVehicleRoadReflection()'),
   vehicleReflectionDistortsAndSoftensRoadImage:sources.mainFragment.includes('float waveA=sin(vWorldPos.z*0.92')&&sources.mainFragment.includes('vec2 blurStep=vehicleReflectionTexel*vec2(1.8,1.15)')&&sources.mainFragment.split('texture2D(vehicleReflectionTexture').length>=6,
-  vehicleReflectionPreservesLampMaterial:sources.mainFragment.includes('solidLamp=min(color.rgb*2.20+vec3(0.06,0.15,0.28),vec3(1.75))'),
+  vehicleReflectionPreservesLampMaterial:sources.mainFragment.includes('solidLamp=min(color.rgb*vec3(1.90,1.50,1.25)+vec3(0.03,0.06,0.15),vec3(1.35))'),
   asphaltEnvironmentReflectionReducedByHalf:sources.mainFragment.includes('clamp(0.06+roadFresnel*0.20,0.0,0.24)'),
   vehicleReflectionMixIsClearlyVisible:sources.mainFragment.includes('reflectionCoverage*0.90')&&sources.mainFragment.includes('vec4 reflectionClip=vehicleReflectionVP*vec4(vWorldPos.x,0.005,vWorldPos.z,1.0)'),
   continuousRoadSurfaceHasNoSegmentBoxes:continuousRoadGeometryPixelFixturePass&&!html.includes('queueRoadCube(roadInstances,cx,-.105,z,9.4,.11,5,C.road,0,9)'),
