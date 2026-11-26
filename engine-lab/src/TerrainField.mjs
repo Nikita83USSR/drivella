@@ -91,43 +91,35 @@ function getRoadElevationProfile() {
   });
   const maxGrade = ROAD_PROFILE_MAX_GRADE;
   const anchorHeight = heights[0];
-
-  // Project raw terrain elevations onto a closed-loop grade envelope.
-  // The start/finish anchor stays fixed; neighbouring stations are cut/filled
-  // until every segment, including the loop seam, respects the grade limit.
-  for (let pass = 0; pass < 240; pass += 1) {
-    let largestCorrection = 0;
-    for (let index = 0; index < heights.length; index += 1) {
-      const nextIndex = (index + 1) % heights.length;
-      const limit = maxGrade * edgeLengths[index];
-      const difference = heights[nextIndex] - heights[index];
-      if (difference > limit + 1e-7) {
-        const correction = difference - limit;
-        if (index === 0) {
-          heights[nextIndex] -= correction;
-        } else if (nextIndex === 0) {
-          heights[index] += correction;
-        } else {
-          heights[index] += correction * 0.5;
-          heights[nextIndex] -= correction * 0.5;
-        }
-        largestCorrection = Math.max(largestCorrection, correction);
-      } else if (difference < -limit - 1e-7) {
-        const correction = -limit - difference;
-        if (index === 0) {
-          heights[nextIndex] += correction;
-        } else if (nextIndex === 0) {
-          heights[index] -= correction;
-        } else {
-          heights[index] -= correction * 0.5;
-          heights[nextIndex] += correction * 0.5;
-        }
-        largestCorrection = Math.max(largestCorrection, correction);
-      }
-    }
-    heights[0] = anchorHeight;
-    if (largestCorrection < 1e-5) break;
+  const cumulative = new Array(route.length).fill(0);
+  for (let index = 1; index < route.length; index += 1) {
+    cumulative[index] = cumulative[index - 1] + edgeLengths[index - 1];
   }
+  const totalLength = cumulative[cumulative.length - 1] + edgeLengths[edgeLengths.length - 1];
+
+  // Construct two globally grade-limited envelopes on the closed loop:
+  // the greatest permissible profile below raw terrain and the least
+  // permissible profile above it. Their midpoint is also grade-limited.
+  const projected = new Array(route.length);
+  for (let index = 0; index < route.length; index += 1) {
+    let lowerEnvelope = Infinity;
+    let upperEnvelope = -Infinity;
+    for (let source = 0; source < route.length; source += 1) {
+      const along = Math.abs(cumulative[index] - cumulative[source]);
+      const loopDistance = Math.min(along, totalLength - along);
+      const allowance = maxGrade * loopDistance;
+      lowerEnvelope = Math.min(lowerEnvelope, heights[source] + allowance);
+      upperEnvelope = Math.max(upperEnvelope, heights[source] - allowance);
+    }
+    projected[index] = (lowerEnvelope + upperEnvelope) * 0.5;
+  }
+
+  // Preserve the actual start/finish elevation while keeping the profile shape.
+  const anchorOffset = anchorHeight - projected[0];
+  for (let index = 0; index < projected.length; index += 1) {
+    heights[index] = projected[index] + anchorOffset;
+  }
+
 
   roadElevationProfile = Object.freeze({
     route,
