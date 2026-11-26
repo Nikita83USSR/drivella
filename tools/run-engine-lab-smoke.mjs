@@ -76,7 +76,9 @@ try {
     probeX: window.__DRIVELLA_LAB__.probeX,
     probeZ: window.__DRIVELLA_LAB__.probeZ,
     terrainYAtProbe: window.__DRIVELLA_LAB__.terrainYAtProbe,
-    spatial: window.__DRIVELLA_LAB__.spatial
+    spatial: window.__DRIVELLA_LAB__.spatial,
+    biomes: window.__DRIVELLA_LAB__.biomes,
+    biomeTypes: window.__DRIVELLA_LAB__.biomeTypes
   }));
 
   if (state.frames < 30) throw new Error("Render loop did not advance enough frames.");
@@ -86,6 +88,11 @@ try {
   if (!Number.isFinite(probeClearance) || probeClearance < -0.8 || probeClearance > 8) {
     throw new Error("Physics probe is not resting against the visible terrain surface: " + JSON.stringify({ probeClearance, state }));
   }
+  if (!state.biomes || !state.biomeTypes || state.biomeTypes.length < 2) {
+    throw new Error("The browser scene did not populate multiple biome regions: " + JSON.stringify(state));
+  }
+  const propCount = Object.values(state.biomes).reduce((sum, count) => sum + count, 0);
+  if (propCount < 8) throw new Error("Biome decoration did not create enough world props: " + JSON.stringify(state.biomes));
   if (!state.spatial || Object.values(state.spatial.axisCoverage).some((covered) => !covered)) {
     throw new Error("Spatial chunk coverage is incomplete in one or more XYZ directions.");
   }
