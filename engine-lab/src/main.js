@@ -51,6 +51,40 @@ function setStatus(message, state = "warn") {
   statusDot.className = "status-dot " + state;
 }
 
+function terrainColorAt(height, slopeAmount) {
+  const stops = [
+    [-180, [0.035, 0.07, 0.18]],
+    [-70, [0.055, 0.16, 0.31]],
+    [-8, [0.045, 0.27, 0.29]],
+    [38, [0.16, 0.14, 0.34]],
+    [100, [0.24, 0.31, 0.52]],
+    [180, [0.52, 0.68, 0.78]]
+  ];
+  let lower = stops[0];
+  let upper = stops[stops.length - 1];
+  for (let index = 0; index < stops.length - 1; index += 1) {
+    if (height >= stops[index][0] && height <= stops[index + 1][0]) {
+      lower = stops[index];
+      upper = stops[index + 1];
+      break;
+    }
+  }
+  const range = upper[0] - lower[0] || 1;
+  const blend = Math.max(0, Math.min(1, (height - lower[0]) / range));
+  const base = [
+    lower[1][0] + (upper[1][0] - lower[1][0]) * blend,
+    lower[1][1] + (upper[1][1] - lower[1][1]) * blend,
+    lower[1][2] + (upper[1][2] - lower[1][2]) * blend
+  ];
+  const ridgeMix = Math.max(0, Math.min(0.68, slopeAmount * 0.82));
+  const ridgeColor = [0.27, 0.49, 0.65];
+  return [
+    base[0] + (ridgeColor[0] - base[0]) * ridgeMix,
+    base[1] + (ridgeColor[1] - base[1]) * ridgeMix,
+    base[2] + (ridgeColor[2] - base[2]) * ridgeMix
+  ];
+}
+
 function createTerrainChunk(scene, chunkX, chunkY, chunkZ, chunkSize, material) {
   const segments = 32;
   const half = chunkSize * 0.5;
@@ -58,6 +92,7 @@ function createTerrainChunk(scene, chunkX, chunkY, chunkZ, chunkSize, material) 
   const positions = [];
   const indices = [];
   const normals = [];
+  const colors = [];
   const uvs = [];
 
   for (let iz = 0; iz <= segments; iz += 1) {
@@ -66,7 +101,8 @@ function createTerrainChunk(scene, chunkX, chunkY, chunkZ, chunkSize, material) 
       const localZ = -half + iz * step;
       const worldX = chunkX * chunkSize + localX;
       const worldZ = chunkZ * chunkSize + localZ;
-      positions.push(localX, terrainHeight(worldX, worldZ) - chunkY * chunkSize, localZ);
+      const worldHeight = terrainHeight(worldX, worldZ);
+      positions.push(localX, worldHeight - chunkY * chunkSize, localZ);
       uvs.push(ix / segments, iz / segments);
     }
   }
@@ -85,19 +121,27 @@ function createTerrainChunk(scene, chunkX, chunkY, chunkZ, chunkSize, material) 
     for (let ix = 0; ix <= segments; ix += 1) {
       const worldX = chunkX * chunkSize - half + ix * step;
       const worldZ = chunkZ * chunkSize - half + iz * step;
+      const worldHeight = terrainHeight(worldX, worldZ);
       const slopeX = (terrainHeight(worldX + 1, worldZ) - terrainHeight(worldX - 1, worldZ)) * 0.5;
       const slopeZ = (terrainHeight(worldX, worldZ + 1) - terrainHeight(worldX, worldZ - 1)) * 0.5;
       const length = Math.sqrt(slopeX * slopeX + 1 + slopeZ * slopeZ);
-      normals.push(-slopeX / length, 1 / length, -slopeZ / length);
+      const normalX = -slopeX / length;
+      const normalY = 1 / length;
+      const normalZ = -slopeZ / length;
+      normals.push(normalX, normalY, normalZ);
+      const rgb = terrainColorAt(worldHeight, 1 - normalY);
+      colors.push(rgb[0], rgb[1], rgb[2], 1);
     }
   }
+
   const vertexData = new VertexData();
   vertexData.positions = positions;
   vertexData.indices = indices;
   vertexData.normals = normals;
+  vertexData.colors = colors;
   vertexData.uvs = uvs;
 
-  const terrain = new Mesh(`terrain-chunk-${chunkX}-${chunkZ}`, scene);
+  const terrain = new Mesh(`terrain-chunk-${chunkX}-${chunkY}-${chunkZ}`, scene);
   vertexData.applyToMesh(terrain, true);
   terrain.position.set(chunkX * chunkSize, chunkY * chunkSize, chunkZ * chunkSize);
   terrain.isPickable = false;
@@ -177,12 +221,13 @@ function createEnvironment(scene) {
   scene.activeCamera = camera;
 
   const terrainMaterial = new StandardMaterial("terrain-material", scene);
-  terrainMaterial.diffuseColor = new Color3(0.22, 0.32, 0.42);
+  terrainMaterial.diffuseColor = Color3.White();
   terrainMaterial.specularColor = new Color3(0.28, 0.38, 0.48);
   terrainMaterial.specularPower = 24;
   terrainMaterial.emissiveColor = new Color3(0.085, 0.13, 0.18);
   terrainMaterial.backFaceCulling = false;
   terrainMaterial.twoSidedLighting = true;
+  terrainMaterial.useVertexColors = true;
 
   const terrainMeshes = new Map();
   const terrainBodies = new Map();
