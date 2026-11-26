@@ -509,10 +509,7 @@ if(roadInstancingExt){
  gl.disableVertexAttribArray(p);gl.disableVertexAttribArray(n);
 }
 gl.bindFramebuffer(gl.FRAMEBUFFER,null);gl.viewport(0,0,W,H);gl.enable(gl.DEPTH_TEST);
-const roadGridAtStart=1+(Math.ceil(150/10)-Math.floor(-150/10)+1)+(Math.ceil(245/10)-Math.floor(-35/10)+1)+
- (Math.ceil(230/10)-Math.floor(-40/10)+1)*3+
- (Math.floor(Math.ceil(230/10)/2)-Math.ceil(Math.floor(-40/10)/2)+1)*2+
- (Math.floor(Math.ceil(230/10)/3)-Math.ceil(Math.floor(-40/10)/3)+1)*2;
+const roadGridAtStart=1+2*21+2*14;
 
 // Execute the exact production point-light function in a GPU pixel fixture.
 const trackLightFunctionStart=sources.mainFragment.indexOf('vec3 evalLocalLight(');
@@ -774,22 +771,59 @@ const showroomReflectionPixelFixturePass=showroomReflectionOnPixel[0]>40&&showro
  gl.bindFramebuffer(gl.FRAMEBUFFER,null);gl.viewport(0,0,W,H);gl.depthMask(true);gl.enable(gl.DEPTH_TEST);
 gl.bindFramebuffer(gl.FRAMEBUFFER,null);gl.viewport(0,0,W,H);gl.depthMask(true);gl.enable(gl.DEPTH_TEST);
 
-// Test exact shared-edge vertices from the production continuous asphalt ribbon geometry.
+// Verify shared boundaries in the actual road surface and both continuous raised curbs.
+const roadFrameStart=html.indexOf('function roadSidePoint(z,lateral){');
+const roadFrameEnd=html.indexOf('\nfunction normalMatrix3(',roadFrameStart);
+must(roadFrameStart>=0&&roadFrameEnd>roadFrameStart,'Shared road tangent/normal helper is missing');
+const roadFrameSource=html.slice(roadFrameStart,roadFrameEnd);
 const roadGeometryStart=html.indexOf('function buildRoadSurfaceGeometry(centerZ){');
 const roadGeometryEnd=html.indexOf('\nfunction updateRoadSurfaceMesh(',roadGeometryStart);
 must(roadGeometryStart>=0&&roadGeometryEnd>roadGeometryStart,'Continuous asphalt ribbon geometry helper is missing');
 const roadGeometrySource=html.slice(roadGeometryStart,roadGeometryEnd);
 const testRoadCurve=z=>2.8*Math.sin(z*.012)+.65*Math.sin(z*.036);
-const buildRoadGeometry=new Function('roadX','ROAD_SURFACE_SEGMENTS','ROAD_SURFACE_CENTER_OFFSET','ROAD_SURFACE_LENGTH','ROAD_SURFACE_WIDTH','ROAD_SURFACE_TOP',roadGeometrySource+'\nreturn buildRoadSurfaceGeometry;')(testRoadCurve,108,95,270,9.4,.005);
+const ROAD_TEST_SEGMENTS=164,ROAD_TEST_BACK=180,ROAD_TEST_FORWARD=230,ROAD_TEST_LENGTH=ROAD_TEST_BACK+ROAD_TEST_FORWARD;
+const buildRoadGeometry=new Function('roadX','ROAD_SURFACE_SEGMENTS','ROAD_SURFACE_CENTER_OFFSET','ROAD_SURFACE_LENGTH','ROAD_SURFACE_WIDTH','ROAD_SURFACE_TOP',roadFrameSource+'\n'+roadGeometrySource+'\nreturn buildRoadSurfaceGeometry;')(testRoadCurve,ROAD_TEST_SEGMENTS,(ROAD_TEST_FORWARD-ROAD_TEST_BACK)*.5,ROAD_TEST_LENGTH,9.4,.005);
 const roadGeometryProbe=buildRoadGeometry(240);
 let continuousRoadSharedEdges=true;
-for(let i=0;i<107;i++){
+for(let i=0;i<ROAD_TEST_SEGMENTS-1;i++){
  const a=i*18,b=(i+1)*18;
  const sameRight=Math.abs(roadGeometryProbe.data[a+6]-roadGeometryProbe.data[b+3])<1e-6&&Math.abs(roadGeometryProbe.data[a+8]-roadGeometryProbe.data[b+5])<1e-6;
  const sameLeft=Math.abs(roadGeometryProbe.data[a+15]-roadGeometryProbe.data[b])<1e-6&&Math.abs(roadGeometryProbe.data[a+17]-roadGeometryProbe.data[b+2])<1e-6;
  if(!sameRight||!sameLeft){continuousRoadSharedEdges=false;break;}
 }
-const continuousRoadGeometryPixelFixturePass=roadGeometryProbe.data.length===108*6*9&&continuousRoadSharedEdges;
+const continuousRoadGeometryPixelFixturePass=roadGeometryProbe.data.length===ROAD_TEST_SEGMENTS*18&&continuousRoadSharedEdges;
+
+const roadCurbsStart=html.indexOf('function buildRoadCurbsGeometry(centerZ){');
+const roadCurbsEnd=html.indexOf('\nfunction updateRoadCurbsMesh(',roadCurbsStart);
+must(roadCurbsStart>=0&&roadCurbsEnd>roadCurbsStart,'Continuous curb geometry helper is missing');
+const roadCurbsSource=html.slice(roadCurbsStart,roadCurbsEnd);
+const buildRoadCurbs=new Function(
+ 'roadX','ROAD_SURFACE_SEGMENTS','ROAD_SURFACE_BACK','ROAD_SURFACE_LENGTH','ROAD_SURFACE_WIDTH',
+ 'ROAD_CURB_GAP','ROAD_CURB_WIDTH','ROAD_CURB_BEVEL','ROAD_CURB_HEIGHT',
+ roadFrameSource+'\n'+roadCurbsSource+'\nreturn buildRoadCurbsGeometry;'
+)(testRoadCurve,ROAD_TEST_SEGMENTS,ROAD_TEST_BACK,ROAD_TEST_LENGTH,9.4,.18,.48,.075,.14);
+const roadCurbsProbe=buildRoadCurbs(240);
+const curbSegmentStride=108,curbSideStride=54;
+const curbSeamPairs=[[3,0],[6,9],[24,33],[42,51]];
+let continuousCurbSharedEdges=true;
+for(let i=0;i<ROAD_TEST_SEGMENTS-1&&continuousCurbSharedEdges;i++){
+ const a=i*curbSegmentStride,b=(i+1)*curbSegmentStride;
+ for(const sideOffset of [0,curbSideStride])for(const [endOffset,startOffset] of curbSeamPairs)for(let axis=0;axis<3;axis++){
+  if(Math.abs(roadCurbsProbe.data[a+sideOffset+endOffset+axis]-roadCurbsProbe.data[b+sideOffset+startOffset+axis])>1e-6){continuousCurbSharedEdges=false;break;}
+ }
+}
+const curbCrossSectionValid=[0,curbSideStride].every(side=>{
+ const base=Math.abs(roadCurbsProbe.data[side+1])<1e-6;
+ const innerTop=Math.abs(roadCurbsProbe.data[side+9+1]-.14)<1e-6;
+ const outerTop=Math.abs(roadCurbsProbe.data[side+33+1]-.14)<1e-6;
+ const outerBase=Math.abs(roadCurbsProbe.data[side+51+1])<1e-6;
+ return base&&innerTop&&outerTop&&outerBase;
+});
+const continuousCurbGeometryFixturePass=roadCurbsProbe.data.length===ROAD_TEST_SEGMENTS*curbSegmentStride
+ &&continuousCurbSharedEdges&&curbCrossSectionValid
+ &&roadCurbsProbe.normals.every(Number.isFinite)
+ &&html.includes('bindMesh(curbs.shape,curbs.model,C.cyan,0,0)')
+ &&html.includes('ROAD_CURB_GAP=.18,ROAD_CURB_WIDTH=.48,ROAD_CURB_BEVEL=.075,ROAD_CURB_HEIGHT=.14');
 
 // Compile and pixel-test the exact production specular response from both Countach headlights.
 const headlightReflectionFunctionStart=sources.mainFragment.indexOf('float calcHeadlightReflection(float roughnessPower){');
@@ -873,7 +907,8 @@ const checks={
   vehicleReflectionIntensityIsHalved:sources.mainFragment.includes('reflectionCoverage*reflectionHeightFade*0.225')&&!sources.mainFragment.includes('reflectionCoverage*0.3375')&&sources.mainFragment.includes('vec4 reflectionClip=vehicleReflectionVP*vec4(vWorldPos.x,vehicleReflectionPlaneY,vWorldPos.z,1.0)'),
   vehicleReflectionFadesAlongScreenHeight:sources.mainFragment.includes('float reflectionHeightFade=1.0-0.30*smoothstep(0.30,0.86,reflectionUv.y);'),
   continuousRoadSurfaceHasNoSegmentBoxes:continuousRoadGeometryPixelFixturePass&&!html.includes('queueRoadCube(roadInstances,cx,-.105,z,9.4,.11,5,C.road,0,9)'),
-  continuousRoadSurfaceUsesOneDynamicMesh:html.includes('const ROAD_SURFACE_SEGMENTS=108')&&html.includes('gl.bufferData(gl.ARRAY_BUFFER,geometry.data,gl.DYNAMIC_DRAW)')&&html.includes('buildRoadSurfaceGeometry(centerZ)'),
+  continuousRoadSurfaceUsesOneDynamicMesh:html.includes('const ROAD_SURFACE_SEGMENTS=164,ROAD_SURFACE_BACK=180,ROAD_SURFACE_FORWARD=230')&&html.includes('gl.bufferData(gl.ARRAY_BUFFER,geometry.data,gl.DYNAMIC_DRAW)')&&html.includes('buildRoadSurfaceGeometry(centerZ)'),
+  continuousRoadCurbsHaveSharedSeamVerticesAndBevelledCrossSection:continuousCurbGeometryFixturePass&&html.includes('function updateRoadCurbsMesh(centerZ)')&&html.includes('lastRoadCurbSegments=ROAD_SURFACE_SEGMENTS'),
   neonGridIsSingleColourEmitter:html.includes('grid:[.18,.84,1,1]')&&html.includes('gridPlane,0,-.245')&&!html.includes('C.grid2')&&neonGridEmissionPixelPass,
   neonGridUsesDerivativeFilteredGroundPlane:gridAAProgram&&html.includes('resolvedMaterialMode>11.5&&resolvedMaterialMode<12.5'),
   neonGridFarPatternIsStable:gridDerivativeFilterPixelFixturePass,
@@ -900,7 +935,7 @@ const checks={
  roadInstancingPreservesShadowAndAOCulling:html.includes('shadowBoundsVisible(shape,model)')&&html.includes('shadowCasterAllowed(item.color,item.material)')&&html.includes('sceneMaskAllowed(item.color,item.material)'),
  roadInstancingHasSafeFallback:html.includes("if(!useInstancing)")&&html.includes("lastRoadInstancingMode='FALLBACK'"),
  roadInstancingPixelFixture:!roadInstancingExt||roadProbeFramebufferStatus===gl.FRAMEBUFFER_COMPLETE&&roadInstancingPixelFixturePass,
- roadInstancingBatchesStaticRoadPropsAndLeavesAsphaltSeparate:roadGridAtStart-28===164&&html.includes("lastRoadBatchCount=1;lastRoadInstanceCount=count;lastRoadInstancingMode='ANGLE_INSTANCED'")&&html.includes('lastRoadBatchCount++;lastRoadSurfaceSegments=ROAD_SURFACE_SEGMENTS;'),
+ roadInstancingBatchesStaticRoadPropsAndLeavesAsphaltSeparate:roadGridAtStart===71&&html.includes("lastRoadBatchCount=1;lastRoadInstanceCount=count;lastRoadInstancingMode='ANGLE_INSTANCED'")&&html.includes('lastRoadBatchCount++;lastRoadSurfaceSegments=ROAD_SURFACE_SEGMENTS;'),
  environmentInstancingResolvesPerInstanceMaterial:sources.mainVertex.includes('vInstanceMaterial=instanceMaterial')&&sources.mainFragment.includes('resolvedMaterialMode=mix(materialMode,vInstanceMaterial,step(0.5,vInstanceMode))'),
  environmentInstancingPreservesMaterialEight:sources.mainFragment.includes('if(resolvedMaterialMode>7.5&&resolvedMaterialMode<8.5)')&&html.includes('queueBiomeInstance(cityCubes,cx-side*(w+.035),wy,wz,.045,.48,.38,tint,0,8)'),
  environmentInstancingBatchesCityBlocks:html.includes('const cityCubes=[]')&&html.includes('drawBiomeInstances(cube,cityCubes);'),
@@ -914,7 +949,7 @@ const checks={
   trackLocalLightsPixelFixtureUsesProductionPointLightFunction:sources.mainFragment.includes('vec3 evalLocalLight(')&&!!trackLightProbeProgram,
   trackLocalLightsPointLightContributesOnlyInsideRange:trackLocalLightPixelFixturePass,
   trackLocalLightsUseTwelveSharedShaderSlots:html.includes('const LOCAL_LIGHT_CAPACITY=12')&&html.includes('const TRACK_LOCAL_LIGHTS=[')&&html.includes('updateTrackLocalLights():[]')&&sources.mainFragment.includes('localLightPosRange[11]'),
-  trackLocalLightsAttachToRoadsidePosts:html.includes('TRACK_LOCAL_LIGHTS[0].position[0]=roadA-9')&&html.includes('TRACK_LOCAL_LIGHTS[1].position[0]=roadA+9')&&html.includes('cx-9,.42,z,.075,.45,.075,C.pink')&&html.includes('cx+9,.42,z,.075,.45,.075,C.cyan'),
+  trackLocalLightsAttachToRoadsidePosts:html.includes('roadSidePoint(zA,-12)')&&html.includes('roadSidePoint(zA,12)')&&html.includes('roadSidePoint(z,-12),right=roadSidePoint(z,12)')&&html.includes('queueRoadCube(roadInstances,left[0],.42,left[1],.075,.45,.075,C.pink,left[2])')&&html.includes('queueRoadCube(roadInstances,right[0],.42,right[1],.075,.45,.075,C.cyan,right[2])'),
   trackLocalLightsCrossFadeAdjacentPairs:html.includes('blendT*blendT*(3-2*blendT)')&&html.includes('powerA=2.8*(1-blend),powerB=2.8*blend'),
   trackLocalLightsDoNotCreateShadowMaps:html.includes("id:'track-pink-a'")&&html.includes("id:'track-cyan-a'")&&html.includes('castsShadow:false')&&html.includes("const localSources=garageMode&&FX.garageSpotlights?GARAGE_LOCAL_LIGHTS:[];"),
   trackLocalLightsHaveF4ToggleAndDefault:html.includes('trackLights')&&html.includes('trackLights:true'),
@@ -1032,7 +1067,7 @@ const checks={
 };
 must(Object.values(checks).every(Boolean),'One or more production checks failed: '+JSON.stringify(Object.entries(checks).filter(([,ok])=>!ok).map(([name])=>name)));
 const glError=gl.getError();must(glError===gl.NO_ERROR,'WebGL error after production shader pixel test: '+glError);
-const result={pass:true,version:version[1],build:version[2],checks,gridDerivative:{nearAverageGreen:gridNearProbe.averageGreen,farAverageGreen:gridFarProbeA.averageGreen,farMeanDifference:gridFarMeanDifference,fixturePass:gridDerivativeFilterPixelFixturePass},surfaceReflectionPixels:{sharp:surfaceReflectionSharpPixel,rough:surfaceReflectionRoughPixel,roughnessDelta:surfaceReflectionRoughnessDelta,fixturePass:surfaceReflectionPixelFixturePass},probes:{...probes,garageProjectorLight:{near:garageProjectorLightNearPixel,off:garageProjectorLightOffPixel,behind:garageProjectorLightBehindPixel,fixturePass:garageProjectorLocalLightPixelFixturePass},roadInstancing:{extensionAvailable:!!roadInstancingExt,framebufferStatus:roadProbeFramebufferStatus,pixels:roadProbePixels,fixturePass:roadInstancingPixelFixturePass},vehicleReflection:{mirrorVertex:reflectedVertexWorld,poseCorrectionError:vehicleReflectionPoseCorrectionError,currentFramePose:vehicleReflectionCurrentFramePoseFixturePass,opaqueGlassPixel:opaqueGlassReflectionPixel,opaqueLampPixel:opaqueLampReflectionPixel,nineTap:reflectionNineTapPixelFixturePass,collectionPreserved:reflectionCollectionPreservedAcrossOutlinePass,capturedPixels:reflectedVehicleCoveredPixels,roadSample:vehicleReflectionRoadSamplePixel,endToEnd:vehicleReflectionEndToEndPixelFixturePass,showroomOn:showroomReflectionOnPixel,showroomOff:showroomReflectionOffPixel,showroomFixturePass:showroomReflectionPixelFixturePass,headlightNear:headlightReflectionNearPixel,headlightFar:headlightReflectionFarPixel,roadSharedEdgeFixture:continuousRoadGeometryPixelFixturePass,fixturePass:vehicleReflectionProjectionPixelFixturePass&&vehicleReflectionOpaqueCapturePixelFixturePass&&reflectionNineTapPixelFixturePass&&showroomReflectionPixelFixturePass&&headlightReflectionPixelFixturePass&&continuousRoadGeometryPixelFixturePass},neonEmitters:{grid:neonGridPixel,gridDerivative:{nearAverageGreen:gridNearProbe.averageGreen,farAverageGreen:gridFarProbeA.averageGreen,farMeanDifference:gridFarMeanDifference},redUnderbody:{core:underbodyAreaCorePixel,xFade:underbodyAreaXFadePixel,edge:underbodyAreaEdgePixel,zFade:underbodyAreaZFadePixel,front:underbodyAreaFrontPixel,outsideX:underbodyAreaOutsideXPixel,outsideZ:underbodyAreaOutsideZPixel,far:underbodyAreaFarPixel,fixturePass:underbodyAreaPixelFixturePass&&underbodyAreaHasSixteenGeometricSamples},fixturePass:neonGridEmissionPixelPass&&gridDerivativeFilterPixelFixturePass&&underbodyAreaPixelFixturePass&&underbodyAreaHasSixteenGeometricSamples}},brightness:{edge:edgeStrength,shoulder:shoulderStrength,mid:midStrength,deep:deepStrength,blockedSun:brightness(probes.blockedSun),visibleSun:brightness(probes.visibleSun)},glVersion:gl.getParameter(gl.VERSION),renderer:gl.getParameter(gl.RENDERER),glError};
+const result={pass:true,version:version[1],build:version[2],checks,gridDerivative:{nearAverageGreen:gridNearProbe.averageGreen,farAverageGreen:gridFarProbeA.averageGreen,farMeanDifference:gridFarMeanDifference,fixturePass:gridDerivativeFilterPixelFixturePass},surfaceReflectionPixels:{sharp:surfaceReflectionSharpPixel,rough:surfaceReflectionRoughPixel,roughnessDelta:surfaceReflectionRoughnessDelta,fixturePass:surfaceReflectionPixelFixturePass},probes:{...probes,garageProjectorLight:{near:garageProjectorLightNearPixel,off:garageProjectorLightOffPixel,behind:garageProjectorLightBehindPixel,fixturePass:garageProjectorLocalLightPixelFixturePass},roadInstancing:{extensionAvailable:!!roadInstancingExt,framebufferStatus:roadProbeFramebufferStatus,pixels:roadProbePixels,fixturePass:roadInstancingPixelFixturePass},vehicleReflection:{mirrorVertex:reflectedVertexWorld,poseCorrectionError:vehicleReflectionPoseCorrectionError,currentFramePose:vehicleReflectionCurrentFramePoseFixturePass,opaqueGlassPixel:opaqueGlassReflectionPixel,opaqueLampPixel:opaqueLampReflectionPixel,nineTap:reflectionNineTapPixelFixturePass,collectionPreserved:reflectionCollectionPreservedAcrossOutlinePass,capturedPixels:reflectedVehicleCoveredPixels,roadSample:vehicleReflectionRoadSamplePixel,endToEnd:vehicleReflectionEndToEndPixelFixturePass,showroomOn:showroomReflectionOnPixel,showroomOff:showroomReflectionOffPixel,showroomFixturePass:showroomReflectionPixelFixturePass,headlightNear:headlightReflectionNearPixel,headlightFar:headlightReflectionFarPixel,roadSharedEdgeFixture:continuousRoadGeometryPixelFixturePass,roadCurbs:continuousCurbGeometryFixturePass,fixturePass:vehicleReflectionProjectionPixelFixturePass&&vehicleReflectionOpaqueCapturePixelFixturePass&&reflectionNineTapPixelFixturePass&&showroomReflectionPixelFixturePass&&headlightReflectionPixelFixturePass&&continuousRoadGeometryPixelFixturePass&&continuousCurbGeometryFixturePass},neonEmitters:{grid:neonGridPixel,gridDerivative:{nearAverageGreen:gridNearProbe.averageGreen,farAverageGreen:gridFarProbeA.averageGreen,farMeanDifference:gridFarMeanDifference},redUnderbody:{core:underbodyAreaCorePixel,xFade:underbodyAreaXFadePixel,edge:underbodyAreaEdgePixel,zFade:underbodyAreaZFadePixel,front:underbodyAreaFrontPixel,outsideX:underbodyAreaOutsideXPixel,outsideZ:underbodyAreaOutsideZPixel,far:underbodyAreaFarPixel,fixturePass:underbodyAreaPixelFixturePass&&underbodyAreaHasSixteenGeometricSamples},fixturePass:neonGridEmissionPixelPass&&gridDerivativeFilterPixelFixturePass&&underbodyAreaPixelFixturePass&&underbodyAreaHasSixteenGeometricSamples}},brightness:{edge:edgeStrength,shoulder:shoulderStrength,mid:midStrength,deep:deepStrength,blockedSun:brightness(probes.blockedSun),visibleSun:brightness(probes.visibleSun)},glVersion:gl.getParameter(gl.VERSION),renderer:gl.getParameter(gl.RENDERER),glError};
 window.__GAME_SHADER_RESULT__=result;
 report.className='pass';
 report.textContent='PASS\\n'+JSON.stringify(result,null,2);
