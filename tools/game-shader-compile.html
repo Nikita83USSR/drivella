@@ -14,7 +14,7 @@ canvas{display:block;width:100%;height:auto;border:1px solid #58eaff55;margin:14
 </style>
 </head>
 <body><main>
-<h1>DRIVELLA // BUILD 201 PIXEL-STABLE GRID + RED UNDERBODY AREA LIGHT + VISIBLE MIRROR REFLECTION + PRODUCTION GLSL</h1>
+<h1>DRIVELLA // BUILD 203 MOTION-GATED MIRROR RIPPLE + BODY-SIZED UNDERGLOW + PRODUCTION GLSL</h1>
 <canvas id="gl" width="960" height="540"></canvas>
 <pre id="report">Extracting production shaders…</pre>
 </main>
@@ -27,7 +27,7 @@ const response=await fetch('../index.html',{cache:'no-store'});
 must(response.ok,'Cannot fetch production index.html: HTTP '+response.status);
 const html=await response.text();
 const version=html.match(/const VERSION='([^']+)',BUILD='([^']+)'/);
-must(version&&version[1]==='v0.19.36'&&version[2]==='202','Unexpected production version marker: '+JSON.stringify(version));
+must(version&&version[1]==='v0.19.37'&&version[2]==='203','Unexpected production version marker: '+JSON.stringify(version));
 function expression(name,endMarker){
  const marker='const '+name+'=';
  const start=html.indexOf(marker);
@@ -650,19 +650,19 @@ function underbodyAreaProbe(x,z){
  gl.uniform3f(location(underbodyAreaProgram,'underbodyLightRight'),1,0,0);
  gl.uniform3f(location(underbodyAreaProgram,'underbodyLightForward'),0,0,1);
  gl.uniform3f(location(underbodyAreaProgram,'underbodyLightDown'),0,-1,0);
- gl.uniform1f(location(underbodyAreaProgram,'underbodyLightIntensity'),9.0);
+ gl.uniform1f(location(underbodyAreaProgram,'underbodyLightIntensity'),30.0);
  gl.uniform3f(location(underbodyAreaProgram,'uWorldPos'),x,.005,z);
  drawGeometry(underbodyAreaProgram,'aPosition',fullscreenVertices,gl.TRIANGLES);gl.finish();
  const pixel=new Uint8Array(4);gl.readPixels(0,0,1,1,gl.RGBA,gl.UNSIGNED_BYTE,pixel);return Array.from(pixel);
 }
 const underbodyAreaCorePixel=underbodyAreaProbe(0,0);
-const underbodyAreaEdgePixel=underbodyAreaProbe(.95,0);
-const underbodyAreaFrontPixel=underbodyAreaProbe(0,2.0);
-const underbodyAreaOutsideXPixel=underbodyAreaProbe(1.2,0);
-const underbodyAreaOutsideZPixel=underbodyAreaProbe(0,2.6);
+const underbodyAreaEdgePixel=underbodyAreaProbe(1.20,0);
+const underbodyAreaFrontPixel=underbodyAreaProbe(0,2.82);
+const underbodyAreaOutsideXPixel=underbodyAreaProbe(1.27,0);
+const underbodyAreaOutsideZPixel=underbodyAreaProbe(0,2.91);
 const underbodyAreaFarPixel=underbodyAreaProbe(0,8);
 const underbodyAreaPixelFixturePass=underbodyAreaCorePixel[0]>60&&underbodyAreaCorePixel[1]<4&&underbodyAreaCorePixel[2]<4&&underbodyAreaEdgePixel[0]>0&&underbodyAreaEdgePixel[0]<underbodyAreaCorePixel[0]&&underbodyAreaFrontPixel[0]>0&&underbodyAreaOutsideXPixel[0]<3&&underbodyAreaOutsideZPixel[0]<3&&underbodyAreaFarPixel[0]<3;
-const underbodyAreaHasSixteenGeometricSamples=underbodyAreaFunctions.includes('for(int iz=0;iz<4;iz++)')&&underbodyAreaFunctions.includes('for(int ix=0;ix<4;ix++)')&&underbodyAreaFunctions.includes('energy+=calcUnderbodyAreaSample(source,surfaceNormal)*0.0625')&&underbodyAreaFunctions.includes('footprintX')&&underbodyAreaFunctions.includes('footprintZ')&&underbodyAreaFunctions.includes('smoothstep(0.88,1.08,abs(localX))');
+const underbodyAreaHasSixteenGeometricSamples=underbodyAreaFunctions.includes('for(int iz=0;iz<4;iz++)')&&underbodyAreaFunctions.includes('for(int ix=0;ix<4;ix++)')&&underbodyAreaFunctions.includes('energy+=calcUnderbodyAreaSample(source,surfaceNormal)*0.0625')&&underbodyAreaFunctions.includes('smoothstep(1.175,1.25,abs(localX))')&&underbodyAreaFunctions.includes('smoothstep(2.8125,2.8875,abs(localZ))')&&underbodyAreaFunctions.includes('underbodyLightRight*(u*1.6667)')&&underbodyAreaFunctions.includes('underbodyLightForward*(v*3.85)');
 gl.bindFramebuffer(gl.FRAMEBUFFER,null);gl.viewport(0,0,W,H);gl.depthMask(true);gl.enable(gl.DEPTH_TEST);
 
 // Confirm the vehicle reflection capture explicitly activates the production program and now spreads its reflected image along the road.
@@ -696,12 +696,38 @@ const roadSampleEnd=sources.mainFragment.indexOf('\nroadColor+=vec3(0.58,0.78,1.
 must(roadSampleStart>=0&&roadSampleEnd>roadSampleStart,'Production road reflection sample block missing');
 const productionRoadSampleBlock=sources.mainFragment.slice(roadSampleStart,roadSampleEnd);
 const roadSampleVs='attribute vec2 aPosition;uniform vec3 uWorldPos;varying vec3 vWorldPos;void main(){vWorldPos=uWorldPos;gl_Position=vec4(aPosition,0.0,1.0);}';
-const roadSampleFs='precision highp float;varying vec3 vWorldPos;uniform sampler2D vehicleReflectionTexture;uniform mat4 vehicleReflectionVP;uniform vec2 vehicleReflectionTexel;uniform float time;uniform float vehicleReflectionEnabled;void main(){vec3 roadColor=vec3(0.02,0.015,0.035);'+productionRoadSampleBlock+'gl_FragColor=vec4(roadColor,1.0);}';
+const roadSampleFs='precision highp float;varying vec3 vWorldPos;uniform sampler2D vehicleReflectionTexture;uniform mat4 vehicleReflectionVP;uniform vec2 vehicleReflectionTexel;uniform float time;uniform float vehicleReflectionEnabled;uniform float vehicleReflectionMotion;void main(){vec3 roadColor=vec3(0.02,0.015,0.035);'+productionRoadSampleBlock+'gl_FragColor=vec4(roadColor,1.0);}';
 const roadSampleProgram=makeProgram(roadSampleVs,roadSampleFs,'Production asphalt projected mirror sample');const roadSampleTarget=makeTarget(1,1);must(roadSampleTarget.status===gl.FRAMEBUFFER_COMPLETE,'Road reflection sample framebuffer incomplete');
 gl.bindFramebuffer(gl.FRAMEBUFFER,roadSampleTarget.framebuffer);gl.viewport(0,0,1,1);gl.disable(gl.DEPTH_TEST);gl.disable(gl.BLEND);gl.depthMask(false);gl.clearColor(0,0,0,0);gl.clear(gl.COLOR_BUFFER_BIT);gl.useProgram(roadSampleProgram);
-gl.activeTexture(gl.TEXTURE0);gl.bindTexture(gl.TEXTURE_2D,capture3Target.texture);gl.uniform1i(location(roadSampleProgram,'vehicleReflectionTexture'),0);gl.uniformMatrix4fv(location(roadSampleProgram,'vehicleReflectionVP'),false,new Float32Array(endToEndReflectionVP));gl.uniform2f(location(roadSampleProgram,'vehicleReflectionTexel'),1/64,1/64);gl.uniform1f(location(roadSampleProgram,'time'),0);gl.uniform1f(location(roadSampleProgram,'vehicleReflectionEnabled'),1);gl.uniform3f(location(roadSampleProgram,'uWorldPos'),0,.005,-.795);drawGeometry(roadSampleProgram,'aPosition',fullscreenVertices,gl.TRIANGLES);gl.finish();
+gl.activeTexture(gl.TEXTURE0);gl.bindTexture(gl.TEXTURE_2D,capture3Target.texture);gl.uniform1i(location(roadSampleProgram,'vehicleReflectionTexture'),0);gl.uniformMatrix4fv(location(roadSampleProgram,'vehicleReflectionVP'),false,new Float32Array(endToEndReflectionVP));gl.uniform2f(location(roadSampleProgram,'vehicleReflectionTexel'),1/64,1/64);gl.uniform1f(location(roadSampleProgram,'time'),0);gl.uniform1f(location(roadSampleProgram,'vehicleReflectionEnabled'),1);gl.uniform1f(location(roadSampleProgram,'vehicleReflectionMotion'),1);gl.uniform3f(location(roadSampleProgram,'uWorldPos'),0,.005,-.795);drawGeometry(roadSampleProgram,'aPosition',fullscreenVertices,gl.TRIANGLES);gl.finish();
 const vehicleReflectionRoadSamplePixel=new Uint8Array(4);gl.readPixels(0,0,1,1,gl.RGBA,gl.UNSIGNED_BYTE,vehicleReflectionRoadSamplePixel);
 const vehicleReflectionEndToEndPixelFixturePass=reflectedVehicleCoveredPixels>80&&vehicleReflectionRoadSamplePixel[0]>25&&vehicleReflectionRoadSamplePixel[3]===255;
+
+ // GPU pixel proof: parked reflection is temporally invariant; moving reflection keeps a small, bounded ripple.
+ const reflectionMotionStart=sources.mainFragment.indexOf('float motionAmount=clamp(vehicleReflectionMotion,0.0,1.0);');
+ const reflectionMotionEnd=sources.mainFragment.indexOf('reflectionUv+=distortion;',reflectionMotionStart);
+ must(reflectionMotionStart>=0&&reflectionMotionEnd>reflectionMotionStart,'Speed-gated production reflection distortion is missing');
+ const reflectionMotionSource=sources.mainFragment.slice(reflectionMotionStart,reflectionMotionEnd);
+ const reflectionMotionVs='attribute vec2 aPosition;varying vec3 vWorldPos;void main(){vWorldPos=vec3(0.0,0.0,1.0);gl_Position=vec4(aPosition,0.0,1.0);}';
+ const reflectionMotionFs='precision highp float;varying vec3 vWorldPos;uniform float time;uniform float vehicleReflectionMotion;void main(){'+reflectionMotionSource+'gl_FragColor=vec4(0.5+distortion.x,0.5+distortion.y,0.0,1.0);}';
+ const reflectionMotionProgram=makeProgram(reflectionMotionVs,reflectionMotionFs,'Production speed-gated reflection ripple pixel fixture');
+ const reflectionMotionTarget=makeTarget(1,1);
+ must(reflectionMotionTarget.status===gl.FRAMEBUFFER_COMPLETE,'Reflection motion fixture framebuffer incomplete');
+ function reflectionMotionProbe(timeValue,motionValue){
+  gl.bindFramebuffer(gl.FRAMEBUFFER,reflectionMotionTarget.framebuffer);gl.viewport(0,0,1,1);
+  gl.disable(gl.DEPTH_TEST);gl.disable(gl.BLEND);gl.depthMask(false);gl.clearColor(0,0,0,0);gl.clear(gl.COLOR_BUFFER_BIT);
+  gl.useProgram(reflectionMotionProgram);
+  gl.uniform1f(location(reflectionMotionProgram,'time'),timeValue);
+  gl.uniform1f(location(reflectionMotionProgram,'vehicleReflectionMotion'),motionValue);
+  drawGeometry(reflectionMotionProgram,'aPosition',fullscreenVertices,gl.TRIANGLES);gl.finish();
+  const pixel=new Uint8Array(4);gl.readPixels(0,0,1,1,gl.RGBA,gl.UNSIGNED_BYTE,pixel);return Array.from(pixel);
+ }
+ const parkedReflectionPixelA=reflectionMotionProbe(.1,0),parkedReflectionPixelB=reflectionMotionProbe(2.1,0);
+ const movingReflectionPixelA=reflectionMotionProbe(.1,1),movingReflectionPixelB=reflectionMotionProbe(2.1,1);
+ const parkedReflectionTemporalDelta=parkedReflectionPixelA.slice(0,2).reduce((sum,value,index)=>sum+Math.abs(value-parkedReflectionPixelB[index]),0);
+ const movingReflectionTemporalDelta=movingReflectionPixelA.slice(0,2).reduce((sum,value,index)=>sum+Math.abs(value-movingReflectionPixelB[index]),0);
+ const vehicleReflectionMotionPixelFixturePass=parkedReflectionTemporalDelta===0&&movingReflectionTemporalDelta>=1&&movingReflectionTemporalDelta<=3;
+ gl.bindFramebuffer(gl.FRAMEBUFFER,null);gl.viewport(0,0,W,H);gl.depthMask(true);gl.enable(gl.DEPTH_TEST);
 gl.bindFramebuffer(gl.FRAMEBUFFER,null);gl.viewport(0,0,W,H);gl.depthMask(true);gl.enable(gl.DEPTH_TEST);
 
 // Test exact shared-edge vertices from the production continuous asphalt ribbon geometry.
@@ -767,7 +793,8 @@ const checks={
   vehicleReflectionTargetPreservesActiveFramebuffer:reflectionTargetPreservesActiveFramebuffer,
   vehicleReflectionCapturedPixelsReachAsphalt:vehicleReflectionEndToEndPixelFixturePass,
   vehicleReflectionCaptureIsNotBlendedMeshCopy:html.includes('gl.disable(gl.BLEND);gl.disable(gl.STENCIL_TEST)')&&html.includes('gl.uniform1f(loc.vehicleReflectionPass,1.0)')&&!html.includes('drawVehicleRoadReflection()'),
-  vehicleReflectionDistortsAndSoftensRoadImage:sources.mainFragment.includes('float waveA=sin(vWorldPos.z*0.92')&&sources.mainFragment.includes('blurStep.y*24.0')&&reflectionNineTapPixelFixturePass,
+  vehicleReflectionDistortsAndSoftensRoadImage:sources.mainFragment.includes('float motionAmount=clamp(vehicleReflectionMotion,0.0,1.0);')&&sources.mainFragment.includes('waveA*0.0010+waveB*0.00032')&&sources.mainFragment.includes('blurStep.y*24.0')&&reflectionNineTapPixelFixturePass,
+  vehicleReflectionIsStableWhenParkedAndSubtlyRipplesInMotion:vehicleReflectionMotionPixelFixturePass&&html.includes("vehicleReflectionMotion:gl.getUniformLocation(prog,'vehicleReflectionMotion')")&&html.includes('getVehicleSpeed()-2.0')&&html.includes('loc.vehicleReflectionMotion,garageMode?0.0:clamp('),
   vehicleReflectionPreservesLampMaterial:sources.mainFragment.includes('solidLamp=min(color.rgb*vec3(1.90,1.50,1.25)+vec3(0.03,0.06,0.15),vec3(1.35))'),
   asphaltEnvironmentReflectionReducedByHalf:sources.mainFragment.includes('clamp(0.06+roadFresnel*0.20,0.0,0.24)'),
   vehicleReflectionMixIsClearlyVisible:sources.mainFragment.includes('reflectionCoverage*0.90')&&sources.mainFragment.includes('vec4 reflectionClip=vehicleReflectionVP*vec4(vWorldPos.x,0.005,vWorldPos.z,1.0)'),
@@ -776,7 +803,7 @@ const checks={
   neonGridIsSingleColourEmitter:html.includes('grid:[.18,.84,1,1]')&&html.includes('gridPlane,0,-.245')&&!html.includes('C.grid2')&&neonGridEmissionPixelPass,
   neonGridUsesDerivativeFilteredGroundPlane:gridAAProgram&&html.includes('resolvedMaterialMode>11.5&&resolvedMaterialMode<12.5'),
   neonGridFarPatternIsStable:gridDerivativeFilterPixelFixturePass,
-  underbodyIsCalculatedRedAreaLight:underbodyAreaPixelFixturePass&&underbodyAreaHasSixteenGeometricSamples&&['underbodyLightCenter','underbodyLightRight','underbodyLightForward','underbodyLightDown','underbodyLightIntensity'].every(name=>sources.mainFragment.includes('uniform '+(name==='underbodyLightIntensity'?'float ':'vec3 ')+name))&&html.includes('calcUnderbodyAreaLight(roadN)')&&html.includes('underbodyLightIntensity,!garageMode&&!shadowPass&&!outlinePass&&!aoScenePass&&FX.underglow?9.0:0.0')&&!html.includes('underbodyGlowMesh')&&!html.includes('drawUnderbodyGlow'),
+  underbodyIsCalculatedRedAreaLight:underbodyAreaPixelFixturePass&&underbodyAreaHasSixteenGeometricSamples&&['underbodyLightCenter','underbodyLightRight','underbodyLightForward','underbodyLightDown','underbodyLightIntensity'].every(name=>sources.mainFragment.includes('uniform '+(name==='underbodyLightIntensity'?'float ':'vec3 ')+name))&&html.includes('calcUnderbodyAreaLight(roadN)')&&html.includes('underbodyLightIntensity,!garageMode&&!shadowPass&&!outlinePass&&!aoScenePass&&FX.underglow?30.0:0.0')&&!html.includes('underbodyGlowMesh')&&!html.includes('drawUnderbodyGlow'),
   underbodyHasNoFakeBlueGeometry:!html.includes('underbodyGlowMesh')&&!html.includes('drawUnderbodyGlow')&&!sources.mainFragment.includes('resolvedMaterialMode>10.5&&resolvedMaterialMode<11.5'),
   vehicleHeadlightReflectionPixelFramebufferComplete:headlightReflectionTarget.status===gl.FRAMEBUFFER_COMPLETE,
   vehicleHeadlightReflectionUsesProductionShaderFunction:sources.mainFragment.includes('float calcHeadlightReflection(float roughnessPower){')&&!!headlightReflectionProgram,
@@ -784,7 +811,7 @@ const checks={
   vehicleReflectionHasF4ToggleAndDefault:html.includes('data-fx="vehicleReflections" checked')&&html.includes('vehicleReflections:true'),
   vehicleReflectionReportsF3:html.includes('CAR REFLECTION TARGET')&&html.includes('vehicleReflectionTarget.width')&&html.includes('MIRROR CAPTURE READY')&&html.includes('lastVehicleRoadReflectionMeshCount'),
   surfaceReflectionDoesNotCaptureEmissiveMaterialEight:sources.mainFragment.includes('resolvedMaterialMode>7.5&&resolvedMaterialMode<8.5')&&html.includes('fixtureYaw,8'),
-  productionVersionVisibleEverywhere:html.includes('id="version-label">v0.19.36 · BUILD 202</div>')&&html.includes('3D NEON HIGHWAY // BUILD 202')&&html.includes('ENGINE STARTUP // v0.19.36 · BUILD 202'),
+  productionVersionVisibleEverywhere:html.includes('id="version-label">v0.19.37 · BUILD 203</div>')&&html.includes('3D NEON HIGHWAY // BUILD 203')&&html.includes('ENGINE STARTUP // v0.19.37 · BUILD 203'),
  roadInstancingProductionVertexCompiled:!!roadProbeV.shader,
  roadInstancingProbeProgramLinked:!!roadProbeP.program,
  roadInstancingAttributesArePresent:['attribute vec3 instancePosition;','attribute vec3 instanceScale;','attribute vec2 instanceYaw;','attribute vec4 instanceColor;','attribute float instanceHeadlight;','attribute float instanceMaterial;'].every(token=>sources.mainVertex.includes(token)),
@@ -919,7 +946,7 @@ const result={pass:true,version:version[1],build:version[2],checks,gridDerivativ
 window.__GAME_SHADER_RESULT__=result;
 report.className='pass';
 report.textContent='PASS\\n'+JSON.stringify(result,null,2);
-document.title='PASS DRIVELLA BUILD 202 derivative grid + 16-point area light + end-to-end mirror reflection';
+document.title='PASS DRIVELLA BUILD 203 derivative grid + 16-point area light + end-to-end mirror reflection';
 })().catch(error=>{
  const report=document.getElementById('report');
  report.className='fail';
