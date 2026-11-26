@@ -25,7 +25,7 @@ permissions:
   contents: write
 
 concurrency:
-  group: drivella-engine-foundation
+  group: drivella-engine-foundation-${{ github.event_name }}-${{ github.ref }}
   cancel-in-progress: true
 
 jobs:
