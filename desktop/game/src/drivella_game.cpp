@@ -7,6 +7,8 @@
 #include <algorithm>
 #include <atomic>
 #include <cctype>
+#include <cstdint>
+#include <utility>
 #include <cwctype>
 #include <filesystem>
 #include <fstream>
@@ -20,6 +22,7 @@
 #include "include/cef_display_handler.h"
 #include "include/cef_life_span_handler.h"
 #include "include/cef_load_handler.h"
+#include "include/cef_parser.h"
 #include "include/wrapper/cef_helpers.h"
 #pragma comment(lib, "ws2_32.lib")
 #pragma comment(lib, "shell32.lib")

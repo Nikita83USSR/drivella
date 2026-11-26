@@ -16,7 +16,7 @@ internal static class Program
 }
 
 internal sealed record GameFile(string path, string sha, long size);
-internal sealed record InstalledState(string treeSha, List<GameFile> files);
+internal sealed record InstalledState(string revision, List<GameFile> files);
 
 internal sealed class LauncherForm : Form
 {
@@ -93,14 +93,28 @@ internal sealed class LauncherForm : Form
     {
         try
         {
+            if (Process.GetProcessesByName("DrivellaGame").Any(p =>
+            {
+                try { return !p.HasExited; }
+                catch { return false; }
+            }))
+            {
+                MessageBox.Show(this,
+                    "Сначала закройте запущенную DRIVELLA. Обновлять файлы во время игры нельзя.",
+                    "DRIVELLA — игра запущена",
+                    MessageBoxButtons.OK, MessageBoxIcon.Information);
+                Close();
+                return;
+            }
+
             SetProgress("ПРОВЕРКА ОБНОВЛЕНИЙ", "Получаем список файлов игры...", 0);
             InstalledState? installed = ReadInstalledState();
             List<GameFile> remoteFiles;
-            string remoteTreeSha;
+            string remoteRevision;
 
             try
             {
-                (remoteTreeSha, remoteFiles) = await GetRemoteManifestAsync();
+                (remoteRevision, remoteFiles) = await GetRemoteManifestAsync();
             }
             catch (Exception ex)
             {
@@ -129,14 +143,14 @@ internal sealed class LauncherForm : Form
                 string localPath = SafePath(_current, remote.path);
                 return !localByPath.TryGetValue(remote.path, out var old) ||
                        !StringComparer.OrdinalIgnoreCase.Equals(old.sha, remote.sha) ||
-                       !File.Exists(localPath);
+                       !IsFileIntact(localPath, remote);
             }).ToList();
 
             bool firstInstall = !IsPlayableLocalCopy();
             if (firstInstall)
             {
                 SetProgress("ПЕРВАЯ УСТАНОВКА", "Загружаем файлы DRIVELLA...", 0);
-                await InstallUpdateAsync(remoteTreeSha, remoteFiles, changed, localByPath);
+                await InstallUpdateAsync(remoteRevision, remoteFiles, changed, localByPath);
                 LaunchGame();
                 return;
             }
@@ -160,7 +174,7 @@ internal sealed class LauncherForm : Form
             if (confirm == DialogResult.Yes)
             {
                 SetProgress("ОБНОВЛЕНИЕ ИГРЫ", "Загружаем изменённые файлы...", 0);
-                await InstallUpdateAsync(remoteTreeSha, remoteFiles, changed, localByPath);
+                await InstallUpdateAsync(remoteRevision, remoteFiles, changed, localByPath);
             }
             else
             {
@@ -191,19 +205,29 @@ internal sealed class LauncherForm : Form
         }
     }
 
-    private async Task<(string treeSha, List<GameFile> files)> GetRemoteManifestAsync()
+    private async Task<(string revision, List<GameFile> files)> GetRemoteManifestAsync()
     {
-        string url = $"https://api.github.com/repos/{Repo}/git/trees/{Branch}?recursive=1";
-        using var response = await Http.GetAsync(url, HttpCompletionOption.ResponseHeadersRead);
-        response.EnsureSuccessStatusCode();
-        await using var stream = await response.Content.ReadAsStreamAsync();
-        using var json = await JsonDocument.ParseAsync(stream);
-        var root = json.RootElement;
+        // Resolve main once and pin every file download to this exact commit.
+        string commitUrl = $"https://api.github.com/repos/{Repo}/commits/{Branch}";
+        using var commitResponse = await Http.GetAsync(commitUrl, HttpCompletionOption.ResponseHeadersRead);
+        commitResponse.EnsureSuccessStatusCode();
+        await using var commitStream = await commitResponse.Content.ReadAsStreamAsync();
+        using var commitJson = await JsonDocument.ParseAsync(commitStream);
+        var commitRoot = commitJson.RootElement;
+        string revision = commitRoot.GetProperty("sha").GetString()
+                          ?? throw new InvalidDataException("GitHub не вернул SHA коммита.");
+        string treeSha = commitRoot.GetProperty("commit").GetProperty("tree").GetProperty("sha").GetString()
+                         ?? throw new InvalidDataException("В коммите GitHub нет SHA дерева.");
+
+        string treeUrl = $"https://api.github.com/repos/{Repo}/git/trees/{treeSha}?recursive=1";
+        using var treeResponse = await Http.GetAsync(treeUrl, HttpCompletionOption.ResponseHeadersRead);
+        treeResponse.EnsureSuccessStatusCode();
+        await using var treeStream = await treeResponse.Content.ReadAsStreamAsync();
+        using var treeJson = await JsonDocument.ParseAsync(treeStream);
+        var root = treeJson.RootElement;
         if (root.TryGetProperty("truncated", out var truncated) && truncated.GetBoolean())
             throw new InvalidDataException("GitHub вернул неполный список файлов.");
 
-        string treeSha = root.GetProperty("sha").GetString()
-                         ?? throw new InvalidDataException("В ответе GitHub нет SHA дерева.");
         var files = new List<GameFile>();
         foreach (var item in root.GetProperty("tree").EnumerateArray())
         {
@@ -219,7 +243,7 @@ internal sealed class LauncherForm : Form
 
         if (!files.Any(x => x.path == "index.html") || files.Count < 2)
             throw new InvalidDataException("В GitHub не найден полный комплект файлов игры.");
-        return (treeSha, files);
+        return (revision, files);
     }
 
     private InstalledState? ReadInstalledState()
@@ -250,7 +274,7 @@ internal sealed class LauncherForm : Form
     }
 
     private async Task InstallUpdateAsync(
-        string treeSha,
+        string revision,
         List<GameFile> remoteFiles,
         List<GameFile> changed,
         Dictionary<string, GameFile> localByPath)
@@ -273,14 +297,14 @@ internal sealed class LauncherForm : Form
 
                 if (localByPath.TryGetValue(file.path, out var old) &&
                     StringComparer.OrdinalIgnoreCase.Equals(old.sha, file.sha) &&
-                    File.Exists(oldPath))
+                    IsFileIntact(oldPath, file))
                 {
                     File.Copy(oldPath, destination, true);
                     continue;
                 }
 
                 string escaped = string.Join("/", file.path.Split('/').Select(Uri.EscapeDataString));
-                string url = $"https://raw.githubusercontent.com/{Repo}/{Branch}/{escaped}";
+                string url = $"https://raw.githubusercontent.com/{Repo}/{revision}/{escaped}";
                 using var response = await Http.GetAsync(url, HttpCompletionOption.ResponseHeadersRead);
                 response.EnsureSuccessStatusCode();
                 await using var input = await response.Content.ReadAsStreamAsync();
@@ -303,7 +327,7 @@ internal sealed class LauncherForm : Form
                 changedDone++;
             }
 
-            var state = new InstalledState(treeSha, remoteFiles);
+            var state = new InstalledState(revision, remoteFiles);
             await File.WriteAllTextAsync(
                 Path.Combine(staging, ".drivella-manifest.json"),
                 JsonSerializer.Serialize(state, new JsonSerializerOptions { WriteIndented = true }),
@@ -339,6 +363,18 @@ internal sealed class LauncherForm : Form
         }
     }
 
+    private static bool IsFileIntact(string path, GameFile expected)
+    {
+        try
+        {
+            var info = new FileInfo(path);
+            if (!info.Exists || info.Length != expected.size) return false;
+            return StringComparer.OrdinalIgnoreCase.Equals(
+                GitBlobSha1(path, info.Length), expected.sha);
+        }
+        catch { return false; }
+    }
+
     private static string GitBlobSha1(byte[] bytes)
     {
         byte[] header = Encoding.ASCII.GetBytes("blob " + bytes.Length + "\0");
@@ -346,6 +382,18 @@ internal sealed class LauncherForm : Form
         Buffer.BlockCopy(header, 0, payload, 0, header.Length);
         Buffer.BlockCopy(bytes, 0, payload, header.Length, bytes.Length);
         return Convert.ToHexString(SHA1.HashData(payload)).ToLowerInvariant();
+    }
+
+    private static string GitBlobSha1(string path, long size)
+    {
+        using var hash = IncrementalHash.CreateHash(HashAlgorithmName.SHA1);
+        hash.AppendData(Encoding.ASCII.GetBytes("blob " + size + "\0"));
+        using var stream = File.OpenRead(path);
+        byte[] buffer = new byte[128 * 1024];
+        int read;
+        while ((read = stream.Read(buffer, 0, buffer.Length)) > 0)
+            hash.AppendData(buffer, 0, read);
+        return Convert.ToHexString(hash.GetHashAndReset()).ToLowerInvariant();
     }
 
     private static string SafePath(string root, string relative)

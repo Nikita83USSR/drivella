@@ -30,7 +30,7 @@ jobs:
           $url = "https://cef-builds.spotifycdn.com/$env:CEF_ARCHIVE"
           Invoke-WebRequest -Uri $url -OutFile "$env:RUNNER_TEMP\cef.tar.bz2"
           tar -xjf "$env:RUNNER_TEMP\cef.tar.bz2" -C "$env:RUNNER_TEMP"
-          $cef = Get-ChildItem "$env:RUNNER_TEMP" -Directory -Filter "cef_binary_*_windows64" | Select-Object -First 1
+          $cef = Get-ChildItem "$env:RUNNER_TEMP" -Directory -Filter "cef_binary_*_windows64_minimal" | Select-Object -First 1
           if (-not $cef) { throw "CEF extraction failed" }
           "CEF_ROOT=$($cef.FullName)" | Out-File -FilePath $env:GITHUB_ENV -Append
           Write-Host "Using CEF at $($cef.FullName)"
@@ -66,10 +66,5 @@ jobs:
           path: out/installer/DRIVELLA-Setup.exe
           if-no-files-found: error
           retention-days: 14
-      - name: Publish GitHub release
-        if: startsWith(github.ref, 'refs/tags/desktop-v')
-        uses: softprops/action-gh-release@v2
-        with:
-          name: DRIVELLA Windows ${{ github.ref_name }}
-          generate_release_notes: true
-          files: out/installer/DRIVELLA-Setup.exe
+      # Public releases are intentionally disabled for the unsandboxed GPU prototype.
+      # Enable release publishing only after the CEF bootstrap sandbox and binary signing are integrated.
