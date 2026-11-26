@@ -2,6 +2,7 @@ import assert from "node:assert/strict";
 import { SpatialChunkManager } from "../engine-lab/src/SpatialChunkManager.mjs";
 import { terrainChunkHeightRange, terrainChunkLayer, terrainHeight } from "../engine-lab/src/TerrainField.mjs";
 import { BIOME_IDS, generateBiomePlacements, sampleBiome } from "../engine-lab/src/BiomeField.mjs";
+import { buildRoadChunkGeometry, generateMainRoadSamples, getRoadStats, nearestRoadSurfaceHeight } from "../engine-lab/src/RoadNetwork.mjs";
 
 const disposed = [];
 const manager = new SpatialChunkManager({
@@ -95,5 +96,33 @@ assert.deepEqual(seedsA, seedsB, "the same XYZ world coordinates must always pro
 manager.dispose();
 deterministicA.dispose();
 deterministicB.dispose();
+
+const roadSamplesA = generateMainRoadSamples();
+const roadSamplesB = generateMainRoadSamples();
+assert.deepEqual(roadSamplesA, roadSamplesB, "the main road spline must be deterministic");
+assert.ok(roadSamplesA.length > 500, "the route must have enough samples for smooth bends");
+assert.ok(Math.abs(roadSamplesA[0].x) < 0.001 && Math.abs(roadSamplesA[0].z) < 0.001,
+  "the start/finish point must cross the central garage area");
+const roadStats = getRoadStats(roadSamplesA);
+assert.ok(roadStats.length > 1200 && roadStats.length < 4000, "main route length must be a coherent closed circuit");
+assert.ok(roadStats.maxGrade < 0.8, "road grade spikes should remain bounded");
+assert.ok(roadStats.chunkKeys.length >= 8, "the circuit must traverse several world chunks");
+assert.ok(Math.abs(nearestRoadSurfaceHeight(0, 0, roadSamplesA) - 1.05) < 0.001,
+  "road start/finish elevation must remain 1.05 m above central terrain");
+let roadSegments = 0;
+let roadVertices = 0;
+for (const key of roadStats.chunkKeys) {
+  const [x, z] = key.split(":").map(Number);
+  const y = terrainChunkLayer(x, z, 128);
+  const chunkGeometry = buildRoadChunkGeometry(roadSamplesA, x, y, z, 128);
+  roadSegments += chunkGeometry.segmentCount;
+  roadVertices += chunkGeometry.positions.length / 3;
+  assert.ok(chunkGeometry.indices.length > 0, `route chunk ${key} should contain road geometry`);
+  assert.ok(chunkGeometry.positions.every(Number.isFinite), `road chunk ${key} has invalid geometry`);
+}
+assert.ok(roadSegments > roadSamplesA.length * 0.9, "road chunks should cover nearly every spline segment");
+assert.ok(roadVertices > 10000, "road mesh should contain actual asphalt, shoulders and markings");
+
+console.log("ROAD NETWORK TEST PASS", JSON.stringify({ ...roadStats, roadSegments, roadVertices }));
 
 console.log("SPATIAL CHUNK TEST PASS", JSON.stringify(initial));
