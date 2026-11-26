@@ -955,3 +955,32 @@ The blue emissive underside mesh is removed. The replacement is not a visible su
 The reflection capture now explicitly selects the main production program after binding its framebuffer, before setting capture uniforms or submitting the stored vehicle meshes. The road sampler uses nine taps: a central image, a compact horizontal cross, and increasingly spread vertical taps along the road projection direction. This intentionally produces a longitudinal wet-road reflection streak, so the opaque body and lamp image can extend outside the actual vehicle silhouette that hides the road directly beneath the car. The original mirror view-projection, depth-tested capture, world-space waves and road blend remain. F3 displays whether the texture capture is READY or WAITING.
 
 The BUILD 201 regression compiles the production vertex and fragment shaders, checks distance-driven grid width growth for both instanced and fallback draws, pixel-tests the red area-light source at the centre, edge and outside its range, verifies nine production reflection samples and explicit FBO program binding, and retains all earlier asphalt, lamp, shadow, road-seam and vehicle fixtures. CI uses Chromium SwiftShader; visual quality and frame time on the user's GTX 1650 remain a separate in-game check.
+
+
+
+## BUILD 202 — Correct capture lifetime, stable procedural grid and rectangular underside light
+
+### Planar vehicle reflection capture lifetime
+
+The vehicle mirror uses a one-frame collection/capture pipeline. The main world pass resets the capture list, enables collection, and draws the opaque vehicle. The next main world pass captures that list into the half-resolution mirror target, then starts collecting the vehicle for the next frame. The separate outline/SSAO draws also call `drawWorld()`, but must neither clear the saved list nor become collection passes. The BUILD 201 second reset before Countach rendering violated this lifetime and made the next capture receive zero meshes after the outline pass. BUILD 202 removes that reset and leaves the single reset inside the guarded main pass.
+
+Target allocation must preserve the currently active GL framebuffer. It is often invoked during the main world pass while Scene Bloom has redirected rendering to its colour target. The mirror target allocator now saves/restores framebuffer, texture and renderbuffer bindings around its allocation and completeness check instead of unconditionally binding the default framebuffer.
+
+The mirror capture remains an opaque depth-tested render of the vehicle through the reflected view-projection matrix. The road samples that image projectively through the same mirror VP. A new GPU fixture rasterizes real geometry into a mirror texture and evaluates the exact production asphalt sampling block at a corresponding road location; the assertion is based on the resulting non-background pixel, not merely on source strings or matrix arithmetic. The live game smoke test checks the actual F3 mesh count and capture READY state.
+
+### Derivative-filtered procedural road grid
+
+The world grid is now a single flat ground-aligned mesh using material mode 12. Its fragment shader evaluates 10 m minor lines and 50 m major lines in world coordinates. The WebGL 1 `OES_standard_derivatives` extension supplies `fwidth(coordinate)`; a smooth pixel-footprint transition filters the line edge, then blends to the exact thin-line area coverage as the projected cell frequency becomes sub-pixel. The grid does not enlarge thin box geometry with camera distance, and it does not add a render target or post-processing pass. A shader fallback without derivatives retains a basic smooth edge.
+
+### Red rectangular underbody area-light approximation
+
+The previous five-point approximation is replaced with a uniform 4 × 4 sample lattice over vehicle-local X/Z coordinates. The sampled rectangle is about 1.92 m × 4.50 m; each sample has weight 1/16. A smooth rectangular footprint suppresses light outside the underside, while the source and receiver cosine terms and distance attenuation determine the direct red contribution to the road material. The calculation is performed only for the road receiver shader; it creates no visible disk, quad or underside mesh. It is a numerical real-time area-light approximation without area-light shadow visibility.
+
+### BUILD 202 regression requirements
+
+- Compile the production GLSL with the derivative extension and pixel-test far grid stability under a world-phase shift.
+- Pixel-test the area-light core, side edge, front edge, side/front exterior and distant background.
+- Verify the reflection collection reset occurs exactly once within the main world pass, and that mirror-target allocation restores the active framebuffer.
+- Rasterize an opaque vehicle triangle into an FBO, then test that the exact production road sampling block returns a visible reflected pixel.
+- Launch the actual game page and require F3 to report a READY mirror target and a non-zero vehicle mesh count after the outline pass.
+- Keep target-GPU visual and performance validation separate from Chromium SwiftShader CI.
