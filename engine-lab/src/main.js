@@ -155,6 +155,7 @@ function createSpatialReference(scene, worldRadius) {
 }
 
 function createEnvironment(scene) {
+  const worldRadius = 420;
   const skyLight = new HemisphericLight("sky-fill", new Vector3(0, 1, 0), scene);
   skyLight.intensity = 0.74;
   skyLight.groundColor = new Color3(0.035, 0.055, 0.1);
@@ -188,7 +189,6 @@ function createEnvironment(scene) {
 
   const terrainMeshes = new Map();
   const terrainBodies = new Map();
-  const worldRadius = 420;
   const chunkManager = new SpatialChunkManager({
     chunkSize: 128,
     radius: worldRadius,
