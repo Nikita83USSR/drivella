@@ -392,3 +392,12 @@ The cyan road grid no longer consists of perspective sub-pixel box lines whose w
 The red underbody contribution is an asphalt receiver calculation, not a visible glowing object. A 4 × 4 set of uniformly weighted samples integrates a rectangular source approximately 1.92 m wide by 4.50 m long in vehicle-local space. The light is evaluated only within a softly bounded footprint; source-facing and receiver-facing cosine terms and distance attenuation determine its contribution to material-9 asphalt. This is a real-time numerical area-light approximation, not a ray-traced or shadowmapped area light.
 
 BUILD 202 adds three focused GPU checks: a far-grid phase-shift stability comparison, red-light probes at the centre/edge/front and just outside the footprint, and an end-to-end planar mirror test that rasterizes vehicle geometry into a texture then samples it with the exact production road-projection shader block. The browser smoke test also launches the production game and requires a READY mirror capture with a non-zero vehicle mesh count after the outline pass. CI still uses Chromium SwiftShader; visual acceptance and frame-time measurement on the GTX 1650 remain the final in-game check. Version `v0.19.36` / BUILD 202.
+
+
+### BUILD 213 — Full-rate road mirror and expanded frame/GPU diagnostics
+
+The low-FPS alternate-frame throttle for the live car-to-asphalt reflection is removed. The measured mirror GPU pass on the RTX 1650 was about 0.15 ms, so cutting the capture cadence in half was an unnecessary source of visible reflection judder. Race reflections now update every rendered frame; F3 reports the actual successful capture interval and count.
+
+F3 now keeps a rolling 240-sample requestAnimationFrame interval window and reports median, 95th percentile, maximum, and frame-jank counts above 25/40/55 ms. This is measured from raw animation-frame timestamps before the simulation's 33 ms timestep clamp, so it can reveal a 60 Hz half-refresh cadence rather than hiding it behind the physics timestep. CPU and GPU timing now show Scene Bloom separately from the generic post pass.
+
+The expanded diagnostics also report the WebGL renderer/vendor when available, context capabilities and relevant extensions, viewport/DPR, allocated render-target dimensions, and an estimated texture/renderbuffer memory footprint. This is a diagnostic estimate rather than a driver-reported VRAM allocation. Version v0.19.47 / BUILD 213.

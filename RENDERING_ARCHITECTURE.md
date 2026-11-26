@@ -994,3 +994,12 @@ The previous five-point approximation is replaced with a uniform 4 × 4 sample l
 - Rasterize an opaque vehicle triangle into an FBO, then test that the exact production road sampling block returns a visible reflected pixel.
 - Launch the actual game page and require F3 to report a READY mirror target and a non-zero vehicle mesh count after the outline pass.
 - Keep target-GPU visual and performance validation separate from Chromium SwiftShader CI.
+
+
+### BUILD 213 — Frame pacing, render-target telemetry and full-rate asphalt reflection
+
+Race-scene planar vehicle reflection capture now runs every rendered frame. The previous adaptive rule switched to every second frame below 62 FPS and therefore reduced a 30 FPS scene to a 15 Hz reflection update. The measured GPU query for the mirror pass on the RTX 1650 was approximately 0.15 ms, too small to justify that visible cadence loss. F3 reports successful capture count and smoothed capture interval.
+
+The F3 profiler records raw requestAnimationFrame intervals in a 240-sample rolling window, before the simulation timestep clamp. It reports P50/P95/max intervals and counts above 25/40/55 ms, making half-refresh pacing and missed-frame spikes distinguishable. CPU and GPU Scene Bloom timings are separated from the generic post pass.
+
+Target telemetry lists allocated scene, outline, AO, mirror, shadow, Scene Bloom, Sun Bloom and God Rays target dimensions with an estimated backing-store footprint. The estimate counts RGBA8 textures and DEPTH_COMPONENT16 renderbuffers where present; it excludes driver alignment, internal tiling, transient allocations and browser compositor surfaces. The panel also reports the unmasked WebGL renderer when the browser permits it, selected WebGL limits, extensions, viewport and DPR. Version v0.19.47 / BUILD 213.

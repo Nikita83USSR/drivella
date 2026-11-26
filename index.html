@@ -122,9 +122,9 @@
 <body>
 <canvas id="scene"></canvas><canvas id="sun"></canvas>
 <div id="hud">
- <div class="top"><div class="logo">DRIVELLA<small>3D SYNTHWAVE DRIFT RACING</small></div><div class="version-label" id="version-label">v0.19.46 · BUILD 212</div><div class="stat">DISTANCE<b id="distance">000.0 KM</b></div><div class="stat">LOCATION<b>VIOLET COAST</b></div></div>
+ <div class="top"><div class="logo">DRIVELLA<small>3D SYNTHWAVE DRIFT RACING</small></div><div class="version-label" id="version-label">v0.19.47 · BUILD 213</div><div class="stat">DISTANCE<b id="distance">000.0 KM</b></div><div class="stat">LOCATION<b>VIOLET COAST</b></div></div>
  <div class="right"><div id="speed">000 <span>KM/H</span></div><div id="direction">▶ FORWARD</div><div id="music">♫ MUSIC SCANNING…</div></div>
- <div class="bottom"><div class="hint"><strong>W / ↑</strong> ACCELERATE　<strong>S / ↓</strong> BRAKE / REVERSE<br><strong>A / ←　D / →</strong> STEER　<strong>SPACE</strong> HANDBRAKE　<strong>C</strong> CAMERA　<strong>HOLD + DRAG LMB</strong> LOOK　<strong>L</strong> LIGHTS　<strong>K</strong> WIREFRAME</div><div class="build-credit"><span>3D NEON HIGHWAY // BUILD 212</span><a class="asset-credit" href="https://sketchfab.com/3d-models/low-poly-lamborghini-countach-c9b28a4ad5c74649a09afa613dd3fae1" target="_blank" rel="noopener noreferrer">Original model: 3DShinobi · Sketchfab · CC BY · modified for DRIVELLA</a></div></div>
+ <div class="bottom"><div class="hint"><strong>W / ↑</strong> ACCELERATE　<strong>S / ↓</strong> BRAKE / REVERSE<br><strong>A / ←　D / →</strong> STEER　<strong>SPACE</strong> HANDBRAKE　<strong>C</strong> CAMERA　<strong>HOLD + DRAG LMB</strong> LOOK　<strong>L</strong> LIGHTS　<strong>K</strong> WIREFRAME</div><div class="build-credit"><span>3D NEON HIGHWAY // BUILD 213</span><a class="asset-credit" href="https://sketchfab.com/3d-models/low-poly-lamborghini-countach-c9b28a4ad5c74649a09afa613dd3fae1" target="_blank" rel="noopener noreferrer">Original model: 3DShinobi · Sketchfab · CC BY · modified for DRIVELLA</a></div></div>
 </div>
 <div id="fps-counter" aria-live="off">FPS --</div>
 <div id="effects-menu" aria-hidden="true">
@@ -170,7 +170,7 @@
 </div>
 <div id="tools-ui"><button id="cam-prev" aria-label="Previous camera">◀</button><span id="cam-label">CAM 2 · CLOSE</span><button id="cam-next" aria-label="Next camera">▶</button><button id="debug-toggle">DEBUG</button></div>
 <div id="debug-panel"><div class="debug-head"><div class="debug-title">DRIVELLA DIAGNOSTICS</div><button id="debug-copy" type="button" aria-label="Скопировать всю диагностику">КОПИРОВАТЬ</button></div><div id="debug-data">Initializing…</div></div>
-<div id="boot-screen"><div class="boot-content"><div class="boot-kicker">NIGHT DRIVE SYSTEMS // INITIALIZING</div><div class="boot-logo">DRIVELLA</div><div class="boot-subtitle">3D SYNTHWAVE DRIFT RACING</div><div class="boot-mark"></div><div class="boot-status" id="boot-status">BUILDING THE 3D WORLD</div><div class="boot-track"><div class="boot-progress" id="boot-progress"></div></div><div class="boot-meta"><span>3D ENGINE ONLINE</span><span id="boot-percent">00%</span></div><div class="boot-footer">ENGINE STARTUP // v0.19.46 · BUILD 212</div></div></div>
+<div id="boot-screen"><div class="boot-content"><div class="boot-kicker">NIGHT DRIVE SYSTEMS // INITIALIZING</div><div class="boot-logo">DRIVELLA</div><div class="boot-subtitle">3D SYNTHWAVE DRIFT RACING</div><div class="boot-mark"></div><div class="boot-status" id="boot-status">BUILDING THE 3D WORLD</div><div class="boot-track"><div class="boot-progress" id="boot-progress"></div></div><div class="boot-meta"><span>3D ENGINE ONLINE</span><span id="boot-percent">00%</span></div><div class="boot-footer">ENGINE STARTUP // v0.19.47 · BUILD 213</div></div></div>
 <div id="main-menu"><div class="menu-content"><div class="menu-brand">DRIVELLA GTS</div><div class="menu-sub">RIDE THE RETRO FUTURE</div><div class="menu-actions"><button class="menu-btn" id="menu-start">СТАРТ</button><button class="menu-btn" id="menu-garage">ГАРАЖ</button><button class="menu-btn" id="menu-options">НАСТРОЙКИ</button></div></div><div class="menu-footer">РАЗРАБОТЧИК — <b>НИКИТА МАРКИН</b></div></div>
 <div id="garage-screen"><div class="garage-head">ГАРАЖ // DRIVELLA GTS</div><div class="garage-copy">DRIVELLA GTS · SHOWROOM LAB<br>ТРИ COUNTACH ДЛЯ СРАВНЕНИЯ МАТЕРИАЛОВ И СВЕТА<br>ДОМА · ПАЛЬМЫ · SUN / BLOOM / GOD RAYS</div><div class="garage-controls"><button id="garage-back">← НАЗАД В МЕНЮ</button></div><div class="garage-tip">ЗАЖМИ И ТЯНИ — ВРАЩАЙ ВСЮ СЦЕНУ<br>КОЛЁСИКО — МАСШТАБ · F4 — ЭФФЕКТЫ · F3 — ДИАГНОСТИКА</div></div>
 <div id="options-screen"><div class="options-head">ОПЦИИ</div><div class="options-card"><div class="option-row"><span>МУЗЫКА</span><button id="option-music">ВКЛЮЧЕНА</button></div><div class="option-row"><span>ГРОМКОСТЬ</span><input id="option-volume" type="range" min="0" max="100" value="52"></div><div class="option-row"><span>ЗВУК ДВИГАТЕЛЯ</span><button id="option-sfx">ВКЛЮЧЁН</button></div><div class="option-row"><span>КАМЕРА</span><span>КЛАВИШИ 1–4</span></div><button id="options-back" style="width:100%;margin-top:18px">← НАЗАД В МЕНЮ</button></div></div>
@@ -189,7 +189,7 @@
 <script>
 (()=>{
 'use strict';
-const VERSION='v0.19.46',BUILD='212';
+const VERSION='v0.19.47',BUILD='213';
 const canvas=document.getElementById('scene'),gl=canvas.getContext('webgl',{antialias:true,alpha:true}),sun=document.getElementById('sun'),sctx=sun.getContext('2d');
 const $=id=>document.getElementById(id);
 let countachModel=null,countachModelReady=false;
@@ -1745,8 +1745,43 @@ const SUN_BLOOM_PROFILES={
 let sunBloomQuality='performance';
 const gpuTimerExt=gl.getExtension('EXT_disjoint_timer_query');
 const gpuTimerQueue=[];let gpuTimerActive=null,gpuTimerPollAt=0;
-const gpuPassMs={shadow:null,world:null,mirror:null,post:null};
-const cpuPassMs={shadow:0,world:0,mirror:0,post:0,frame:0};
+const gpuPassMs={shadow:null,world:null,mirror:null,sceneBloom:null,post:null};
+const cpuPassMs={update:0,shadow:0,world:0,mirror:0,sceneBloom:0,post:0,frame:0};
+const FRAME_INTERVAL_CAPACITY=240,frameIntervalSamples=new Float32Array(FRAME_INTERVAL_CAPACITY);
+let frameIntervalWrite=0,frameIntervalCount=0,lastRafTimestamp=0;
+let vehicleReflectionCaptureCount=0,lastVehicleReflectionCaptureAt=0,vehicleReflectionCaptureIntervalMs=0;
+function recordRafInterval(timestamp){
+ if(lastRafTimestamp>0){const interval=timestamp-lastRafTimestamp;if(Number.isFinite(interval)&&interval>0&&interval<1000){frameIntervalSamples[frameIntervalWrite]=interval;frameIntervalWrite=(frameIntervalWrite+1)%FRAME_INTERVAL_CAPACITY;frameIntervalCount=Math.min(FRAME_INTERVAL_CAPACITY,frameIntervalCount+1);}}
+ lastRafTimestamp=timestamp;
+}
+function getFramePacingStats(){
+ if(!frameIntervalCount)return{p50:0,p95:0,max:0,avg:0,over25:0,over40:0,over55:0,hint:'COLLECTING'};
+ const values=Array.from(frameIntervalSamples.slice(0,frameIntervalCount)).sort((a,b)=>a-b);
+ const percentile=p=>values[Math.min(values.length-1,Math.max(0,Math.ceil(values.length*p)-1))];
+ const p50=percentile(.50),p95=percentile(.95),max=values[values.length-1],avg=values.reduce((sum,v)=>sum+v,0)/values.length;
+ const cadence=p50>31&&p50<36?'~30 Hz · POSSIBLE 60 Hz HALF-RATE':p50>15&&p50<18.5?'~60 Hz':p50>12&&p50<14.5?'~75 Hz':p50>7.5&&p50<9.5?'~120 Hz':p50>6&&p50<7.5?'~144–165 Hz':'VARIABLE / UNCAPPED';
+ return{p50,p95,max,avg,over25:values.filter(v=>v>25).length,over40:values.filter(v=>v>40).length,over55:values.filter(v=>v>55).length,hint:cadence};
+}
+const gpuDebugExtension=gl.getExtension('WEBGL_debug_renderer_info');
+const gpuRendererName=(()=>{try{return gpuDebugExtension?String(gl.getParameter(gpuDebugExtension.UNMASKED_RENDERER_WEBGL)):String(gl.getParameter(gl.RENDERER));}catch(_){return String(gl.getParameter(gl.RENDERER)||'UNKNOWN');}})();
+const gpuVendorName=(()=>{try{return gpuDebugExtension?String(gl.getParameter(gpuDebugExtension.UNMASKED_VENDOR_WEBGL)):String(gl.getParameter(gl.VENDOR));}catch(_){return String(gl.getParameter(gl.VENDOR)||'UNKNOWN');}})();
+const gpuCapabilities={maxTexture:gl.getParameter(gl.MAX_TEXTURE_SIZE),textureUnits:gl.getParameter(gl.MAX_TEXTURE_IMAGE_UNITS),vertexAttribs:gl.getParameter(gl.MAX_VERTEX_ATTRIBS),varyingVectors:gl.getParameter(gl.MAX_VARYING_VECTORS),antialias:!!(gl.getContextAttributes()&&gl.getContextAttributes().antialias),depth:!!(gl.getContextAttributes()&&gl.getContextAttributes().depth)};
+function getRenderTargetDiagnostics(){
+ let bytes=0;const sizes=[];
+ const add=(name,target,bytesPerPixel=4)=>{
+  if(!target||!target.texture)return;
+  const width=target.width||target.size||0,height=target.height||target.size||0;
+  if(!width||!height)return;
+  bytes+=width*height*bytesPerPixel;sizes.push(name+':'+width+'x'+height);
+ };
+ add('SCENE',sceneColorTarget,6);add('OUTLINE',outlineTarget,6);add('AO',aoTarget,6);
+ add('MIRROR',vehicleReflectionTarget,6);add('SHADOW',shadowTarget,6);add('VEH-SHADOW',vehicleShadowTarget,6);
+ localShadowTargets.forEach((target,i)=>add('LOCAL'+i,target,6));
+ if(sceneBloomTargets)for(const [name,target] of Object.entries(sceneBloomTargets))if(target&&target.texture)add('SCENE-BLOOM-'+name,target,4);
+ if(sunBloomTargets)for(const [name,target] of Object.entries(sunBloomTargets))if(target&&target.texture)add('SUN-BLOOM-'+name,target,4);
+ add('GOD-RAYS',godRaysTarget,4);
+ return{mb:bytes/(1024*1024),sizes};
+}
 function beginGpuPass(label){if(!debugVisible||!gpuTimerExt||gpuTimerActive||gpuTimerQueue.length>=12)return;const query=gpuTimerExt.createQueryEXT();if(!query)return;gpuTimerExt.beginQueryEXT(gpuTimerExt.TIME_ELAPSED_EXT,query);gpuTimerActive={label,query};}
 function endGpuPass(){if(!gpuTimerExt||!gpuTimerActive)return;gpuTimerExt.endQueryEXT(gpuTimerExt.TIME_ELAPSED_EXT);gpuTimerQueue.push(gpuTimerActive);gpuTimerActive=null;}
 function pollGpuPassTimes(){if(!gpuTimerExt||performance.now()<gpuTimerPollAt)return;gpuTimerPollAt=performance.now()+250;const disjoint=gl.getParameter(gpuTimerExt.GPU_DISJOINT_EXT);for(let i=gpuTimerQueue.length-1;i>=0;i--){const item=gpuTimerQueue[i];if(!gpuTimerExt.getQueryObjectEXT(item.query,gpuTimerExt.QUERY_RESULT_AVAILABLE_EXT))continue;const ns=gpuTimerExt.getQueryObjectEXT(item.query,gpuTimerExt.QUERY_RESULT_EXT);if(!disjoint&&Number.isFinite(ns)&&ns>=0){const ms=ns/1e6,old=gpuPassMs[item.label];gpuPassMs[item.label]=old===null?ms:old*.65+ms*.35;}gpuTimerExt.deleteQueryEXT(item.query);gpuTimerQueue.splice(i,1);}}
@@ -1983,6 +2018,11 @@ function renderTimedVehicleReflectionCapture(vp,currentVehiclePose,planeY){
  const profiling=debugVisible,profileGpu=profiling&&gpuTimerExt&&gpuTimerActive&&gpuTimerActive.label==='world',cpuStart=profiling?performance.now():0;
  if(profileGpu){endGpuPass();beginGpuPass('mirror');}
  const result=renderVehicleReflectionCapture(vp,currentVehiclePose,planeY);
+ if(result){
+  const capturedAt=performance.now();
+  if(lastVehicleReflectionCaptureAt>0){const interval=capturedAt-lastVehicleReflectionCaptureAt;vehicleReflectionCaptureIntervalMs=vehicleReflectionCaptureIntervalMs>0?vehicleReflectionCaptureIntervalMs*.65+interval*.35:interval;}
+  lastVehicleReflectionCaptureAt=capturedAt;vehicleReflectionCaptureCount++;
+ }
  if(profileGpu){endGpuPass();beginGpuPass('world');}
  if(profiling)cpuPassMs.mirror=performance.now()-cpuStart;
  return result;
@@ -2294,11 +2334,9 @@ function drawWorld(){
  const vp=shadowPass&&shadowVP?shadowVP:matMul(perspective(cam.fov*Math.PI/180,W/H,.1,650),lookAt(cam.x,cam.y,cam.z,cam.tx,cam.ty,cam.tz));
  const heading=garageMode?0:carYaw,roll=garageMode?0:bodyRoll,vehicleFrame=matMul(translate(carX,0,carZ),matMul(rotateY(heading),rotateZ(roll)));
  if(!shadowPass&&!outlinePass&&!aoScenePass&&!garageMode){
-  if(fps>0){if(fps<62)vehicleReflectionAdaptiveThrottle=true;else if(fps>70)vehicleReflectionAdaptiveThrottle=false;}
+  vehicleReflectionAdaptiveThrottle=false;
   vehicleReflectionFrameIndex++;
-  const reflectionCaptureDue=!vehicleReflectionAdaptiveThrottle||(vehicleReflectionFrameIndex%2===0)||!vehicleReflectionReady;
-  if(reflectionCaptureDue)renderTimedVehicleReflectionCapture(vp,vehicleFrame,.005);
-  else if(debugVisible)cpuPassMs.mirror=0;
+  renderTimedVehicleReflectionCapture(vp,vehicleFrame,.005);
   vehicleRoadReflectionCount=0;
   vehicleRoadReflectionCapture=FX.vehicleReflections&&!wireframeMode;
   vehicleRoadReflectionPose=vehicleFrame.slice();
@@ -2757,13 +2795,29 @@ function updateDebug(dt){
  if(fpsElapsed>=.5){fps=fpsFrames/fpsElapsed;fpsFrames=0;fpsTime=fpsNow;const meter=$('fps-counter');if(meter){meter.textContent='FPS '+Math.round(fps);meter.style.color=fps>=55?'#8fffff':fps>=35?'#ffdf82':'#ff8d9d';}}
  if(debugVisible&&performance.now()-debugTime>160){
   debugTime=performance.now();
+  const pacing=getFramePacingStats(),targets=getRenderTargetDiagnostics();
+  const gpuKeys=['shadow','world','mirror','sceneBloom','post'],gpuKnown=gpuKeys.filter(k=>gpuPassMs[k]!==null);
+  const gpuSum=gpuKnown.length?gpuKnown.reduce((sum,k)=>sum+gpuPassMs[k],0):null;
+  const gpuText=gpuTimerExt?gpuKeys.map(k=>gpuPassMs[k]===null?'--':gpuPassMs[k].toFixed(2)).join(' / ')+' ms':'TIMER UNSUPPORTED';
+  const captureInterval=vehicleReflectionCaptureIntervalMs>0?vehicleReflectionCaptureIntervalMs.toFixed(1)+' ms':'COLLECTING';
+  const targetDetails=targets.sizes.length?targets.sizes.join(' · '):'ALLOCATING';
+  const dpr=(devicePixelRatio||1).toFixed(2),rafHz=pacing.p50>0?(1000/pacing.p50).toFixed(1):'--';
   $('debug-data').innerHTML=
    '<strong>VERSION</strong> '+VERSION+' / BUILD '+BUILD+'<br>'+
-   '<strong>MUSIC FILES</strong> '+foundTracks.length+' FOUND · '+(musicPending?'WAITING':'READY')+'<br>'+
-   '<strong>FPS</strong> '+fps.toFixed(1)+'<br>'+
-   '<strong>CPU FRAME / SHADOW / WORLD / MIRROR / POST</strong> '+cpuPassMs.frame.toFixed(2)+' / '+cpuPassMs.shadow.toFixed(2)+' / '+cpuPassMs.world.toFixed(2)+' / '+cpuPassMs.mirror.toFixed(2)+' / '+cpuPassMs.post.toFixed(2)+' ms<br>'+
-   '<strong>GPU SHADOW / WORLD / MIRROR / POST</strong> '+(gpuTimerExt?['shadow','world','mirror','post'].map(k=>gpuPassMs[k]===null?'--':gpuPassMs[k].toFixed(2)).join(' / ')+' ms':'TIMER UNSUPPORTED')+'<br>'+
-   '<strong>SCENE</strong> '+(garageMode?'GARAGE':'ROAD')+'<br>'+
+   '<strong>FPS / RAF MEDIAN</strong> '+fps.toFixed(1)+' / '+rafHz+' Hz<br>'+
+   '<strong>FRAME PACING P50 / P95 / MAX</strong> '+(pacing.p50?pacing.p50.toFixed(2):'--')+' / '+(pacing.p95?pacing.p95.toFixed(2):'--')+' / '+(pacing.max?pacing.max.toFixed(2):'--')+' ms · '+pacing.hint+'<br>'+
+   '<strong>FRAME JANK &gt;25 / &gt;40 / &gt;55</strong> '+pacing.over25+' / '+pacing.over40+' / '+pacing.over55+' OF '+frameIntervalCount+' SAMPLES<br>'+
+   '<strong>CPU FRAME / UPDATE / SHADOW / WORLD / MIRROR / BLOOM / POST</strong> '+[cpuPassMs.frame,cpuPassMs.update,cpuPassMs.shadow,cpuPassMs.world,cpuPassMs.mirror,cpuPassMs.sceneBloom,cpuPassMs.post].map(v=>v.toFixed(2)).join(' / ')+' ms<br>'+
+   '<strong>GPU SHADOW / WORLD / MIRROR / BLOOM / POST</strong> '+gpuText+'<br>'+
+   '<strong>GPU SUM / RAF P50</strong> '+(gpuSum===null?'--':gpuSum.toFixed(2)+' ms')+' / '+(pacing.p50?pacing.p50.toFixed(2):'--')+' ms<br>'+
+   '<strong>DEVICE / VIEWPORT / DPR</strong> '+innerWidth+'x'+innerHeight+' / '+canvas.width+'x'+canvas.height+' / '+dpr+' · '+(document.visibilityState||'VISIBLE').toUpperCase()+'<br>'+
+   '<strong>GPU</strong> '+gpuVendorName.slice(0,32)+' · '+gpuRendererName.slice(0,76)+'<br>'+
+   '<strong>WEBGL CAPS</strong> TEX '+gpuCapabilities.maxTexture+' · UNITS '+gpuCapabilities.textureUnits+' · ATTR '+gpuCapabilities.vertexAttribs+' · VARY '+gpuCapabilities.varyingVectors+' · AA '+(gpuCapabilities.antialias?'ON':'OFF')+'<br>'+
+   '<strong>EXTENSIONS</strong> INSTANCING '+(instancingExt?'YES':'NO')+' · DERIVATIVES '+(standardDerivativesExt?'YES':'NO')+' · GPU TIMER '+(gpuTimerExt?'YES':'NO')+'<br>'+
+   '<strong>RENDER TARGET MEMORY EST.</strong> '+targets.mb.toFixed(1)+' MiB · '+targets.sizes.length+' TARGETS<br>'+
+   '<strong>TARGETS</strong> '+targetDetails+'<br>'+
+   '<strong>SHADOW MAPS</strong> MAIN '+(shadowTarget?shadowTarget.size+'²':'OFF')+' · VEHICLE '+(vehicleShadowTarget?vehicleShadowTarget.size+'²':'OFF')+' · LOCAL '+localShadowTargets.filter(Boolean).length+' / 2<br>'+
+   '<strong>SCENE</strong> '+(garageMode?'GARAGE':'ROAD')+' · DRAW CALLS '+drawCalls+'<br>'+
    '<strong>GARAGE TURNTABLE</strong> '+(garageMode?'2 REPLICAS ROTATING · 0.11 RAD/S':'OFF')+'<br>'+
    '<strong>GARAGE LIGHTS</strong> '+(garageMode?lastGarageLocalLightCount+' SOURCES · '+lastGarageHeadlightSources+' HEADLIGHTS · '+lastGarageUnderbodySources+' UNDERGLOW':'OFF')+'<br>'+
    '<strong>GARAGE MIRROR</strong> '+(garageMode?(vehicleReflectionReady?'READY · '+lastVehicleRoadReflectionMeshCount+' MESHES · 3 PLINTHS':'WAITING FOR CAPTURE'):'OFF')+'<br>'+
@@ -2772,23 +2826,21 @@ function updateDebug(dt){
    '<strong>ATMOSPHERE / GRADE</strong> '+(FX.atmosphere?'ON · DEPTH HAZE':'OFF')+'<br>'+
    '<strong>PAINT / ROAD REFLECTIONS</strong> '+(FX.paintReflections?'PAINT ON':'PAINT OFF')+' / '+(FX.roadReflections?'ROAD ON':'ROAD OFF')+'<br>'+
    '<strong>CAR / HEADLIGHT MIRROR</strong> '+(FX.vehicleReflections?'ON · '+lastVehicleRoadReflectionMeshCount+' MESHES':'OFF')+'<br>'+
-   '<strong>CAR REFLECTION RATE</strong> '+(garageMode?'FULL RATE · SHOWROOM':vehicleReflectionAdaptiveThrottle?'AUTO · EVERY 2ND FRAME':'FULL RATE · EVERY FRAME')+'<br>'+
+   '<strong>CAR REFLECTION TARGET</strong> '+(vehicleReflectionTarget?vehicleReflectionTarget.width+' × '+vehicleReflectionTarget.height:'UNAVAILABLE')+' · '+(FX.vehicleReflections?(vehicleReflectionReady?'MIRROR CAPTURE READY':'CAPTURE WAITING'):'OFF')+' · '+lastVehicleRoadReflectionMeshCount+' MESHES<br>'+
+   '<strong>CAR REFLECTION RATE</strong> '+(garageMode?'FULL RATE · SHOWROOM':FX.vehicleReflections?'FULL RATE · EVERY FRAME':'OFF')+' · '+captureInterval+' · '+vehicleReflectionCaptureCount+' CAPTURES<br>'+
    '<strong>GOD RAYS</strong> '+(FX.sunGodRays&&gpuSunReady?'ON · 25% RES':'OFF')+'<br>'+
    '<strong>GPU LENS OPTICS</strong> '+(FX.lensFlares?(lensOpticsReady?'ON · '+lastLensOpticsSources+' SOURCES / '+lastLensOpticsQuads+' QUADS':'UNAVAILABLE'):'OFF')+'<br>'+
    '<strong>HEADLIGHT LENS GLOW (H)</strong> '+(headlightLightingEnabled?'ON':'OFF')+'<br>'+
-    '<strong>TRACK LOCAL LIGHTS</strong> '+(!garageMode&&FX.trackLights?'ON · 4 POINT SOURCES':'OFF')+'<br>'+
-   '<strong>MOUSE LOOK</strong> '+(mouseLookActive?'ACTIVE':'AUTO')+' · '+mouseLookYaw.toFixed(2)+' / '+mouseLookPitch.toFixed(2)+'<br>'+
+   '<strong>TRACK LOCAL LIGHTS</strong> '+(!garageMode&&FX.trackLights?'ON · 4 POINT SOURCES':'OFF')+'<br>'+
+   '<strong>UNDERBODY AREA LIGHT</strong> '+(FX.underglow?'ON · 4x4 / 16 SAMPLES PER ROAD PIXEL':'OFF')+'<br>'+
    '<strong>POP-UP DEPLOY</strong> '+Math.round(headlightDeploy*100)+'%<br>'+
-   '<strong>DRAW CALLS</strong> '+drawCalls+'<br>'+
    '<strong>ROAD GPU BATCH</strong> '+lastRoadBatchCount+' BATCH / '+lastRoadInstanceCount+' INSTANCES + '+lastRoadSurfaceSegments+' SURFACE SEGMENTS · '+lastRoadInstancingMode+'<br>'+
-   '<strong>CAR REFLECTION TARGET</strong> '+(vehicleReflectionTarget?vehicleReflectionTarget.width+' × '+vehicleReflectionTarget.height:'UNAVAILABLE')+' · '+(FX.vehicleReflections?(vehicleReflectionReady?'MIRROR CAPTURE READY':'CAPTURE WAITING'):'OFF')+' · '+lastVehicleRoadReflectionMeshCount+' MESHES<br>'+
-   '<strong>NEON GRID / UNDERBODY</strong> '+(FX.underglow?'DERIVATIVE-FILTERED GRID · RED 16-POINT AREA LIGHT':'UNDERBODY OFF')+' · '+(FX.sceneBloom?'SCENE BLOOM':'NO BLOOM')+'<br>'+
    '<strong>BIOME GPU BATCH</strong> '+lastBiomeBatchCount+' BATCHES / '+lastBiomeInstanceCount+' INSTANCES<br>'+
-    '<strong>SHOWROOM GPU BATCH</strong> '+lastGarageBatchCount+' BATCHES / '+lastGarageInstanceCount+' INSTANCES<br>'+ 
+   '<strong>SHOWROOM GPU BATCH</strong> '+lastGarageBatchCount+' BATCHES / '+lastGarageInstanceCount+' INSTANCES<br>'+
    '<strong>CAMERA</strong> '+(cameraMode+1)+' / 4 — '+CAMERA_NAMES[cameraMode]+'<br>'+
    '<strong>SPEED</strong> '+getVehicleSpeed().toFixed(1)+' km/h<br>'+
-    '<strong>DRIFT STATE / SLIP / YAW</strong> '+['GRIP','INIT','DRIFT','RECOVERY'][driftState]+' / '+(Math.atan2(lateralVelocity,Math.max(2,Math.abs(speed)/3.6))*180/Math.PI).toFixed(1)+'° / '+(yawRate*180/Math.PI).toFixed(0)+'°/s<br>'+
-    '<strong>VELOCITY LONG / LAT</strong> '+(speed/3.6).toFixed(1)+' / '+lateralVelocity.toFixed(1)+' m/s<br>'+
+   '<strong>DRIFT STATE / SLIP / YAW</strong> '+['GRIP','INIT','DRIFT','RECOVERY'][driftState]+' / '+(Math.atan2(lateralVelocity,Math.max(2,Math.abs(speed)/3.6))*180/Math.PI).toFixed(1)+'° / '+(yawRate*180/Math.PI).toFixed(0)+'°/s<br>'+
+   '<strong>VELOCITY LONG / LAT</strong> '+(speed/3.6).toFixed(1)+' / '+lateralVelocity.toFixed(1)+' m/s<br>'+
    '<strong>WORLD Z</strong> '+distance.toFixed(2)+'<br>'+
    '<strong>STEER / X / ROLL</strong> '+steer.toFixed(2)+' / '+playerX.toFixed(2)+' / '+bodyRoll.toFixed(3)+'<br>'+
    '<strong>WEBGL</strong> '+(gl.getParameter(gl.VERSION)||'OK')+'<br>'+
@@ -2796,6 +2848,7 @@ function updateDebug(dt){
  }
 }
 function frame(now){
+ recordRafInterval(now);
  const frameCpuStart=performance.now();
  const dt=Math.min(.033,(now-last)/1000);last=now;if(garageMode)garageDisplaySpin=(garageDisplaySpin+dt*.11)%(Math.PI*2);
  if(mouseLookReturning&&!mouseLookActive){const settle=Math.exp(-dt*17);mouseLookYaw*=settle;mouseLookPitch*=settle;if(Math.abs(mouseLookYaw)<.004&&Math.abs(mouseLookPitch)<.004){mouseLookYaw=0;mouseLookPitch=0;mouseLookReturning=false;}}
@@ -2947,14 +3000,14 @@ function frame(now){
   brakeLight*=Math.pow(.88,dt*60);
  }
 
+ cpuPassMs.update=performance.now()-frameCpuStart;
  let passCpuStart=performance.now();beginGpuPass('shadow');renderShadowMap();endGpuPass();cpuPassMs.shadow=performance.now()-passCpuStart;
  const sceneBloomCapture=!!(FX.sceneBloom&&ensureSceneColorTarget());
  if(sceneBloomCapture){gl.bindFramebuffer(gl.FRAMEBUFFER,sceneColorTarget.framebuffer);gl.viewport(0,0,canvas.width,canvas.height);}
  else{gl.bindFramebuffer(gl.FRAMEBUFFER,null);gl.viewport(0,0,canvas.width,canvas.height);}
  passCpuStart=performance.now();beginGpuPass('world');drawWorld();endGpuPass();cpuPassMs.world=Math.max(0,performance.now()-passCpuStart-cpuPassMs.mirror);
- passCpuStart=performance.now();beginGpuPass('post');
- if(sceneBloomCapture)renderThresholdedSceneBloom();
- renderCarOutlines();drawSun();renderVehicleLensFlaresGPU();endGpuPass();cpuPassMs.post=performance.now()-passCpuStart;
+ passCpuStart=performance.now();beginGpuPass('sceneBloom');if(sceneBloomCapture)renderThresholdedSceneBloom();endGpuPass();cpuPassMs.sceneBloom=performance.now()-passCpuStart;
+ passCpuStart=performance.now();beginGpuPass('post');renderCarOutlines();drawSun();renderVehicleLensFlaresGPU();endGpuPass();cpuPassMs.post=performance.now()-passCpuStart;
  updateDebug(dt);
  updateCarAudio();
  $('speed').innerHTML=String(Math.round(getVehicleSpeed())).padStart(3,'0')+' <span>KM/H</span>';

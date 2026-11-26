@@ -27,7 +27,7 @@ const response=await fetch('../index.html',{cache:'no-store'});
 must(response.ok,'Cannot fetch production index.html: HTTP '+response.status);
 const html=await response.text();
 const version=html.match(/const VERSION='([^']+)',BUILD='([^']+)'/);
-must(version&&version[1]==='v0.19.46'&&version[2]==='212','Unexpected production version marker: '+JSON.stringify(version));
+must(version&&version[1]==='v0.19.47'&&version[2]==='213','Unexpected production version marker: '+JSON.stringify(version));
 function expression(name,endMarker){
  const marker='const '+name+'=';
  const start=html.indexOf(marker);
@@ -686,7 +686,7 @@ const underbodyAreaHasSixteenGeometricSamples=underbodyAreaFunctions.includes('f
 gl.bindFramebuffer(gl.FRAMEBUFFER,null);gl.viewport(0,0,W,H);gl.depthMask(true);gl.enable(gl.DEPTH_TEST);
 
 // Confirm the vehicle reflection capture explicitly activates the production program and now spreads its reflected image along the road.
-const reflectionCaptureStart=html.indexOf('function renderVehicleReflectionCapture(vp,currentVehiclePose){');
+const reflectionCaptureStart=html.indexOf('function renderVehicleReflectionCapture(vp,currentVehiclePose,planeY=.005){');
 const reflectionCaptureEnd=html.indexOf('\nfunction bindMesh(',reflectionCaptureStart);
 must(reflectionCaptureStart>=0&&reflectionCaptureEnd>reflectionCaptureStart,'Production vehicle reflection capture function missing');
 const reflectionCaptureSource=html.slice(reflectionCaptureStart,reflectionCaptureEnd);
@@ -881,11 +881,11 @@ const checks={
   garageProjectorLocalLightProducesBeamOnlyInsideCone:garageProjectorLocalLightPixelFixturePass,
   vehicleReflectionHasF4ToggleAndDefault:html.includes('data-fx="vehicleReflections" checked')&&html.includes('vehicleReflections:true'),
   vehicleReflectionReportsF3:html.includes('CAR REFLECTION TARGET')&&html.includes('vehicleReflectionTarget.width')&&html.includes('MIRROR CAPTURE READY')&&html.includes('lastVehicleRoadReflectionMeshCount'),
-  vehicleReflectionUsesAdaptiveLowFpsCadence:html.includes('vehicleReflectionAdaptiveThrottle')&&html.includes('fps<62')&&html.includes('fps>70')&&html.includes('vehicleReflectionFrameIndex%2===0')&&html.includes('CAR REFLECTION RATE'),
+  vehicleReflectionCapturesEveryRaceFrame:html.includes('renderTimedVehicleReflectionCapture(vp,vehicleFrame,.005)')&&!html.includes('vehicleReflectionFrameIndex%2===0')&&html.includes('FULL RATE · EVERY FRAME'),
   asphaltEnvironmentReflectionSkipsWorkWhenDisabled:sources.mainFragment.includes('if(roadReflectionEnabled>0.5){vec3 roadReflected=evalSynthwaveEnvironment(reflect(-roadV,roadN),0.82)'),
   asphaltVehicleMirrorSkipsTextureReadsWhenUnavailable:sources.mainFragment.includes('if(vehicleReflectionEnabled>0.5&&reflectionInFrame>0.5){')&&sources.mainFragment.includes('blurStep.y*24.0'),
   surfaceReflectionDoesNotCaptureEmissiveMaterialEight:sources.mainFragment.includes('resolvedMaterialMode>7.5&&resolvedMaterialMode<8.5')&&html.includes('fixtureYaw,8'),
-  productionVersionVisibleEverywhere:html.includes('id="version-label">v0.19.46 · BUILD 212</div>')&&html.includes('3D NEON HIGHWAY // BUILD 212')&&html.includes('ENGINE STARTUP // v0.19.46 · BUILD 212'),
+  productionVersionVisibleEverywhere:html.includes('id="version-label">v0.19.47 · BUILD 213</div>')&&html.includes('3D NEON HIGHWAY // BUILD 213')&&html.includes('ENGINE STARTUP // v0.19.47 · BUILD 213'),
  roadInstancingProductionVertexCompiled:!!roadProbeV.shader,
  roadInstancingProbeProgramLinked:!!roadProbeP.program,
  roadInstancingAttributesArePresent:['attribute vec3 instancePosition;','attribute vec3 instanceScale;','attribute vec2 instanceYaw;','attribute vec4 instanceColor;','attribute float instanceHeadlight;','attribute float instanceMaterial;'].every(token=>sources.mainVertex.includes(token)),
@@ -1018,6 +1018,11 @@ const checks={
  vehicleSelfShadowCastersRestored:html.includes('drawCarMesh(m.bodyPaint,carX,carZ,C.body,yaw,PAINT_MATERIAL,false,true)')&&html.includes('bindMesh(shape,model,color,1,material,false,true)'),
  selfShadowF4DescriptionFixed:!html.includes('ОТЛОЖЕНО: доработка контура и артефактов'),
  garageMirrorReceiver:showroomReflectionPixelFixturePass&&html.includes('vehicleReflectionPlaneY')&&html.includes('GARAGE_REFLECTION_PLANE_Y=-.034'),
+  framePacingDiagnosticsUseRawAnimationFrameTimestamps:html.includes('recordRafInterval(now)')&&html.includes('getFramePacingStats()')&&html.includes('FRAME PACING P50 / P95 / MAX')&&html.includes('FRAME JANK &gt;25 / &gt;40 / &gt;55'),
+  rendererDiagnosticsExposeGpuAndTargetCaps:html.includes('gpuRendererName')&&html.includes('gpuCapabilities.maxTexture')&&html.includes('getRenderTargetDiagnostics()')&&html.includes('RENDER TARGET MEMORY EST.')&&html.includes('TARGETS</strong>'),
+  rendererDiagnosticsSplitSceneBloomCpuGpuTime:html.includes("beginGpuPass('sceneBloom')")&&html.includes('cpuPassMs.sceneBloom')&&html.includes('gpuPassMs={shadow:null,world:null,mirror:null,sceneBloom:null,post:null}'),
+  rendererDiagnosticsReportActualMirrorCadence:html.includes('vehicleReflectionCaptureIntervalMs')&&html.includes('vehicleReflectionCaptureCount')&&html.includes('CAPTURES'),
+  rendererDiagnosticsIdentifyUnderbodySampleLoad:html.includes('4x4 / 16 SAMPLES PER ROAD PIXEL'),
  ...pixelTests
 };
 must(Object.values(checks).every(Boolean),'One or more production checks failed: '+JSON.stringify(Object.entries(checks).filter(([,ok])=>!ok).map(([name])=>name)));
