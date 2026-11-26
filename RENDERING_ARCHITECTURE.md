@@ -9,7 +9,7 @@ This document records the rendering decisions that future vehicle, environment, 
 
 ## BUILD 219 — 360° environment coverage and continuous road curbs
 
-The active asphalt window now extends 180 m behind and 230 m ahead of the car. A single widened ground/grid region and symmetric city/coast generation keep scenery present when the camera is turned to the sides or rear. Repeated far windows and secondary palm details use a distance-based LOD; near geometry retains the authored details. Road and biome seeds are fixed so the same environment can be reproduced during regression.
+The active asphalt window now extends 180 m behind and 230 m ahead of the car. A single widened ground/grid region, symmetric city/coast generation and an eight-segment low-poly ridge ring keep scenery present when the camera is turned to the sides or rear. Repeated far windows and secondary palm details use a distance-based LOD; near geometry retains the authored details. Road and biome seeds are fixed so the same environment can be reproduced during regression.
 
 The road surface, lane marks, roadside posts, track-light sources and continuous left/right curbs share one horizontal road tangent/normal. The curbs are a single dynamic mesh with a trapezoidal raised profile, equal lateral clearance, a unified cyan material and shared vertices at adjacent segments. The dynamic asphalt and curb buffers update once per car position and are reused by the visible, directional-shadow and scene/AO passes. Directional shadow focus follows the active camera's look direction so the world remains consistently lit during rear/side inspection. Vehicle physics and wheel placement are intentionally unchanged; wheel/suspension adaptation and vertical road elevation are separate later stages.
 

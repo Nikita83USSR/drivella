@@ -98,7 +98,7 @@ try {
   await gamePage.locator('#debug-toggle').click();
   await gamePage.waitForFunction(() => {
     const value = document.getElementById('debug-data')?.innerText || '';
-    return value.includes('CAR REFLECTION TARGET') && value.includes('MESHES') && value.includes('TRACK WORLD') && value.includes('ROAD CURBS');
+    return value.includes('CAR REFLECTION TARGET') && value.includes('MESHES') && value.includes('TRACK WORLD') && value.includes('ROAD CURBS') && value.includes('WORLD PANORAMA');
   }, null, { timeout: 45000 });
   await gamePage.waitForFunction(() => {
     const value = document.getElementById('debug-data')?.innerText || '';
@@ -108,11 +108,12 @@ try {
   await gamePage.context().grantPermissions(['clipboard-read', 'clipboard-write']);
   await gamePage.locator('#debug-copy').click();
   const copiedDiagnostics = await gamePage.evaluate(() => navigator.clipboard.readText());
-  assert(copiedDiagnostics.includes('CAR REFLECTION RATE') && copiedDiagnostics.includes('FRAME PACING P50 / P95 / MAX') && copiedDiagnostics.includes('RENDER TARGET MEMORY EST.') && copiedDiagnostics.includes('CPU FRAME / UPDATE / SHADOW / WORLD / MIRROR / BLOOM / POST') && copiedDiagnostics.includes('GPU SHADOW / WORLD / MIRROR / BLOOM / POST') && copiedDiagnostics.includes('TRACK WORLD') && copiedDiagnostics.includes('ROAD CURBS'), 'F3 copy button did not copy complete renderer/environment diagnostics: ' + copiedDiagnostics);
+  assert(copiedDiagnostics.includes('CAR REFLECTION RATE') && copiedDiagnostics.includes('FRAME PACING P50 / P95 / MAX') && copiedDiagnostics.includes('RENDER TARGET MEMORY EST.') && copiedDiagnostics.includes('CPU FRAME / UPDATE / SHADOW / WORLD / MIRROR / BLOOM / POST') && copiedDiagnostics.includes('GPU SHADOW / WORLD / MIRROR / BLOOM / POST') && copiedDiagnostics.includes('TRACK WORLD') && copiedDiagnostics.includes('ROAD CURBS') && copiedDiagnostics.includes('WORLD PANORAMA'), 'F3 copy button did not copy complete renderer/environment diagnostics: ' + copiedDiagnostics);
   assert((await gamePage.locator('#debug-copy').innerText()) === 'СКОПИРОВАНО', 'F3 copy button did not show its success state');
   const liveReflectionDiagnostics = await gamePage.locator('#debug-data').innerText();
   assert(/MIRROR CAPTURE READY/.test(liveReflectionDiagnostics), 'Live game did not produce a READY planar vehicle reflection: ' + liveReflectionDiagnostics);
   assert(/ROAD CURBS.*CONTINUOUS CYAN · BOTH SIDES · 164 SEGMENTS/.test(liveReflectionDiagnostics), 'Live road curb diagnostics are incomplete: ' + liveReflectionDiagnostics);
+  assert(/WORLD PANORAMA.*8 LOW-POLY RIDGE SEGMENTS/.test(liveReflectionDiagnostics), '360-degree ridge horizon is missing from live diagnostics: ' + liveReflectionDiagnostics);
   const viewCanvas=gamePage.locator('#scene'),viewBox=await viewCanvas.boundingBox();
   assert(viewBox,'Main scene canvas has no visible bounds');
   const lookX=viewBox.x+viewBox.width*.5,lookY=viewBox.y+viewBox.height*.52;
