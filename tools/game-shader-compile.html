@@ -14,7 +14,7 @@ canvas{display:block;width:100%;height:auto;border:1px solid #58eaff55;margin:14
 </style>
 </head>
 <body><main>
-<h1>DRIVELLA // BUILD 207 HALF-AMPLITUDE MIRROR RIPPLE + SOFT UNDERGLOW EDGE + PRODUCTION GLSL</h1>
+<h1>DRIVELLA // BUILD 208 HALF-AMPLITUDE MIRROR RIPPLE + SOFT UNDERGLOW EDGE + PRODUCTION GLSL</h1>
 <canvas id="gl" width="960" height="540"></canvas>
 <pre id="report">Extracting production shaders…</pre>
 </main>
@@ -27,7 +27,7 @@ const response=await fetch('../index.html',{cache:'no-store'});
 must(response.ok,'Cannot fetch production index.html: HTTP '+response.status);
 const html=await response.text();
 const version=html.match(/const VERSION='([^']+)',BUILD='([^']+)'/);
-must(version&&version[1]==='v0.19.41'&&version[2]==='207','Unexpected production version marker: '+JSON.stringify(version));
+must(version&&version[1]==='v0.19.42'&&version[2]==='208','Unexpected production version marker: '+JSON.stringify(version));
 function expression(name,endMarker){
  const marker='const '+name+'=';
  const start=html.indexOf(marker);
@@ -795,6 +795,33 @@ const headlightReflectionFarPixel=headlightReflectionProbe(150);
 const headlightReflectionPixelFixturePass=headlightReflectionNearPixel[0]>16&&headlightReflectionFarPixel[0]<3;
 gl.bindFramebuffer(gl.FRAMEBUFFER,null);gl.viewport(0,0,W,H);gl.depthMask(true);gl.enable(gl.DEPTH_TEST);
 
+
+const localLightFunctionStart=sources.mainFragment.indexOf('vec3 evalLocalLight(');
+const localLightFunctionEnd=sources.mainFragment.indexOf('vec3 calcLocalLighting',localLightFunctionStart);
+must(localLightFunctionStart>=0&&localLightFunctionEnd>localLightFunctionStart,'Production local-light evaluator is missing');
+const localLightFunction=sources.mainFragment.slice(localLightFunctionStart,localLightFunctionEnd);
+const garageProjectorLightVs='attribute vec2 aPosition;uniform vec3 uWorldPos;varying vec3 vWorldPos;void main(){vWorldPos=uWorldPos;gl_Position=vec4(aPosition,0.0,1.0);}';
+const garageProjectorLightFs='precision highp float;varying vec3 vWorldPos;uniform vec4 uPositionRange;uniform vec4 uColorPower;uniform vec4 uDirectionCone;'+localLightFunction+'void main(){vec3 lit=evalLocalLight(vec3(0.0,1.0,0.0),vec3(0.0,1.0,0.0),vec3(.12,.12,.13),18.0,uPositionRange,uColorPower,uDirectionCone,1.0);gl_FragColor=vec4(lit,1.0);}';
+const garageProjectorLightProgram=makeProgram(garageProjectorLightVs,garageProjectorLightFs,'Production showroom projector cone light');
+const garageProjectorLightTarget=makeTarget(1,1);
+must(garageProjectorLightTarget.status===gl.FRAMEBUFFER_COMPLETE,'Showroom projector light framebuffer incomplete');
+function garageProjectorLightProbe(worldPosition,power){
+ gl.bindFramebuffer(gl.FRAMEBUFFER,garageProjectorLightTarget.framebuffer);gl.viewport(0,0,1,1);
+ gl.disable(gl.DEPTH_TEST);gl.disable(gl.BLEND);gl.depthMask(false);gl.clearColor(0,0,0,0);gl.clear(gl.COLOR_BUFFER_BIT);
+ gl.useProgram(garageProjectorLightProgram);
+ gl.uniform3f(location(garageProjectorLightProgram,'uWorldPos'),worldPosition[0],worldPosition[1],worldPosition[2]);
+ gl.uniform4f(location(garageProjectorLightProgram,'uPositionRange'),0,.62,2.7,42);
+ gl.uniform4f(location(garageProjectorLightProgram,'uColorPower'),.78,.90,1.0,power);
+ gl.uniform4f(location(garageProjectorLightProgram,'uDirectionCone'),0,-.164,.986,.78);
+ drawGeometry(garageProjectorLightProgram,'aPosition',fullscreenVertices,gl.TRIANGLES);gl.finish();
+ const pixel=new Uint8Array(4);gl.readPixels(0,0,1,1,gl.RGBA,gl.UNSIGNED_BYTE,pixel);return Array.from(pixel);
+}
+const garageProjectorLightNearPixel=garageProjectorLightProbe([0,-.06,6.8],14.0);
+const garageProjectorLightOffPixel=garageProjectorLightProbe([0,-.06,6.8],0.0);
+const garageProjectorLightBehindPixel=garageProjectorLightProbe([0,-.06,-2.0],14.0);
+const garageProjectorLocalLightPixelFixturePass=garageProjectorLightNearPixel[0]>5&&garageProjectorLightOffPixel[0]<3&&garageProjectorLightBehindPixel[0]<3;
+gl.bindFramebuffer(gl.FRAMEBUFFER,null);gl.viewport(0,0,W,H);gl.depthMask(true);gl.enable(gl.DEPTH_TEST);
+
 const checks={
   surfaceReflectionEnvironmentFramebufferComplete:surfaceReflectionTarget.status===gl.FRAMEBUFFER_COMPLETE,
   surfaceReflectionEnvironmentUsesProductionFunction:sources.mainFragment.includes('vec3 evalSynthwaveEnvironment(')&&!!surfaceReflectionProgram,
@@ -829,10 +856,12 @@ const checks={
   vehicleHeadlightReflectionPixelFramebufferComplete:headlightReflectionTarget.status===gl.FRAMEBUFFER_COMPLETE,
   vehicleHeadlightReflectionUsesProductionShaderFunction:sources.mainFragment.includes('float calcHeadlightReflection(float roughnessPower){')&&!!headlightReflectionProgram,
   vehicleHeadlightReflectionAppearsInsideBeamAndRange:headlightReflectionPixelFixturePass,
+  garageProjectorLocalLightFramebufferComplete:garageProjectorLightTarget.status===gl.FRAMEBUFFER_COMPLETE,
+  garageProjectorLocalLightProducesBeamOnlyInsideCone:garageProjectorLocalLightPixelFixturePass,
   vehicleReflectionHasF4ToggleAndDefault:html.includes('data-fx="vehicleReflections" checked')&&html.includes('vehicleReflections:true'),
   vehicleReflectionReportsF3:html.includes('CAR REFLECTION TARGET')&&html.includes('vehicleReflectionTarget.width')&&html.includes('MIRROR CAPTURE READY')&&html.includes('lastVehicleRoadReflectionMeshCount'),
   surfaceReflectionDoesNotCaptureEmissiveMaterialEight:sources.mainFragment.includes('resolvedMaterialMode>7.5&&resolvedMaterialMode<8.5')&&html.includes('fixtureYaw,8'),
-  productionVersionVisibleEverywhere:html.includes('id="version-label">v0.19.41 · BUILD 207</div>')&&html.includes('3D NEON HIGHWAY // BUILD 207')&&html.includes('ENGINE STARTUP // v0.19.41 · BUILD 207'),
+  productionVersionVisibleEverywhere:html.includes('id="version-label">v0.19.42 · BUILD 208</div>')&&html.includes('3D NEON HIGHWAY // BUILD 208')&&html.includes('ENGINE STARTUP // v0.19.42 · BUILD 208'),
  roadInstancingProductionVertexCompiled:!!roadProbeV.shader,
  roadInstancingProbeProgramLinked:!!roadProbeP.program,
  roadInstancingAttributesArePresent:['attribute vec3 instancePosition;','attribute vec3 instanceScale;','attribute vec2 instanceYaw;','attribute vec4 instanceColor;','attribute float instanceHeadlight;','attribute float instanceMaterial;'].every(token=>sources.mainVertex.includes(token)),
@@ -855,7 +884,7 @@ const checks={
   trackLocalLightsPixelFixtureFramebufferComplete:trackLightProbeTarget.status===gl.FRAMEBUFFER_COMPLETE,
   trackLocalLightsPixelFixtureUsesProductionPointLightFunction:sources.mainFragment.includes('vec3 evalLocalLight(')&&!!trackLightProbeProgram,
   trackLocalLightsPointLightContributesOnlyInsideRange:trackLocalLightPixelFixturePass,
-  trackLocalLightsUseFourExistingShaderSlots:html.includes('const LOCAL_LIGHT_CAPACITY=4')&&html.includes('const TRACK_LOCAL_LIGHTS=[')&&html.includes('updateTrackLocalLights():[]'),
+  trackLocalLightsUseTwelveSharedShaderSlots:html.includes('const LOCAL_LIGHT_CAPACITY=12')&&html.includes('const TRACK_LOCAL_LIGHTS=[')&&html.includes('updateTrackLocalLights():[]')&&sources.mainFragment.includes('localLightPosRange[11]'),
   trackLocalLightsAttachToRoadsidePosts:html.includes('TRACK_LOCAL_LIGHTS[0].position[0]=roadA-9')&&html.includes('TRACK_LOCAL_LIGHTS[1].position[0]=roadA+9')&&html.includes('cx-9,.42,z,.075,.45,.075,C.pink')&&html.includes('cx+9,.42,z,.075,.45,.075,C.cyan'),
   trackLocalLightsCrossFadeAdjacentPairs:html.includes('blendT*blendT*(3-2*blendT)')&&html.includes('powerA=2.8*(1-blend),powerB=2.8*blend'),
   trackLocalLightsDoNotCreateShadowMaps:html.includes("id:'track-pink-a'")&&html.includes("id:'track-cyan-a'")&&html.includes('castsShadow:false')&&html.includes("const localSources=garageMode&&FX.garageSpotlights?GARAGE_LOCAL_LIGHTS:[];"),
@@ -869,7 +898,7 @@ const checks={
   showroomInstancingKeepsSixPalmPlacements:(html.split('queueGaragePalm(garagePalmTrunks').length-1)===6,
   showroomInstancingBatchesNeonRails:html.includes("drawInstancedMesh(cube,garageNeonRails,'garage')")&&html.includes('queueBiomeInstance(garageNeonRails,31.0,-.16,0'),
   showroomInstancingPreservesShadowAOCullingAndFallback:html.includes('shadowBoundsVisible(shape,model)')&&html.includes('shadowCasterAllowed(item.color,item.material)')&&html.includes('sceneMaskAllowed(item.color,item.material)')&&html.includes('if(!useInstancing)'),
-  showroomInstancingKeepsActualGarageSpotlightSources:html.includes('uploadLocalLights(garageMode?(FX.garageSpotlights?GARAGE_LOCAL_LIGHTS:[]):(!shadowPass&&FX.trackLights?updateTrackLocalLights():[]))')&&html.includes('GARAGE_LOCAL_LIGHTS'),
+  showroomInstancingKeepsActualGarageSpotlightSources:html.includes('uploadLocalLights(garageMode?buildGarageLocalLights():(!shadowPass&&FX.trackLights?updateTrackLocalLights():[]))')&&html.includes('GARAGE_LOCAL_LIGHTS'),
   showroomInstancingReportsF3:html.includes('SHOWROOM GPU BATCH')&&html.includes('lastGarageInstanceCount')&&html.includes("batchKind==='garage'"),
  atmosphereVertexShaderCompiled:!!atmosphereV.shader,
  atmosphereFragmentShaderCompiled:!!atmosphereF.shader,
@@ -903,7 +932,11 @@ const checks={
  garageSunUsesTheSharedDepthMask:html.includes('const sunOcclusionActive=!!(gpuSunReady&&FX.sunGpu&&FX.sunDisc);'),
  garageSunHasGarageSpecificPlacement:html.includes('if(garageMode)return{x:W*.5,y:H*.285,r:Math.min(W*.27,H*.24,185)};'),
  garageGodRaysRunWithoutGarageExclusion:garageGodRaysSource.includes('FX.sunGodRays')&&!garageGodRaysSource.includes('garageMode'),
- garageShowroomUsesProductionCountachCopies:html.includes('function drawGarageReplica(')&&html.includes('drawGarageReplica(-10.2,0,0')&&html.includes('drawGarageReplica(10.2,0,Math.PI'),
+ garageShowroomUsesProductionCountachCopies:html.includes('function drawGarageReplica(')&&html.includes('drawGarageReplica(-10.2,0,garageReplicaYaw(-1)')&&html.includes('drawGarageReplica(10.2,0,garageReplicaYaw(1)')&&html.includes('garageDisplaySpin=(garageDisplaySpin+dt*.11)'),
+  garageLightsIncludeAllThreeCarsHeadlightsAndUnderglow:html.includes('function buildGarageLocalLights()')&&html.includes("id:'garage-projector-'+carIndex")&&html.includes("id:'garage-underbody-'+carIndex")&&html.includes('lastGarageHeadlightSources++')&&html.includes('lastGarageUnderbodySources++'),
+  garageHeadlightsFollowDeployAndTurntablePose:html.includes('headlightDeploy-.12')&&html.includes('headlightLightingEnabled?1:0')&&html.includes("kind:'headlight',p:point(moduleWorld,lampFrontPoint")&&html.includes('garageReplicaYaw(-1)')&&html.includes('garageReplicaYaw(1)'),
+  garageReplicasReceiveTireContactShadows:html.includes('if(FX.tireContact){')&&html.includes('draw(underglowDisk,world[0],world[1],world[2]')&&html.includes('m.wheelCenters[axle]'),
+  garageEffectsUseSharedPostProcessing:html.includes('const sceneBloomCapture=!!(FX.sceneBloom&&ensureSceneColorTarget())')&&html.includes('renderCarOutlines();drawSun();renderVehicleLensFlaresGPU();')&&garageGodRaysSource.includes('FX.sunGodRays')&&!garageGodRaysSource.includes('garageMode'),
   garageHasThreeDimensionalHomesAndPalms:html.includes('function drawGarageHouse(')&&html.includes('function queueGaragePalm(')&&html.includes('drawGarageHouse(-19.8,-18')&&html.includes('queueGaragePalm(garagePalmTrunks,garagePalmRings,garagePalmLeaves,-14.4,-9.8'),
  garageCameraCanFrameTheShowroom:html.includes('garageZoom=22')&&html.includes('garageZoom+Math.sign(e.deltaY)*.8,7,36'),
  sceneBloomF3ReportsGarageGodRays:html.includes("'<strong>GOD RAYS</strong> '+(FX.sunGodRays&&gpuSunReady?'ON · 25% RES':'OFF')+'<br>'+"),
@@ -964,11 +997,11 @@ const checks={
 };
 must(Object.values(checks).every(Boolean),'One or more production checks failed: '+JSON.stringify(Object.entries(checks).filter(([,ok])=>!ok).map(([name])=>name)));
 const glError=gl.getError();must(glError===gl.NO_ERROR,'WebGL error after production shader pixel test: '+glError);
-const result={pass:true,version:version[1],build:version[2],checks,gridDerivative:{nearAverageGreen:gridNearProbe.averageGreen,farAverageGreen:gridFarProbeA.averageGreen,farMeanDifference:gridFarMeanDifference,fixturePass:gridDerivativeFilterPixelFixturePass},surfaceReflectionPixels:{sharp:surfaceReflectionSharpPixel,rough:surfaceReflectionRoughPixel,roughnessDelta:surfaceReflectionRoughnessDelta,fixturePass:surfaceReflectionPixelFixturePass},probes:{...probes,roadInstancing:{extensionAvailable:!!roadInstancingExt,framebufferStatus:roadProbeFramebufferStatus,pixels:roadProbePixels,fixturePass:roadInstancingPixelFixturePass},vehicleReflection:{mirrorVertex:reflectedVertexWorld,poseCorrectionError:vehicleReflectionPoseCorrectionError,currentFramePose:vehicleReflectionCurrentFramePoseFixturePass,opaqueGlassPixel:opaqueGlassReflectionPixel,opaqueLampPixel:opaqueLampReflectionPixel,nineTap:reflectionNineTapPixelFixturePass,collectionPreserved:reflectionCollectionPreservedAcrossOutlinePass,capturedPixels:reflectedVehicleCoveredPixels,roadSample:vehicleReflectionRoadSamplePixel,endToEnd:vehicleReflectionEndToEndPixelFixturePass,headlightNear:headlightReflectionNearPixel,headlightFar:headlightReflectionFarPixel,roadSharedEdgeFixture:continuousRoadGeometryPixelFixturePass,fixturePass:vehicleReflectionProjectionPixelFixturePass&&vehicleReflectionOpaqueCapturePixelFixturePass&&reflectionNineTapPixelFixturePass&&headlightReflectionPixelFixturePass&&continuousRoadGeometryPixelFixturePass},neonEmitters:{grid:neonGridPixel,gridDerivative:{nearAverageGreen:gridNearProbe.averageGreen,farAverageGreen:gridFarProbeA.averageGreen,farMeanDifference:gridFarMeanDifference},redUnderbody:{core:underbodyAreaCorePixel,xFade:underbodyAreaXFadePixel,edge:underbodyAreaEdgePixel,zFade:underbodyAreaZFadePixel,front:underbodyAreaFrontPixel,outsideX:underbodyAreaOutsideXPixel,outsideZ:underbodyAreaOutsideZPixel,far:underbodyAreaFarPixel,fixturePass:underbodyAreaPixelFixturePass&&underbodyAreaHasSixteenGeometricSamples},fixturePass:neonGridEmissionPixelPass&&gridDerivativeFilterPixelFixturePass&&underbodyAreaPixelFixturePass&&underbodyAreaHasSixteenGeometricSamples}},brightness:{edge:edgeStrength,shoulder:shoulderStrength,mid:midStrength,deep:deepStrength,blockedSun:brightness(probes.blockedSun),visibleSun:brightness(probes.visibleSun)},glVersion:gl.getParameter(gl.VERSION),renderer:gl.getParameter(gl.RENDERER),glError};
+const result={pass:true,version:version[1],build:version[2],checks,gridDerivative:{nearAverageGreen:gridNearProbe.averageGreen,farAverageGreen:gridFarProbeA.averageGreen,farMeanDifference:gridFarMeanDifference,fixturePass:gridDerivativeFilterPixelFixturePass},surfaceReflectionPixels:{sharp:surfaceReflectionSharpPixel,rough:surfaceReflectionRoughPixel,roughnessDelta:surfaceReflectionRoughnessDelta,fixturePass:surfaceReflectionPixelFixturePass},probes:{...probes,garageProjectorLight:{near:garageProjectorLightNearPixel,off:garageProjectorLightOffPixel,behind:garageProjectorLightBehindPixel,fixturePass:garageProjectorLocalLightPixelFixturePass},roadInstancing:{extensionAvailable:!!roadInstancingExt,framebufferStatus:roadProbeFramebufferStatus,pixels:roadProbePixels,fixturePass:roadInstancingPixelFixturePass},vehicleReflection:{mirrorVertex:reflectedVertexWorld,poseCorrectionError:vehicleReflectionPoseCorrectionError,currentFramePose:vehicleReflectionCurrentFramePoseFixturePass,opaqueGlassPixel:opaqueGlassReflectionPixel,opaqueLampPixel:opaqueLampReflectionPixel,nineTap:reflectionNineTapPixelFixturePass,collectionPreserved:reflectionCollectionPreservedAcrossOutlinePass,capturedPixels:reflectedVehicleCoveredPixels,roadSample:vehicleReflectionRoadSamplePixel,endToEnd:vehicleReflectionEndToEndPixelFixturePass,headlightNear:headlightReflectionNearPixel,headlightFar:headlightReflectionFarPixel,roadSharedEdgeFixture:continuousRoadGeometryPixelFixturePass,fixturePass:vehicleReflectionProjectionPixelFixturePass&&vehicleReflectionOpaqueCapturePixelFixturePass&&reflectionNineTapPixelFixturePass&&headlightReflectionPixelFixturePass&&continuousRoadGeometryPixelFixturePass},neonEmitters:{grid:neonGridPixel,gridDerivative:{nearAverageGreen:gridNearProbe.averageGreen,farAverageGreen:gridFarProbeA.averageGreen,farMeanDifference:gridFarMeanDifference},redUnderbody:{core:underbodyAreaCorePixel,xFade:underbodyAreaXFadePixel,edge:underbodyAreaEdgePixel,zFade:underbodyAreaZFadePixel,front:underbodyAreaFrontPixel,outsideX:underbodyAreaOutsideXPixel,outsideZ:underbodyAreaOutsideZPixel,far:underbodyAreaFarPixel,fixturePass:underbodyAreaPixelFixturePass&&underbodyAreaHasSixteenGeometricSamples},fixturePass:neonGridEmissionPixelPass&&gridDerivativeFilterPixelFixturePass&&underbodyAreaPixelFixturePass&&underbodyAreaHasSixteenGeometricSamples}},brightness:{edge:edgeStrength,shoulder:shoulderStrength,mid:midStrength,deep:deepStrength,blockedSun:brightness(probes.blockedSun),visibleSun:brightness(probes.visibleSun)},glVersion:gl.getParameter(gl.VERSION),renderer:gl.getParameter(gl.RENDERER),glError};
 window.__GAME_SHADER_RESULT__=result;
 report.className='pass';
 report.textContent='PASS\\n'+JSON.stringify(result,null,2);
-document.title='PASS DRIVELLA BUILD 207 derivative grid + 16-point area light + end-to-end mirror reflection';
+document.title='PASS DRIVELLA BUILD 208 derivative grid + 16-point area light + end-to-end mirror reflection';
 })().catch(error=>{
  const report=document.getElementById('report');
  report.className='fail';
