@@ -16,7 +16,7 @@ export const MAIN_ROUTE_CONTROL_POINTS = Object.freeze([
 ]);
 
 export const ROAD_SAMPLE_SPACING = 3.2;
-export const ROAD_PROFILE_MAX_GRADE = 0.32;
+export const ROAD_PROFILE_MAX_GRADE = 0.20;
 export const ROAD_PROFILE_CORE_RADIUS = 8.5;
 export const ROAD_PROFILE_BLEND_RADIUS = 15;
 
