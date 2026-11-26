@@ -60,11 +60,11 @@ try {
   await page.waitForFunction(() => Boolean(window.__GAME_SHADER_RESULT__) || document.title.startsWith('FAIL'), null, { timeout: 60000 });
   const result = await page.evaluate(() => window.__GAME_SHADER_RESULT__);
   assert(result, 'Browser test page reported failure without a result object: ' + await page.title());
-  await page.screenshot({ path: 'artifacts/mirror-vp-cyan-neon-underbody-build200-regression.png', fullPage: true });
-  console.log('PRODUCTION MIRROR-VP VEHICLE REFLECTION + CYAN GRID EMITTER + SINGLE UNDERBODY EMITTER + CONTINUOUS ASPHALT + SCENE BLOOM REGRESSION\n' + JSON.stringify(result, null, 2));
+  await page.screenshot({ path: 'artifacts/pixel-stable-grid-red-underbody-light-visible-reflection-build201-regression.png', fullPage: true });
+  console.log('PRODUCTION NINE-TAP VEHICLE REFLECTION + DISTANCE-STABLE GRID GEOMETRY + RED UNDERBODY AREA LIGHT + CONTINUOUS ASPHALT + SCENE BLOOM REGRESSION\n' + JSON.stringify(result, null, 2));
   assert(result.pass, 'Production shader regression failed: ' + JSON.stringify(result));
   assert(pageErrors.length === 0, 'Browser page errors: ' + pageErrors.join('\\n'));
-  console.log('ALL BUILD 200 MIRROR-VP REFLECTION/CYAN GRID/UNDERBODY EMITTER/CONTINUOUS ASPHALT/BLOOM/SHADER/VEHICLE CHECKS PASSED');
+  console.log('ALL BUILD 201 NINE-TAP MIRROR REFLECTION/GRID LOD/RED AREA LIGHT/CONTINUOUS ASPHALT/BLOOM/SHADER/VEHICLE CHECKS PASSED');
 
   const metaScript = await readFile('assets/countach_model_0.js', 'utf8');
   const metaMatch = metaScript.match(/window\.DRIVELLA_COUNTACH_META=(\{[\s\S]*?\});/);
@@ -137,7 +137,7 @@ try {
   const inlineScriptMatch=productionIndex.match(/<script>([\s\S]*?)<\/script>/i);
   assert(inlineScriptMatch&&inlineScriptMatch[1].trim(),'Production inline JavaScript was not found');
   new Function(inlineScriptMatch[1]);
-  console.log('BUILD 200 COUNTACH LAMP GEOMETRY // PLACEMENT CHECK\\n'+JSON.stringify({centres,turnIndices,fogIndices,rearSignalTriangles:{left:rearSignalBars.left.length,right:rearSignalBars.right.length},rearLampPoints,rearSignalPoints,sourceTailBounds:partBounds.bodyTail,sourcePads:lowerLampPads.map(p=>p.center),bumperBodyBlackBounds:partBounds.bodyBlack},null,2));
+  console.log('BUILD 201 COUNTACH LAMP GEOMETRY // PLACEMENT CHECK\\n'+JSON.stringify({centres,turnIndices,fogIndices,rearSignalTriangles:{left:rearSignalBars.left.length,right:rearSignalBars.right.length},rearLampPoints,rearSignalPoints,sourceTailBounds:partBounds.bodyTail,sourcePads:lowerLampPads.map(p=>p.center),bumperBodyBlackBounds:partBounds.bodyBlack},null,2));
 } catch (error) {
   console.error('VEHICLE LIGHTING REGRESSION FAILED\n' + (error.stack || error));
   console.error(serverOutput.join(''));
