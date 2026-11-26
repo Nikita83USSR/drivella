@@ -61,36 +61,45 @@ Acceptance:
 ### 2 — Full 3D world system (in progress)
 
 Implemented and covered by automated tests:
+
+**Spatial world and terrain**
 - [x] Deterministic XYZ chunk manager with a 420 m spherical availability radius and 128 m cells.
 - [x] Chunk inclusion based on closest-point distance from the player to each 3D chunk volume.
 - [x] Symmetric coverage tests for all six cardinal directions and diagonal chunks.
 - [x] Stable coordinate-derived seeds and high/medium/low distance tiers.
 - [x] Chunk lifetime independent of the camera frustum; looking away cannot evict nearby chunks.
-- [x] Continuous world-space terrain height field with deterministic multi-octave value-noise, domain warp, ridges and a valley profile.
-- [x] Flat central start/garage area with broad relief beyond it.
-- [x] Terrain patches assigned to vertical Y layers from their sampled average height (tested in positive and negative layers).
-- [x] Vertex colours vary by elevation and slope, giving lowlands, slopes and high ridges different material response.
-- [x] Havok static collision attached to streamed terrain patches and disposed with their chunks.
-- [x] Automated test verifies terrain height determinism, non-flat relief, elevation thresholds and Y-layer assignment.
-
-Implemented and covered by automated tests:
-- [x] Deterministic XYZ chunk manager with a 420 m spherical availability radius and 128 m cells.
-- [x] Symmetric six-axis and diagonal chunk coverage; camera visibility does not control chunk lifetime.
 - [x] Continuous world-space elevation, vertical Y-layer assignment, ridges and valleys.
-- [x] Five biome classes currently present in the generated world: forest, meadow, rocky, alpine and wetland.
+- [x] Flat central start/garage area with broad relief beyond it.
+- [x] Havok static collision attached to streamed terrain patches and disposed with their chunks.
+
+**Biomes and natural objects**
+- [x] Five biome classes currently present: forest, meadow, rocky, alpine and wetland.
 - [x] Deterministic humidity/elevation/slope classification; repeated loads produce identical prop placements.
 - [x] Procedural conifer trees, grass tufts, wetland reeds and low-poly rocks.
 - [x] Per-chunk combined vegetation/rock geometry instead of a separate draw call for every plant or stone.
 - [x] Distance LOD reduces biome placement counts on remote chunks.
-- [x] Rock batches receive static Havok colliders; terrain retains its own static collider.
-- [x] Browser smoke test verifies that multiple biome types and hundreds of props are present, Havok contact is stable, and runtime requests remain same-origin.
+- [x] Rock batches receive static Havok colliders.
+
+**Spline road and physical surface**
+- [x] Closed Catmull-Rom circuit with 604 samples and approximately 1,952 m route length.
+- [x] Road is split across 17 spatial chunks and follows the terrain's world-space elevation profile.
+- [x] Terrain corridor is cut/filled around the route using a closed-loop profile projection.
+- [x] Maximum longitudinal grade is constrained to 20% across the entire closed loop, including the start/finish seam.
+- [x] Batched asphalt, shoulders, edge lines and broken cyan centre markings.
+- [x] Static Havok colliders attached to each streamed road chunk.
+- [x] A dedicated dynamic box test confirms actual contact with the asphalt, within 35 cm of the surface and 2.5 m of the road centreline.
+
+**Automated validation**
+- [x] Browser startup on WebGL 2, local Havok WASM, terrain collision and same-origin-only runtime requests.
+- [x] XYZ coverage, terrain Y-layers, multiple biomes and deterministic prop placement.
+- [x] Route geometry, road chunk coverage, 20% grade limit and physical road contact.
 
 Still required:
-- Add more varied tree silhouettes, shrub types, ground cover, and biome-specific texture detail.
+- Improve road shoulders, cut/fill edges, guardrails, drains and the transition between pavement and natural terrain.
 - Add a water/coast system, rivers, lakes and proper wetland transitions.
-- Build a spline-based road network that follows height and grade, with banking, shoulders, lane markings and physically correct collision.
 - Add bridges and tunnels where road/terrain profiles require them.
-- Generate city districts, buildings, bridges, overpasses, industrial zones and other architecture as XYZ-streamed content.
+- Generate city districts, detailed buildings, industrial zones, overpasses and other architecture as XYZ-streamed content.
+- Add more varied tree silhouettes, shrub types, ground cover, and biome-specific texture detail.
 - Move chunk generation and asset preparation off the render-critical path; add worker-backed asynchronous generation and bounded queues.
 - Tie the chunk-manager center to the actual vehicle physics body rather than the current lab camera target.
 - Add performance budgets, frustum/occlusion rendering (without coupling it to chunk lifetime), and further seam/collision regression tests.
