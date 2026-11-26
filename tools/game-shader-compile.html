@@ -808,7 +808,7 @@ const buildRoadCurbs=new Function(
 )(testRoadCurve,ROAD_TEST_SEGMENTS,ROAD_TEST_BACK,ROAD_TEST_LENGTH,9.4,.18,.48,.075,.14);
 const roadCurbsProbe=buildRoadCurbs(240);
 const curbSegmentStride=108,curbSideStride=54;
-const curbSeamPairs=[[3,0],[6,9],[24,33],[42,51]];
+const curbSeamPairs=[[3,0],[6,15],[24,33],[42,51]];
 let continuousCurbSharedEdges=true;
 for(let i=0;i<ROAD_TEST_SEGMENTS-1&&continuousCurbSharedEdges;i++){
  const a=i*curbSegmentStride,b=(i+1)*curbSegmentStride;
@@ -818,7 +818,7 @@ for(let i=0;i<ROAD_TEST_SEGMENTS-1&&continuousCurbSharedEdges;i++){
 }
 const curbCrossSectionValid=[0,curbSideStride].every(side=>{
  const base=Math.abs(roadCurbsProbe.data[side+1])<1e-6;
- const innerTop=Math.abs(roadCurbsProbe.data[side+9+1]-.14)<1e-6;
+ const innerTop=Math.abs(roadCurbsProbe.data[side+15+1]-.14)<1e-6;
  const outerTop=Math.abs(roadCurbsProbe.data[side+33+1]-.14)<1e-6;
  const outerBase=Math.abs(roadCurbsProbe.data[side+51+1])<1e-6;
  return base&&innerTop&&outerTop&&outerBase;
