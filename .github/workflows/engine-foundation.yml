@@ -1,0 +1,59 @@
+name: DRIVELLA Babylon + Havok foundation
+
+on:
+  push:
+    branches: [engine-migration-foundation]
+    paths:
+      - 'package.json'
+      - 'engine-lab/index.html'
+      - 'engine-lab/styles.css'
+      - 'engine-lab/src/**'
+      - 'engine-lab/build.mjs'
+      - 'engine-lab/sw.js'
+      - 'tools/run-engine-lab-smoke.mjs'
+      - '.github/workflows/engine-foundation.yml'
+  pull_request:
+    branches: [main]
+    paths:
+      - 'package.json'
+      - 'engine-lab/**'
+      - 'tools/run-engine-lab-smoke.mjs'
+      - '.github/workflows/engine-foundation.yml'
+
+permissions:
+  contents: write
+
+jobs:
+  build-and-browser-test:
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+        with:
+          ref: \${{ github.head_ref || github.ref_name }}
+      - name: Set up Node
+        uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+      - name: Install pinned engine and build dependencies
+        run: npm install --no-audit --no-fund
+      - name: Build repository-local runtime
+        run: npm run build:engine
+      - name: Install Playwright
+        run: npm install --no-save --no-audit --no-fund playwright
+      - name: Install Chromium
+        run: npx playwright install --with-deps chromium
+      - name: Verify browser startup, Havok collision and network isolation
+        run: node tools/run-engine-lab-smoke.mjs
+      - name: Commit generated runtime files to migration branch
+        if: github.event_name == 'push' && github.ref == 'refs/heads/engine-migration-foundation'
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add package-lock.json engine-lab/vendor engine-lab/licenses
+          if ! git diff --cached --quiet; then
+            git commit -m "build(engine): vendor Babylon.js and Havok runtime"
+            git push origin HEAD:engine-migration-foundation
+          fi

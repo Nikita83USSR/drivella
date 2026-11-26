@@ -1,0 +1,19 @@
+{
+  "schemaVersion": 1,
+  "build": "engine-foundation-001",
+  "originPolicy": "same-origin-only",
+  "core": [
+    {
+      "id": "babylon-runtime",
+      "path": "./vendor/drivella-engine.js",
+      "requiredFor": "3d-rendering"
+    },
+    {
+      "id": "havok-wasm",
+      "path": "./vendor/HavokPhysics.wasm",
+      "requiredFor": "physics",
+      "degradedModeAllowed": true
+    }
+  ],
+  "optional": []
+}
