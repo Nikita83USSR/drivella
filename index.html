@@ -2683,7 +2683,7 @@ function updateDebug(dt){
    '<strong>DRAW CALLS</strong> '+drawCalls+'<br>'+
    '<strong>ROAD GPU BATCH</strong> '+lastRoadBatchCount+' BATCH / '+lastRoadInstanceCount+' INSTANCES + '+lastRoadSurfaceSegments+' SURFACE SEGMENTS · '+lastRoadInstancingMode+'<br>'+
    '<strong>CAR REFLECTION TARGET</strong> '+(vehicleReflectionTarget?vehicleReflectionTarget.width+' × '+vehicleReflectionTarget.height:'UNAVAILABLE')+' · '+(FX.vehicleReflections?(vehicleReflectionReady?'MIRROR CAPTURE READY':'CAPTURE WAITING'):'OFF')+' · '+lastVehicleRoadReflectionMeshCount+' MESHES<br>'+
-   '<strong>NEON GRID / UNDERBODY</strong> '+(FX.underglow?'DERIVATIVE- FILTERED GRID · RED 16-POINT AREA LIGHT':'UNDERBODY OFF')+' · '+(FX.sceneBloom?'SCENE BLOOM':'NO BLOOM')+'<br>'+
+   '<strong>NEON GRID / UNDERBODY</strong> '+(FX.underglow?'DERIVATIVE-FILTERED GRID · RED 16-POINT AREA LIGHT':'UNDERBODY OFF')+' · '+(FX.sceneBloom?'SCENE BLOOM':'NO BLOOM')+'<br>'+
    '<strong>BIOME GPU BATCH</strong> '+lastBiomeBatchCount+' BATCHES / '+lastBiomeInstanceCount+' INSTANCES<br>'+
     '<strong>SHOWROOM GPU BATCH</strong> '+lastGarageBatchCount+' BATCHES / '+lastGarageInstanceCount+' INSTANCES<br>'+ 
    '<strong>CAMERA</strong> '+(cameraMode+1)+' / 4 — '+CAMERA_NAMES[cameraMode]+'<br>'+
