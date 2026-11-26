@@ -1,5 +1,6 @@
 import assert from "node:assert/strict";
 import { SpatialChunkManager } from "../engine-lab/src/SpatialChunkManager.mjs";
+import { terrainChunkHeightRange, terrainChunkLayer, terrainHeight } from "../engine-lab/src/TerrainField.mjs";
 
 const disposed = [];
 const manager = new SpatialChunkManager({
@@ -13,6 +14,15 @@ const initial = manager.update({ x: 0, y: 0, z: 0 });
 assert.ok(initial.activeCount > 100, "the spherical region should cover a meaningful 3D chunk volume");
 assert.equal(initial.chunkSize, 128);
 assert.equal(initial.radius, 420);
+assert.equal(terrainHeight(0, 0), 0, "the start/garage zone must remain flat");
+assert.ok(terrainHeight(384, 0) > 64, "eastern high ground should occupy an upper Y layer");
+assert.ok(terrainHeight(-384, 0) < -64, "western low ground should occupy a lower Y layer");
+assert.equal(terrainChunkLayer(0, 0, 128), 0);
+assert.equal(terrainChunkLayer(3, 0, 128), 1);
+assert.equal(terrainChunkLayer(-3, 0, 128), -1);
+const eastRange = terrainChunkHeightRange(3, 0, 128);
+const westRange = terrainChunkHeightRange(-3, 0, 128);
+assert.ok(eastRange.max > 64 && westRange.min < -64, "terrain relief must cross vertical chunk layers");
 
 for (const axis of ["+X", "-X", "+Y", "-Y", "+Z", "-Z"]) {
   assert.equal(initial.axisCoverage[axis], true, `missing symmetric world coverage on ${axis}`);
@@ -27,6 +37,8 @@ for (const chunk of manager.getActiveChunks()) {
 
 const diagonalKey = SpatialChunkManager.chunkKey(1, 1, 1);
 assert.ok(activeKeys.has(diagonalKey), "diagonal 3D chunks must be included");
+assert.ok(activeKeys.has("3:1:0"), "upper terrain chunks must be available in +Y");
+assert.ok(activeKeys.has("-3:-1:0"), "lower terrain chunks must be available in -Y");
 assert.ok(
   SpatialChunkManager.intersectsSphere({ x: 0, y: 0, z: 0 }, 3, 0, 0, 128, 420),
   "the +X boundary chunk must intersect the same sphere"
