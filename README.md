@@ -134,9 +134,71 @@ Core implementation completed: adaptive directional shadows, PCSS-style filterin
 - [~] **GPU instancing — BUILDS 193–195.** BUILD 193 batches the ground/grid, asphalt, edge rails, lane markings and roadside posts. BUILD 194 adds city blocks, emissive windows, coastline and palms. BUILD 195 batches the showroom's repeated LED fixtures, six palms and perimeter neon rails. All reuse the generic mesh-instancing path with per-instance colour/material and per-object shadow/AO/headlight culling. Remaining work: only additional high-count environment props that profiling shows are worth batching.
 - [ ] Move high-count particle simulation to GPU only when effects and profiling justify the complexity; keep vehicle physics and gameplay state on the CPU.
 
+### Track environment development — Stage 1: 360° world and 3D road profile
+
+**Status: planned.** This section records the next environment-development stage; it is a plan only and does not indicate that the changes have been implemented.
+
+**Goal:** keep the world visually complete when the camera rotates through 360°, and make the road a smooth three-dimensional route with stable edges, curbs, climbs and descents.
+
+#### 1. Expand world coverage and visibility in every direction
+
+- Preserve the current forward-world coverage, which is already sufficient for the present driving view.
+- Extend the environment laterally and behind the car. The current side world is too narrow, and objects disappear very quickly when looking backward.
+- Replace any forward-only object lifetime or generation assumptions with a symmetric active world region around the player. Objects should remain available when the camera turns; visibility culling must follow the active camera, not only the car's forward direction.
+- Audit draw-distance limits, frustum culling, object recycling and the visibility rules used by the main scene, directional shadows and the scene/AO mask. Increasing map dimensions alone is not enough if one of these passes still rejects the objects.
+- Extend the ground/terrain and biome backdrop so the sides and rear do not end in a visibly short strip or empty void.
+
+#### 2. Rebuild the road edges and curbs
+
+- Move both curbs slightly farther away from the asphalt, keeping a constant and equal offset from the road edges.
+- Give both sides the same colour/material, matching the current right-hand curb.
+- Replace the visibly tilted or twisted appearance on bends with continuous road-style raised curbs. Use a simple bevelled top and clean side faces rather than detached pieces that rotate unpredictably.
+- Keep curb height, width and clearance consistent through straight sections, corners, segment joins, climbs and descents.
+- Generate both curbs from the same road geometry as the asphalt; do not calculate their positions independently.
+
+#### 3. Add procedural elevation changes
+
+- Extend the procedural route from a horizontal X/Z path to a three-dimensional X/Y/Z centreline.
+- Generate gradual climbs, descents, crests and dips in addition to the existing horizontal bends.
+- Build the asphalt, lane markings, shoulders, curbs and roadside alignment from one shared road frame so that every element follows the same horizontal and vertical profile.
+- Preserve road width and continuous texture coordinates across segment joins; avoid gaps, stretched texture sections and sudden surface-normal changes.
+- Make vehicle ground/contact and collision calculations follow the same road height and direction as the rendered surface.
+
+#### 4. Add safe geometric limits
+
+- Bound maximum uphill/downhill grade, rate of grade change, vertical curvature, horizontal curvature and total elevation range. Tune the actual values against the current vehicle handling rather than choosing arbitrary numbers in advance.
+- Smooth the generated profile and clamp extreme combinations of bend plus elevation so the vehicle does not launch from abrupt ramps or lose contact with the road.
+- Keep both curbs attached to the road frame at all times. Their height, offset and orientation must not drift away from the asphalt at sharp bends or slope transitions.
+- Keep the playable road and its texture inside a clearly defined safe corridor; prevent procedural offsets from moving the vehicle path or road edges beyond the generated surface.
+
+#### Suggested implementation order
+
+1. Measure the current visible world bounds and identify which generation/culling rule causes the short side and rear views.
+2. Make world availability camera-independent within a bounded 360° region around the player; retain distance culling and instancing for performance.
+3. Establish one smooth 3D road centreline and a stable local frame along it.
+4. Rebuild the asphalt edge, lane markings and both curbs from that shared frame; apply the new curb spacing and unified material.
+5. Introduce bounded vertical-profile generation and connect it to vehicle ground/contact handling.
+6. Add F3 geometry diagnostics and run visual, physics and performance checks.
+
+#### Additional ideas for this stage
+
+- Use near-, mid- and far-distance environment detail levels so the expanded world does not multiply draw cost.
+- Generate environment placement from a repeatable seed so the same road can be reproduced while fixing geometry and culling bugs.
+- Add a debug overlay for the road centreline, asphalt limits, curb limits, current grade, curvature and active generation radius.
+- Add a narrow shoulder between asphalt and curb, leaving room for gravel, grass, rocks or concrete verge details in a later pass.
+- Consider subtle road banking only after ordinary bends and vertical transitions are stable; it is not a prerequisite for this stage.
+
+#### Stage 1 acceptance checks
+
+- At a standstill and while driving, a full 360° camera rotation does not reveal prematurely disappearing side or rear objects.
+- The expanded environment has no obvious short boundary or empty cut-off at the sides and behind the car.
+- Both curbs remain continuous, level relative to the road surface, equally offset and the same colour through bends and segment joins.
+- Climbs and descents are smooth; the vehicle does not unexpectedly launch, sink through the road or lose ground contact.
+- Road texture, lane markings, shoulders and curbs have no visible gaps or separation when the road changes direction or elevation.
+- The expanded world remains compatible with the shared shadow/AO scene path and does not introduce an unacceptable frame-time increase on the target PC and mobile devices.
+
 ### Later stages
 
-- Expand the track, biomes, roadside props, and garage environment.
 - Add opponent traffic, racing challenges, collision feedback, and progression.
 - Improve mobile controls and responsive presentation.
 
