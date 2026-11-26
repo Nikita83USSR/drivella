@@ -24,6 +24,10 @@ on:
 permissions:
   contents: write
 
+concurrency:
+  group: drivella-engine-foundation
+  cancel-in-progress: true
+
 jobs:
   build-and-browser-test:
     runs-on: ubuntu-latest
@@ -63,5 +67,16 @@ jobs:
           git add package-lock.json engine-lab/vendor engine-lab/licenses
           if ! git diff --cached --quiet; then
             git commit -m "build(engine): vendor Babylon.js and Havok runtime"
-            git push origin HEAD:engine-migration-foundation
+            for attempt in 1 2 3; do
+              git fetch origin engine-migration-foundation
+              git rebase origin/engine-migration-foundation
+              if git push origin HEAD:engine-migration-foundation; then
+                break
+              fi
+              if [ "$attempt" -eq 3 ]; then
+                echo "Could not push generated runtime after three attempts."
+                exit 1
+              fi
+              sleep 2
+            done
           fi
