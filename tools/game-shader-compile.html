@@ -43,9 +43,11 @@ const canvas=document.getElementById('gl');
 const gl=canvas.getContext('webgl',{alpha:true,antialias:false,preserveDrawingBuffer:true});
 must(gl,'WebGL context unavailable');
 const glExpression={getShaderPrecisionFormat:()=>gl.getShaderPrecisionFormat(gl.FRAGMENT_SHADER,gl.HIGH_FLOAT),getExtension:name=>gl.getExtension(name)};
+const standardDerivativesExt=!!gl.getExtension('OES_standard_derivatives');
+const gridAntiAliasSource=new Function('standardDerivativesExt','return ('+expression('gridAntiAliasSource',';\nconst fs=')+');')(standardDerivativesExt);
 const sources={
  mainVertex:new Function('gl','return ('+expression('vs',';\nconst gridAntiAliasSource=')+');')(glExpression),
- mainFragment:new Function('gl','return ('+expression('fs',';\nfunction shader')+');')(glExpression),
+ mainFragment:new Function('gl','standardDerivativesExt','gridAntiAliasSource','return ('+expression('fs',';\nfunction shader')+');')(glExpression,standardDerivativesExt,gridAntiAliasSource),
  outlineVertex:new Function('gl','return ('+expression('outlineVs',';\nconst outlineFs=')+');')(glExpression),
  outlineFragment:new Function('gl','return ('+expression('outlineFs',';const outlineProgram=')+');')(glExpression),
  sunVertex:new Function('gl','return ('+expression('sunVs',';\n const sunFs=')+');')(glExpression),
