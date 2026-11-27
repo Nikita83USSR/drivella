@@ -154,31 +154,31 @@ try {
   handlingSamples.accelerationT500=await sampleVehicle();
   await page.waitForTimeout(500);
   handlingSamples.accelerationT1000=await sampleVehicle();
-  await page.waitForTimeout(1800);
+  await page.waitForTimeout(500);
   handlingSamples.acceleration=await sampleVehicle();
   await page.keyboard.down("d");
-  await page.waitForTimeout(1350);
+  await page.waitForTimeout(500);
   handlingSamples.corner=await sampleVehicle();
   await page.keyboard.down(" ");
-  await page.waitForTimeout(180);
+  await page.waitForTimeout(120);
   handlingSamples.handbrake=await sampleVehicle();
   await page.keyboard.up("d");
   await page.keyboard.up(" ");
   await page.keyboard.down("a");
-  await page.waitForTimeout(1100);
+  await page.waitForTimeout(450);
   handlingSamples.countersteer=await sampleVehicle();
   await page.keyboard.up("a");
   await page.keyboard.up("w");
 
   await page.keyboard.down("w");
-  await page.waitForTimeout(1100);
+  await page.waitForTimeout(250);
   const spinStart=await sampleVehicle();
   await page.keyboard.down("w");
   await page.keyboard.down("d");
   await page.keyboard.down(" ");
   await page.waitForTimeout(180);
   await page.keyboard.up(" ");
-  await page.waitForTimeout(1500);
+  await page.waitForTimeout(700);
   handlingSamples.spin=await sampleVehicle();
   await page.keyboard.up(" ");
   await page.keyboard.up("d");
@@ -270,6 +270,7 @@ try {
 
   if(state.frames<30)throw new Error("Render loop did not advance enough frames.");
   if(!state.vehicleReady||state.vehicleWheelContacts!==4||state.vehicleStableFrames<24)throw new Error("Countach lost one or more independent wheel contacts: "+JSON.stringify(state));
+  if(!Number.isFinite(state.vehicleRoadDistance)||state.vehicleRoadDistance>7)throw new Error("Handling smoke left the asphalt corridor: "+JSON.stringify(state));
   const travelled=Math.hypot(state.vehicleX-beforeDrive.x,state.vehicleZ-beforeDrive.z);
   const yawDelta=Math.abs(state.vehicleUnwrappedYaw-beforeDrive.unwrappedYaw);
   if(travelled<.55||state.vehicleSpeedKmh<1.5||yawDelta<.005)throw new Error("WASD failed to move and steer the Countach: "+JSON.stringify({beforeDrive,state,travelled,yawDelta}));
