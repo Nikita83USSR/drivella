@@ -573,7 +573,7 @@ export function buildRoadFurnitureChunkGeometry(
   return geometry;
 }
 
-export function getRoadFurnitureStats(samples, chunkSize = ROAD_CHUNK_SIZE) {
+export function getRoadFurnitureStats(samples, chunkSize = ROAD_CHUNK_SIZE, tunnels = []) {
   if (!Array.isArray(samples) || samples.length < 2) {
     return { transitionSegments: 0, drainageSegments: 0, guardrailSegments: 0 };
   }
@@ -583,6 +583,7 @@ export function getRoadFurnitureStats(samples, chunkSize = ROAD_CHUNK_SIZE) {
     const nextIndex = (index + 1) % samples.length;
     const a = samples[index];
     const b = samples[nextIndex];
+    if (isTunnelSampleIndex(index, tunnels, samples.length)) continue;
     const averageMagnitude = (
       Math.abs(profiles[index].left.delta)
       + Math.abs(profiles[nextIndex].left.delta)
