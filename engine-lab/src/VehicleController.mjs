@@ -118,6 +118,24 @@ export class VehicleController{
   const velocity=this.aggregate.body.getLinearVelocity(),angular=this.aggregate.body.getAngularVelocity();
   const left=this.keys.has("a")||this.keys.has("arrowleft"),right=this.keys.has("d")||this.keys.has("arrowright");
   this.steerInput=(right?1:0)-(left?1:0);this.throttle=this.keys.has("w")||this.keys.has("arrowup");this.brake=this.keys.has("s")||this.keys.has("arrowdown");this.handbrake=this.keys.has(" ");
+  if(this.parked){
+   const heldContacts=new Map();
+   for(const w of WHEELS){
+    const anchor=Vector3.TransformCoordinates(this.wheelMount(w),matrix),end=anchor.add(new Vector3(0,-(P.max+this.metrics.wheelRadius+.16),0));
+    physics.raycastToRef(anchor,end,this.ray,{ignoreBody:this.aggregate.body});
+    if(!this.ray.hasHit){heldContacts.set(w.key,{...w,hit:false,anchor,point:end,normal:Vector3.Up(),compression:-P.maxComp,steerAngle:0,longitudinalSpeed:0,lateralSpeed:0});continue;}
+    const point=this.ray.hitPointWorld.clone(),normal=this.ray.hitNormalWorld.clone().normalize();
+    if(normal.y<0)normal.scaleInPlace(-1);
+    const suspensionLength=Vector3.Distance(anchor,point)-this.metrics.wheelRadius;
+    const compression=clamp(P.rest-clamp(suspensionLength,P.min,P.max),-P.maxComp,P.maxComp);
+    heldContacts.set(w.key,{...w,hit:suspensionLength<=P.max+.025,anchor,point,normal,compression,springForce:0,steerAngle:0,longitudinalSpeed:0,lateralSpeed:0,tireUtilization:0});
+   }
+   this.wheelContacts=heldContacts;
+   this.aggregate.body.setLinearVelocity(Vector3.Zero());
+   this.aggregate.body.setAngularVelocity(Vector3.Zero());
+   this.aggregate.body.applyForce(new Vector3(0,this.mass*9.81,0),position);
+   return;
+  }
   const speed=Math.hypot(velocity.x,velocity.z),fade=clamp(speed/58,0,.58);this.steer+=(this.steerInput-this.steer)*clamp(dt*7.5,0,1);
   const ack=calculateAckermannAngles(this.steer,this.metrics.wheelbase,this.metrics.track,P.maxSteer*(1-fade));
   const bodyForward=new Vector3(Math.sin(yaw),0,Math.cos(yaw)),fwd=Vector3.Dot(velocity,bodyForward);let drive=this.throttle?P.engine*clamp(1-speed/82,.22,1):0,braking=0;
