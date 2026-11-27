@@ -52,7 +52,7 @@ let pageErrors = [];
 let browserConsoleErrors = [];
 try {
   await new Promise((resolve) => server.listen(port, "127.0.0.1", resolve));
-  const page = await browser.newPage({ viewport: { width: 1440, height: 900 } });
+  const page = await browser.newPage({ viewport: { width: 1024, height: 640 } });
   page.on("request", (request) => {
     const requestUrl = new URL(request.url());
     if (requestUrl.origin !== "http://127.0.0.1:" + port) externalRequests.push(request.url());
@@ -63,10 +63,24 @@ try {
   });
 
   await page.goto("http://127.0.0.1:" + port + "/engine-lab/", { waitUntil: "load" });
-  await page.waitForFunction(() => window.__DRIVELLA_LAB__?.ready === true, { timeout: 60000 });
-  await page.waitForFunction(() => window.__DRIVELLA_LAB__?.physicsReady === true, { timeout: 60000 });
   try {
-    await page.waitForFunction(() => window.__DRIVELLA_LAB__?.probeStableFrames >= 30, { timeout: 60000 });
+    await page.waitForFunction(() => window.__DRIVELLA_LAB__?.ready === true, null, { timeout: 120000 });
+  } catch (error) {
+    const diagnostic = await page.evaluate(() => window.__DRIVELLA_LAB__ || null);
+    await mkdir("artifacts", { recursive: true });
+    await page.screenshot({ path: "artifacts/engine-lab-startup-timeout.png" }).catch(() => {});
+    throw new Error("3D scene did not reach ready state. Diagnostic: " + JSON.stringify(diagnostic) + " · pageErrors=" + JSON.stringify(pageErrors) + " · " + String(error));
+  }
+  try {
+    await page.waitForFunction(() => window.__DRIVELLA_LAB__?.physicsReady === true, null, { timeout: 90000 });
+  } catch (error) {
+    const diagnostic = await page.evaluate(() => window.__DRIVELLA_LAB__ || null);
+    await mkdir("artifacts", { recursive: true });
+    await page.screenshot({ path: "artifacts/engine-lab-physics-init-timeout.png" }).catch(() => {});
+    throw new Error("Havok did not initialize. Diagnostic: " + JSON.stringify(diagnostic) + " · pageErrors=" + JSON.stringify(pageErrors) + " · " + String(error));
+  }
+  try {
+    await page.waitForFunction(() => window.__DRIVELLA_LAB__?.probeStableFrames >= 30, null, { timeout: 60000 });
   } catch (error) {
     const diagnostic = await page.evaluate(() => window.__DRIVELLA_LAB__ || null);
     await mkdir("artifacts", { recursive: true });
@@ -74,7 +88,7 @@ try {
     throw new Error("Terrain collision probe did not settle. Diagnostic: " + JSON.stringify(diagnostic) + " · " + String(error));
   }
   try {
-    await page.waitForFunction(() => window.__DRIVELLA_LAB__?.roadProbeStableFrames >= 30, { timeout: 60000 });
+    await page.waitForFunction(() => window.__DRIVELLA_LAB__?.roadProbeStableFrames >= 30, null, { timeout: 60000 });
   } catch (error) {
     const diagnostic = await page.evaluate(() => window.__DRIVELLA_LAB__ || null);
     await mkdir("artifacts", { recursive: true });
