@@ -710,15 +710,18 @@ function enableHavokPhysics() {
       }
     }
 
-    probeMesh = MeshBuilder.CreateSphere("falling-physics-probe", { diameter: 3, segments: 24 }, scene);
-    probeMesh.position.set(0, 24, 0);
+    probeMesh = MeshBuilder.CreateBox("falling-physics-probe", { size: 3 }, scene);
+    // Keep the terrain collision probe on the broad, flat garage apron and
+    // away from the start/finish asphalt so it tests terrain contact rather
+    // than rolling down the surrounding hills.
+    probeMesh.position.set(0, 24, 40);
     const probeMaterial = new StandardMaterial("probe-material", scene);
     probeMaterial.diffuseColor = new Color3(0.96, 0.31, 0.12);
     probeMaterial.emissiveColor = new Color3(0.12, 0.025, 0.008);
     probeMaterial.metallic = 0.2;
     probeMaterial.roughness = 0.38;
     probeMesh.material = probeMaterial;
-    addPhysicalProbe(scene, probeMesh, 2.5, PhysicsShapeType.SPHERE, { friction: 0.7, restitution: 0.16 });
+    addPhysicalProbe(scene, probeMesh, 18, PhysicsShapeType.BOX, { friction: 1.8, restitution: 0.01 });
 
     const roadProbeTarget = findStableRoadProbeSample(roadSamples);
     if (!roadProbeTarget) throw new Error("Could not select a flat road segment for Havok contact test.");
