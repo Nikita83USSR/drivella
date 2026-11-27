@@ -2,7 +2,7 @@ import {Color3,Mesh,MeshBuilder,PhysicsAggregate,PhysicsShapeType,Quaternion,Sta
 import {PhysicsRaycastResult} from "@babylonjs/core/Physics/physicsRaycastResult.js";
 const WHEEL_PARTS=new Set(["front_tyre","front_rims","front_extra_NoMaterial","rear_tyre","rear_rims"]);
 const WHEELS=Object.freeze([Object.freeze({key:"frontLeft",axle:"front",side:-1}),Object.freeze({key:"frontRight",axle:"front",side:1}),Object.freeze({key:"rearLeft",axle:"rear",side:-1}),Object.freeze({key:"rearRight",axle:"rear",side:1})]);
-const P=Object.freeze({mass:1250,cg:.58,spawn:.05,colliderH:.42,rest:.32,min:.12,max:.55,maxComp:.20,spring:38000,damper:4200,bump:98000,antiRoll:11000,maxForce:16000,maxSteer:.49,engine:8600,brake:19500,handbrake:10500,drag:.46,rolling:.012});
+const P=Object.freeze({mass:1250,cg:.50,spawn:.05,colliderH:.42,rest:.32,min:.12,max:.55,maxComp:.20,spring:38000,damper:4200,bump:98000,antiRoll:26000,rollStiffness:16000,rollDamping:4000,maxRollTorque:9000,maxForce:16000,maxSteer:.49,engine:8600,brake:19500,handbrake:10500,drag:.46,rolling:.012});
 const clamp=(v,a,b)=>Math.max(a,Math.min(b,v));
 export function calculateAckermannAngles(input,wheelbase,track,maximumAngle=P.maxSteer){
  const centre=clamp(input,-1,1)*maximumAngle;if(Math.abs(centre)<1e-5)return {left:0,right:0};
@@ -70,7 +70,7 @@ export class VehicleController{
   this.chassis.position.set(startSample.x,startSample.y+P.cg+P.spawn,startSample.z);this.chassis.rotationQuaternion=Quaternion.RotationYawPitchRoll(yaw,0,0);
   this.chassis.isVisible=false;this.chassis.visibility=0;this.chassis.isPickable=false;this.chassis.checkCollisions=false;
   this.aggregate=new PhysicsAggregate(this.chassis,PhysicsShapeType.BOX,{mass:P.mass,friction:.2,restitution:.01},scene);
-  this.aggregate.body.setLinearDamping(.018);this.aggregate.body.setAngularDamping(.36);
+  this.aggregate.body.setLinearDamping(.018);this.aggregate.body.setAngularDamping(.42);
   this.bodyRoot=new TransformNode("drivella-countach-render-root",scene);this.bodyRoot.parent=this.chassis;this.bodyRoot.position.set(0,-P.cg-P.spawn,0);
   this.buildMaterials();this.buildBody();this.buildWheels();
   this.keydown=e=>{const k=String(e.key||"").toLowerCase();if(["w","a","s","d","arrowup","arrowdown","arrowleft","arrowright"," "].includes(k)){e.preventDefault();this.keys.add(k);}};
@@ -136,6 +136,12 @@ export class VehicleController{
   const anti=(lk,rk)=>{const l=contacts.get(lk),r=contacts.get(rk);if(!l?.hit||!r?.hit)return;const force=(l.compression-r.compression)*P.antiRoll;
    this.aggregate.body.applyForce(new Vector3(0,-force,0),l.anchor);this.aggregate.body.applyForce(new Vector3(0,force,0),r.anchor);};
   anti("frontLeft","frontRight");anti("rearLeft","rearRight");
+  const orientation=this.chassis.rotationQuaternion??Quaternion.Identity();
+  const bodyRoll=orientation.toEulerAngles().z;
+  const rollAxis=Vector3.TransformNormal(Vector3.Forward(),matrix).normalize();
+  const rollRate=Vector3.Dot(angular,rollAxis);
+  const rollTorque=clamp(-bodyRoll*P.rollStiffness-rollRate*P.rollDamping,-P.maxRollTorque,P.maxRollTorque);
+  this.aggregate.body.applyTorque(rollAxis.scale(rollTorque));
   for(const c of contacts.values())if(c.hit)this.wheelSpin.set(c.key,(this.wheelSpin.get(c.key)??0)+c.longitudinalSpeed/this.metrics.wheelRadius*dt);
   this.wheelContacts=contacts;
  }
