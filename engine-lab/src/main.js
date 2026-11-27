@@ -451,7 +451,7 @@ function createEnvironment(scene) {
   const tunnelSpatialStats = registerTunnelCorridors(tunnels);
   const tunnelStats = getTunnelStats(tunnels);
   const roadStats = getRoadStats(roadSamples);
-  const roadFurnitureStats = getRoadFurnitureStats(roadSamples);
+  const roadFurnitureStats = getRoadFurnitureStats(roadSamples, 128, tunnels);
   const hydrologyStats = getHydrologyStats();
   const bridgeClassification = classifyRoadHydrologyCrossings(roadSamples);
   const waterMeshes = new Map();
