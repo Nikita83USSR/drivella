@@ -119,7 +119,7 @@ export class VehicleController{
  wheelMount(w){const c=this.metrics.wheelCenters[w.axle];return new Vector3(w.side*c[0],c[1]+P.rest-P.cg-P.spawn-P.rideSag,c[2]);}
  stepPhysics(){
   if(!this.aggregate?.body||this.aggregate.body.isDisposed)return;const physics=this.scene.getPhysicsEngine();if(!physics?.raycastToRef)return;
-  const dt=clamp(this.scene.getEngine().getDeltaTime()/1000,1/240,1/30),matrix=this.bodyMatrix(),yaw=this.yawOf(matrix),position=this.chassis.position.clone();
+  const dt=clamp(physics.getTimeStep(),1/240,1/30),matrix=this.bodyMatrix(),yaw=this.yawOf(matrix),position=this.chassis.position.clone();
   this.unwrappedYaw+=wrapVehicleAngle(yaw-this.lastYaw);this.lastYaw=yaw;
   const velocity=this.aggregate.body.getLinearVelocity(),angular=this.aggregate.body.getAngularVelocity();
   const left=this.keys.has("a")||this.keys.has("arrowleft"),right=this.keys.has("d")||this.keys.has("arrowright");
@@ -228,6 +228,7 @@ export class VehicleController{
   return {
    x:Number(p.x.toFixed(3)),y:Number(p.y.toFixed(3)),z:Number(p.z.toFixed(3)),
    bodyMass:Number(massProperties.mass.toFixed(2)),gravityFactor:Number(gravityFactor.toFixed(3)),
+   physicsStep:Number(this.scene.getPhysicsEngine().getTimeStep().toFixed(6)),physicsSubStep:Number(this.scene.getPhysicsEngine().getSubTimeStep().toFixed(3)),
    speed:Number(motion.speed.toFixed(3)),speedKmh:Number((motion.speed*3.6).toFixed(1)),
    forwardSpeed:Number(motion.forwardSpeed.toFixed(3)),lateralSpeed:Number(motion.lateralSpeed.toFixed(3)),
    slipAngle:Number(motion.slipAngle.toFixed(4)),slipAngleDegrees:Number((motion.slipAngle*57.2957795).toFixed(2)),
