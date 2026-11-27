@@ -156,6 +156,11 @@ try {
   handlingSamples.accelerationT1000=await sampleVehicle();
   await page.waitForTimeout(500);
   handlingSamples.acceleration=await sampleVehicle();
+  await page.keyboard.up("w");
+  await page.keyboard.down("s");
+  await page.waitForTimeout(220);
+  await page.keyboard.up("s");
+  handlingSamples.preCorner=await sampleVehicle();
   await page.keyboard.down("d");
   await page.waitForTimeout(500);
   handlingSamples.corner=await sampleVehicle();

@@ -4,7 +4,7 @@ const WHEEL_PARTS=new Set(["front_tyre","front_rims","front_extra_NoMaterial","r
 const WHEELS=Object.freeze([Object.freeze({key:"frontLeft",axle:"front",side:-1}),Object.freeze({key:"frontRight",axle:"front",side:1}),Object.freeze({key:"rearLeft",axle:"rear",side:-1}),Object.freeze({key:"rearRight",axle:"rear",side:1})]);
 // Babylon 9.37.2 PhysicsMotionType enum: STATIC=0, ANIMATED=1, DYNAMIC=2.
 const BODY_MOTION=Object.freeze({STATIC:0,DYNAMIC:2});
-const P=Object.freeze({mass:1250,cg:.50,spawn:.05,colliderH:.42,rest:.32,rideSag:.06,min:.12,max:.55,maxComp:.20,spring:38000,damper:4200,bump:98000,antiRoll:26000,rollStiffness:16000,rollDamping:4000,maxRollTorque:9000,maxForce:16000,maxSteer:.49,engine:8600,brake:19500,handbrake:10500,parkingBrake:18000,frontGrip:1.22,rearGrip:1.04,rearHandbrakeGrip:.32,frontCornering:5600,rearCornering:3950,drag:.46,rolling:.012});
+const P=Object.freeze({mass:1250,cg:.50,spawn:.05,colliderH:.42,rest:.32,rideSag:.06,min:.12,max:.55,maxComp:.20,spring:38000,damper:4200,bump:98000,antiRoll:26000,maxLateralAccel:7.0,rollStiffness:16000,rollDamping:4000,maxRollTorque:9000,maxForce:16000,maxSteer:.49,engine:8600,brake:19500,handbrake:10500,parkingBrake:18000,frontGrip:1.22,rearGrip:1.04,rearHandbrakeGrip:.32,frontCornering:5600,rearCornering:3950,drag:.46,rolling:.012});
 const clamp=(v,a,b)=>Math.max(a,Math.min(b,v));
 export function calculateStaticSuspensionCompression(wheelCenterY,wheelRadius,rideSag=.06){
  return wheelRadius-wheelCenterY+rideSag;
@@ -140,7 +140,8 @@ export class VehicleController{
    return;
   }
   const speed=Math.hypot(velocity.x,velocity.z),fade=clamp(speed/58,0,.58);this.lastDt=dt;this.steer+=(this.steerInput-this.steer)*clamp(dt*7.5,0,1);
-  const ack=calculateAckermannAngles(this.steer,this.metrics.wheelbase,this.metrics.track,P.maxSteer*(1-fade));
+  const lateralSteerLimit=speed>.5?Math.min(P.maxSteer,Math.atan(this.metrics.wheelbase*P.maxLateralAccel/(speed*speed))):P.maxSteer;
+  const ack=calculateAckermannAngles(this.steer,this.metrics.wheelbase,this.metrics.track,lateralSteerLimit);
   const bodyForward=new Vector3(Math.sin(yaw),0,Math.cos(yaw)),fwd=Vector3.Dot(velocity,bodyForward);let drive=this.throttle?P.engine*clamp(1-speed/82,.22,1):0,braking=0;
   if(this.brake){if(fwd>1)braking=P.brake;else drive=-P.engine*.48;}
   this.driveRequested=drive;this.brakeRequested=braking;
@@ -239,7 +240,7 @@ export class VehicleController{
    roll:Number(e.z.toFixed(4)),pitch:Number(e.x.toFixed(4)),steer:Number(this.steer.toFixed(3)),
    wheelContactCount:wheels.filter(w=>w.contact).length,wheelbase:Number(this.metrics.wheelbase.toFixed(4)),
    track:Number(this.metrics.track.toFixed(4)),wheelRadius:Number(this.metrics.wheelRadius.toFixed(4)),
-   frontGrip:P.frontGrip,rearGrip:P.rearGrip,rearHandbrakeGrip:P.rearHandbrakeGrip,parked:this.parked,
+   frontGrip:P.frontGrip,rearGrip:P.rearGrip,rearHandbrakeGrip:P.rearHandbrakeGrip,maxLateralAccel:P.maxLateralAccel,steerLimit:Number((speed>.5?Math.min(P.maxSteer,Math.atan(this.metrics.wheelbase*P.maxLateralAccel/(speed*speed))):P.maxSteer).toFixed(4)),parked:this.parked,
    throttle:this.throttle,handbrake:this.handbrake,driveRequested:Number(this.driveRequested.toFixed(1)),brakeRequested:Number(this.brakeRequested.toFixed(1)),
    velocityX:Number(v.x.toFixed(4)),velocityY:Number(v.y.toFixed(4)),velocityZ:Number(v.z.toFixed(4)),
    maxSuspensionCompression:Number(maxSuspensionCompression.toFixed(4)),averageSuspensionCompression:Number(averageSuspensionCompression.toFixed(4)),
