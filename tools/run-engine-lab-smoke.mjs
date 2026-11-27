@@ -115,6 +115,16 @@ try {
     roadGuardrailSegments: window.__DRIVELLA_LAB__.roadGuardrailSegments,
     roadDrainageSegments: window.__DRIVELLA_LAB__.roadDrainageSegments,
     roadTransitionSegments: window.__DRIVELLA_LAB__.roadTransitionSegments,
+    waterChunks: window.__DRIVELLA_LAB__.waterChunks,
+    shoreChunks: window.__DRIVELLA_LAB__.shoreChunks,
+    riverSegments: window.__DRIVELLA_LAB__.riverSegments,
+    lakeTriangles: window.__DRIVELLA_LAB__.lakeTriangles,
+    riverCount: window.__DRIVELLA_LAB__.riverCount,
+    lakeCount: window.__DRIVELLA_LAB__.lakeCount,
+    bridgeCrossingCount: window.__DRIVELLA_LAB__.bridgeCrossingCount,
+    bridgeCandidateCount: window.__DRIVELLA_LAB__.bridgeCandidateCount,
+    unresolvedWaterCrossings: window.__DRIVELLA_LAB__.unresolvedWaterCrossings,
+    bridgeCrossings: window.__DRIVELLA_LAB__.bridgeCrossings,
     roadYAtProbe: window.__DRIVELLA_LAB__.roadYAtProbe,
     roadDistanceAtProbe: window.__DRIVELLA_LAB__.roadDistanceAtProbe,
     roadProbeY: window.__DRIVELLA_LAB__.roadProbeY,
@@ -148,6 +158,22 @@ try {
     || state.roadGuardrailSegments < 1
   ) {
     throw new Error("Roadside cut/fill, drainage and exposed-edge safety geometry was not generated: " + JSON.stringify(state));
+  }
+  if (
+    state.riverCount < 2
+    || state.lakeCount < 1
+    || state.waterChunks < 1
+    || state.shoreChunks < 1
+    || state.riverSegments < 1
+    || state.bridgeCrossingCount < 1
+    || !Array.isArray(state.bridgeCrossings)
+  ) {
+    throw new Error("Streamed water bodies, shorelines or road-water crossing classification are incomplete: " + JSON.stringify(state));
+  }
+  if (!state.bridgeCrossings.every((crossing) =>
+    Number.isFinite(crossing.minClearance) && crossing.sampleCount > 0
+  )) {
+    throw new Error("Road-water crossings are missing measurable deck clearance: " + JSON.stringify(state.bridgeCrossings));
   }
   if (state.roadProbeStableFrames < 30) {
     throw new Error("Dedicated road probe did not settle on the asphalt collision mesh: " + JSON.stringify(state));
