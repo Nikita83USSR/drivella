@@ -895,7 +895,6 @@ async function boot() {
         labState.biomeDistribution = biomeDistribution;
         worldMeta.textContent = `XYZ chunks: ${spatial.activeCount} · terrain: ${terrainMeshes.size} patches · Y layers ${terrainLayers.join("/") || "—"} · ${Object.values(spatial.axisCoverage).every(Boolean) ? "6/6 directions" : "coverage check pending"}`;
         roadMeta.textContent = `Road: ${roadMeshes.size} chunks · ${Math.round(roadStats.length)} m · transitions ${labState.roadTransitionSegments} · drains ${labState.roadDrainageSegments} · guardrails ${labState.roadGuardrailSegments}`;
-        waterMeta.textContent = `Water: ${labState.riverCount} rivers · ${labState.lakeCount} lakes · ${waterMeshes.size} chunks · ${labState.bridgeCrossingCount} road crossings (${labState.bridgeCandidateCount} bridge candidates)`;
         biomeMeta.textContent = `Biomes: ${biomeTypes.slice(0, 4).join("/") || "preparing"} · ${biomeTotals.trees} trees · ${biomeTotals.rocks} rocks`;
       }
     });
