@@ -130,7 +130,8 @@ try {
       yawTurns:s.vehicleYawTurns,speedKmh:s.vehicleSpeedKmh,forwardSpeed:s.vehicleForwardSpeed,
       lateralSpeed:s.vehicleLateralSpeed,slipDegrees:s.vehicleSlipAngleDegrees,
       rearSlipDegrees:s.vehicleRearSlipAngleDegrees,yawRate:s.vehicleYawRate,
-      steer:s.vehicleSteer,contacts:s.vehicleWheelContacts,roll:s.vehicleRoll,parked:s.vehicleParked
+      steer:s.vehicleSteer,contacts:s.vehicleWheelContacts,roll:s.vehicleRoll,parked:s.vehicleParked,
+      driveRequested:s.vehicleDriveRequested,totalSpringLoad:s.vehicleTotalSpringLoad,rearLongitudinalForce:s.vehicleRearLongitudinalForce,totalLongitudinalForce:s.vehicleTotalLongitudinalForce
     };
   });
   const beforeDrive=await sampleVehicle();
@@ -182,6 +183,8 @@ try {
     vehicleSpeedKmh:window.__DRIVELLA_LAB__.vehicleSpeedKmh,vehicleRoll:window.__DRIVELLA_LAB__.vehicleRoll,
     vehiclePitch:window.__DRIVELLA_LAB__.vehiclePitch,vehicleYaw:window.__DRIVELLA_LAB__.vehicleYaw,
     vehicleX:window.__DRIVELLA_LAB__.vehicleX,vehicleY:window.__DRIVELLA_LAB__.vehicleY,vehicleZ:window.__DRIVELLA_LAB__.vehicleZ,
+    vehicleDriveRequested:window.__DRIVELLA_LAB__.vehicleDriveRequested,vehicleTotalSpringLoad:window.__DRIVELLA_LAB__.vehicleTotalSpringLoad,
+    vehicleRearLongitudinalForce:window.__DRIVELLA_LAB__.vehicleRearLongitudinalForce,vehicleTotalLongitudinalForce:window.__DRIVELLA_LAB__.vehicleTotalLongitudinalForce,
     vehicleForwardSpeed:window.__DRIVELLA_LAB__.vehicleForwardSpeed,vehicleLateralSpeed:window.__DRIVELLA_LAB__.vehicleLateralSpeed,
     vehicleSlipAngleDegrees:window.__DRIVELLA_LAB__.vehicleSlipAngleDegrees,vehicleYawRate:window.__DRIVELLA_LAB__.vehicleYawRate,
     vehicleUnwrappedYaw:window.__DRIVELLA_LAB__.vehicleUnwrappedYaw,vehicleYawTurns:window.__DRIVELLA_LAB__.vehicleYawTurns,

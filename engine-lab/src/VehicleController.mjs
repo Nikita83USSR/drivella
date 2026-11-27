@@ -74,7 +74,7 @@ export class VehicleController{
  constructor(scene,{roadSamples,startSample=roadSamples?.[0],model}){
   if(!scene?.getPhysicsEngine?.())throw new Error("Vehicle requires active Havok Physics V2.");
   if(!Array.isArray(roadSamples)||roadSamples.length<2||!startSample)throw new TypeError("Vehicle requires sampled road and spawn point.");
-  this.scene=scene;this.model=model;this.metrics=model.metrics;this.mass=P.mass;this.keys=new Set();this.steer=0;this.steerInput=0;this.handbrake=false;this.brake=false;this.throttle=false;this.parked=true;
+  this.scene=scene;this.model=model;this.metrics=model.metrics;this.mass=P.mass;this.keys=new Set();this.steer=0;this.steerInput=0;this.handbrake=false;this.brake=false;this.throttle=false;this.parked=true;this.driveRequested=0;this.brakeRequested=0;this.lastDt=1/60;
   this.wheelContacts=new Map();this.wheelSpin=new Map(WHEELS.map(w=>[w.key,0]));this.wheelPivots=new Map();this.materials=new Map();this.ray=new PhysicsRaycastResult();
   const yaw=Math.atan2(startSample.tangentX,startSample.tangentZ),width=clamp(model.bodySize.x*.88,1.72,2.05),length=clamp(model.bodySize.z*.80,3.65,4.05);
   this.unwrappedYaw=yaw;this.initialYaw=yaw;this.lastYaw=yaw;
@@ -136,10 +136,11 @@ export class VehicleController{
    this.aggregate.body.applyForce(new Vector3(0,this.mass*9.81,0),position);
    return;
   }
-  const speed=Math.hypot(velocity.x,velocity.z),fade=clamp(speed/58,0,.58);this.steer+=(this.steerInput-this.steer)*clamp(dt*7.5,0,1);
+  const speed=Math.hypot(velocity.x,velocity.z),fade=clamp(speed/58,0,.58);this.lastDt=dt;this.steer+=(this.steerInput-this.steer)*clamp(dt*7.5,0,1);
   const ack=calculateAckermannAngles(this.steer,this.metrics.wheelbase,this.metrics.track,P.maxSteer*(1-fade));
   const bodyForward=new Vector3(Math.sin(yaw),0,Math.cos(yaw)),fwd=Vector3.Dot(velocity,bodyForward);let drive=this.throttle?P.engine*clamp(1-speed/82,.22,1):0,braking=0;
   if(this.brake){if(fwd>1)braking=P.brake;else drive=-P.engine*.48;}
+  this.driveRequested=drive;this.brakeRequested=braking;
   const aero=P.drag*speed*speed,rolling=Math.abs(fwd)>.15?Math.sign(fwd)*this.mass*9.81*P.rolling:0,dragWheel=-(aero+rolling)*.25,driveRear=drive*.5,contacts=new Map();
   for(const w of WHEELS){
    const anchor=Vector3.TransformCoordinates(this.wheelMount(w),matrix),end=anchor.add(new Vector3(0,-(P.max+this.metrics.wheelRadius+.16),0));
@@ -153,7 +154,7 @@ export class VehicleController{
    const lever=point.subtract(position),pointVelocity=velocity.add(Vector3.Cross(angular,lever));
    let spring=P.spring*Math.max(0,compression)-P.damper*pointVelocity.y;
    if(suspensionLength<P.min)spring+=(P.min-suspensionLength)*P.bump;spring=clamp(spring,0,P.maxForce);
-   contacts.set(w.key,{...w,hit:true,anchor,point,normal,compression,springForce:spring,steerAngle:steer,longitudinalSpeed:0,lateralSpeed:0,lateralForce:0,tireUtilization:0});
+   contacts.set(w.key,{...w,hit:true,anchor,point,normal,compression,springForce:spring,steerAngle:steer,longitudinalSpeed:0,longitudinalForce:0,lateralSpeed:0,lateralForce:0,tireUtilization:0});
    if(spring<=.5)continue;
    this.aggregate.body.applyForce(new Vector3(normal.x*spring/Math.max(normal.y,.35),spring,normal.z*spring/Math.max(normal.y,.35)),point);
    const wa=yaw+steer,nf=new Vector3(Math.sin(wa),0,Math.cos(wa)),forward=nf.subtract(normal.scale(Vector3.Dot(nf,normal))).normalize();
@@ -165,7 +166,7 @@ export class VehicleController{
    if(this.parked&&Math.abs(longV)>.025)longitudinal-=Math.sign(longV)*P.parkingBrake;
    const tire=clampTireForce(longitudinal,lateral,limit);
    this.aggregate.body.applyForce(forward.scale(tire.longitudinal).add(rightVector.scale(tire.lateral)),point);
-   const contact=contacts.get(w.key);contact.longitudinalSpeed=longV;contact.lateralSpeed=sideV;contact.lateralForce=tire.lateral;contact.tireUtilization=limit>0?Math.hypot(tire.longitudinal,tire.lateral)/limit:0;
+   const contact=contacts.get(w.key);contact.longitudinalSpeed=longV;contact.longitudinalForce=tire.longitudinal;contact.lateralSpeed=sideV;contact.lateralForce=tire.lateral;contact.tireUtilization=limit>0?Math.hypot(tire.longitudinal,tire.lateral)/limit:0;
   }
   const anti=(lk,rk)=>{const l=contacts.get(lk),r=contacts.get(rk);if(!l?.hit||!r?.hit)return;const force=(l.compression-r.compression)*P.antiRoll;
    this.aggregate.body.applyForce(new Vector3(0,-force,0),l.anchor);this.aggregate.body.applyForce(new Vector3(0,force,0),r.anchor);};
@@ -193,12 +194,17 @@ export class VehicleController{
   const angular=this.aggregate.body.getAngularVelocity(),yaw=this.yawOf(this.bodyMatrix());
   const motion=calculateVehicleMotionTelemetry(v,yaw,angular.y);
   const wheels=WHEELS.map(w=>{const c=this.wheelContacts.get(w.key);return {
-   key:w.key,contact:Boolean(c?.hit),compression:Number((c?.compression??0).toFixed(4)),
-   steering:Number((c?.steerAngle??0).toFixed(4)),lateralSpeed:Number((c?.lateralSpeed??0).toFixed(3)),
-   longitudinalSpeed:Number((c?.longitudinalSpeed??0).toFixed(3)),tireUtilization:Number((c?.tireUtilization??0).toFixed(3))
+   key:w.key,axle:w.axle,contact:Boolean(c?.hit),compression:Number((c?.compression??0).toFixed(4)),
+   springForce:Number((c?.springForce??0).toFixed(1)),steering:Number((c?.steerAngle??0).toFixed(4)),
+   lateralSpeed:Number((c?.lateralSpeed??0).toFixed(3)),longitudinalSpeed:Number((c?.longitudinalSpeed??0).toFixed(3)),
+   longitudinalForce:Number((c?.longitudinalForce??0).toFixed(1)),lateralForce:Number((c?.lateralForce??0).toFixed(1)),
+   tireUtilization:Number((c?.tireUtilization??0).toFixed(3))
   };});
   const axleAverage=(axle,key)=>{const list=WHEELS.filter(w=>w.axle===axle).map(w=>this.wheelContacts.get(w.key)).filter(c=>c?.hit);
    return list.length?list.reduce((sum,c)=>sum+(c[key]??0),0)/list.length:0;};
+  const totalSpringLoad=wheels.reduce((sum,w)=>sum+(this.wheelContacts.get(w.key)?.springForce??0),0);
+  const rearLongitudinalForce=WHEELS.filter(w=>w.axle==="rear").reduce((sum,w)=>sum+(this.wheelContacts.get(w.key)?.longitudinalForce??0),0);
+  const totalLongitudinalForce=WHEELS.reduce((sum,w)=>sum+(this.wheelContacts.get(w.key)?.longitudinalForce??0),0);
   const frontLateralSpeed=axleAverage("front","lateralSpeed"),rearLateralSpeed=axleAverage("rear","lateralSpeed");
   const rearLongitudinalSpeed=axleAverage("rear","longitudinalSpeed"),rearSlipAngle=Math.atan2(rearLateralSpeed,Math.max(Math.abs(rearLongitudinalSpeed),.5));
   return {
@@ -213,7 +219,9 @@ export class VehicleController{
    roll:Number(e.z.toFixed(4)),pitch:Number(e.x.toFixed(4)),steer:Number(this.steer.toFixed(3)),
    wheelContactCount:wheels.filter(w=>w.contact).length,wheelbase:Number(this.metrics.wheelbase.toFixed(4)),
    track:Number(this.metrics.track.toFixed(4)),wheelRadius:Number(this.metrics.wheelRadius.toFixed(4)),
-   frontGrip:P.frontGrip,rearGrip:P.rearGrip,rearHandbrakeGrip:P.rearHandbrakeGrip,parked:this.parked,wheels
+   frontGrip:P.frontGrip,rearGrip:P.rearGrip,rearHandbrakeGrip:P.rearHandbrakeGrip,parked:this.parked,
+   throttle:this.throttle,handbrake:this.handbrake,driveRequested:Number(this.driveRequested.toFixed(1)),brakeRequested:Number(this.brakeRequested.toFixed(1)),
+   totalSpringLoad:Number(totalSpringLoad.toFixed(1)),rearLongitudinalForce:Number(rearLongitudinalForce.toFixed(1)),totalLongitudinalForce:Number(totalLongitudinalForce.toFixed(1)),wheels
   };
  }
  dispose(){this.scene.onBeforePhysicsObservable.remove(this.observer);window.removeEventListener("keydown",this.keydown);window.removeEventListener("keyup",this.keyup);window.removeEventListener("blur",this.blur);
