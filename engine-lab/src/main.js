@@ -18,10 +18,11 @@ import {
 } from "@babylonjs/core";
 import HavokPhysics from "@babylonjs/havok";
 import { SpatialChunkManager } from "./SpatialChunkManager.mjs";
-import { terrainChunkLayer, terrainHeight, terrainMoisture } from "./TerrainField.mjs";
+import { registerTunnelCorridors, terrainChunkLayer, terrainHeight, terrainMoisture } from "./TerrainField.mjs";
 import { generateBiomePlacements } from "./BiomeField.mjs";
 import { buildHydrologyChunkGeometry, classifyRoadHydrologyCrossings, getHydrologyStats } from "./HydrologyField.mjs";
 import { buildRoadChunkGeometry, buildRoadFurnitureChunkGeometry, generateMainRoadSamples, getRoadStats, getRoadFurnitureStats, nearestRoadSurfaceHeight, nearestRoadSurfaceInfo } from "./RoadNetwork.mjs";
+import { buildTunnelChunkGeometry, detectTunnelSegments, getTunnelStats, TUNNEL_CLEAR_HEIGHT } from "./TunnelNetwork.mjs";
 
 const canvas = document.getElementById("renderCanvas");
 const statusText = document.getElementById("engineStatus");
@@ -32,6 +33,7 @@ const fpsMeta = document.getElementById("fpsMeta");
 const worldMeta = document.getElementById("worldMeta");
 const roadMeta = document.getElementById("roadMeta");
 const waterMeta = document.getElementById("waterMeta");
+const tunnelMeta = document.getElementById("tunnelMeta");
 const dropButton = document.getElementById("dropButton");
 const resetButton = document.getElementById("resetButton");
 
@@ -74,6 +76,18 @@ const labState = {
   bridgeGirderSegments: 0,
   unresolvedWaterCrossings: 0,
   bridgeCrossings: [],
+  tunnelCount: 0,
+  tunnelLength: 0,
+  tunnelChunks: 0,
+  tunnelPortals: 0,
+  tunnelRibs: 0,
+  tunnelLights: 0,
+  tunnelMinCover: null,
+  tunnelMeshCount: 0,
+  tunnelBodyCount: 0,
+  tunnelProbeY: null,
+  tunnelProbeYAtRoof: null,
+  tunnelProbeStableFrames: 0,
   error: null,
   spatial: null
 };
@@ -433,6 +447,9 @@ function createEnvironment(scene) {
   terrainMaterial.useVertexColors = true;
 
   const roadSamples = generateMainRoadSamples();
+  const tunnels = detectTunnelSegments(roadSamples);
+  const tunnelSpatialStats = registerTunnelCorridors(tunnels);
+  const tunnelStats = getTunnelStats(tunnels);
   const roadStats = getRoadStats(roadSamples);
   const roadFurnitureStats = getRoadFurnitureStats(roadSamples);
   const hydrologyStats = getHydrologyStats();
@@ -441,6 +458,8 @@ function createEnvironment(scene) {
   const shoreMeshes = new Map();
   const roadMeshes = new Map();
   const roadFurnitureMeshes = new Map();
+  const tunnelMeshes = new Map();
+  const tunnelBodies = new Map();
   const roadBodies = new Map();
   const roadMaterial = new StandardMaterial("drivella-road-material", scene);
   roadMaterial.diffuseColor = Color3.White();
@@ -454,6 +473,14 @@ function createEnvironment(scene) {
   roadFurnitureMaterial.specularPower = 14;
   roadFurnitureMaterial.useVertexColors = true;
   roadFurnitureMaterial.backFaceCulling = false;
+
+  const tunnelMaterial = new StandardMaterial("drivella-tunnel-material", scene);
+  tunnelMaterial.diffuseColor = Color3.White();
+  tunnelMaterial.emissiveColor = new Color3(0.08, 0.12, 0.16);
+  tunnelMaterial.specularColor = new Color3(0.28, 0.34, 0.39);
+  tunnelMaterial.specularPower = 28;
+  tunnelMaterial.useVertexColors = true;
+  tunnelMaterial.backFaceCulling = false;
 
   const waterMaterial = new StandardMaterial("drivella-water-material", scene);
   waterMaterial.diffuseColor = new Color3(0.42, 0.76, 0.84);
@@ -494,7 +521,7 @@ function createEnvironment(scene) {
     radius: worldRadius,
     maxActiveChunks: 512,
     onCreate: (chunk) => {
-      const payload = { terrainMesh: null, biome: null, roadMesh: null, roadFurnitureMesh: null, roadFurnitureStats: null, waterMesh: null, shoreMesh: null, hydrologyStats: null };
+      const payload = { terrainMesh: null, biome: null, roadMesh: null, roadFurnitureMesh: null, roadFurnitureStats: null, tunnelMesh: null, tunnelGeometryStats: null, waterMesh: null, shoreMesh: null, hydrologyStats: null };
       if (chunk.y === terrainChunkLayer(chunk.x, chunk.z, 128)) {
         const mesh = createTerrainChunk(scene, chunk.x, chunk.y, chunk.z, 128, terrainMaterial);
         payload.terrainMesh = mesh;
@@ -516,7 +543,7 @@ function createEnvironment(scene) {
             roadBodies.set(chunk.key, roadBody);
           }
         }
-        const furnitureGeometry = buildRoadFurnitureChunkGeometry(roadSamples, chunk.x, chunk.y, chunk.z, 128);
+        const furnitureGeometry = buildRoadFurnitureChunkGeometry(roadSamples, chunk.x, chunk.y, chunk.z, 128, tunnels);
         payload.roadFurnitureStats = {
           bridgePiers: furnitureGeometry.bridgePiers,
           bridgeGirderSegments: furnitureGeometry.bridgeGirderSegments
@@ -529,6 +556,27 @@ function createEnvironment(scene) {
         if (furnitureMesh) {
           payload.roadFurnitureMesh = furnitureMesh;
           roadFurnitureMeshes.set(chunk.key, furnitureMesh);
+        }
+        const tunnelGeometry = buildTunnelChunkGeometry(tunnels, chunk.x, chunk.y, chunk.z, 128);
+        payload.tunnelGeometryStats = {
+          portalCount: tunnelGeometry.portalCount,
+          segmentCount: tunnelGeometry.segmentCount,
+          ribCount: tunnelGeometry.ribCount,
+          lightSegments: tunnelGeometry.lightSegments
+        };
+        labState.tunnelPortals += tunnelGeometry.portalCount;
+        labState.tunnelRibs += tunnelGeometry.ribCount;
+        labState.tunnelLights += tunnelGeometry.lightSegments;
+        const tunnelMesh = createCombinedPropMesh(
+          scene, `tunnel-${chunk.x}-${chunk.y}-${chunk.z}`, tunnelGeometry, tunnelMaterial, roadOrigin
+        );
+        if (tunnelMesh) {
+          payload.tunnelMesh = tunnelMesh;
+          tunnelMeshes.set(chunk.key, tunnelMesh);
+          if (scene.getPhysicsEngine()) {
+            const tunnelBody = addPhysicalProbe(scene, tunnelMesh, 0, PhysicsShapeType.MESH, { friction: 0.92, restitution: 0.01 });
+            tunnelBodies.set(chunk.key, tunnelBody);
+          }
         }
         const waterGeometry = buildHydrologyChunkGeometry(chunk.x, chunk.y, chunk.z, 128, terrainHeight);
         payload.hydrologyStats = {
@@ -585,6 +633,20 @@ function createEnvironment(scene) {
         labState.bridgePiers = Math.max(0, labState.bridgePiers - payload.roadFurnitureStats.bridgePiers);
         labState.bridgeGirderSegments = Math.max(0, labState.bridgeGirderSegments - payload.roadFurnitureStats.bridgeGirderSegments);
       }
+      if (payload?.tunnelGeometryStats) {
+        labState.tunnelPortals = Math.max(0, labState.tunnelPortals - payload.tunnelGeometryStats.portalCount);
+        labState.tunnelRibs = Math.max(0, labState.tunnelRibs - payload.tunnelGeometryStats.ribCount);
+        labState.tunnelLights = Math.max(0, labState.tunnelLights - payload.tunnelGeometryStats.lightSegments);
+      }
+      const tunnelBody = tunnelBodies.get(chunk.key);
+      if (tunnelBody) {
+        tunnelBody.dispose();
+        tunnelBodies.delete(chunk.key);
+      }
+      if (payload?.tunnelMesh) {
+        payload.tunnelMesh.dispose();
+        tunnelMeshes.delete(chunk.key);
+      }
       if (payload?.hydrologyStats) {
         labState.riverSegments = Math.max(0, labState.riverSegments - payload.hydrologyStats.riverSegments);
         labState.lakeTriangles = Math.max(0, labState.lakeTriangles - payload.hydrologyStats.lakeTriangles);
@@ -623,7 +685,7 @@ function createEnvironment(scene) {
   scene.imageProcessingConfiguration.exposure = 1.18;
   scene.imageProcessingConfiguration.contrast = 1.12;
 
-  return { camera, chunkManager, terrainMeshes, terrainBodies, biomeMeshes, rockBodies, roadSamples, roadStats, roadFurnitureStats, hydrologyStats, bridgeClassification, waterMeshes, shoreMeshes, roadMeshes, roadFurnitureMeshes, roadBodies };
+  return { camera, chunkManager, terrainMeshes, terrainBodies, biomeMeshes, rockBodies, roadSamples, roadStats, roadFurnitureStats, hydrologyStats, bridgeClassification, tunnels, tunnelStats, tunnelSpatialStats, tunnelMeshes, tunnelBodies, waterMeshes, shoreMeshes, roadMeshes, roadFurnitureMeshes, roadBodies };
 }
 
 function addPhysicalProbe(scene, mesh, mass, shape, options = {}) {
@@ -649,6 +711,12 @@ let roadFurnitureMeshes;
 let waterMeshes;
 let shoreMeshes;
 let roadBodies;
+let tunnels;
+let tunnelMeshes;
+let tunnelBodies;
+let tunnelProbeMesh = null;
+let tunnelProbeStableFrames = 0;
+let lastTunnelProbePosition = null;
 let havokAttemptRunning = false;
 let havokInstance = null;
 let probeMesh = null;
@@ -715,6 +783,12 @@ function enableHavokPhysics() {
         roadBodies.set(key, body);
       }
     }
+    for (const [key, mesh] of tunnelMeshes) {
+      if (!tunnelBodies.has(key)) {
+        const body = addPhysicalProbe(scene, mesh, 0, PhysicsShapeType.MESH, { friction: 0.92, restitution: 0.01 });
+        tunnelBodies.set(key, body);
+      }
+    }
 
     probeMesh = MeshBuilder.CreateBox("falling-physics-probe", { size: 3 }, scene);
     // Keep the terrain collision probe on the broad, flat garage apron and
@@ -749,6 +823,29 @@ function enableHavokPhysics() {
     roadProbeMaterial.roughness = 0.5;
     roadProbeMesh.material = roadProbeMaterial;
     addPhysicalProbe(scene, roadProbeMesh, 18, PhysicsShapeType.BOX, { friction: 1.8, restitution: 0.01 });
+
+    const tunnelProbeTarget = tunnels.length
+      ? tunnels.reduce((best, tunnel) => {
+        const sample = tunnel.path[Math.floor(tunnel.path.length / 2)];
+        const score = Math.abs(sample.bank || 0);
+        return !best || score < best.score ? { sample, score } : best;
+      }, null)
+      : null;
+    if (tunnelProbeTarget) {
+      tunnelProbeMesh = MeshBuilder.CreateBox("tunnel-ceiling-collision-probe", { size: 1 }, scene);
+      tunnelProbeMesh.position.set(
+        tunnelProbeTarget.sample.x,
+        tunnelProbeTarget.sample.y + 14,
+        tunnelProbeTarget.sample.z
+      );
+      const tunnelProbeMaterial = new StandardMaterial("tunnel-probe-material", scene);
+      tunnelProbeMaterial.diffuseColor = new Color3(0.76, 0.28, 0.92);
+      tunnelProbeMaterial.emissiveColor = new Color3(0.12, 0.025, 0.18);
+      tunnelProbeMaterial.metallic = 0.18;
+      tunnelProbeMaterial.roughness = 0.46;
+      tunnelProbeMesh.material = tunnelProbeMaterial;
+      addPhysicalProbe(scene, tunnelProbeMesh, 8, PhysicsShapeType.BOX, { friction: 1.6, restitution: 0.005 });
+    }
 
     for (let i = 0; i < 5; i += 1) {
       spawnDynamicBox(16 + (i % 2) * 6, 8 + i * 5.5, 5);
