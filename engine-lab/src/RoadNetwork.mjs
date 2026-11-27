@@ -1,4 +1,5 @@
-import { terrainHeight } from "./TerrainField.mjs";
+import { roadProfileHeightAt, terrainHeight } from "./TerrainField.mjs";
+import { getNearestWaterFeature } from "./HydrologyField.mjs";
 import {
   MAIN_ROUTE_CONTROL_POINTS,
   ROAD_SAMPLE_SPACING,
@@ -73,7 +74,7 @@ export function generateMainRoadSamples(
     const turn = (incomingX / incomingLength) * (outgoingZ / outgoingLength)
       - (incomingZ / incomingLength) * (outgoingX / outgoingLength);
     const bank = clamp(turn * 2.2, -0.16, 0.16);
-    const centerY = terrainHeight(current.x, current.z) + ROAD_SURFACE_OFFSET;
+    const centerY = roadProfileHeightAt(current.x, current.z) + ROAD_SURFACE_OFFSET;
 
     samples.push({
       x: current.x,
@@ -95,7 +96,7 @@ function offsetPoint(sample, offset, lift) {
   const bankLift = sample.bank * (offset / ROAD_HALF_WIDTH);
   return {
     x,
-    y: terrainHeight(x, z) + lift + bankLift,
+    y: sample.y - ROAD_SURFACE_OFFSET + lift + bankLift,
     z
   };
 }
@@ -121,7 +122,7 @@ function createCrossSection(sample) {
     leftEdge: offsetPoint(sample, half, ROAD_SURFACE_OFFSET),
     center: {
       x: sample.x,
-      y: terrainHeight(sample.x, sample.z) + ROAD_SURFACE_OFFSET,
+      y: sample.y,
       z: sample.z
     },
     rightEdge: offsetPoint(sample, -half, ROAD_SURFACE_OFFSET),
@@ -285,12 +286,15 @@ const ROAD_FURNITURE_COLORS = Object.freeze({
   drainBank: Object.freeze([0.24, 0.28, 0.27]),
   drainBed: Object.freeze([0.105, 0.145, 0.15]),
   rail: Object.freeze([0.43, 0.52, 0.55]),
-  railPost: Object.freeze([0.30, 0.37, 0.39])
+  railPost: Object.freeze([0.30, 0.37, 0.39]),
+  bridgeConcrete: Object.freeze([0.35, 0.38, 0.39])
 });
 
 function sideProfile(sample, side) {
-  const edge = offsetPoint(sample, side * ROAD_EDGE_OUTER_OFFSET, 0);
-  const far = offsetPoint(sample, side * ROAD_EDGE_SAMPLE_OFFSET, 0);
+  const edge = offsetPoint(sample, side * ROAD_EDGE_OUTER_OFFSET, ROAD_SHOULDER_OFFSET);
+  const farX = sample.x + sample.normalX * side * ROAD_EDGE_SAMPLE_OFFSET;
+  const farZ = sample.z + sample.normalZ * side * ROAD_EDGE_SAMPLE_OFFSET;
+  const far = { x: farX, y: terrainHeight(farX, farZ), z: farZ };
   return {
     edge,
     far,
@@ -341,6 +345,28 @@ function addRailBeam(geometry, origin, a, b, halfThickness, halfHeight, color) {
   addBoxFace(geometry, origin, [aRightBottom, bRightBottom, bRightTop, aRightTop], color);
   addBoxFace(geometry, origin, [aLeftBottom, aRightBottom, aRightTop, aLeftTop], color);
   addBoxFace(geometry, origin, [bLeftBottom, bLeftTop, bRightTop, bRightBottom], color);
+}
+
+function addBridgePier(geometry, origin, x, z, bottomY, topY, bottomRadius = 0.82, topRadius = 0.62) {
+  if (![x, z, bottomY, topY].every(Number.isFinite) || topY - bottomY < 0.5) return;
+  const sides = 8;
+  const bottom = [];
+  const top = [];
+  for (let side = 0; side < sides; side += 1) {
+    const angle = (side / sides) * Math.PI * 2;
+    const cosine = Math.cos(angle);
+    const sine = Math.sin(angle);
+    bottom.push({ x: x + cosine * bottomRadius, y: bottomY, z: z + sine * bottomRadius });
+    top.push({ x: x + cosine * topRadius, y: topY, z: z + sine * topRadius });
+  }
+  for (let side = 0; side < sides; side += 1) {
+    const next = (side + 1) % sides;
+    addQuad(
+      geometry, origin,
+      bottom[side], bottom[next], top[next], top[side],
+      ROAD_FURNITURE_COLORS.bridgeConcrete
+    );
+  }
 }
 
 function addGuardrailPost(geometry, origin, point, bottom, top, radius, color) {
@@ -413,7 +439,8 @@ export function buildRoadFurnitureChunkGeometry(
     transitionSegments: 0,
     drainageSegments: 0,
     guardrailSegments: 0,
-    guardrailPosts: 0
+    guardrailPosts: 0,
+    bridgePiers: 0
   };
   const origin = {
     x: chunkX * chunkSize,
@@ -427,6 +454,28 @@ export function buildRoadFurnitureChunkGeometry(
     const a = samples[index];
     const b = samples[nextIndex];
     if (!isChunkSegment(a, b, chunkX, chunkZ, chunkSize)) continue;
+
+    if (index % 4 === 0) {
+      const bridgeWater = getNearestWaterFeature(a.x, a.z, ROAD_HALF_WIDTH + 9);
+      if (bridgeWater) {
+        const crossingReach = bridgeWater.kind === "river"
+          ? ROAD_HALF_WIDTH + bridgeWater.halfWidth + 2.4
+          : ROAD_HALF_WIDTH + 3.2;
+        if (
+          bridgeWater.distance <= crossingReach
+          && a.y - bridgeWater.waterY >= 3.95
+        ) {
+          for (const lateralOffset of [-3.25, 3.25]) {
+            const support = offsetPoint(a, lateralOffset, 0);
+            addBridgePier(
+              geometry, origin, support.x, support.z,
+              bridgeWater.waterY - 0.9, a.y - 0.55
+            );
+            geometry.bridgePiers += 1;
+          }
+        }
+      }
+    }
 
     for (const side of [1, -1]) {
       const sideKey = side === 1 ? "left" : "right";
@@ -480,8 +529,8 @@ export function buildRoadFurnitureChunkGeometry(
         && profileB.delta <= -ROAD_GUARDRAIL_DROP_THRESHOLD
       ) {
         const railOffset = ROAD_EDGE_OUTER_OFFSET - 0.18;
-        const groundA = terrainPointAtOffset(a, side, railOffset, ROAD_SHOULDER_OFFSET);
-        const groundB = terrainPointAtOffset(b, side, railOffset, ROAD_SHOULDER_OFFSET);
+        const groundA = offsetPoint(a, side * railOffset, ROAD_SHOULDER_OFFSET);
+        const groundB = offsetPoint(b, side * railOffset, ROAD_SHOULDER_OFFSET);
         const topA = { ...groundA, y: groundA.y + 0.98 };
         const topB = { ...groundB, y: groundB.y + 0.98 };
         const midA = { ...groundA, y: groundA.y + 0.52 };
@@ -509,7 +558,7 @@ export function getRoadFurnitureStats(samples, chunkSize = ROAD_CHUNK_SIZE) {
   if (!Array.isArray(samples) || samples.length < 2) {
     return { transitionSegments: 0, drainageSegments: 0, guardrailSegments: 0 };
   }
-  const stats = { transitionSegments: 0, drainageSegments: 0, guardrailSegments: 0 };
+  const stats = { transitionSegments: 0, drainageSegments: 0, guardrailSegments: 0, bridgePiers: 0 };
   const profiles = getRoadFurnitureProfiles(samples);
   for (let index = 0; index < samples.length; index += 1) {
     const nextIndex = (index + 1) % samples.length;
