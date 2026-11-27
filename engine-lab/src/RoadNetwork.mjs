@@ -303,7 +303,10 @@ const roadFurnitureProfileCache = new WeakMap();
 function getRoadFurnitureProfiles(samples) {
   const cached = roadFurnitureProfileCache.get(samples);
   if (cached) return cached;
-  const profiles = getRoadFurnitureProfiles(samples);
+  const profiles = samples.map((sample) => ({
+    left: sideProfile(sample, 1),
+    right: sideProfile(sample, -1)
+  }));
   roadFurnitureProfileCache.set(samples, profiles);
   return profiles;
 }
@@ -417,10 +420,7 @@ export function buildRoadFurnitureChunkGeometry(
     y: chunkY * chunkSize,
     z: chunkZ * chunkSize
   };
-  const profiles = samples.map((sample) => ({
-    left: sideProfile(sample, 1),
-    right: sideProfile(sample, -1)
-  }));
+  const profiles = getRoadFurnitureProfiles(samples);
 
   for (let index = 0; index < samples.length; index += 1) {
     const nextIndex = (index + 1) % samples.length;
