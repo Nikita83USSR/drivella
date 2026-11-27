@@ -147,11 +147,14 @@ assert.ok(bridgeClassification.crossings.length >= 1, "the main route should cla
 assert.ok(
   bridgeClassification.crossings.every((crossing) =>
     Number.isFinite(crossing.minClearance)
+    && crossing.minClearance >= 3.95
     && crossing.sampleCount > 0
-    && ["bridge-candidate", "bridge-or-culvert-required"].includes(crossing.structure)
+    && crossing.structure === "bridge-candidate"
   ),
-  "each water crossing must report a measurable deck clearance and structure classification"
+  "every road-water crossing must have a raised road deck with at least 4 m of water clearance"
 );
+assert.equal(bridgeClassification.unresolvedCount, 0,
+  "no route section may remain below the water surface after bridge-profile elevation");
 console.log("HYDROLOGY TEST PASS", JSON.stringify({ ...hydrologyStats, waterChunkTotals, bridgeClassification }));
 assert.ok(roadStats.length > 1200 && roadStats.length < 4000, "main route length must be a coherent closed circuit");
 const roadProfileStats = getMainRoadElevationStats();
