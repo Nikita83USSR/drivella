@@ -1,5 +1,6 @@
 import { roadProfileHeightAt, terrainHeight } from "./TerrainField.mjs";
 import { getNearestWaterFeature, RIVER_BED_DEPTH, LAKE_BED_DEPTH } from "./HydrologyField.mjs";
+import { isTunnelSampleIndex } from "./TunnelNetwork.mjs";
 import {
   MAIN_ROUTE_CONTROL_POINTS,
   ROAD_SAMPLE_SPACING,
@@ -420,7 +421,8 @@ export function buildRoadFurnitureChunkGeometry(
   chunkX,
   chunkY,
   chunkZ,
-  chunkSize = ROAD_CHUNK_SIZE
+  chunkSize = ROAD_CHUNK_SIZE,
+  tunnels = []
 ) {
   if (!Array.isArray(samples) || samples.length < 8) {
     throw new TypeError("Road furniture generation requires a closed sample path.");
@@ -455,6 +457,7 @@ export function buildRoadFurnitureChunkGeometry(
     const a = samples[index];
     const b = samples[nextIndex];
     if (!isChunkSegment(a, b, chunkX, chunkZ, chunkSize)) continue;
+    if (isTunnelSampleIndex(index, tunnels, samples.length)) continue;
 
     const midpointX = (a.x + b.x) * 0.5;
     const midpointZ = (a.z + b.z) * 0.5;
