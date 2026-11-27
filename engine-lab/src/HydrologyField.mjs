@@ -151,6 +151,38 @@ const RIVERS = Object.freeze(RIVER_DEFINITIONS.map((definition) => Object.freeze
   samples: Object.freeze(sampleRiver(definition).map((sample) => Object.freeze(sample)))
 })));
 
+const RIVER_SPATIAL_CELL_SIZE = 48;
+const RIVER_SEGMENT_BUCKETS = new Map();
+const RIVER_SEGMENTS = [];
+for (const river of RIVERS) {
+  for (let index = 0; index < river.samples.length - 1; index += 1) {
+    const a = river.samples[index];
+    const b = river.samples[index + 1];
+    const segment = { river, index, a, b };
+    RIVER_SEGMENTS.push(segment);
+    const cellX = Math.floor(((a.x + b.x) * 0.5) / RIVER_SPATIAL_CELL_SIZE);
+    const cellZ = Math.floor(((a.z + b.z) * 0.5) / RIVER_SPATIAL_CELL_SIZE);
+    const key = `${cellX}:${cellZ}`;
+    if (!RIVER_SEGMENT_BUCKETS.has(key)) RIVER_SEGMENT_BUCKETS.set(key, []);
+    RIVER_SEGMENT_BUCKETS.get(key).push(segment);
+  }
+}
+
+function getRiverCandidates(x, z, radius) {
+  if (!Number.isFinite(radius)) return RIVER_SEGMENTS;
+  const reach = Math.ceil(radius / RIVER_SPATIAL_CELL_SIZE) + 1;
+  const cellX = Math.floor(x / RIVER_SPATIAL_CELL_SIZE);
+  const cellZ = Math.floor(z / RIVER_SPATIAL_CELL_SIZE);
+  const candidates = [];
+  for (let offsetX = -reach; offsetX <= reach; offsetX += 1) {
+    for (let offsetZ = -reach; offsetZ <= reach; offsetZ += 1) {
+      const bucket = RIVER_SEGMENT_BUCKETS.get(`${cellX + offsetX}:${cellZ + offsetZ}`);
+      if (bucket) candidates.push(...bucket);
+    }
+  }
+  return candidates;
+}
+
 function lakeLevelAt(lake) {
   return waterLevelAt(lake.x, lake.z, lake.levelOffset);
 }
@@ -177,25 +209,21 @@ export function getNearestWaterFeature(x, z, maxDistance = Infinity) {
   if (!(maxDistance >= 0)) throw new RangeError("maxDistance must be non-negative.");
 
   let nearest = null;
-  for (const river of RIVERS) {
-    for (let index = 0; index < river.samples.length - 1; index += 1) {
-      const a = river.samples[index];
-      const b = river.samples[index + 1];
-      const point = nearestPointOnSegment(x, z, a, b);
-      if (point.distance < (nearest?.distance ?? maxDistance + 1)) {
-        nearest = {
-          id: river.id,
-          name: river.name,
-          kind: "river",
-          x: point.x,
-          z: point.z,
-          distance: point.distance,
-          waterY: lerp(a.y, b.y, point.t),
-          halfWidth: river.halfWidth,
-          sampleIndex: index,
-          t: point.t
-        };
-      }
+  for (const segment of getRiverCandidates(x, z, maxDistance)) {
+    const point = nearestPointOnSegment(x, z, segment.a, segment.b);
+    if (point.distance < (nearest?.distance ?? maxDistance + 1)) {
+      nearest = {
+        id: segment.river.id,
+        name: segment.river.name,
+        kind: "river",
+        x: point.x,
+        z: point.z,
+        distance: point.distance,
+        waterY: lerp(segment.a.y, segment.b.y, point.t),
+        halfWidth: segment.river.halfWidth,
+        sampleIndex: segment.index,
+        t: point.t
+      };
     }
   }
 
@@ -233,25 +261,27 @@ export function applyHydrologyCarve(x, z, terrainY) {
   }
 
   let result = terrainY;
-  for (const river of RIVERS) {
-    let bestDistance = Infinity;
-    let bestWaterY = null;
-    for (let index = 0; index < river.samples.length - 1; index += 1) {
-      const a = river.samples[index];
-      const b = river.samples[index + 1];
-      const point = nearestPointOnSegment(x, z, a, b);
-      if (point.distance < bestDistance) {
-        bestDistance = point.distance;
-        bestWaterY = lerp(a.y, b.y, point.t);
-      }
+  const nearestByRiver = new Map();
+  for (const segment of getRiverCandidates(x, z, RIVER_BANK_RADIUS)) {
+    const point = nearestPointOnSegment(x, z, segment.a, segment.b);
+    const current = nearestByRiver.get(segment.river.id);
+    if (!current || point.distance < current.distance) {
+      nearestByRiver.set(segment.river.id, {
+        distance: point.distance,
+        waterY: lerp(segment.a.y, segment.b.y, point.t),
+        halfWidth: segment.river.halfWidth
+      });
     }
-    if (bestDistance > RIVER_BANK_RADIUS) continue;
+  }
+  for (const river of RIVERS) {
+    const nearest = nearestByRiver.get(river.id);
+    if (!nearest || nearest.distance > RIVER_BANK_RADIUS) continue;
 
     const innerRadius = river.halfWidth * 0.58;
-    const blend = bestDistance <= innerRadius
+    const blend = nearest.distance <= innerRadius
       ? 1
-      : 1 - smooth01((bestDistance - innerRadius) / (RIVER_BANK_RADIUS - innerRadius));
-    const channelBed = bestWaterY - RIVER_BED_DEPTH;
+      : 1 - smooth01((nearest.distance - innerRadius) / (RIVER_BANK_RADIUS - innerRadius));
+    const channelBed = nearest.waterY - RIVER_BED_DEPTH;
     result = lerp(result, channelBed, blend);
   }
 
