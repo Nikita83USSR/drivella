@@ -1,7 +1,7 @@
 import assert from "node:assert/strict";
 import { readFile } from "node:fs/promises";
 import { inflateSync } from "node:zlib";
-import { calculateAckermannAngles, calculateLateralTireForce, calculateVehicleMotionTelemetry, clampTireForce, measureCountachRigMetrics, wrapVehicleAngle } from "../engine-lab/src/VehicleController.mjs";
+import { calculateAckermannAngles, calculateLateralTireForce, calculateStaticSuspensionCompression, calculateVehicleMotionTelemetry, clampTireForce, measureCountachRigMetrics, wrapVehicleAngle } from "../engine-lab/src/VehicleController.mjs";
 
 const assetDir = new URL("../engine-lab/assets/", import.meta.url);
 const names = [
@@ -57,6 +57,10 @@ assert.ok(rear.radius > 0 && rear.radius < 2, "Rear tyre radius must be finite a
 const rig = measureCountachRigMetrics(meta, wheelRadius);
 assert.ok(Math.abs(rig.track - 1.8548473716) < 1e-6);
 assert.ok(Math.abs(rig.wheelbase - 3.2824337110) < 1e-6);
+const frontStaticCompression=calculateStaticSuspensionCompression(meta.wheelCenters.front[1],wheelRadius);
+const rearStaticCompression=calculateStaticSuspensionCompression(meta.wheelCenters.rear[1],wheelRadius);
+assert.ok(frontStaticCompression>.075&&frontStaticCompression<.10,"Front static sag must preload the springs to support the 1,250 kg chassis.");
+assert.ok(rearStaticCompression>.065&&rearStaticCompression<.09,"Rear static sag must preload the springs to support the 1,250 kg chassis.");
 
 const right = calculateAckermannAngles(0.7, rig.wheelbase, rig.track);
 assert.ok(right.left > 0 && right.right > right.left, "Right-hand turn must steer right wheel tighter.");
@@ -83,4 +87,4 @@ console.log("COUNTACH SOURCE GEOMETRY PASS", JSON.stringify({
   track: rig.track,
   measuredWheelRadius: rig.wheelRadius
 }));
-console.log("VEHICLE CONTROLLER UNIT PASS", JSON.stringify({ right, left, saturated }));
+console.log("VEHICLE CONTROLLER UNIT PASS", JSON.stringify({ right, left, saturated, frontStaticCompression, rearStaticCompression }));

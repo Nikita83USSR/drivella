@@ -4,8 +4,11 @@ const WHEEL_PARTS=new Set(["front_tyre","front_rims","front_extra_NoMaterial","r
 const WHEELS=Object.freeze([Object.freeze({key:"frontLeft",axle:"front",side:-1}),Object.freeze({key:"frontRight",axle:"front",side:1}),Object.freeze({key:"rearLeft",axle:"rear",side:-1}),Object.freeze({key:"rearRight",axle:"rear",side:1})]);
 // Babylon 9.37.2 PhysicsMotionType enum: STATIC=0, ANIMATED=1, DYNAMIC=2.
 const BODY_MOTION=Object.freeze({STATIC:0,DYNAMIC:2});
-const P=Object.freeze({mass:1250,cg:.50,spawn:.05,colliderH:.42,rest:.32,min:.12,max:.55,maxComp:.20,spring:38000,damper:4200,bump:98000,antiRoll:26000,rollStiffness:16000,rollDamping:4000,maxRollTorque:9000,maxForce:16000,maxSteer:.49,engine:8600,brake:19500,handbrake:10500,parkingBrake:18000,frontGrip:1.22,rearGrip:1.04,rearHandbrakeGrip:.32,frontCornering:5600,rearCornering:3950,drag:.46,rolling:.012});
+const P=Object.freeze({mass:1250,cg:.50,spawn:.05,colliderH:.42,rest:.32,rideSag:.06,min:.12,max:.55,maxComp:.20,spring:38000,damper:4200,bump:98000,antiRoll:26000,rollStiffness:16000,rollDamping:4000,maxRollTorque:9000,maxForce:16000,maxSteer:.49,engine:8600,brake:19500,handbrake:10500,parkingBrake:18000,frontGrip:1.22,rearGrip:1.04,rearHandbrakeGrip:.32,frontCornering:5600,rearCornering:3950,drag:.46,rolling:.012});
 const clamp=(v,a,b)=>Math.max(a,Math.min(b,v));
+export function calculateStaticSuspensionCompression(wheelCenterY,wheelRadius,rideSag=.06){
+ return wheelRadius-wheelCenterY+rideSag;
+}
 export function wrapVehicleAngle(angle){return Math.atan2(Math.sin(angle),Math.cos(angle));}
 export function calculateVehicleMotionTelemetry(velocity,yaw,yawRate=0){
  const forwardX=Math.sin(yaw),forwardZ=Math.cos(yaw),rightX=Math.cos(yaw),rightZ=-Math.sin(yaw);
@@ -113,7 +116,7 @@ export class VehicleController{
  }
  bodyMatrix(){this.chassis.computeWorldMatrix(true);return this.chassis.getWorldMatrix();}
  yawOf(m){const f=Vector3.TransformNormal(Vector3.Forward(),m).normalize();return Math.atan2(f.x,f.z);}
- wheelMount(w){const c=this.metrics.wheelCenters[w.axle];return new Vector3(w.side*c[0],c[1]+P.rest-P.cg-P.spawn,c[2]);}
+ wheelMount(w){const c=this.metrics.wheelCenters[w.axle];return new Vector3(w.side*c[0],c[1]+P.rest-P.cg-P.spawn-P.rideSag,c[2]);}
  stepPhysics(){
   if(!this.aggregate?.body||this.aggregate.body.isDisposed)return;const physics=this.scene.getPhysicsEngine();if(!physics?.raycastToRef)return;
   const dt=clamp(this.scene.getEngine().getDeltaTime()/1000,1/240,1/30),matrix=this.bodyMatrix(),yaw=this.yawOf(matrix),position=this.chassis.position.clone();
