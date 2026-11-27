@@ -3,7 +3,7 @@ import { SpatialChunkManager } from "../engine-lab/src/SpatialChunkManager.mjs";
 import { getMainRoadElevationStats, terrainChunkHeightRange, terrainChunkLayer, terrainHeight } from "../engine-lab/src/TerrainField.mjs";
 import { distanceToMainRoute } from "../engine-lab/src/WorldLayout.mjs";
 import { BIOME_IDS, generateBiomePlacements, sampleBiome } from "../engine-lab/src/BiomeField.mjs";
-import { buildRoadChunkGeometry, generateMainRoadSamples, getRoadStats, nearestRoadSurfaceHeight } from "../engine-lab/src/RoadNetwork.mjs";
+import { buildRoadChunkGeometry, buildRoadFurnitureChunkGeometry, generateMainRoadSamples, getRoadStats, nearestRoadSurfaceHeight } from "../engine-lab/src/RoadNetwork.mjs";
 
 const disposed = [];
 const manager = new SpatialChunkManager({
@@ -116,6 +116,11 @@ assert.ok(Math.abs(nearestRoadSurfaceHeight(0, 0, roadSamplesA) - 1.05) < 0.001,
   "road start/finish elevation must remain 1.05 m above central terrain");
 let roadSegments = 0;
 let roadVertices = 0;
+let transitionSegments = 0;
+let drainageSegments = 0;
+let guardrailSegments = 0;
+let guardrailPosts = 0;
+let furnitureVertices = 0;
 for (const key of roadStats.chunkKeys) {
   const [x, z] = key.split(":").map(Number);
   const y = terrainChunkLayer(x, z, 128);
@@ -124,10 +129,26 @@ for (const key of roadStats.chunkKeys) {
   roadVertices += chunkGeometry.positions.length / 3;
   assert.ok(chunkGeometry.indices.length > 0, `route chunk ${key} should contain road geometry`);
   assert.ok(chunkGeometry.positions.every(Number.isFinite), `road chunk ${key} has invalid geometry`);
+
+  const furniture = buildRoadFurnitureChunkGeometry(roadSamplesA, x, y, z, 128);
+  transitionSegments += furniture.transitionSegments;
+  drainageSegments += furniture.drainageSegments;
+  guardrailSegments += furniture.guardrailSegments;
+  guardrailPosts += furniture.guardrailPosts;
+  furnitureVertices += furniture.positions.length / 3;
+  assert.ok(furniture.positions.every(Number.isFinite), `road furniture chunk ${key} has invalid geometry`);
+  assert.equal(furniture.indices.length % 3, 0, `road furniture chunk ${key} has incomplete triangles`);
 }
 assert.ok(roadSegments > roadSamplesA.length * 0.9, "road chunks should cover nearly every spline segment");
 assert.ok(roadVertices > 10000, "road mesh should contain actual asphalt, shoulders and markings");
+assert.ok(transitionSegments > 0, "cut/fill transitions should be dressed where terrain diverges from the road shoulder");
+assert.ok(drainageSegments > 0, "uphill road cuts should receive drainage channels");
+assert.ok(guardrailSegments > 0 && guardrailPosts > 0, "exposed road drops should receive guardrails and supports");
+assert.ok(furnitureVertices > 1000, "roadside transition and safety geometry should be generated");
 
-console.log("ROAD NETWORK TEST PASS", JSON.stringify({ ...roadStats, roadSegments, roadVertices }));
+console.log("ROAD NETWORK TEST PASS", JSON.stringify({
+  ...roadStats, roadSegments, roadVertices,
+  transitionSegments, drainageSegments, guardrailSegments, guardrailPosts, furnitureVertices
+}));
 
 console.log("SPATIAL CHUNK TEST PASS", JSON.stringify(initial));
