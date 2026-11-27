@@ -87,6 +87,7 @@ const labState = {
   tunnelBodyCount: 0,
   tunnelProbeY: null,
   tunnelProbeYAtRoof: null,
+  tunnelProbePeakY: null,
   tunnelProbeStableFrames: 0,
   error: null,
   spatial: null
@@ -837,7 +838,7 @@ function enableHavokPhysics() {
       tunnelProbeMesh = MeshBuilder.CreateBox("tunnel-ceiling-collision-probe", { size: 1 }, scene);
       tunnelProbeMesh.position.set(
         tunnelProbeTarget.sample.x,
-        tunnelProbeTarget.sample.y + 14,
+        tunnelProbeTarget.sample.y + 1.5,
         tunnelProbeTarget.sample.z
       );
       const tunnelProbeMaterial = new StandardMaterial("tunnel-probe-material", scene);
@@ -846,7 +847,13 @@ function enableHavokPhysics() {
       tunnelProbeMaterial.metallic = 0.18;
       tunnelProbeMaterial.roughness = 0.46;
       tunnelProbeMesh.material = tunnelProbeMaterial;
-      addPhysicalProbe(scene, tunnelProbeMesh, 8, PhysicsShapeType.BOX, { friction: 1.6, restitution: 0.005 });
+      const tunnelProbeAggregate = addPhysicalProbe(
+        scene, tunnelProbeMesh, 8, PhysicsShapeType.BOX, { friction: 1.6, restitution: 0.005 }
+      );
+      // Launch from inside the bore. If the arch collider is missing, the
+      // test body will rise above the expected roof height instead of striking it.
+      tunnelProbeAggregate.body.setLinearVelocity(new Vector3(0, 12, 0));
+      labState.tunnelProbePeakY = tunnelProbeMesh.position.y;
     }
 
     for (let i = 0; i < 5; i += 1) {
@@ -979,6 +986,10 @@ async function boot() {
         labState.tunnelProbeYAtRoof = tunnelProbeRoadY === null
           ? null
           : Number((tunnelProbeRoadY + TUNNEL_CLEAR_HEIGHT).toFixed(3));
+        labState.tunnelProbePeakY = Number(Math.max(
+          labState.tunnelProbePeakY ?? -Infinity,
+          position.y
+        ).toFixed(3));
         if (lastTunnelProbePosition) {
           const movement = Math.hypot(
             position.x - lastTunnelProbePosition.x,
