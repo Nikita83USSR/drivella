@@ -1,5 +1,5 @@
 import {Color3,Mesh,MeshBuilder,PhysicsAggregate,PhysicsShapeType,Quaternion,StandardMaterial,TransformNode,Vector3,VertexData} from "@babylonjs/core";
-import {PhysicsRaycastResult} from "@babylonjs/core/Physics/physicsRaycastResult";
+import {PhysicsRaycastResult} from "@babylonjs/core/Physics/physicsRaycastResult.js";
 const WHEEL_PARTS=new Set(["front_tyre","front_rims","front_extra_NoMaterial","rear_tyre","rear_rims"]);
 const WHEELS=Object.freeze([Object.freeze({key:"frontLeft",axle:"front",side:-1}),Object.freeze({key:"frontRight",axle:"front",side:1}),Object.freeze({key:"rearLeft",axle:"rear",side:-1}),Object.freeze({key:"rearRight",axle:"rear",side:1})]);
 const P=Object.freeze({mass:1250,cg:.58,spawn:.05,colliderH:.42,rest:.32,min:.12,max:.55,maxComp:.20,spring:38000,damper:4200,bump:98000,antiRoll:11000,maxForce:16000,maxSteer:.49,engine:8600,brake:19500,handbrake:10500,drag:.46,rolling:.012});
