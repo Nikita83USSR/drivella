@@ -155,6 +155,12 @@ assert.ok(
 );
 assert.equal(bridgeClassification.unresolvedCount, 0,
   "no route section may remain below the water surface after bridge-profile elevation");
+for (const crossing of bridgeClassification.crossings) {
+  const water = getNearestWaterFeature(crossing.x, crossing.z, 24);
+  assert.ok(water && water.kind === "river", `${crossing.id} must resolve to an actual river segment`);
+  assert.ok(terrainHeight(water.x, water.z) <= water.waterY - 1.4,
+    `${crossing.id} must preserve an open river channel beneath the raised deck`);
+}
 console.log("HYDROLOGY TEST PASS", JSON.stringify({ ...hydrologyStats, waterChunkTotals, bridgeClassification }));
 assert.ok(roadStats.length > 1200 && roadStats.length < 4000, "main route length must be a coherent closed circuit");
 const roadProfileStats = getMainRoadElevationStats();
@@ -176,6 +182,7 @@ let drainageSegments = 0;
 let guardrailSegments = 0;
 let guardrailPosts = 0;
 let furnitureVertices = 0;
+let bridgePiers = 0;
 for (const key of roadStats.chunkKeys) {
   const [x, z] = key.split(":").map(Number);
   const y = terrainChunkLayer(x, z, 128);
@@ -191,6 +198,7 @@ for (const key of roadStats.chunkKeys) {
   guardrailSegments += furniture.guardrailSegments;
   guardrailPosts += furniture.guardrailPosts;
   furnitureVertices += furniture.positions.length / 3;
+  bridgePiers += furniture.bridgePiers;
   assert.ok(furniture.positions.every(Number.isFinite), `road furniture chunk ${key} has invalid geometry`);
   assert.equal(furniture.indices.length % 3, 0, `road furniture chunk ${key} has incomplete triangles`);
 }
@@ -200,10 +208,11 @@ assert.ok(transitionSegments > 0, "cut/fill transitions should be dressed where 
 assert.ok(drainageSegments > 0, "uphill road cuts should receive drainage channels");
 assert.ok(guardrailSegments > 0 && guardrailPosts > 0, "exposed road drops should receive guardrails and supports");
 assert.ok(furnitureVertices > 1000, "roadside transition and safety geometry should be generated");
+assert.ok(bridgePiers >= 4, "raised river crossings should receive visible structural support piers");
 
 console.log("ROAD NETWORK TEST PASS", JSON.stringify({
   ...roadStats, roadSegments, roadVertices,
-  transitionSegments, drainageSegments, guardrailSegments, guardrailPosts, furnitureVertices
+  transitionSegments, drainageSegments, guardrailSegments, guardrailPosts, furnitureVertices, bridgePiers
 }));
 
 console.log("SPATIAL CHUNK TEST PASS", JSON.stringify(initial));
