@@ -24,7 +24,7 @@ export function measureCountachRigMetrics(meta,wheelRadius){
 }
 function mirrorX(src){const out=new Float32Array(src.length);for(let i=0;i<src.length;i+=9){
  out[i]=-src[i+6];out[i+1]=src[i+7];out[i+2]=src[i+8];out[i+3]=-src[i+3];out[i+4]=src[i+4];out[i+5]=src[i+5];out[i+6]=-src[i];out[i+7]=src[i+1];out[i+8]=src[i+2];}return out;}
-function tyreRadius(pos,c){if(!pos?.length)throw new Error("Countach tyre geometry is missing.");let r=0;for(let i=0;i<pos.length;i+=3)r=Math.max(r,Math.hypot(pos[i+1]-c[1],pos[i+2]-c[2]));return r;}
+function tyreRadius(pos){if(!pos?.length)throw new Error("Countach tyre geometry is missing.");let r=0;for(let i=0;i<pos.length;i+=3)r=Math.max(r,Math.hypot(pos[i+1],pos[i+2]));return r;}
 async function decodeModel(meta,encoded){
  if(!meta||meta.version!==2||!Array.isArray(meta.parts))throw new Error("Countach model metadata missing or unsupported.");
  if(typeof encoded!=="string"||!encoded.length)throw new Error("Countach model data missing.");
@@ -42,7 +42,7 @@ async function decodeModel(meta,encoded){
    }
   }parts.set(part.name,pos);
  }
- const rf=tyreRadius(parts.get("front_tyre"),meta.wheelCenters.front),rr=tyreRadius(parts.get("rear_tyre"),meta.wheelCenters.rear);
+ const rf=tyreRadius(parts.get("front_tyre")),rr=tyreRadius(parts.get("rear_tyre"));
  const metrics=measureCountachRigMetrics(meta,(rf+rr)*.5);
  return {parts,bounds,bodySize:bounds.max.subtract(bounds.min),metrics};
 }
@@ -55,7 +55,7 @@ function triangleMesh(scene,name,pos,parent,mat){
  VertexData.ComputeNormals(pos,indices,normals);const data=new VertexData();data.positions=pos;data.indices=indices;data.normals=normals;data.applyToMesh(mesh,true);
  mesh.parent=parent;mesh.material=mat;mesh.isPickable=false;mesh.alwaysSelectAsActiveMesh=true;return mesh;
 }
-function wheelAtPivot(src,c){const p=new Float32Array(src.length);for(let i=0;i<src.length;i+=3){p[i]=src[i]-c[0];p[i+1]=src[i+1]-c[1];p[i+2]=src[i+2]-c[2];}return p;}
+function wheelAtPivot(src){return src;}
 
 export class VehicleController{
  static async create(scene,opts){const meta=opts?.assetMeta??globalThis.DRIVELLA_COUNTACH_META,data=opts?.assetData??globalThis.DRIVELLA_COUNTACH_DATA;return new VehicleController(scene,{...opts,model:await decodeModel(meta,data)});}
@@ -90,7 +90,7 @@ export class VehicleController{
  buildWheels(){
   for(const w of WHEELS){const pivot=new TransformNode("countach-wheel-pivot-"+w.key,this.scene);this.wheelPivots.set(w.key,pivot);
    const c=this.metrics.wheelCenters[w.axle],signed=[w.side*c[0],c[1],c[2]],names=w.axle==="front"?["front_tyre","front_rims","front_extra_NoMaterial"]:["rear_tyre","rear_rims"];
-   for(const n of names){const src=this.model.parts.get(n);if(!src)continue;const sided=w.side<0?mirrorX(src):src,local=wheelAtPivot(sided,signed),mat=n.endsWith("_tyre")?"tyre":n.endsWith("_rims")?"rims":"wheelExtra";
+   for(const n of names){const src=this.model.parts.get(n);if(!src)continue;const sided=w.side<0?mirrorX(src):src,local=wheelAtPivot(sided),mat=n.endsWith("_tyre")?"tyre":n.endsWith("_rims")?"rims":"wheelExtra";
     triangleMesh(this.scene,"countach-"+w.key+"-"+n,local,pivot,this.materials.get(mat));
    }
   }
