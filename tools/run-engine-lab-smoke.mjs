@@ -144,6 +144,7 @@ try {
   });
   const beforeDrive=await sampleVehicle();
   if(beforeDrive.speedKmh>1.0||beforeDrive.parked!==true||beforeDrive.contacts!==4)throw new Error("Vehicle must remain parked with four wheel ray contacts before driver input: "+JSON.stringify(beforeDrive));
+  if(Math.abs(beforeDrive.bodyMass-1250)>.5||Math.abs(beforeDrive.gravityFactor-1)>.001)throw new Error("Havok vehicle mass/gravity mismatch: "+JSON.stringify(beforeDrive));
   const handlingSamples={beforeDrive};
   await page.keyboard.down("w");
   await page.waitForTimeout(180);
@@ -176,11 +177,15 @@ try {
   await page.keyboard.down(" ");
   await page.waitForTimeout(180);
   await page.keyboard.up(" ");
-  await page.waitForTimeout(4200);
+  await page.waitForTimeout(1500);
   handlingSamples.spin=await sampleVehicle();
+  await page.keyboard.up(" ");
   await page.keyboard.up("d");
   await page.keyboard.up("w");
-  await page.waitForTimeout(400);
+  await page.keyboard.down("s");
+  await page.waitForTimeout(800);
+  await page.keyboard.up("s");
+  await page.waitForTimeout(250);
   const finalVehicle=await sampleVehicle();
   console.log("VEHICLE HANDLING PHASES",JSON.stringify({
     ...handlingSamples,
