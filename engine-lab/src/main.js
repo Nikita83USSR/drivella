@@ -801,8 +801,7 @@ async function enableHavokPhysics() {
       }
     }
 
-    const stableVehicleStart=findStableRoadProbeSample(roadSamples)?.sample??roadSamples[0];
-    vehicle = await VehicleController.create(scene, { roadSamples, startSample: stableVehicleStart });
+    vehicle = await VehicleController.create(scene, { roadSamples, startSample: roadSamples[0] });
     labState.vehicleReady = true;
     labState.vehicleWheelbase = vehicle.metrics.wheelbase;
     labState.vehicleTrack = vehicle.metrics.track;
