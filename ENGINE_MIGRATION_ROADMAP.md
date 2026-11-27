@@ -94,15 +94,26 @@ Implemented and covered by automated tests:
 - [x] Roadside features are batched into streamed per-chunk meshes; shared edge profiles are cached instead of resampled for each chunk.
 - [x] Node geometry tests validate finite vertices, complete triangles, transition strips, drainage channels, guardrail runs and posts.
 
+**Hydrology, riverbeds and bridge spans**
+- [x] Two deterministic river splines and two lake basins generated from repository-local world data.
+- [x] River channels and lake beds carved into the terrain with smooth bank transitions.
+- [x] Per-chunk batched water surfaces, river highlights, lake polygons and natural shoreline meshes.
+- [x] Hydrology segment spatial index keeps terrain sampling local and deterministic.
+- [x] Road-water crossings grouped and classified with measurable deck clearance.
+- [x] Road profile automatically raises all three detected river crossings to at least 4 m of water clearance while preserving the closed-loop 20% grade limit.
+- [x] Terrain under raised spans remains carved below the water surface; the elevated road deck is generated independently from the riverbed.
+- [x] Bridge spans receive paired concrete girders and piers extending below the carved bed.
+- [x] Node and browser tests verify open river channels, finite water/shore/bridge geometry, every crossing's clearance and the presence of girders and piers.
+
 **Automated validation**
 - [x] Browser startup on WebGL 2, local Havok WASM, terrain collision and same-origin-only runtime requests.
 - [x] XYZ coverage, terrain Y-layers, multiple biomes and deterministic prop placement.
 - [x] Route geometry, road chunk coverage, 20% grade limit and physical road contact.
 
 Still required:
-- Improve road shoulders, cut/fill edges, guardrails, drains and the transition between pavement and natural terrain.
-- Add a water/coast system, rivers, lakes and proper wetland transitions.
-- Add bridges and tunnels where road/terrain profiles require them.
+- Add tidal/coastal zones, waterfalls, river rapids, and proper terrain/wetland blending around shorelines.
+- Add tunnels, cuttings and retaining structures where terrain profiles require them.
+- Replace the current low-poly bridge/shore placeholders with detailed authored modular assets and material passes.
 - Generate city districts, detailed buildings, industrial zones, overpasses and other architecture as XYZ-streamed content.
 - Add more varied tree silhouettes, shrub types, ground cover, and biome-specific texture detail.
 - Move chunk generation and asset preparation off the render-critical path; add worker-backed asynchronous generation and bounded queues.
@@ -134,4 +145,4 @@ Still required:
 
 ## Current status
 
-The current branch contains the self-hosted engine, Havok runtime, tested XYZ chunk manager, elevation-aware terrain and the first deterministic biome/prop generation layer. The production car, final open-world content, vehicle simulation, traffic and ragdolls are still future milestones.
+The migration branch now contains the self-hosted Babylon.js/Havok runtime, deterministic XYZ chunk streaming, elevation-aware terrain, five observed biomes, a grade-limited 1.95 km road circuit, roadside safety details, two rivers, two lakes and three raised bridge spans with open channels, concrete girders and bed-anchored piers. The bridge and water system is still a procedural technical preview; the production car, vehicle suspension/tire simulation, full tunnel system, authored final assets, traffic and ragdolls remain future milestones.
