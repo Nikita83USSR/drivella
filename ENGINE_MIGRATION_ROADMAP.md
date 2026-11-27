@@ -88,6 +88,11 @@ Implemented and covered by automated tests:
 - [x] Batched asphalt, shoulders, edge lines and broken cyan centre markings.
 - [x] Static Havok colliders attached to each streamed road chunk.
 - [x] A dedicated dynamic box test confirms actual contact with the asphalt, within 35 cm of the surface and 2.5 m of the road centreline.
+- [x] Tapered earth/gravel verges dress measurable cut/fill transitions and follow the banked shoulder cross-section.
+- [x] Shallow drainage channels are generated only on the uphill side of significant road cuts.
+- [x] Two-level metal guardrails and support posts are generated only where the terrain falls away by at least 2 m beyond the shoulder.
+- [x] Roadside features are batched into streamed per-chunk meshes; shared edge profiles are cached instead of resampled for each chunk.
+- [x] Node geometry tests validate finite vertices, complete triangles, transition strips, drainage channels, guardrail runs and posts.
 
 **Automated validation**
 - [x] Browser startup on WebGL 2, local Havok WASM, terrain collision and same-origin-only runtime requests.
