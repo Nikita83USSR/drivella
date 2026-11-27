@@ -131,7 +131,7 @@ export class VehicleController{
     if(normal.y<0)normal.scaleInPlace(-1);
     const suspensionLength=Vector3.Distance(anchor,point)-this.metrics.wheelRadius;
     const compression=clamp(P.rest-clamp(suspensionLength,P.min,P.max),-P.maxComp,P.maxComp);
-    heldContacts.set(w.key,{...w,hit:suspensionLength<=P.max+.025,anchor,point,normal,compression,springForce:0,steerAngle:0,longitudinalSpeed:0,lateralSpeed:0,tireUtilization:0});
+    heldContacts.set(w.key,{...w,hit:suspensionLength<=P.max+.025,anchor,anchorY:anchor.y,point,normal,compression,suspensionLength,pointVelocityY:0,springCompressionForce:0,damperForce:0,bumpForce:0,springForce:0,steerAngle:0,longitudinalSpeed:0,lateralSpeed:0,tireUtilization:0});
    }
    this.wheelContacts=heldContacts;
    return;
@@ -153,9 +153,13 @@ export class VehicleController{
    if(suspensionLength>P.max+.025){contacts.set(w.key,{...w,hit:false,anchor,point,normal,compression:-P.maxComp,springForce:0,steerAngle:steer,longitudinalSpeed:0});continue;}
    const length=clamp(suspensionLength,P.min,P.max),compression=clamp(P.rest-length,-P.maxComp,P.maxComp);
    const lever=point.subtract(position),pointVelocity=velocity.add(Vector3.Cross(angular,lever));
-   let spring=P.spring*Math.max(0,compression)-P.damper*pointVelocity.y;
-   if(suspensionLength<P.min)spring+=(P.min-suspensionLength)*P.bump;spring=clamp(spring,0,P.maxForce);
-   contacts.set(w.key,{...w,hit:true,anchor,point,normal,compression,springForce:spring,steerAngle:steer,longitudinalSpeed:0,longitudinalForce:0,lateralSpeed:0,lateralForce:0,tireUtilization:0});
+   const springCompressionForce=P.spring*Math.max(0,compression);
+   const damperForce=-P.damper*pointVelocity.y;
+   const bumpForce=suspensionLength<P.min?(P.min-suspensionLength)*P.bump:0;
+   const rawSpringForce=springCompressionForce+damperForce+bumpForce;
+   const spring=clamp(rawSpringForce,0,P.maxForce);
+   contacts.set(w.key,{...w,hit:true,anchor,anchorY:anchor.y,point,normal,compression,suspensionLength,pointVelocityY:pointVelocity.y,
+    springCompressionForce,damperForce,bumpForce,rawSpringForce,springForce:spring,steerAngle:steer,longitudinalSpeed:0,longitudinalForce:0,lateralSpeed:0,lateralForce:0,tireUtilization:0});
    if(spring<=.5)continue;
    this.aggregate.body.applyForce(new Vector3(normal.x*spring/Math.max(normal.y,.35),spring,normal.z*spring/Math.max(normal.y,.35)),point);
    const wa=yaw+steer,nf=new Vector3(Math.sin(wa),0,Math.cos(wa)),forward=nf.subtract(normal.scale(Vector3.Dot(nf,normal))).normalize();
@@ -199,7 +203,10 @@ export class VehicleController{
   const motion=calculateVehicleMotionTelemetry(v,yaw,angular.y);
   const wheels=WHEELS.map(w=>{const c=this.wheelContacts.get(w.key);return {
    key:w.key,axle:w.axle,contact:Boolean(c?.hit),compression:Number((c?.compression??0).toFixed(4)),
-   springForce:Number((c?.springForce??0).toFixed(1)),steering:Number((c?.steerAngle??0).toFixed(4)),
+   springForce:Number((c?.springForce??0).toFixed(1)),springCompressionForce:Number((c?.springCompressionForce??0).toFixed(1)),
+   damperForce:Number((c?.damperForce??0).toFixed(1)),bumpForce:Number((c?.bumpForce??0).toFixed(1)),rawSpringForce:Number((c?.rawSpringForce??0).toFixed(1)),
+   anchorY:Number((c?.anchorY??0).toFixed(3)),suspensionLength:Number((c?.suspensionLength??0).toFixed(4)),pointVelocityY:Number((c?.pointVelocityY??0).toFixed(4)),
+   steering:Number((c?.steerAngle??0).toFixed(4)),
    lateralSpeed:Number((c?.lateralSpeed??0).toFixed(3)),longitudinalSpeed:Number((c?.longitudinalSpeed??0).toFixed(3)),
    longitudinalForce:Number((c?.longitudinalForce??0).toFixed(1)),lateralForce:Number((c?.lateralForce??0).toFixed(1)),
    appliedForceX:Number((c?.appliedForceX??0).toFixed(1)),appliedForceZ:Number((c?.appliedForceZ??0).toFixed(1)),

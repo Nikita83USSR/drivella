@@ -134,6 +134,7 @@ try {
       driveRequested:s.vehicleDriveRequested,totalSpringLoad:s.vehicleTotalSpringLoad,rearLongitudinalForce:s.vehicleRearLongitudinalForce,totalLongitudinalForce:s.vehicleTotalLongitudinalForce,
       velocityX:s.vehicleVelocityX,velocityY:s.vehicleVelocityY,velocityZ:s.vehicleVelocityZ,
       maxCompression:s.vehicleMaxSuspensionCompression,averageCompression:s.vehicleAverageSuspensionCompression,
+      wheels:s.vehicleWheelDiagnostics?.map(w=>({key:w.key,compression:w.compression,springForce:w.springForce,damperForce:w.damperForce,bumpForce:w.bumpForce,rawSpringForce:w.rawSpringForce,anchorY:w.anchorY,suspensionLength:w.suspensionLength,pointVelocityY:w.pointVelocityY,contactY:w.contactY})) ,
       bottomClearance:s.vehicleRoadBodyBottomClearance,appliedForceX:s.vehicleAppliedForceX,appliedForceZ:s.vehicleAppliedForceZ,
       forwardX:s.vehicleForwardX,forwardZ:s.vehicleForwardZ,roadY:s.vehicleRoadSurfaceY,roadDistance:s.vehicleRoadDistance,
       spawnX:s.vehicleSpawnX,spawnZ:s.vehicleSpawnZ,spawnGrade:s.vehicleSpawnGrade,spawnToProbe:s.vehicleSpawnDistanceFromRoadProbe,
