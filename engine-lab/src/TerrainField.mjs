@@ -1,4 +1,4 @@
-import { applyHydrologyCarve } from "./HydrologyField.mjs";
+import { applyHydrologyCarve, getNearestWaterFeature } from "./HydrologyField.mjs";
 import {
   MAIN_ROUTE_CONTROL_POINTS,
   ROAD_PROFILE_BLEND_RADIUS,
@@ -122,6 +122,41 @@ function getRoadElevationProfile() {
     heights[index] = projected[index] + anchorOffset;
   }
 
+  // Where a river/lake crosses the route, create a raised road deck with
+  // grade-limited approaches. The propagated floor is a 20%-Lipschitz envelope;
+  // taking its maximum with the existing profile preserves the grade bound.
+  const roadHalfWidth = 6.2;
+  const roadSurfaceOffset = 1.05;
+  const requiredDeckClearance = 4.0;
+  const waterFloorConstraints = [];
+  for (let index = 0; index < route.length; index += 1) {
+    const point = route[index];
+    const water = getNearestWaterFeature(point.x, point.z, roadHalfWidth + 9);
+    if (!water) continue;
+    const crossingReach = water.kind === "river"
+      ? roadHalfWidth + water.halfWidth + 2.4
+      : roadHalfWidth + 3.2;
+    if (water.distance > crossingReach) continue;
+    waterFloorConstraints.push({
+      index,
+      floor: water.waterY + requiredDeckClearance - roadSurfaceOffset
+    });
+  }
+
+  if (waterFloorConstraints.length) {
+    for (let index = 0; index < route.length; index += 1) {
+      let raisedFloor = -Infinity;
+      for (const constraint of waterFloorConstraints) {
+        const along = Math.abs(cumulative[index] - cumulative[constraint.index]);
+        const loopDistance = Math.min(along, totalLength - along);
+        raisedFloor = Math.max(
+          raisedFloor,
+          constraint.floor - maxGrade * loopDistance
+        );
+      }
+      heights[index] = Math.max(heights[index], raisedFloor);
+    }
+  }
 
   roadElevationProfile = Object.freeze({
     route,
