@@ -58,6 +58,7 @@ const labState = {
   roadGuardrailSegments: 0,
   roadDrainageSegments: 0,
   roadTransitionSegments: 0,
+  roadFurnitureChunks: 0,
   roadSampleCount: 0,
   error: null,
   spatial: null
@@ -797,6 +798,7 @@ async function boot() {
         labState.spatial = spatial;
         const terrainLayers = [...new Set([...terrainMeshes.values()].map((mesh) => mesh.metadata.chunkY))].sort((a, b) => a - b);
         labState.roadChunks = roadMeshes.size;
+        labState.roadFurnitureChunks = roadFurnitureMeshes.size;
         const biomeTotals = { trees: 0, grass: 0, reeds: 0, rocks: 0 };
         const biomeDistribution = {};
         for (const props of biomeMeshes.values()) {
