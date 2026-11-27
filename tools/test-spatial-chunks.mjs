@@ -4,6 +4,7 @@ import { getMainRoadElevationStats, terrainChunkHeightRange, terrainChunkLayer, 
 import { distanceToMainRoute } from "../engine-lab/src/WorldLayout.mjs";
 import { BIOME_IDS, generateBiomePlacements, sampleBiome } from "../engine-lab/src/BiomeField.mjs";
 import { buildRoadChunkGeometry, buildRoadFurnitureChunkGeometry, generateMainRoadSamples, getRoadStats, getRoadFurnitureStats, nearestRoadSurfaceHeight } from "../engine-lab/src/RoadNetwork.mjs";
+import { buildHydrologyChunkGeometry, classifyRoadHydrologyCrossings, getHydrologyStats, getNearestWaterFeature } from "../engine-lab/src/HydrologyField.mjs";
 
 const disposed = [];
 const manager = new SpatialChunkManager({
@@ -98,6 +99,42 @@ manager.dispose();
 deterministicA.dispose();
 deterministicB.dispose();
 
+const hydrologyStats = getHydrologyStats();
+assert.ok(hydrologyStats.riverCount >= 2, "the world should include a main river and tributary");
+assert.ok(hydrologyStats.lakeCount >= 1, "the world should include at least one lake basin");
+assert.ok(hydrologyStats.riverSampleCount > 100, "river splines should be densely sampled");
+const farRiver = getNearestWaterFeature(385, -235, 30);
+assert.ok(farRiver && farRiver.kind === "river", "river spatial queries should find a nearby river segment");
+assert.ok(terrainHeight(385, -235) <= farRiver.waterY - 1.4,
+  "river terrain must be carved below the water surface rather than leaving water over solid ground");
+
+const waterChunkTotals = {
+  chunks: 0,
+  riverSegments: 0,
+  lakeTriangles: 0,
+  shoreVertices: 0,
+  waterVertices: 0
+};
+for (let chunkX = -4; chunkX <= 4; chunkX += 1) {
+  for (let chunkZ = -4; chunkZ <= 4; chunkZ += 1) {
+    const chunkY = terrainChunkLayer(chunkX, chunkZ, 128);
+    const hydro = buildHydrologyChunkGeometry(chunkX, chunkY, chunkZ, 128, terrainHeight);
+    assert.ok(hydro.water.positions.every(Number.isFinite), `water chunk ${chunkX}:${chunkZ} has invalid vertices`);
+    assert.ok(hydro.shore.positions.every(Number.isFinite), `shore chunk ${chunkX}:${chunkZ} has invalid vertices`);
+    assert.equal(hydro.water.indices.length % 3, 0, "water geometry must contain complete triangles");
+    assert.equal(hydro.shore.indices.length % 3, 0, "shore geometry must contain complete triangles");
+    if (hydro.hasWater || hydro.hasShore) waterChunkTotals.chunks += 1;
+    waterChunkTotals.riverSegments += hydro.riverSegments;
+    waterChunkTotals.lakeTriangles += hydro.lakeTriangles;
+    waterChunkTotals.shoreVertices += hydro.shore.positions.length / 3;
+    waterChunkTotals.waterVertices += hydro.water.positions.length / 3;
+  }
+}
+assert.ok(waterChunkTotals.chunks >= 5, "rivers and lakes should stream across multiple world chunks");
+assert.ok(waterChunkTotals.riverSegments > 80, "the streamed water network should include river surfaces");
+assert.ok(waterChunkTotals.lakeTriangles >= 48, "lake polygons should be triangulated into water surfaces");
+assert.ok(waterChunkTotals.shoreVertices > 500, "riverbanks and lake shores should have generated geometry");
+
 const roadSamplesA = generateMainRoadSamples();
 const roadSamplesB = generateMainRoadSamples();
 assert.deepEqual(roadSamplesA, roadSamplesB, "the main road spline must be deterministic");
@@ -105,6 +142,17 @@ assert.ok(roadSamplesA.length > 500, "the route must have enough samples for smo
 assert.ok(Math.abs(roadSamplesA[0].x) < 0.001 && Math.abs(roadSamplesA[0].z) < 0.001,
   "the start/finish point must cross the central garage area");
 const roadStats = getRoadStats(roadSamplesA);
+const bridgeClassification = classifyRoadHydrologyCrossings(roadSamplesA);
+assert.ok(bridgeClassification.crossings.length >= 1, "the main route should classify at least one river/lake crossing");
+assert.ok(
+  bridgeClassification.crossings.every((crossing) =>
+    Number.isFinite(crossing.minClearance)
+    && crossing.sampleCount > 0
+    && ["bridge-candidate", "bridge-or-culvert-required"].includes(crossing.structure)
+  ),
+  "each water crossing must report a measurable deck clearance and structure classification"
+);
+console.log("HYDROLOGY TEST PASS", JSON.stringify({ ...hydrologyStats, waterChunkTotals, bridgeClassification }));
 assert.ok(roadStats.length > 1200 && roadStats.length < 4000, "main route length must be a coherent closed circuit");
 const roadProfileStats = getMainRoadElevationStats();
 console.log("ROAD GRADE METRICS", JSON.stringify({ ...roadStats, profile: roadProfileStats }));
