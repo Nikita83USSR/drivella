@@ -65,8 +65,22 @@ try {
   await page.goto("http://127.0.0.1:" + port + "/engine-lab/", { waitUntil: "load" });
   await page.waitForFunction(() => window.__DRIVELLA_LAB__?.ready === true, { timeout: 60000 });
   await page.waitForFunction(() => window.__DRIVELLA_LAB__?.physicsReady === true, { timeout: 60000 });
-  await page.waitForFunction(() => window.__DRIVELLA_LAB__?.probeStableFrames >= 30, { timeout: 30000 });
-  await page.waitForFunction(() => window.__DRIVELLA_LAB__?.roadProbeStableFrames >= 30, { timeout: 30000 });
+  try {
+    await page.waitForFunction(() => window.__DRIVELLA_LAB__?.probeStableFrames >= 30, { timeout: 60000 });
+  } catch (error) {
+    const diagnostic = await page.evaluate(() => window.__DRIVELLA_LAB__ || null);
+    await mkdir("artifacts", { recursive: true });
+    await page.screenshot({ path: "artifacts/engine-lab-physics-timeout.png" }).catch(() => {});
+    throw new Error("Terrain collision probe did not settle. Diagnostic: " + JSON.stringify(diagnostic) + " · " + String(error));
+  }
+  try {
+    await page.waitForFunction(() => window.__DRIVELLA_LAB__?.roadProbeStableFrames >= 30, { timeout: 60000 });
+  } catch (error) {
+    const diagnostic = await page.evaluate(() => window.__DRIVELLA_LAB__ || null);
+    await mkdir("artifacts", { recursive: true });
+    await page.screenshot({ path: "artifacts/engine-lab-road-physics-timeout.png" }).catch(() => {});
+    throw new Error("Road asphalt collision probe did not settle. Diagnostic: " + JSON.stringify(diagnostic) + " · " + String(error));
+  }
 
   const state = await page.evaluate(() => ({
     renderer: window.__DRIVELLA_LAB__.renderer,
