@@ -833,29 +833,6 @@ function enableHavokPhysics() {
       }, null)
       : null;
     if (tunnelProbeTarget) {
-      tunnelProbeMesh = MeshBuilder.CreateBox("tunnel-ceiling-collision-probe", { size: 1 }, scene);
-      tunnelProbeMesh.position.set(
-        tunnelProbeTarget.sample.x,
-        tunnelProbeTarget.sample.y + 14,
-        tunnelProbeTarget.sample.z
-      );
-      const tunnelProbeMaterial = new StandardMaterial("tunnel-probe-material", scene);
-      tunnelProbeMaterial.diffuseColor = new Color3(0.76, 0.28, 0.92);
-      tunnelProbeMaterial.emissiveColor = new Color3(0.12, 0.025, 0.18);
-      tunnelProbeMaterial.metallic = 0.18;
-      tunnelProbeMaterial.roughness = 0.46;
-      tunnelProbeMesh.material = tunnelProbeMaterial;
-      addPhysicalProbe(scene, tunnelProbeMesh, 8, PhysicsShapeType.BOX, { friction: 1.6, restitution: 0.005 });
-    }
-
-    const tunnelProbeTarget = tunnels.length
-      ? tunnels.reduce((best, tunnel) => {
-        const sample = tunnel.path[Math.floor(tunnel.path.length / 2)];
-        const score = Math.abs(sample.bank || 0);
-        return !best || score < best.score ? { sample, score } : best;
-      }, null)
-      : null;
-    if (tunnelProbeTarget) {
       tunnelProbeRoadY = tunnelProbeTarget.sample.y;
       tunnelProbeMesh = MeshBuilder.CreateBox("tunnel-ceiling-collision-probe", { size: 1 }, scene);
       tunnelProbeMesh.position.set(
