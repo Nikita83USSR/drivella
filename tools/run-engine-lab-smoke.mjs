@@ -123,6 +123,7 @@ try {
     lakeCount: window.__DRIVELLA_LAB__.lakeCount,
     bridgeCrossingCount: window.__DRIVELLA_LAB__.bridgeCrossingCount,
     bridgeCandidateCount: window.__DRIVELLA_LAB__.bridgeCandidateCount,
+    bridgePiers: window.__DRIVELLA_LAB__.bridgePiers,
     unresolvedWaterCrossings: window.__DRIVELLA_LAB__.unresolvedWaterCrossings,
     bridgeCrossings: window.__DRIVELLA_LAB__.bridgeCrossings,
     roadYAtProbe: window.__DRIVELLA_LAB__.roadYAtProbe,
@@ -173,6 +174,7 @@ try {
   if (
     state.unresolvedWaterCrossings !== 0
     || state.bridgeCandidateCount !== state.bridgeCrossingCount
+    || state.bridgePiers < 4
     || !state.bridgeCrossings.every((crossing) =>
       Number.isFinite(crossing.minClearance)
       && crossing.minClearance >= 3.95
