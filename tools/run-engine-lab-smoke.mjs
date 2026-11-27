@@ -95,6 +95,19 @@ try {
     await page.screenshot({ path: "artifacts/engine-lab-road-physics-timeout.png" }).catch(() => {});
     throw new Error("Road asphalt collision probe did not settle. Diagnostic: " + JSON.stringify(diagnostic) + " · " + String(error));
   }
+  try {
+    await page.waitForFunction(() =>
+      window.__DRIVELLA_LAB__?.tunnelProbeStableFrames >= 30
+      && Number.isFinite(window.__DRIVELLA_LAB__?.tunnelProbePeakY),
+      null,
+      { timeout: 60000 }
+    );
+  } catch (error) {
+    const diagnostic = await page.evaluate(() => window.__DRIVELLA_LAB__ || null);
+    await mkdir("artifacts", { recursive: true });
+    await page.screenshot({ path: "artifacts/engine-lab-tunnel-physics-timeout.png" }).catch(() => {});
+    throw new Error("Tunnel ceiling/road collision probe did not settle. Diagnostic: " + JSON.stringify(diagnostic) + " · " + String(error));
+  }
 
   const state = await page.evaluate(() => ({
     renderer: window.__DRIVELLA_LAB__.renderer,
@@ -135,6 +148,10 @@ try {
     tunnelMinCover: window.__DRIVELLA_LAB__.tunnelMinCover,
     tunnelMeshCount: window.__DRIVELLA_LAB__.tunnelMeshCount,
     tunnelBodyCount: window.__DRIVELLA_LAB__.tunnelBodyCount,
+    tunnelProbeY: window.__DRIVELLA_LAB__.tunnelProbeY,
+    tunnelProbeYAtRoof: window.__DRIVELLA_LAB__.tunnelProbeYAtRoof,
+    tunnelProbePeakY: window.__DRIVELLA_LAB__.tunnelProbePeakY,
+    tunnelProbeStableFrames: window.__DRIVELLA_LAB__.tunnelProbeStableFrames,
     bridgeCrossings: window.__DRIVELLA_LAB__.bridgeCrossings,
     roadYAtProbe: window.__DRIVELLA_LAB__.roadYAtProbe,
     roadDistanceAtProbe: window.__DRIVELLA_LAB__.roadDistanceAtProbe,
@@ -208,6 +225,16 @@ try {
     || state.tunnelMinCover < 7.8
   ) {
     throw new Error("Mountain tunnel bores, portals, lining or Havok collision are incomplete: " + JSON.stringify(state));
+  }
+  const tunnelPeakOffset = state.tunnelProbePeakY - state.tunnelProbeYAtRoof;
+  if (
+    state.tunnelProbeStableFrames < 30
+    || !Number.isFinite(tunnelPeakOffset)
+    || tunnelPeakOffset < -1.0
+    || tunnelPeakOffset > 0.7
+  ) {
+    throw new Error("Upward physics probe did not strike and stop at the tunnel arch ceiling: "
+      + JSON.stringify({ tunnelPeakOffset, state }));
   }
   if (state.roadProbeStableFrames < 30) {
     throw new Error("Dedicated road probe did not settle on the asphalt collision mesh: " + JSON.stringify(state));
