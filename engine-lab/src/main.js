@@ -778,10 +778,10 @@ async function enableHavokPhysics() {
   if (labState.physicsReady || !havokInstance) return;
 
   try {
-    scene.enablePhysics(new Vector3(0, -9.81, 0), new HavokPlugin(false, havokInstance));
-    // Engine deterministic lockstep advances this scene in bounded 60 Hz steps.
-    // Havok uses the same fixed timestep for force impulses and world integration;
-    // max four catch-up steps prevent a slow render from stalling the browser.
+    scene.enablePhysics(new Vector3(0, -9.81, 0), new HavokPlugin(true, havokInstance));
+    // The world uses the render-frame delta. VehicleController converts every
+    // spring, tyre, anti-roll and body torque force into an impulse using that
+    // exact same delta, avoiding Havok applyForce()'s fixed 1/60 scaling.
     for (const [key, mesh] of terrainMeshes) {
       if (!terrainBodies.has(key)) {
         const body = addPhysicalProbe(scene, mesh, 0, PhysicsShapeType.MESH, { friction: 0.96, restitution: 0.02 });
@@ -941,10 +941,7 @@ async function createRenderer() {
       const webgpu = new WebGPUEngine(canvas, {
         antialias: true,
         adaptToDeviceRatio: true,
-        powerPreference: "high-performance",
-        deterministicLockstep: true,
-        lockstepMaxSteps: 4,
-        timeStep: 1 / 60
+        powerPreference: "high-performance"
       });
       await webgpu.initAsync();
       return { engine: webgpu, label: "WebGPU" };
@@ -957,10 +954,7 @@ async function createRenderer() {
     adaptToDeviceRatio: true,
     powerPreference: "high-performance",
     preserveDrawingBuffer: false,
-    stencil: true,
-    deterministicLockstep: true,
-    lockstepMaxSteps: 4,
-    timeStep: 1 / 60
+    stencil: true
   });
   return { engine: webgl, label: "WebGL " + (webgl.webGLVersion || "fallback") };
 }
