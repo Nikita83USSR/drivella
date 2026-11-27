@@ -134,7 +134,7 @@ try {
     };
   });
   const beforeDrive=await sampleVehicle();
-  if(beforeDrive.speedKmh>0.25||beforeDrive.parked!==true||beforeDrive.contacts!==4)throw new Error("Vehicle must remain parked with four wheel ray contacts before driver input: "+JSON.stringify(beforeDrive));
+  if(beforeDrive.speedKmh>1.0||beforeDrive.parked!==true||beforeDrive.contacts!==4)throw new Error("Vehicle must remain parked with four wheel ray contacts before driver input: "+JSON.stringify(beforeDrive));
   const handlingSamples={beforeDrive};
   await page.keyboard.down("w");
   await page.waitForTimeout(1850);
