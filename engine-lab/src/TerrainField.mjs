@@ -51,7 +51,7 @@ function fbm(x, z, octaves = 5) {
   return sum / weight;
 }
 
-function rawTerrainHeight(x, z) {
+export function rawTerrainHeight(x, z) {
   if (!Number.isFinite(x) || !Number.isFinite(z)) {
     throw new TypeError("terrainHeight expects finite world coordinates.");
   }
@@ -81,6 +81,66 @@ function rawTerrainHeight(x, z) {
 
 
 let roadElevationProfile = null;
+
+const TUNNEL_CORRIDOR_CELL_SIZE = 32;
+const TUNNEL_CORRIDOR_RADIUS = 11.4;
+let tunnelCorridorBuckets = new Map();
+let tunnelCorridorCount = 0;
+
+function tunnelCellKey(x, z) {
+  return `${Math.floor(x / TUNNEL_CORRIDOR_CELL_SIZE)}:${Math.floor(z / TUNNEL_CORRIDOR_CELL_SIZE)}`;
+}
+
+export function registerTunnelCorridors(tunnels) {
+  if (!Array.isArray(tunnels)) throw new TypeError("Tunnel corridor registration requires an array.");
+  const buckets = new Map();
+  let segmentCount = 0;
+
+  for (const tunnel of tunnels) {
+    if (!Array.isArray(tunnel.path) || tunnel.path.length < 2) continue;
+    for (let index = 0; index < tunnel.path.length - 1; index += 1) {
+      const a = tunnel.path[index];
+      const b = tunnel.path[index + 1];
+      const segment = { a, b };
+      const minCellX = Math.floor((Math.min(a.x, b.x) - TUNNEL_CORRIDOR_RADIUS) / TUNNEL_CORRIDOR_CELL_SIZE);
+      const maxCellX = Math.floor((Math.max(a.x, b.x) + TUNNEL_CORRIDOR_RADIUS) / TUNNEL_CORRIDOR_CELL_SIZE);
+      const minCellZ = Math.floor((Math.min(a.z, b.z) - TUNNEL_CORRIDOR_RADIUS) / TUNNEL_CORRIDOR_CELL_SIZE);
+      const maxCellZ = Math.floor((Math.max(a.z, b.z) + TUNNEL_CORRIDOR_RADIUS) / TUNNEL_CORRIDOR_CELL_SIZE);
+      for (let cellX = minCellX; cellX <= maxCellX; cellX += 1) {
+        for (let cellZ = minCellZ; cellZ <= maxCellZ; cellZ += 1) {
+          const key = `${cellX}:${cellZ}`;
+          if (!buckets.has(key)) buckets.set(key, []);
+          buckets.get(key).push(segment);
+        }
+      }
+      segmentCount += 1;
+    }
+  }
+
+  tunnelCorridorBuckets = buckets;
+  tunnelCorridorCount = segmentCount;
+  return { tunnelCount: tunnels.length, segmentCount, cellCount: buckets.size };
+}
+
+export function isInsideTunnelCorridor(x, z, radius = TUNNEL_CORRIDOR_RADIUS) {
+  if (!Number.isFinite(x) || !Number.isFinite(z) || !Number.isFinite(radius) || radius < 0) {
+    throw new TypeError("Tunnel corridor query requires finite coordinates and a non-negative radius.");
+  }
+  if (!tunnelCorridorCount) return false;
+  const segments = tunnelCorridorBuckets.get(tunnelCellKey(x, z));
+  if (!segments) return false;
+
+  for (const segment of segments) {
+    const dx = segment.b.x - segment.a.x;
+    const dz = segment.b.z - segment.a.z;
+    const lengthSquared = dx * dx + dz * dz || 1;
+    const t = Math.max(0, Math.min(1, ((x - segment.a.x) * dx + (z - segment.a.z) * dz) / lengthSquared));
+    const nearestX = segment.a.x + dx * t;
+    const nearestZ = segment.a.z + dz * t;
+    if (Math.hypot(x - nearestX, z - nearestZ) <= radius) return true;
+  }
+  return false;
+}
 
 function getRoadElevationProfile() {
   if (roadElevationProfile) return roadElevationProfile;
@@ -210,6 +270,11 @@ export function terrainHeight(x, z) {
   // Keep river/lake channels open beneath raised road decks. The road surface
   // uses roadProfileHeightAt; the terrain itself is not replaced by an earth
   // embankment inside a water crossing corridor.
+  // Tunnel interiors retain the uncut mountain surface as their roof. The
+  // tunnel liner is built separately below it, while the ordinary road
+  // earthwork corridor is deliberately not flattened through this segment.
+  if (isInsideTunnelCorridor(x, z)) return rawHeight;
+
   const water = getNearestWaterFeature(x, z, ROAD_PROFILE_BLEND_RADIUS + 0.2);
   if (water) {
     const crossingReach = water.kind === "river"
