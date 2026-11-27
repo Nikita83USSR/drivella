@@ -183,6 +183,21 @@ export function getMainRoadElevationStats() {
   return { maxGrade, minHeight, maxHeight, sampleCount: profile.heights.length };
 }
 
+function roadProfileHeightAtNearest(nearest) {
+  const profile = getRoadElevationProfile();
+  const nextIndex = (nearest.index + 1) % profile.heights.length;
+  return profile.heights[nearest.index]
+    + (profile.heights[nextIndex] - profile.heights[nearest.index]) * nearest.t;
+}
+
+export function roadProfileHeightAt(x, z) {
+  if (!Number.isFinite(x) || !Number.isFinite(z)) {
+    throw new TypeError("roadProfileHeightAt expects finite world coordinates.");
+  }
+  const nearest = nearestMainRouteSegment(x, z);
+  return nearest ? roadProfileHeightAtNearest(nearest) : rawTerrainHeight(x, z);
+}
+
 export function terrainHeight(x, z) {
   if (!Number.isFinite(x) || !Number.isFinite(z)) {
     throw new TypeError("terrainHeight expects finite world coordinates.");
@@ -192,11 +207,18 @@ export function terrainHeight(x, z) {
   const nearest = nearestMainRouteSegment(x, z);
   if (!nearest || nearest.distance >= ROAD_PROFILE_BLEND_RADIUS) return rawHeight;
 
-  const profile = getRoadElevationProfile();
-  const nextIndex = (nearest.index + 1) % profile.heights.length;
-  const routeHeight = profile.heights[nearest.index]
-    + (profile.heights[nextIndex] - profile.heights[nearest.index]) * nearest.t;
+  // Keep river/lake channels open beneath raised road decks. The road surface
+  // uses roadProfileHeightAt; the terrain itself is not replaced by an earth
+  // embankment inside a water crossing corridor.
+  const water = getNearestWaterFeature(x, z, ROAD_PROFILE_BLEND_RADIUS + 0.2);
+  if (water) {
+    const crossingReach = water.kind === "river"
+      ? 6.2 + water.halfWidth + 2.4
+      : 6.2 + 3.2;
+    if (water.distance <= crossingReach) return rawHeight;
+  }
 
+  const routeHeight = roadProfileHeightAtNearest(nearest);
   if (nearest.distance <= ROAD_PROFILE_CORE_RADIUS) return routeHeight;
   const blendT = (nearest.distance - ROAD_PROFILE_CORE_RADIUS)
     / (ROAD_PROFILE_BLEND_RADIUS - ROAD_PROFILE_CORE_RADIUS);
