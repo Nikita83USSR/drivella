@@ -63,21 +63,41 @@ jobs:
       - name: Commit generated runtime files to migration branch
         if: github.event_name == 'push' && github.ref == 'refs/heads/engine-migration-foundation'
         run: |
+          set -e
+          BRANCH="engine-migration-foundation"
           git config user.name "github-actions[bot]"
           git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
-          git add package-lock.json engine-lab/vendor engine-lab/licenses
-          if ! git diff --cached --quiet; then
-            git commit -m "build(engine): vendor Babylon.js and Havok runtime"
-            for attempt in 1 2 3; do
-              git fetch origin engine-migration-foundation
-              git rebase origin/engine-migration-foundation
-              if git push origin HEAD:engine-migration-foundation; then
-                break
-              fi
-              if [ "$attempt" -eq 3 ]; then
-                echo "Could not push generated runtime after three attempts."
-                exit 1
-              fi
-              sleep 2
-            done
-          fi
+
+          for attempt in 1 2 3; do
+            git fetch origin "$BRANCH"
+            REMOTE_HEAD="$(git rev-parse "origin/$BRANCH")"
+            LOCAL_HEAD="$(git rev-parse HEAD)"
+
+            # If another commit landed while this workflow was running, never
+            # rebase an engine bundle built from stale source over a competing
+            # generated bundle. Rebuild and retest against the latest branch.
+            if [ "$REMOTE_HEAD" != "$LOCAL_HEAD" ]; then
+              echo "Branch advanced from $LOCAL_HEAD to $REMOTE_HEAD; rebuilding from the current branch head."
+              git reset --hard "$REMOTE_HEAD"
+              npm install --no-audit --no-fund
+              npm run build:engine
+              node tools/test-spatial-chunks.mjs
+              node tools/run-engine-lab-smoke.mjs
+            fi
+
+            git add package-lock.json engine-lab/vendor engine-lab/licenses
+            if ! git diff --cached --quiet; then
+              git commit -m "build(engine): vendor Babylon.js and Havok runtime"
+            fi
+
+            if git push origin HEAD:"$BRANCH"; then
+              echo "Repository-local runtime bundle is synchronized with $BRANCH."
+              break
+            fi
+
+            if [ "$attempt" -eq 3 ]; then
+              echo "Could not synchronize the generated runtime after three attempts."
+              exit 1
+            fi
+            sleep 2
+          done
