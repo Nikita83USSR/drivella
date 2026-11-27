@@ -492,7 +492,7 @@ function createEnvironment(scene) {
     radius: worldRadius,
     maxActiveChunks: 512,
     onCreate: (chunk) => {
-      const payload = { terrainMesh: null, biome: null, roadMesh: null, roadFurnitureMesh: null, waterMesh: null, shoreMesh: null };
+      const payload = { terrainMesh: null, biome: null, roadMesh: null, roadFurnitureMesh: null, waterMesh: null, shoreMesh: null, hydrologyStats: null };
       if (chunk.y === terrainChunkLayer(chunk.x, chunk.z, 128)) {
         const mesh = createTerrainChunk(scene, chunk.x, chunk.y, chunk.z, 128, terrainMaterial);
         payload.terrainMesh = mesh;
@@ -523,6 +523,12 @@ function createEnvironment(scene) {
           roadFurnitureMeshes.set(chunk.key, furnitureMesh);
         }
         const waterGeometry = buildHydrologyChunkGeometry(chunk.x, chunk.y, chunk.z, 128, terrainHeight);
+        payload.hydrologyStats = {
+          riverSegments: waterGeometry.riverSegments,
+          lakeTriangles: waterGeometry.lakeTriangles
+        };
+        labState.riverSegments += waterGeometry.riverSegments;
+        labState.lakeTriangles += waterGeometry.lakeTriangles;
         const waterMesh = createCombinedPropMesh(
           scene, `water-${chunk.x}-${chunk.y}-${chunk.z}`, waterGeometry.water, waterMaterial, roadOrigin
         );
@@ -566,6 +572,10 @@ function createEnvironment(scene) {
       if (payload?.roadFurnitureMesh) {
         payload.roadFurnitureMesh.dispose();
         roadFurnitureMeshes.delete(chunk.key);
+      }
+      if (payload?.hydrologyStats) {
+        labState.riverSegments = Math.max(0, labState.riverSegments - payload.hydrologyStats.riverSegments);
+        labState.lakeTriangles = Math.max(0, labState.lakeTriangles - payload.hydrologyStats.lakeTriangles);
       }
       if (payload?.waterMesh) {
         payload.waterMesh.dispose();
@@ -868,6 +878,9 @@ async function boot() {
         labState.roadFurnitureChunks = roadFurnitureMeshes.size;
         labState.waterChunks = waterMeshes.size;
         labState.shoreChunks = shoreMeshes.size;
+        if (waterMeta) {
+          waterMeta.textContent = `Water: ${labState.riverCount} rivers · ${labState.lakeCount} lakes · ${waterMeshes.size} water chunks · ${labState.bridgeCrossingCount} crossings / ${labState.bridgeCandidateCount} bridge sites`;
+        }
         const biomeTotals = { trees: 0, grass: 0, reeds: 0, rocks: 0 };
         const biomeDistribution = {};
         for (const props of biomeMeshes.values()) {
