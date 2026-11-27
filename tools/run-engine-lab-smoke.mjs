@@ -200,7 +200,7 @@ try {
   if(!Number.isFinite(state.vehicleWheelbase)||Math.abs(state.vehicleWheelbase-3.282433711)>.002)throw new Error("Countach wheelbase mismatch: "+JSON.stringify(state));
   if(!Number.isFinite(state.vehicleTrack)||Math.abs(state.vehicleTrack-1.854847372)>.002)throw new Error("Countach track mismatch: "+JSON.stringify(state));
   if(!Number.isFinite(state.vehicleWheelRadius)||state.vehicleWheelRadius<.22||state.vehicleWheelRadius>.55)throw new Error("Tyre radius was not decoded from Countach geometry: "+JSON.stringify(state));
-  if(Math.abs(state.vehicleRoll)>.32||Math.abs(state.vehiclePitch)>.32)throw new Error("Chassis attitude exceeded controlled test limits: "+JSON.stringify(state));
+  if(Math.abs(state.vehicleRoll)>.18||Math.abs(state.vehiclePitch)>.32)throw new Error("Chassis roll/pitch exceeded controlled test limits: "+JSON.stringify(state));
   if (!state.physicsMode.startsWith("havok")) throw new Error("Havok Physics V2 was not initialized.");
   if (state.probeStableFrames < 30) throw new Error("Physics probe did not settle after collision.");
   const probeClearance = state.probeY - 1.5 - state.terrainYAtProbe;
