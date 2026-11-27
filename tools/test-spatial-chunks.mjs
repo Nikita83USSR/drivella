@@ -3,7 +3,7 @@ import { SpatialChunkManager } from "../engine-lab/src/SpatialChunkManager.mjs";
 import { getMainRoadElevationStats, terrainChunkHeightRange, terrainChunkLayer, terrainHeight } from "../engine-lab/src/TerrainField.mjs";
 import { distanceToMainRoute } from "../engine-lab/src/WorldLayout.mjs";
 import { BIOME_IDS, generateBiomePlacements, sampleBiome } from "../engine-lab/src/BiomeField.mjs";
-import { buildRoadChunkGeometry, buildRoadFurnitureChunkGeometry, generateMainRoadSamples, getRoadStats, nearestRoadSurfaceHeight } from "../engine-lab/src/RoadNetwork.mjs";
+import { buildRoadChunkGeometry, buildRoadFurnitureChunkGeometry, generateMainRoadSamples, getRoadStats, getRoadFurnitureStats, nearestRoadSurfaceHeight } from "../engine-lab/src/RoadNetwork.mjs";
 
 const disposed = [];
 const manager = new SpatialChunkManager({
@@ -112,6 +112,10 @@ assert.ok(roadProfileStats.maxGrade <= 0.2001, "terrain corridor must enforce th
 assert.ok(roadStats.maxGrade <= 0.201, "the asphalt profile must follow the grade-limited terrain corridor");
 assert.ok(distanceToMainRoute(0, 0) < 0.1, "start/finish must match the shared world route layout");
 assert.ok(roadStats.chunkKeys.length >= 8, "the circuit must traverse several world chunks");
+const roadFurnitureStats = getRoadFurnitureStats(roadSamplesA);
+assert.ok(roadFurnitureStats.transitionSegments > 0, "cached road edge statistics must identify cut/fill sections");
+assert.ok(roadFurnitureStats.drainageSegments > 0, "cached road edge statistics must identify drainage sections");
+assert.ok(roadFurnitureStats.guardrailSegments > 0, "cached road edge statistics must identify exposed drops");
 assert.ok(Math.abs(nearestRoadSurfaceHeight(0, 0, roadSamplesA) - 1.05) < 0.001,
   "road start/finish elevation must remain 1.05 m above central terrain");
 let roadSegments = 0;
