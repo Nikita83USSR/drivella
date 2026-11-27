@@ -20,7 +20,7 @@ import HavokPhysics from "@babylonjs/havok";
 import { SpatialChunkManager } from "./SpatialChunkManager.mjs";
 import { terrainChunkLayer, terrainHeight, terrainMoisture } from "./TerrainField.mjs";
 import { generateBiomePlacements } from "./BiomeField.mjs";
-import { buildRoadChunkGeometry, generateMainRoadSamples, getRoadStats, nearestRoadSurfaceHeight, nearestRoadSurfaceInfo } from "./RoadNetwork.mjs";
+import { buildRoadChunkGeometry, buildRoadFurnitureChunkGeometry, generateMainRoadSamples, getRoadStats, getRoadFurnitureStats, nearestRoadSurfaceHeight, nearestRoadSurfaceInfo } from "./RoadNetwork.mjs";
 
 const canvas = document.getElementById("renderCanvas");
 const statusText = document.getElementById("engineStatus");
@@ -55,6 +55,9 @@ const labState = {
   roadProbeTargetGrade: null,
   roadChunks: 0,
   roadLength: 0,
+  roadGuardrailSegments: 0,
+  roadDrainageSegments: 0,
+  roadTransitionSegments: 0,
   roadSampleCount: 0,
   error: null,
   spatial: null
@@ -416,7 +419,9 @@ function createEnvironment(scene) {
 
   const roadSamples = generateMainRoadSamples();
   const roadStats = getRoadStats(roadSamples);
+  const roadFurnitureStats = getRoadFurnitureStats(roadSamples);
   const roadMeshes = new Map();
+  const roadFurnitureMeshes = new Map();
   const roadBodies = new Map();
   const roadMaterial = new StandardMaterial("drivella-road-material", scene);
   roadMaterial.diffuseColor = Color3.White();
@@ -424,6 +429,12 @@ function createEnvironment(scene) {
   roadMaterial.specularPower = 24;
   roadMaterial.useVertexColors = true;
   roadMaterial.backFaceCulling = false;
+  const roadFurnitureMaterial = new StandardMaterial("drivella-road-furniture-material", scene);
+  roadFurnitureMaterial.diffuseColor = Color3.White();
+  roadFurnitureMaterial.specularColor = new Color3(0.18, 0.21, 0.22);
+  roadFurnitureMaterial.specularPower = 14;
+  roadFurnitureMaterial.useVertexColors = true;
+  roadFurnitureMaterial.backFaceCulling = false;
 
   const terrainMeshes = new Map();
   const terrainBodies = new Map();
@@ -446,7 +457,7 @@ function createEnvironment(scene) {
     radius: worldRadius,
     maxActiveChunks: 512,
     onCreate: (chunk) => {
-      const payload = { terrainMesh: null, biome: null, roadMesh: null };
+      const payload = { terrainMesh: null, biome: null, roadMesh: null, roadFurnitureMesh: null };
       if (chunk.y === terrainChunkLayer(chunk.x, chunk.z, 128)) {
         const mesh = createTerrainChunk(scene, chunk.x, chunk.y, chunk.z, 128, terrainMaterial);
         payload.terrainMesh = mesh;
@@ -467,6 +478,14 @@ function createEnvironment(scene) {
             const roadBody = addPhysicalProbe(scene, roadMesh, 0, PhysicsShapeType.MESH, { friction: 0.94, restitution: 0.02 });
             roadBodies.set(chunk.key, roadBody);
           }
+        }
+        const furnitureGeometry = buildRoadFurnitureChunkGeometry(roadSamples, chunk.x, chunk.y, chunk.z, 128);
+        const furnitureMesh = createCombinedPropMesh(
+          scene, `road-furniture-${chunk.x}-${chunk.y}-${chunk.z}`, furnitureGeometry, roadFurnitureMaterial, roadOrigin
+        );
+        if (furnitureMesh) {
+          payload.roadFurnitureMesh = furnitureMesh;
+          roadFurnitureMeshes.set(chunk.key, furnitureMesh);
         }
         if (biome.rockMesh && scene.getPhysicsEngine()) {
           const rockBody = addPhysicalProbe(scene, biome.rockMesh, 0, PhysicsShapeType.MESH, { friction: 0.88, restitution: 0.04 });
@@ -494,6 +513,10 @@ function createEnvironment(scene) {
         payload.roadMesh.dispose();
         roadMeshes.delete(chunk.key);
       }
+      if (payload?.roadFurnitureMesh) {
+        payload.roadFurnitureMesh.dispose();
+        roadFurnitureMeshes.delete(chunk.key);
+      }
       const rockBody = rockBodies.get(chunk.key);
       if (rockBody) {
         rockBody.dispose();
@@ -520,7 +543,7 @@ function createEnvironment(scene) {
   scene.imageProcessingConfiguration.exposure = 1.18;
   scene.imageProcessingConfiguration.contrast = 1.12;
 
-  return { camera, chunkManager, terrainMeshes, terrainBodies, biomeMeshes, rockBodies, roadSamples, roadStats, roadMeshes, roadBodies };
+  return { camera, chunkManager, terrainMeshes, terrainBodies, biomeMeshes, rockBodies, roadSamples, roadStats, roadFurnitureStats, roadMeshes, roadFurnitureMeshes, roadBodies };
 }
 
 function addPhysicalProbe(scene, mesh, mass, shape, options = {}) {
@@ -542,6 +565,7 @@ let rockBodies;
 let roadSamples;
 let roadStats;
 let roadMeshes;
+let roadFurnitureMeshes;
 let roadBodies;
 let havokAttemptRunning = false;
 let havokInstance = null;
@@ -721,7 +745,11 @@ async function boot() {
     roadSamples = environment.roadSamples;
     roadStats = environment.roadStats;
     roadMeshes = environment.roadMeshes;
+    roadFurnitureMeshes = environment.roadFurnitureMeshes;
     roadBodies = environment.roadBodies;
+    labState.roadGuardrailSegments = environment.roadFurnitureStats.guardrailSegments;
+    labState.roadDrainageSegments = environment.roadFurnitureStats.drainageSegments;
+    labState.roadTransitionSegments = environment.roadFurnitureStats.transitionSegments;
     labState.roadLength = Number(roadStats.length.toFixed(1));
     labState.roadSampleCount = roadSamples.length;
 
@@ -782,7 +810,7 @@ async function boot() {
         labState.biomeTypes = biomeTypes;
         labState.biomeDistribution = biomeDistribution;
         worldMeta.textContent = `XYZ chunks: ${spatial.activeCount} · terrain: ${terrainMeshes.size} patches · Y layers ${terrainLayers.join("/") || "—"} · ${Object.values(spatial.axisCoverage).every(Boolean) ? "6/6 directions" : "coverage check pending"}`;
-        roadMeta.textContent = `Road: ${roadMeshes.size} chunks · ${Math.round(roadStats.length)} m loop · ${roadSamples.length} spline samples`;
+        roadMeta.textContent = `Road: ${roadMeshes.size} chunks · ${Math.round(roadStats.length)} m · transitions ${labState.roadTransitionSegments} · drains ${labState.roadDrainageSegments} · guardrails ${labState.roadGuardrailSegments}`;
         biomeMeta.textContent = `Biomes: ${biomeTypes.slice(0, 4).join("/") || "preparing"} · ${biomeTotals.trees} trees · ${biomeTotals.rocks} rocks`;
       }
     });
