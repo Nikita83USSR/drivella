@@ -134,6 +134,7 @@ try {
       driveRequested:s.vehicleDriveRequested,totalSpringLoad:s.vehicleTotalSpringLoad,rearLongitudinalForce:s.vehicleRearLongitudinalForce,totalLongitudinalForce:s.vehicleTotalLongitudinalForce,
       velocityX:s.vehicleVelocityX,velocityZ:s.vehicleVelocityZ,appliedForceX:s.vehicleAppliedForceX,appliedForceZ:s.vehicleAppliedForceZ,
       forwardX:s.vehicleForwardX,forwardZ:s.vehicleForwardZ,roadY:s.vehicleRoadSurfaceY,roadDistance:s.vehicleRoadDistance,
+      spawnX:s.vehicleSpawnX,spawnZ:s.vehicleSpawnZ,spawnGrade:s.vehicleSpawnGrade,spawnToProbe:s.vehicleSpawnDistanceFromRoadProbe,
       bodyBottomClearance:s.vehicleRoadBodyBottomClearance,wheelDiagnostics:s.vehicleWheelDiagnostics
     };
   });

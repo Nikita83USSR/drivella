@@ -94,6 +94,7 @@ const labState = {
   vehicleReady:false,vehicleWheelbase:null,vehicleTrack:null,vehicleWheelRadius:null,
   vehicleWheelContacts:0,vehicleStableFrames:0,vehicleSpeedKmh:0,vehicleRoll:0,vehiclePitch:0,vehicleYaw:0,vehicleSteer:0,
   vehicleX:0,vehicleY:0,vehicleZ:0,vehicleDriveRequested:0,vehicleTotalSpringLoad:0,vehicleRearLongitudinalForce:0,vehicleTotalLongitudinalForce:0,
+  vehicleSpawnX:null,vehicleSpawnZ:null,vehicleSpawnGrade:null,vehicleSpawnDistanceFromRoadProbe:null,
   vehicleRoadSurfaceY:null,vehicleRoadDistance:null,vehicleRoadBodyBottomClearance:null,vehicleVelocityX:0,vehicleVelocityZ:0,vehicleAppliedForceX:0,vehicleAppliedForceZ:0,vehicleForwardX:0,vehicleForwardZ:0,vehicleWheelDiagnostics:[],
   vehicleForwardSpeed:0,vehicleLateralSpeed:0,vehicleSlipAngle:0,vehicleSlipAngleDegrees:0,vehicleYawRate:0,vehicleUnwrappedYaw:0,vehicleYawTurns:0,vehicleRearSlipAngle:0,vehicleRearSlipAngleDegrees:0,vehicleFrontGrip:0,vehicleRearGrip:0,vehicleRearHandbrakeGrip:0,vehicleParked:true,
   error:null,
@@ -739,20 +740,21 @@ let lastProbeY = null;
 let probeStableFrames = 0;
 const dynamicMeshes = [];
 
-function findStableRoadProbeSample(samples) {
+function findStableRoadProbeSample(samples, excludedSample = null, minSeparation = 0) {
   let best = null;
   let bestScore = Infinity;
   for (let index = 0; index < samples.length; index += 1) {
     const previous = samples[(index - 1 + samples.length) % samples.length];
     const current = samples[index];
     if (Math.hypot(current.x, current.z) < 32) continue;
+    if (excludedSample && Math.hypot(current.x-excludedSample.x,current.z-excludedSample.z) < minSeparation) continue;
     const next = samples[(index + 1) % samples.length];
     const distance = Math.hypot(next.x - previous.x, next.z - previous.z);
     const grade = Math.abs(next.y - previous.y) / Math.max(distance, 0.001);
     const score = grade + Math.abs(current.bank) * 0.45;
     if (score < bestScore) {
       bestScore = score;
-      best = { sample: current, grade };
+      best = { sample: current, grade, index };
     }
   }
   return best;
@@ -802,7 +804,19 @@ async function enableHavokPhysics() {
       }
     }
 
-    vehicle = await VehicleController.create(scene, { roadSamples, startSample: roadSamples[0] });
+    const roadProbeTarget = findStableRoadProbeSample(roadSamples);
+    if (!roadProbeTarget) throw new Error("Could not select a flat road segment for Havok contact test.");
+    const vehicleSpawnTarget = findStableRoadProbeSample(roadSamples, roadProbeTarget.sample, 18);
+    if (!vehicleSpawnTarget) throw new Error("Could not select a second flat road segment for the vehicle.");
+    const vehicleSpawnDistance = Math.hypot(
+      vehicleSpawnTarget.sample.x-roadProbeTarget.sample.x,
+      vehicleSpawnTarget.sample.z-roadProbeTarget.sample.z
+    );
+    vehicle = await VehicleController.create(scene, { roadSamples, startSample: vehicleSpawnTarget.sample });
+    labState.vehicleSpawnX = Number(vehicleSpawnTarget.sample.x.toFixed(3));
+    labState.vehicleSpawnZ = Number(vehicleSpawnTarget.sample.z.toFixed(3));
+    labState.vehicleSpawnGrade = Number(vehicleSpawnTarget.grade.toFixed(5));
+    labState.vehicleSpawnDistanceFromRoadProbe = Number(vehicleSpawnDistance.toFixed(2));
     labState.vehicleReady = true;
     labState.vehicleWheelbase = vehicle.metrics.wheelbase;
     labState.vehicleTrack = vehicle.metrics.track;
@@ -825,8 +839,6 @@ async function enableHavokPhysics() {
     probeMesh.material = probeMaterial;
     addPhysicalProbe(scene, probeMesh, 18, PhysicsShapeType.BOX, { friction: 1.8, restitution: 0.01 });
 
-    const roadProbeTarget = findStableRoadProbeSample(roadSamples);
-    if (!roadProbeTarget) throw new Error("Could not select a flat road segment for Havok contact test.");
     labState.roadProbeTargetGrade = roadProbeTarget.grade;
     roadProbeMesh = MeshBuilder.CreateBox("road-collision-probe", {
       width: 2,
