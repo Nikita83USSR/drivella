@@ -127,6 +127,7 @@ try {
     const s=window.__DRIVELLA_LAB__;
     return {
       x:s.vehicleX,z:s.vehicleZ,yaw:s.vehicleYaw,unwrappedYaw:s.vehicleUnwrappedYaw,
+      bodyMass:s.vehicleBodyMass,gravityFactor:s.vehicleGravityFactor,
       yawTurns:s.vehicleYawTurns,speedKmh:s.vehicleSpeedKmh,forwardSpeed:s.vehicleForwardSpeed,
       lateralSpeed:s.vehicleLateralSpeed,slipDegrees:s.vehicleSlipAngleDegrees,
       rearSlipDegrees:s.vehicleRearSlipAngleDegrees,yawRate:s.vehicleYawRate,
@@ -198,6 +199,7 @@ try {
     vehicleSpeedKmh:window.__DRIVELLA_LAB__.vehicleSpeedKmh,vehicleRoll:window.__DRIVELLA_LAB__.vehicleRoll,
     vehiclePitch:window.__DRIVELLA_LAB__.vehiclePitch,vehicleYaw:window.__DRIVELLA_LAB__.vehicleYaw,
     vehicleX:window.__DRIVELLA_LAB__.vehicleX,vehicleY:window.__DRIVELLA_LAB__.vehicleY,vehicleZ:window.__DRIVELLA_LAB__.vehicleZ,
+    vehicleBodyMass:window.__DRIVELLA_LAB__.vehicleBodyMass,vehicleGravityFactor:window.__DRIVELLA_LAB__.vehicleGravityFactor,
     vehicleDriveRequested:window.__DRIVELLA_LAB__.vehicleDriveRequested,vehicleTotalSpringLoad:window.__DRIVELLA_LAB__.vehicleTotalSpringLoad,
     vehicleRoadSurfaceY:window.__DRIVELLA_LAB__.vehicleRoadSurfaceY,vehicleRoadDistance:window.__DRIVELLA_LAB__.vehicleRoadDistance,vehicleRoadBodyBottomClearance:window.__DRIVELLA_LAB__.vehicleRoadBodyBottomClearance,
     vehicleVelocityX:window.__DRIVELLA_LAB__.vehicleVelocityX,vehicleVelocityY:window.__DRIVELLA_LAB__.vehicleVelocityY,vehicleVelocityZ:window.__DRIVELLA_LAB__.vehicleVelocityZ,

@@ -201,7 +201,7 @@ export class VehicleController{
  getPosition(){return this.chassis.position.clone();}
  getCameraTarget(){return this.chassis.position.add(new Vector3(0,-.10,0));}
  getTelemetry(){
-  const p=this.chassis.position,v=this.aggregate.body.getLinearVelocity(),e=(this.chassis.rotationQuaternion??Quaternion.Identity()).toEulerAngles();
+  const p=this.chassis.position,v=this.aggregate.body.getLinearVelocity(),massProperties=this.aggregate.body.getMassProperties(),gravityFactor=this.aggregate.body.getGravityFactor(),e=(this.chassis.rotationQuaternion??Quaternion.Identity()).toEulerAngles();
   const angular=this.aggregate.body.getAngularVelocity(),yaw=this.yawOf(this.bodyMatrix());
   const motion=calculateVehicleMotionTelemetry(v,yaw,angular.y);
   const wheels=WHEELS.map(w=>{const c=this.wheelContacts.get(w.key);return {
@@ -227,6 +227,7 @@ export class VehicleController{
   const rearLongitudinalSpeed=axleAverage("rear","longitudinalSpeed"),rearSlipAngle=Math.atan2(rearLateralSpeed,Math.max(Math.abs(rearLongitudinalSpeed),.5));
   return {
    x:Number(p.x.toFixed(3)),y:Number(p.y.toFixed(3)),z:Number(p.z.toFixed(3)),
+   bodyMass:Number(massProperties.mass.toFixed(2)),gravityFactor:Number(gravityFactor.toFixed(3)),
    speed:Number(motion.speed.toFixed(3)),speedKmh:Number((motion.speed*3.6).toFixed(1)),
    forwardSpeed:Number(motion.forwardSpeed.toFixed(3)),lateralSpeed:Number(motion.lateralSpeed.toFixed(3)),
    slipAngle:Number(motion.slipAngle.toFixed(4)),slipAngleDegrees:Number((motion.slipAngle*57.2957795).toFixed(2)),

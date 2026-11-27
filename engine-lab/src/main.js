@@ -93,7 +93,7 @@ const labState = {
   tunnelProbeStableFrames: 0,
   vehicleReady:false,vehicleWheelbase:null,vehicleTrack:null,vehicleWheelRadius:null,
   vehicleWheelContacts:0,vehicleStableFrames:0,vehicleSpeedKmh:0,vehicleRoll:0,vehiclePitch:0,vehicleYaw:0,vehicleSteer:0,
-  vehicleX:0,vehicleY:0,vehicleZ:0,vehicleDriveRequested:0,vehicleTotalSpringLoad:0,vehicleRearLongitudinalForce:0,vehicleTotalLongitudinalForce:0,
+  vehicleX:0,vehicleY:0,vehicleZ:0,vehicleBodyMass:0,vehicleGravityFactor:1,vehicleDriveRequested:0,vehicleTotalSpringLoad:0,vehicleRearLongitudinalForce:0,vehicleTotalLongitudinalForce:0,
   vehicleSpawnX:null,vehicleSpawnZ:null,vehicleSpawnGrade:null,vehicleSpawnDistanceFromRoadProbe:null,
   vehicleRoadSurfaceY:null,vehicleRoadDistance:null,vehicleRoadBodyBottomClearance:null,vehicleVelocityX:0,vehicleVelocityY:0,vehicleVelocityZ:0,vehicleMaxSuspensionCompression:0,vehicleAverageSuspensionCompression:0,vehicleAppliedForceX:0,vehicleAppliedForceZ:0,vehicleForwardX:0,vehicleForwardZ:0,vehicleWheelDiagnostics:[],
   vehicleForwardSpeed:0,vehicleLateralSpeed:0,vehicleSlipAngle:0,vehicleSlipAngleDegrees:0,vehicleYawRate:0,vehicleUnwrappedYaw:0,vehicleYawTurns:0,vehicleRearSlipAngle:0,vehicleRearSlipAngleDegrees:0,vehicleFrontGrip:0,vehicleRearGrip:0,vehicleRearHandbrakeGrip:0,vehicleParked:true,
@@ -1005,6 +1005,7 @@ async function boot() {
       if(vehicle){
         vehicle.syncVisuals();const t=vehicle.getTelemetry();
         labState.vehicleX=t.x;labState.vehicleY=t.y;labState.vehicleZ=t.z;labState.vehicleSpeedKmh=t.speedKmh;
+        labState.vehicleBodyMass=t.bodyMass;labState.vehicleGravityFactor=t.gravityFactor;
         labState.vehicleRoll=t.roll;labState.vehiclePitch=t.pitch;labState.vehicleYaw=t.yaw;labState.vehicleSteer=t.steer;
         labState.vehicleWheelContacts=t.wheelContactCount;
         labState.vehicleForwardSpeed=t.forwardSpeed;labState.vehicleLateralSpeed=t.lateralSpeed;
