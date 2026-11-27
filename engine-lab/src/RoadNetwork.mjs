@@ -1,5 +1,5 @@
 import { roadProfileHeightAt, terrainHeight } from "./TerrainField.mjs";
-import { getNearestWaterFeature } from "./HydrologyField.mjs";
+import { getNearestWaterFeature, RIVER_BED_DEPTH, LAKE_BED_DEPTH } from "./HydrologyField.mjs";
 import {
   MAIN_ROUTE_CONTROL_POINTS,
   ROAD_SAMPLE_SPACING,
@@ -440,7 +440,8 @@ export function buildRoadFurnitureChunkGeometry(
     drainageSegments: 0,
     guardrailSegments: 0,
     guardrailPosts: 0,
-    bridgePiers: 0
+    bridgePiers: 0,
+    bridgeGirderSegments: 0
   };
   const origin = {
     x: chunkX * chunkSize,
@@ -455,21 +456,36 @@ export function buildRoadFurnitureChunkGeometry(
     const b = samples[nextIndex];
     if (!isChunkSegment(a, b, chunkX, chunkZ, chunkSize)) continue;
 
-    if (index % 4 === 0) {
-      const bridgeWater = getNearestWaterFeature(a.x, a.z, ROAD_HALF_WIDTH + 9);
-      if (bridgeWater) {
-        const crossingReach = bridgeWater.kind === "river"
-          ? ROAD_HALF_WIDTH + bridgeWater.halfWidth + 2.4
-          : ROAD_HALF_WIDTH + 3.2;
-        if (
-          bridgeWater.distance <= crossingReach
-          && a.y - bridgeWater.waterY >= 3.95
-        ) {
-          for (const lateralOffset of [-3.25, 3.25]) {
-            const support = offsetPoint(a, lateralOffset, 0);
+    const midpointX = (a.x + b.x) * 0.5;
+    const midpointZ = (a.z + b.z) * 0.5;
+    const bridgeWater = getNearestWaterFeature(midpointX, midpointZ, ROAD_HALF_WIDTH + 9);
+    if (bridgeWater) {
+      const crossingReach = bridgeWater.kind === "river"
+        ? ROAD_HALF_WIDTH + bridgeWater.halfWidth + 2.4
+        : ROAD_HALF_WIDTH + 3.2;
+      const deckClearance = (a.y + b.y) * 0.5 - bridgeWater.waterY;
+      if (bridgeWater.distance <= crossingReach && deckClearance >= 3.95) {
+        // Two longitudinal concrete girders tie the deck to its supports.
+        for (const lateralOffset of [-4.65, 4.65]) {
+          const girderA = offsetPoint(a, lateralOffset, -0.82);
+          const girderB = offsetPoint(b, lateralOffset, -0.82);
+          addRailBeam(
+            geometry, origin, girderA, girderB,
+            0.22, 0.25, ROAD_FURNITURE_COLORS.bridgeConcrete
+          );
+          geometry.bridgeGirderSegments += 1;
+        }
+
+        // Piers are spaced along the span and continue below the carved
+        // river/lake bed, so they are not short floating stubs at water level.
+        if (index % 4 === 0) {
+          const bedDepth = bridgeWater.kind === "river" ? RIVER_BED_DEPTH : LAKE_BED_DEPTH;
+          const pierBaseY = bridgeWater.waterY - bedDepth - 1.0;
+          for (const lateralOffset of [-4.65, 4.65]) {
+            const support = offsetPoint(a, lateralOffset, -0.82);
             addBridgePier(
               geometry, origin, support.x, support.z,
-              bridgeWater.waterY - 0.9, a.y - 0.55
+              pierBaseY, a.y - 0.55
             );
             geometry.bridgePiers += 1;
           }
@@ -558,7 +574,7 @@ export function getRoadFurnitureStats(samples, chunkSize = ROAD_CHUNK_SIZE) {
   if (!Array.isArray(samples) || samples.length < 2) {
     return { transitionSegments: 0, drainageSegments: 0, guardrailSegments: 0 };
   }
-  const stats = { transitionSegments: 0, drainageSegments: 0, guardrailSegments: 0, bridgePiers: 0 };
+  const stats = { transitionSegments: 0, drainageSegments: 0, guardrailSegments: 0, bridgePiers: 0, bridgeGirderSegments: 0 };
   const profiles = getRoadFurnitureProfiles(samples);
   for (let index = 0; index < samples.length; index += 1) {
     const nextIndex = (index + 1) % samples.length;
