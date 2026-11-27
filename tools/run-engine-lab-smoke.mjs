@@ -83,6 +83,10 @@ try {
     roadChunks: window.__DRIVELLA_LAB__.roadChunks,
     roadLength: window.__DRIVELLA_LAB__.roadLength,
     roadSampleCount: window.__DRIVELLA_LAB__.roadSampleCount,
+    roadFurnitureChunks: window.__DRIVELLA_LAB__.roadFurnitureChunks,
+    roadGuardrailSegments: window.__DRIVELLA_LAB__.roadGuardrailSegments,
+    roadDrainageSegments: window.__DRIVELLA_LAB__.roadDrainageSegments,
+    roadTransitionSegments: window.__DRIVELLA_LAB__.roadTransitionSegments,
     roadYAtProbe: window.__DRIVELLA_LAB__.roadYAtProbe,
     roadDistanceAtProbe: window.__DRIVELLA_LAB__.roadDistanceAtProbe,
     roadProbeY: window.__DRIVELLA_LAB__.roadProbeY,
@@ -108,6 +112,14 @@ try {
   if (propCount < 8) throw new Error("Biome decoration did not create enough world props: " + JSON.stringify(state.biomes));
   if (!Number.isFinite(state.roadLength) || state.roadLength < 1200 || state.roadChunks < 8) {
     throw new Error("The spline road was not streamed into the world chunks: " + JSON.stringify(state));
+  }
+  if (
+    state.roadFurnitureChunks < 1
+    || state.roadTransitionSegments < 1
+    || state.roadDrainageSegments < 1
+    || state.roadGuardrailSegments < 1
+  ) {
+    throw new Error("Roadside cut/fill, drainage and exposed-edge safety geometry was not generated: " + JSON.stringify(state));
   }
   if (state.roadProbeStableFrames < 30) {
     throw new Error("Dedicated road probe did not settle on the asphalt collision mesh: " + JSON.stringify(state));
