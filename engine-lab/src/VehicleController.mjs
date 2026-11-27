@@ -21,6 +21,11 @@ export function calculateLateralTireForce(lateralSpeed,corneringStiffness,fricti
  const limit=Math.max(0,frictionLimit)*.92;
  return clamp(-lateralSpeed*corneringStiffness,-limit,limit);
 }
+export function calculateSpeedSteerLimit(speed,wheelbase,maxLateralAccel,maximumAngle=P.maxSteer){
+ const v=Math.max(0,Number.isFinite(speed)?speed:0);
+ if(v<=.5)return maximumAngle;
+ return Math.min(maximumAngle,Math.atan(wheelbase*maxLateralAccel/(v*v)));
+}
 export function calculateAckermannAngles(input,wheelbase,track,maximumAngle=P.maxSteer){
  const centre=clamp(input,-1,1)*maximumAngle;if(Math.abs(centre)<1e-5)return {left:0,right:0};
  const dir=Math.sign(centre),radius=wheelbase/Math.tan(Math.abs(centre)),half=track*.5;
@@ -142,7 +147,7 @@ export class VehicleController{
    return;
   }
   const speed=Math.hypot(velocity.x,velocity.z),fade=clamp(speed/58,0,.58);this.lastDt=dt;this.steer+=(this.steerInput-this.steer)*clamp(dt*7.5,0,1);
-  const lateralSteerLimit=speed>.5?Math.min(P.maxSteer,Math.atan(this.metrics.wheelbase*P.maxLateralAccel/(speed*speed))):P.maxSteer;
+  const lateralSteerLimit=calculateSpeedSteerLimit(speed,this.metrics.wheelbase,P.maxLateralAccel,P.maxSteer);
   const ack=calculateAckermannAngles(this.steer,this.metrics.wheelbase,this.metrics.track,lateralSteerLimit);
   const bodyForward=new Vector3(Math.sin(yaw),0,Math.cos(yaw)),fwd=Vector3.Dot(velocity,bodyForward);let drive=this.throttle?P.engine*clamp(1-speed/82,.22,1):0,braking=0;
   if(this.brake){if(fwd>1)braking=P.brake;else drive=-P.engine*.48;}
@@ -245,7 +250,7 @@ export class VehicleController{
    roll:Number(e.z.toFixed(4)),pitch:Number(e.x.toFixed(4)),steer:Number(this.steer.toFixed(3)),
    wheelContactCount:wheels.filter(w=>w.contact).length,wheelbase:Number(this.metrics.wheelbase.toFixed(4)),
    track:Number(this.metrics.track.toFixed(4)),wheelRadius:Number(this.metrics.wheelRadius.toFixed(4)),
-   frontGrip:P.frontGrip,rearGrip:P.rearGrip,rearHandbrakeGrip:P.rearHandbrakeGrip,maxLateralAccel:P.maxLateralAccel,steerLimit:Number((speed>.5?Math.min(P.maxSteer,Math.atan(this.metrics.wheelbase*P.maxLateralAccel/(speed*speed))):P.maxSteer).toFixed(4)),parked:this.parked,
+   frontGrip:P.frontGrip,rearGrip:P.rearGrip,rearHandbrakeGrip:P.rearHandbrakeGrip,maxLateralAccel:P.maxLateralAccel,steerLimit:Number(calculateSpeedSteerLimit(motion.speed,this.metrics.wheelbase,P.maxLateralAccel,P.maxSteer).toFixed(4)),parked:this.parked,
    throttle:this.throttle,handbrake:this.handbrake,driveRequested:Number(this.driveRequested.toFixed(1)),brakeRequested:Number(this.brakeRequested.toFixed(1)),
    velocityX:Number(v.x.toFixed(4)),velocityY:Number(v.y.toFixed(4)),velocityZ:Number(v.z.toFixed(4)),
    maxSuspensionCompression:Number(maxSuspensionCompression.toFixed(4)),averageSuspensionCompression:Number(averageSuspensionCompression.toFixed(4)),
