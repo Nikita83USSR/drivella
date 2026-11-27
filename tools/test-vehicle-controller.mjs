@@ -24,7 +24,7 @@ const raw = inflateSync(Buffer.from(encoded, "base64"));
 assert.equal(raw.byteLength, meta.rawBytes, "Decompressed Countach bytes must match its metadata.");
 const view = new DataView(raw.buffer, raw.byteOffset, raw.byteLength);
 
-function tyreRadius(partName, centre) {
+function tyreRadius(partName) {
   const part = meta.parts.find((entry) => entry.name === partName);
   assert.ok(part, `Missing ${partName} triangle metadata.`);
   let radius = 0;
@@ -42,16 +42,14 @@ function tyreRadius(partName, centre) {
       min[axis] = Math.min(min[axis], point[axis]);
       max[axis] = Math.max(max[axis], point[axis]);
     }
-    radius = Math.max(radius, Math.hypot(
-      point[1] - centre[1],
-      point[2] - centre[2]
-    ));
+    // Countach part vertices are authored around each wheel mesh's local origin.
+    radius = Math.max(radius, Math.hypot(point[1], point[2]));
   }
   return { radius, min, max };
 }
 
-const front = tyreRadius("front_tyre", meta.wheelCenters.front);
-const rear = tyreRadius("rear_tyre", meta.wheelCenters.rear);
+const front = tyreRadius("front_tyre");
+const rear = tyreRadius("rear_tyre");
 const wheelRadius = (front.radius + rear.radius) * 0.5;
 console.log("COUNTACH RAW TYRE MEASUREMENTS", JSON.stringify({ front, rear }));
 assert.ok(front.radius > 0 && front.radius < 2, "Front tyre radius must be finite and positive.");
