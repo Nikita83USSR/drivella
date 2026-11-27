@@ -79,7 +79,7 @@ export class VehicleController{
  constructor(scene,{roadSamples,startSample=roadSamples?.[0],model}){
   if(!scene?.getPhysicsEngine?.())throw new Error("Vehicle requires active Havok Physics V2.");
   if(!Array.isArray(roadSamples)||roadSamples.length<2||!startSample)throw new TypeError("Vehicle requires sampled road and spawn point.");
-  this.scene=scene;this.model=model;this.metrics=model.metrics;this.mass=P.mass;this.keys=new Set();this.steer=0;this.steerInput=0;this.handbrake=false;this.brake=false;this.throttle=false;this.parked=true;this.driveRequested=0;this.brakeRequested=0;this.lastDt=1/60;
+  this.scene=scene;this.model=model;this.startSample=startSample;this.metrics=model.metrics;this.mass=P.mass;this.keys=new Set();this.steer=0;this.steerInput=0;this.handbrake=false;this.brake=false;this.throttle=false;this.parked=true;this.driveRequested=0;this.brakeRequested=0;this.lastDt=1/60;
   this.wheelContacts=new Map();this.wheelSpin=new Map(WHEELS.map(w=>[w.key,0]));this.wheelPivots=new Map();this.materials=new Map();this.ray=new PhysicsRaycastResult();this.appliedDriveForceWorld=Vector3.Zero();
   const yaw=Math.atan2(startSample.tangentX,startSample.tangentZ),width=clamp(model.bodySize.x*.88,1.72,2.05),length=clamp(model.bodySize.z*.80,3.65,4.05);
   this.unwrappedYaw=yaw;this.initialYaw=yaw;this.lastYaw=yaw;
@@ -125,16 +125,18 @@ export class VehicleController{
   const left=this.keys.has("a")||this.keys.has("arrowleft"),right=this.keys.has("d")||this.keys.has("arrowright");
   this.steerInput=(right?1:0)-(left?1:0);this.throttle=this.keys.has("w")||this.keys.has("arrowup");this.brake=this.keys.has("s")||this.keys.has("arrowdown");this.handbrake=this.keys.has(" ");
   if(this.parked){
-   const heldContacts=new Map();
+   // The chassis is STATIC here and its spawn pose is fixed. Derive the
+   // four resting tyre contacts from the measured road sample instead of
+   // issuing four expensive Havok raycasts on every idle render frame.
+   const heldContacts=new Map(),normal=Vector3.Up();
    for(const w of WHEELS){
-    const anchor=Vector3.TransformCoordinates(this.wheelMount(w),matrix),end=anchor.add(new Vector3(0,-(P.max+this.metrics.wheelRadius+.16),0));
-    physics.raycastToRef(anchor,end,this.ray,{ignoreBody:this.aggregate.body});
-    if(!this.ray.hasHit){heldContacts.set(w.key,{...w,hit:false,anchor,point:end,normal:Vector3.Up(),compression:-P.maxComp,steerAngle:0,longitudinalSpeed:0,lateralSpeed:0});continue;}
-    const point=this.ray.hitPointWorld.clone(),normal=this.ray.hitNormalWorld.clone().normalize();
-    if(normal.y<0)normal.scaleInPlace(-1);
+    const anchor=Vector3.TransformCoordinates(this.wheelMount(w),matrix);
+    const point=new Vector3(anchor.x,this.startSample.y,anchor.z);
     const suspensionLength=Vector3.Distance(anchor,point)-this.metrics.wheelRadius;
     const compression=clamp(P.rest-clamp(suspensionLength,P.min,P.max),-P.maxComp,P.maxComp);
-    heldContacts.set(w.key,{...w,hit:suspensionLength<=P.max+.025,anchor,anchorY:anchor.y,point,normal,compression,suspensionLength,pointVelocityY:0,springCompressionForce:0,damperForce:0,bumpForce:0,springForce:0,steerAngle:0,longitudinalSpeed:0,lateralSpeed:0,tireUtilization:0});
+    heldContacts.set(w.key,{...w,hit:true,anchor,anchorY:anchor.y,point,normal:normal.clone(),compression,suspensionLength,
+     pointVelocityY:0,springCompressionForce:0,damperForce:0,bumpForce:0,springForce:0,
+     steerAngle:0,longitudinalSpeed:0,longitudinalForce:0,lateralSpeed:0,lateralForce:0,tireUtilization:0});
    }
    this.wheelContacts=heldContacts;
    return;

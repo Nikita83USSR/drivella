@@ -151,6 +151,7 @@ try {
   await page.keyboard.down("w");
   await page.waitForTimeout(180);
   handlingSamples.accelerationT180=await sampleVehicle();
+  if(handlingSamples.accelerationT180.contacts!==4)throw new Error("Vehicle lost a real Havok wheel ray contact immediately after PARKED-to-DYNAMIC: "+JSON.stringify(handlingSamples.accelerationT180));
   await page.waitForTimeout(320);
   handlingSamples.accelerationT500=await sampleVehicle();
   await page.waitForTimeout(500);
