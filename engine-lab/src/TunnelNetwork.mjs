@@ -46,11 +46,11 @@ function isWaterApproach(sample, clearance = 18) {
   return water.distance <= reach;
 }
 
-function routeDistance(samples, start, end) {
+function routeDistanceForIndices(samples, indices) {
   let length = 0;
-  for (let index = start; index < end; index += 1) {
-    const a = samples[index % samples.length];
-    const b = samples[(index + 1) % samples.length];
+  for (let position = 0; position < indices.length - 1; position += 1) {
+    const a = samples[indices[position]];
+    const b = samples[indices[position + 1]];
     length += Math.hypot(b.x - a.x, b.z - a.z);
   }
   return length;
@@ -113,7 +113,6 @@ export function detectTunnelSegments(roadSamples, options = {}) {
     } else if (current) {
       pendingGap += 1;
       if (pendingGap > maxGapSamples) {
-        current.indices.length -= pendingGap;
         if (current.indices.length) groups.push(current);
         current = null;
         pendingGap = 0;
@@ -121,7 +120,6 @@ export function detectTunnelSegments(roadSamples, options = {}) {
     }
   }
   if (current) {
-    current.indices.length -= pendingGap;
     if (current.indices.length) groups.push(current);
   }
 
@@ -140,7 +138,7 @@ export function detectTunnelSegments(roadSamples, options = {}) {
   for (const group of groups) {
     const indices = group.indices;
     if (indices.length < 2) continue;
-    const length = routeDistance(samples, indices[0], indices[indices.length - 1]);
+    const length = routeDistanceForIndices(samples, indices);
     const coverSamples = indices.map((index) => samples[index].cover);
     const minCover = Math.min(...coverSamples);
     const maxCover = Math.max(...coverSamples);
@@ -326,15 +324,13 @@ export function buildTunnelChunkGeometry(tunnels, chunkX, chunkY, chunkZ, chunkS
       geometry.segmentCount += 1;
     }
 
-    if (includedTunnel) {
-      geometry.tunnelIds.push(tunnel.id);
-      if (chunkIndex(tunnel.start.x, chunkSize) === chunkX && chunkIndex(tunnel.start.z, chunkSize) === chunkZ) {
-        addTunnelPortal(geometry, origin, tunnel.start);
-      }
-      if (chunkIndex(tunnel.end.x, chunkSize) === chunkX && chunkIndex(tunnel.end.z, chunkSize) === chunkZ) {
-        addTunnelPortal(geometry, origin, tunnel.end);
-      }
-    }
+    const hasStartPortal = chunkIndex(tunnel.start.x, chunkSize) === chunkX
+      && chunkIndex(tunnel.start.z, chunkSize) === chunkZ;
+    const hasEndPortal = chunkIndex(tunnel.end.x, chunkSize) === chunkX
+      && chunkIndex(tunnel.end.z, chunkSize) === chunkZ;
+    if (hasStartPortal) addTunnelPortal(geometry, origin, tunnel.start);
+    if (hasEndPortal) addTunnelPortal(geometry, origin, tunnel.end);
+    if (includedTunnel || hasStartPortal || hasEndPortal) geometry.tunnelIds.push(tunnel.id);
   }
 
   return geometry;
