@@ -94,6 +94,7 @@ const labState = {
   vehicleReady:false,vehicleWheelbase:null,vehicleTrack:null,vehicleWheelRadius:null,
   vehicleWheelContacts:0,vehicleStableFrames:0,vehicleSpeedKmh:0,vehicleRoll:0,vehiclePitch:0,vehicleYaw:0,vehicleSteer:0,
   vehicleX:0,vehicleY:0,vehicleZ:0,
+  vehicleForwardSpeed:0,vehicleLateralSpeed:0,vehicleSlipAngle:0,vehicleSlipAngleDegrees:0,vehicleYawRate:0,vehicleUnwrappedYaw:0,vehicleYawTurns:0,vehicleRearSlipAngle:0,vehicleRearSlipAngleDegrees:0,vehicleFrontGrip:0,vehicleRearGrip:0,vehicleRearHandbrakeGrip:0,
   error:null,
   spatial: null
 };
@@ -986,6 +987,11 @@ async function boot() {
         labState.vehicleX=t.x;labState.vehicleY=t.y;labState.vehicleZ=t.z;labState.vehicleSpeedKmh=t.speedKmh;
         labState.vehicleRoll=t.roll;labState.vehiclePitch=t.pitch;labState.vehicleYaw=t.yaw;labState.vehicleSteer=t.steer;
         labState.vehicleWheelContacts=t.wheelContactCount;
+        labState.vehicleForwardSpeed=t.forwardSpeed;labState.vehicleLateralSpeed=t.lateralSpeed;
+        labState.vehicleSlipAngle=t.slipAngle;labState.vehicleSlipAngleDegrees=t.slipAngleDegrees;
+        labState.vehicleYawRate=t.yawRate;labState.vehicleUnwrappedYaw=t.unwrappedYaw;labState.vehicleYawTurns=t.yawTurns;
+        labState.vehicleRearSlipAngle=t.rearSlipAngle;labState.vehicleRearSlipAngleDegrees=t.rearSlipAngleDegrees;
+        labState.vehicleFrontGrip=t.frontGrip;labState.vehicleRearGrip=t.rearGrip;labState.vehicleRearHandbrakeGrip=t.rearHandbrakeGrip;
         labState.vehicleStableFrames=t.wheelContactCount===4?labState.vehicleStableFrames+1:0;
         camera.target.copyFrom(vehicle.getCameraTarget());
         if(vehicleMeta)vehicleMeta.textContent=`Countach · ${t.speedKmh.toFixed(0)} km/h · wheels ${t.wheelContactCount}/4 · roll ${(Math.abs(t.roll)*57.2958).toFixed(1)}°`;

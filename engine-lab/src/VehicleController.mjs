@@ -2,8 +2,20 @@ import {Color3,Mesh,MeshBuilder,PhysicsAggregate,PhysicsShapeType,Quaternion,Sta
 import {PhysicsRaycastResult} from "@babylonjs/core/Physics/physicsRaycastResult.js";
 const WHEEL_PARTS=new Set(["front_tyre","front_rims","front_extra_NoMaterial","rear_tyre","rear_rims"]);
 const WHEELS=Object.freeze([Object.freeze({key:"frontLeft",axle:"front",side:-1}),Object.freeze({key:"frontRight",axle:"front",side:1}),Object.freeze({key:"rearLeft",axle:"rear",side:-1}),Object.freeze({key:"rearRight",axle:"rear",side:1})]);
-const P=Object.freeze({mass:1250,cg:.50,spawn:.05,colliderH:.42,rest:.32,min:.12,max:.55,maxComp:.20,spring:38000,damper:4200,bump:98000,antiRoll:26000,rollStiffness:16000,rollDamping:4000,maxRollTorque:9000,maxForce:16000,maxSteer:.49,engine:8600,brake:19500,handbrake:10500,drag:.46,rolling:.012});
+const P=Object.freeze({mass:1250,cg:.50,spawn:.05,colliderH:.42,rest:.32,min:.12,max:.55,maxComp:.20,spring:38000,damper:4200,bump:98000,antiRoll:26000,rollStiffness:16000,rollDamping:4000,maxRollTorque:9000,maxForce:16000,maxSteer:.49,engine:8600,brake:19500,handbrake:13500,frontGrip:1.22,rearGrip:1.04,rearHandbrakeGrip:.32,frontCornering:5600,rearCornering:3950,drag:.46,rolling:.012});
 const clamp=(v,a,b)=>Math.max(a,Math.min(b,v));
+export function wrapVehicleAngle(angle){return Math.atan2(Math.sin(angle),Math.cos(angle));}
+export function calculateVehicleMotionTelemetry(velocity,yaw,yawRate=0){
+ const forwardX=Math.sin(yaw),forwardZ=Math.cos(yaw),rightX=Math.cos(yaw),rightZ=-Math.sin(yaw);
+ const forwardSpeed=velocity.x*forwardX+velocity.z*forwardZ;
+ const lateralSpeed=velocity.x*rightX+velocity.z*rightZ;
+ const speed=Math.hypot(velocity.x,velocity.z),velocityHeading=speed>.05?Math.atan2(velocity.x,velocity.z):yaw;
+ return {speed,forwardSpeed,lateralSpeed,slipAngle:Math.atan2(lateralSpeed,Math.max(Math.abs(forwardSpeed),.5)),velocityHeading,headingError:wrapVehicleAngle(velocityHeading-yaw),yawRate};
+}
+export function calculateLateralTireForce(lateralSpeed,corneringStiffness,frictionLimit){
+ const limit=Math.max(0,frictionLimit)*.92;
+ return clamp(-lateralSpeed*corneringStiffness,-limit,limit);
+}
 export function calculateAckermannAngles(input,wheelbase,track,maximumAngle=P.maxSteer){
  const centre=clamp(input,-1,1)*maximumAngle;if(Math.abs(centre)<1e-5)return {left:0,right:0};
  const dir=Math.sign(centre),radius=wheelbase/Math.tan(Math.abs(centre)),half=track*.5;
@@ -65,6 +77,7 @@ export class VehicleController{
   this.scene=scene;this.model=model;this.metrics=model.metrics;this.mass=P.mass;this.keys=new Set();this.steer=0;this.steerInput=0;this.handbrake=false;this.brake=false;this.throttle=false;
   this.wheelContacts=new Map();this.wheelSpin=new Map(WHEELS.map(w=>[w.key,0]));this.wheelPivots=new Map();this.materials=new Map();this.ray=new PhysicsRaycastResult();
   const yaw=Math.atan2(startSample.tangentX,startSample.tangentZ),width=clamp(model.bodySize.x*.88,1.72,2.05),length=clamp(model.bodySize.z*.80,3.65,4.05);
+  this.unwrappedYaw=yaw;this.initialYaw=yaw;this.lastYaw=yaw;
   this.colliderDimensions={width,height:P.colliderH,length};
   this.chassis=MeshBuilder.CreateBox("drivella-countach-physics-chassis",{width,height:P.colliderH,depth:length},scene);
   this.chassis.position.set(startSample.x,startSample.y+P.cg+P.spawn,startSample.z);this.chassis.rotationQuaternion=Quaternion.RotationYawPitchRoll(yaw,0,0);
@@ -101,6 +114,7 @@ export class VehicleController{
  stepPhysics(){
   if(!this.aggregate?.body||this.aggregate.body.isDisposed)return;const physics=this.scene.getPhysicsEngine();if(!physics?.raycastToRef)return;
   const dt=clamp(this.scene.getEngine().getDeltaTime()/1000,1/240,1/30),matrix=this.bodyMatrix(),yaw=this.yawOf(matrix),position=this.chassis.position.clone();
+  this.unwrappedYaw+=wrapVehicleAngle(yaw-this.lastYaw);this.lastYaw=yaw;
   const velocity=this.aggregate.body.getLinearVelocity(),angular=this.aggregate.body.getAngularVelocity();
   const left=this.keys.has("a")||this.keys.has("arrowleft"),right=this.keys.has("d")||this.keys.has("arrowright");
   this.steerInput=(right?1:0)-(left?1:0);this.throttle=this.keys.has("w")||this.keys.has("arrowup");this.brake=this.keys.has("s")||this.keys.has("arrowdown");this.handbrake=this.keys.has(" ");
@@ -121,17 +135,18 @@ export class VehicleController{
    const lever=point.subtract(position),pointVelocity=velocity.add(Vector3.Cross(angular,lever));
    let spring=P.spring*Math.max(0,compression)-P.damper*pointVelocity.y;
    if(suspensionLength<P.min)spring+=(P.min-suspensionLength)*P.bump;spring=clamp(spring,0,P.maxForce);
-   contacts.set(w.key,{...w,hit:true,anchor,point,normal,compression,springForce:spring,steerAngle:steer,longitudinalSpeed:0});
+   contacts.set(w.key,{...w,hit:true,anchor,point,normal,compression,springForce:spring,steerAngle:steer,longitudinalSpeed:0,lateralSpeed:0,lateralForce:0,tireUtilization:0});
    if(spring<=.5)continue;
    this.aggregate.body.applyForce(new Vector3(normal.x*spring/Math.max(normal.y,.35),spring,normal.z*spring/Math.max(normal.y,.35)),point);
    const wa=yaw+steer,nf=new Vector3(Math.sin(wa),0,Math.cos(wa)),forward=nf.subtract(normal.scale(Vector3.Dot(nf,normal))).normalize();
    const rightVector=Vector3.Cross(normal,forward).normalize(),wheelV=velocity.add(Vector3.Cross(angular,lever));
-   const longV=Vector3.Dot(wheelV,forward),sideV=Vector3.Dot(wheelV,rightVector),rear=w.axle==="rear",mu=rear&&this.handbrake?.4:rear?1.10:1.24,limit=mu*spring;
-   const lateral=clamp(-sideV*(rear?3900:5350),-limit*.92,limit*.92);let longitudinal=dragWheel;if(rear)longitudinal+=driveRear;
+   const longV=Vector3.Dot(wheelV,forward),sideV=Vector3.Dot(wheelV,rightVector),rear=w.axle==="rear",mu=rear&&this.handbrake?P.rearHandbrakeGrip:rear?P.rearGrip:P.frontGrip,limit=mu*spring;
+   const lateral=calculateLateralTireForce(sideV,rear?P.rearCornering:P.frontCornering,limit);let longitudinal=dragWheel;if(rear)longitudinal+=driveRear;
    if(this.brake&&braking>0){const share=rear?.42:.58;longitudinal-=Math.sign(longV||fwd||1)*braking*share*.5;}
    if(this.handbrake&&rear)longitudinal-=Math.sign(longV||fwd||1)*P.handbrake;
    const tire=clampTireForce(longitudinal,lateral,limit);
-   this.aggregate.body.applyForce(forward.scale(tire.longitudinal).add(rightVector.scale(tire.lateral)),point);contacts.get(w.key).longitudinalSpeed=longV;
+   this.aggregate.body.applyForce(forward.scale(tire.longitudinal).add(rightVector.scale(tire.lateral)),point);
+   const contact=contacts.get(w.key);contact.longitudinalSpeed=longV;contact.lateralSpeed=sideV;contact.lateralForce=tire.lateral;contact.tireUtilization=limit>0?Math.hypot(tire.longitudinal,tire.lateral)/limit:0;
   }
   const anti=(lk,rk)=>{const l=contacts.get(lk),r=contacts.get(rk);if(!l?.hit||!r?.hit)return;const force=(l.compression-r.compression)*P.antiRoll;
    this.aggregate.body.applyForce(new Vector3(0,-force,0),l.anchor);this.aggregate.body.applyForce(new Vector3(0,force,0),r.anchor);};
@@ -156,8 +171,31 @@ export class VehicleController{
  getCameraTarget(){return this.chassis.position.add(new Vector3(0,-.10,0));}
  getTelemetry(){
   const p=this.chassis.position,v=this.aggregate.body.getLinearVelocity(),e=(this.chassis.rotationQuaternion??Quaternion.Identity()).toEulerAngles();
-  const wheels=WHEELS.map(w=>{const c=this.wheelContacts.get(w.key);return {key:w.key,contact:Boolean(c?.hit),compression:Number((c?.compression??0).toFixed(4)),steering:Number((c?.steerAngle??0).toFixed(4))};});
-  return {x:Number(p.x.toFixed(3)),y:Number(p.y.toFixed(3)),z:Number(p.z.toFixed(3)),speedKmh:Number((Math.hypot(v.x,v.z)*3.6).toFixed(1)),yaw:Number(this.yawOf(this.bodyMatrix()).toFixed(4)),roll:Number(e.z.toFixed(4)),pitch:Number(e.x.toFixed(4)),steer:Number(this.steer.toFixed(3)),wheelContactCount:wheels.filter(w=>w.contact).length,wheelbase:Number(this.metrics.wheelbase.toFixed(4)),track:Number(this.metrics.track.toFixed(4)),wheelRadius:Number(this.metrics.wheelRadius.toFixed(4)),wheels};
+  const angular=this.aggregate.body.getAngularVelocity(),yaw=this.yawOf(this.bodyMatrix());
+  const motion=calculateVehicleMotionTelemetry(v,yaw,angular.y);
+  const wheels=WHEELS.map(w=>{const c=this.wheelContacts.get(w.key);return {
+   key:w.key,contact:Boolean(c?.hit),compression:Number((c?.compression??0).toFixed(4)),
+   steering:Number((c?.steerAngle??0).toFixed(4)),lateralSpeed:Number((c?.lateralSpeed??0).toFixed(3)),
+   longitudinalSpeed:Number((c?.longitudinalSpeed??0).toFixed(3)),tireUtilization:Number((c?.tireUtilization??0).toFixed(3))
+  };});
+  const axleAverage=(axle,key)=>{const list=WHEELS.filter(w=>w.axle===axle).map(w=>this.wheelContacts.get(w.key)).filter(c=>c?.hit);
+   return list.length?list.reduce((sum,c)=>sum+(c[key]??0),0)/list.length:0;};
+  const frontLateralSpeed=axleAverage("front","lateralSpeed"),rearLateralSpeed=axleAverage("rear","lateralSpeed");
+  const rearLongitudinalSpeed=axleAverage("rear","longitudinalSpeed"),rearSlipAngle=Math.atan2(rearLateralSpeed,Math.max(Math.abs(rearLongitudinalSpeed),.5));
+  return {
+   x:Number(p.x.toFixed(3)),y:Number(p.y.toFixed(3)),z:Number(p.z.toFixed(3)),
+   speed:Number(motion.speed.toFixed(3)),speedKmh:Number((motion.speed*3.6).toFixed(1)),
+   forwardSpeed:Number(motion.forwardSpeed.toFixed(3)),lateralSpeed:Number(motion.lateralSpeed.toFixed(3)),
+   slipAngle:Number(motion.slipAngle.toFixed(4)),slipAngleDegrees:Number((motion.slipAngle*57.2957795).toFixed(2)),
+   headingError:Number(motion.headingError.toFixed(4)),yawRate:Number(motion.yawRate.toFixed(4)),
+   unwrappedYaw:Number(this.unwrappedYaw.toFixed(4)),yawTurns:Number((Math.abs(this.unwrappedYaw-this.initialYaw)/(Math.PI*2)).toFixed(3)),
+   rearSlipAngle:Number(rearSlipAngle.toFixed(4)),rearSlipAngleDegrees:Number((rearSlipAngle*57.2957795).toFixed(2)),
+   frontLateralSpeed:Number(frontLateralSpeed.toFixed(3)),rearLateralSpeed:Number(rearLateralSpeed.toFixed(3)),
+   roll:Number(e.z.toFixed(4)),pitch:Number(e.x.toFixed(4)),steer:Number(this.steer.toFixed(3)),
+   wheelContactCount:wheels.filter(w=>w.contact).length,wheelbase:Number(this.metrics.wheelbase.toFixed(4)),
+   track:Number(this.metrics.track.toFixed(4)),wheelRadius:Number(this.metrics.wheelRadius.toFixed(4)),
+   frontGrip:P.frontGrip,rearGrip:P.rearGrip,rearHandbrakeGrip:P.rearHandbrakeGrip,wheels
+  };
  }
  dispose(){this.scene.onBeforePhysicsObservable.remove(this.observer);window.removeEventListener("keydown",this.keydown);window.removeEventListener("keyup",this.keyup);window.removeEventListener("blur",this.blur);
   this.aggregate?.dispose();this.bodyRoot?.dispose(false,true);for(const p of this.wheelPivots.values())p.dispose(false,true);for(const m of this.materials.values())m.dispose();this.chassis?.dispose();}

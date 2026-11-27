@@ -1,7 +1,7 @@
 import assert from "node:assert/strict";
 import { readFile } from "node:fs/promises";
 import { inflateSync } from "node:zlib";
-import { calculateAckermannAngles, clampTireForce, measureCountachRigMetrics } from "../engine-lab/src/VehicleController.mjs";
+import { calculateAckermannAngles, calculateLateralTireForce, calculateVehicleMotionTelemetry, clampTireForce, measureCountachRigMetrics, wrapVehicleAngle } from "../engine-lab/src/VehicleController.mjs";
 
 const assetDir = new URL("../engine-lab/assets/", import.meta.url);
 const names = [
@@ -66,6 +66,13 @@ assert.deepEqual(calculateAckermannAngles(0, rig.wheelbase, rig.track), { left: 
 assert.deepEqual(clampTireForce(1800, 900, 4000), { longitudinal: 1800, lateral: 900, scale: 1 });
 const saturated = clampTireForce(4000, 3000, 3500);
 assert.ok(Math.hypot(saturated.longitudinal, saturated.lateral) <= 3500.000001 && saturated.scale < 1);
+assert.ok(calculateLateralTireForce(1, 5000, 4000) < 0, "lateral tyre force must oppose slip");
+assert.ok(Math.abs(calculateLateralTireForce(100, 5000, 4000)) <= 3680.000001, "lateral tyre force must obey the grip limit");
+const motion = calculateVehicleMotionTelemetry({ x: 3, y: 0, z: 10 }, 0, 0.42);
+assert.ok(Math.abs(motion.forwardSpeed - 10) < 1e-9);
+assert.ok(Math.abs(motion.lateralSpeed - 3) < 1e-9);
+assert.ok(motion.slipAngle > 0 && motion.yawRate === 0.42);
+assert.ok(Math.abs(wrapVehicleAngle(Math.PI * 1.5) + Math.PI * 0.5) < 1e-9);
 
 console.log("COUNTACH SOURCE GEOMETRY PASS", JSON.stringify({
   rawBytes: raw.byteLength,
