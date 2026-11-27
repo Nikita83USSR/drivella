@@ -1,10 +1,11 @@
 import assert from "node:assert/strict";
 import { SpatialChunkManager } from "../engine-lab/src/SpatialChunkManager.mjs";
-import { getMainRoadElevationStats, terrainChunkHeightRange, terrainChunkLayer, terrainHeight } from "../engine-lab/src/TerrainField.mjs";
+import { getMainRoadElevationStats, isInsideTunnelCorridor, rawTerrainHeight, registerTunnelCorridors, terrainChunkHeightRange, terrainChunkLayer, terrainHeight } from "../engine-lab/src/TerrainField.mjs";
 import { distanceToMainRoute } from "../engine-lab/src/WorldLayout.mjs";
 import { BIOME_IDS, generateBiomePlacements, sampleBiome } from "../engine-lab/src/BiomeField.mjs";
 import { buildRoadChunkGeometry, buildRoadFurnitureChunkGeometry, generateMainRoadSamples, getRoadStats, getRoadFurnitureStats, nearestRoadSurfaceHeight } from "../engine-lab/src/RoadNetwork.mjs";
 import { buildHydrologyChunkGeometry, classifyRoadHydrologyCrossings, getHydrologyStats, getNearestWaterFeature } from "../engine-lab/src/HydrologyField.mjs";
+import { buildTunnelChunkGeometry, detectTunnelSegments, getTunnelStats, TUNNEL_CLEAR_HEIGHT } from "../engine-lab/src/TunnelNetwork.mjs";
 
 const disposed = [];
 const manager = new SpatialChunkManager({
@@ -142,6 +143,61 @@ assert.ok(roadSamplesA.length > 500, "the route must have enough samples for smo
 assert.ok(Math.abs(roadSamplesA[0].x) < 0.001 && Math.abs(roadSamplesA[0].z) < 0.001,
   "the start/finish point must cross the central garage area");
 const roadStats = getRoadStats(roadSamplesA);
+const tunnels = detectTunnelSegments(roadSamplesA);
+const tunnelStats = getTunnelStats(tunnels);
+const tunnelSpatialStats = registerTunnelCorridors(tunnels);
+console.log("TUNNEL DETECTION METRICS", JSON.stringify({ ...tunnelStats, tunnelSpatialStats }));
+assert.ok(tunnels.length >= 1, "the road should pass beneath at least one naturally overhung mountain section");
+assert.ok(tunnels.every((tunnel) =>
+  tunnel.length >= 48
+  && tunnel.minCover > TUNNEL_CLEAR_HEIGHT
+  && tunnel.maxCover >= 12.5
+  && tunnel.path.length >= 8
+), "detected tunnels must have sufficient length and mountain cover for a vehicle-sized bore");
+assert.equal(tunnelSpatialStats.tunnelCount, tunnels.length);
+assert.ok(tunnelSpatialStats.segmentCount >= tunnels.length * 7,
+  "tunnel cover corridors must be indexed for terrain generation");
+let tunnelChunks = 0;
+let tunnelSegments = 0;
+let tunnelPortals = 0;
+let tunnelRibs = 0;
+let tunnelLightSegments = 0;
+for (const tunnel of tunnels) {
+  const sample = tunnel.path[Math.floor(tunnel.path.length / 2)];
+  assert.ok(isInsideTunnelCorridor(sample.x, sample.z),
+    `${tunnel.id} centreline must register a terrain roof corridor`);
+  assert.ok(isInsideTunnelCorridor(
+    sample.x + sample.normalX * 5,
+    sample.z + sample.normalZ * 5
+  ), `${tunnel.id} corridor must cover the full road width`);
+  assert.ok(!isInsideTunnelCorridor(
+    sample.x + sample.normalX * 24,
+    sample.z + sample.normalZ * 24
+  ), `${tunnel.id} corridor must not flatten distant natural terrain`);
+  assert.ok(Math.abs(terrainHeight(sample.x, sample.z) - rawTerrainHeight(sample.x, sample.z)) < 0.001,
+    `${tunnel.id} must retain the mountain surface as its roof`);
+  assert.ok(terrainHeight(sample.x, sample.z) - sample.y >= TUNNEL_CLEAR_HEIGHT,
+    `${tunnel.id} needs clear overburden above the road`);
+}
+for (const key of roadStats.chunkKeys) {
+  const [x, z] = key.split(":").map(Number);
+  const y = terrainChunkLayer(x, z, 128);
+  const geometry = buildTunnelChunkGeometry(tunnels, x, y, z, 128);
+  assert.ok(geometry.positions.every(Number.isFinite), `tunnel chunk ${key} contains invalid vertices`);
+  assert.equal(geometry.indices.length % 3, 0, `tunnel chunk ${key} has incomplete triangles`);
+  if (geometry.indices.length) tunnelChunks += 1;
+  tunnelSegments += geometry.segmentCount;
+  tunnelPortals += geometry.portalCount;
+  tunnelRibs += geometry.ribCount;
+  tunnelLightSegments += geometry.lightSegments;
+}
+assert.ok(tunnelChunks >= 1, "tunnel bores must be generated in streamed world chunks");
+assert.ok(tunnelSegments > 0, "tunnel geometry must contain a continuous inner lining");
+assert.equal(tunnelPortals, tunnels.length * 2, "every tunnel must have an entrance and an exit portal");
+assert.ok(tunnelRibs > 0, "tunnel bores must have repeated structural ribs");
+assert.ok(tunnelLightSegments > 0, "tunnel interiors must have continuous local light strips");
+console.log("TUNNEL NETWORK TEST PASS", JSON.stringify({ tunnelChunks, tunnelSegments, tunnelPortals, tunnelRibs, tunnelLightSegments }));
+
 const bridgeClassification = classifyRoadHydrologyCrossings(roadSamplesA);
 assert.ok(bridgeClassification.crossings.length >= 1, "the main route should classify at least one river/lake crossing");
 assert.ok(
