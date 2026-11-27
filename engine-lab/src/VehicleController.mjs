@@ -19,7 +19,7 @@ export function measureCountachRigMetrics(meta,wheelRadius){
  if(!meta?.wheelCenters?.front||!meta?.wheelCenters?.rear)throw new TypeError("Countach wheel-centre metadata is missing.");
  const f=meta.wheelCenters.front,r=meta.wheelCenters.rear,track=Math.abs(f[0])*2,wheelbase=Math.abs(f[2]-r[2]);
  if(!Number.isFinite(track)||!Number.isFinite(wheelbase)||track<=0||wheelbase<=0)throw new RangeError("Countach wheel layout is invalid.");
- if(!Number.isFinite(wheelRadius)||wheelRadius<.22||wheelRadius>.55)throw new RangeError("Countach tyre radius is outside expected model scale.");
+ if(!Number.isFinite(wheelRadius)||wheelRadius<.20||wheelRadius>1.10)throw new RangeError("Countach tyre radius is outside expected model scale.");
  return {track,wheelbase,wheelRadius,wheelCenters:{front:[...f],rear:[...r]}};
 }
 function mirrorX(src){const out=new Float32Array(src.length);for(let i=0;i<src.length;i+=9){
