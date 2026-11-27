@@ -123,14 +123,53 @@ try {
     throw new Error("Tunnel ceiling/road collision probe did not settle. Diagnostic: " + JSON.stringify(diagnostic) + " · " + String(error));
   }
 
-  const beforeDrive = await page.evaluate(() => ({x:window.__DRIVELLA_LAB__.vehicleX,z:window.__DRIVELLA_LAB__.vehicleZ,yaw:window.__DRIVELLA_LAB__.vehicleYaw}));
+  const sampleVehicle = () => page.evaluate(() => {
+    const s=window.__DRIVELLA_LAB__;
+    return {
+      x:s.vehicleX,z:s.vehicleZ,yaw:s.vehicleYaw,unwrappedYaw:s.vehicleUnwrappedYaw,
+      yawTurns:s.vehicleYawTurns,speedKmh:s.vehicleSpeedKmh,forwardSpeed:s.vehicleForwardSpeed,
+      lateralSpeed:s.vehicleLateralSpeed,slipDegrees:s.vehicleSlipAngleDegrees,
+      rearSlipDegrees:s.vehicleRearSlipAngleDegrees,yawRate:s.vehicleYawRate,
+      steer:s.vehicleSteer,contacts:s.vehicleWheelContacts,roll:s.vehicleRoll
+    };
+  });
+  const beforeDrive=await sampleVehicle();
+  const handlingSamples={beforeDrive};
   await page.keyboard.down("w");
-  await page.waitForTimeout(900);
+  await page.waitForTimeout(1150);
+  handlingSamples.acceleration=await sampleVehicle();
   await page.keyboard.down("d");
-  await page.waitForTimeout(800);
+  await page.waitForTimeout(1350);
+  handlingSamples.corner=await sampleVehicle();
+  await page.keyboard.down(" ");
+  await page.waitForTimeout(900);
+  handlingSamples.handbrake=await sampleVehicle();
+  await page.keyboard.up("d");
+  await page.keyboard.up(" ");
+  await page.keyboard.down("a");
+  await page.waitForTimeout(1100);
+  handlingSamples.countersteer=await sampleVehicle();
+  await page.keyboard.up("a");
+  await page.keyboard.up("w");
+
+  const spinStart=await sampleVehicle();
+  await page.keyboard.down("w");
+  await page.keyboard.down("d");
+  await page.keyboard.down(" ");
+  await page.waitForTimeout(4200);
+  handlingSamples.spin=await sampleVehicle();
+  await page.keyboard.up(" ");
   await page.keyboard.up("d");
   await page.keyboard.up("w");
-  await page.waitForTimeout(450);
+  await page.waitForTimeout(400);
+  const finalVehicle=await sampleVehicle();
+  console.log("VEHICLE HANDLING PHASES",JSON.stringify({
+    ...handlingSamples,
+    spinStart,
+    spinYawDelta:finalVehicle.unwrappedYaw-spinStart.unwrappedYaw,
+    finalVehicle
+  }));
+
   const state = await page.evaluate(() => ({
     renderer: window.__DRIVELLA_LAB__.renderer,
     frames: window.__DRIVELLA_LAB__.frames,
@@ -141,6 +180,10 @@ try {
     vehicleSpeedKmh:window.__DRIVELLA_LAB__.vehicleSpeedKmh,vehicleRoll:window.__DRIVELLA_LAB__.vehicleRoll,
     vehiclePitch:window.__DRIVELLA_LAB__.vehiclePitch,vehicleYaw:window.__DRIVELLA_LAB__.vehicleYaw,
     vehicleX:window.__DRIVELLA_LAB__.vehicleX,vehicleY:window.__DRIVELLA_LAB__.vehicleY,vehicleZ:window.__DRIVELLA_LAB__.vehicleZ,
+    vehicleForwardSpeed:window.__DRIVELLA_LAB__.vehicleForwardSpeed,vehicleLateralSpeed:window.__DRIVELLA_LAB__.vehicleLateralSpeed,
+    vehicleSlipAngleDegrees:window.__DRIVELLA_LAB__.vehicleSlipAngleDegrees,vehicleYawRate:window.__DRIVELLA_LAB__.vehicleYawRate,
+    vehicleUnwrappedYaw:window.__DRIVELLA_LAB__.vehicleUnwrappedYaw,vehicleYawTurns:window.__DRIVELLA_LAB__.vehicleYawTurns,
+    vehicleRearSlipAngleDegrees:window.__DRIVELLA_LAB__.vehicleRearSlipAngleDegrees,
     probeY: window.__DRIVELLA_LAB__.probeY,
     probeStableFrames: window.__DRIVELLA_LAB__.probeStableFrames,
     probeX: window.__DRIVELLA_LAB__.probeX,
@@ -305,6 +348,7 @@ try {
   await mkdir("artifacts", { recursive: true });
   await page.screenshot({ path: "artifacts/engine-lab-spatial-preview.png" });
   console.log("ENGINE LAB PASS", JSON.stringify(state));
+  console.log("VEHICLE HANDLING ACCEPTANCE DATA",JSON.stringify(handlingSamples));
   console.log("RUNTIME NETWORK PASS: same-origin requests only.");
 } finally {
   await browser.close();

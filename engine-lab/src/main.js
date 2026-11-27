@@ -994,7 +994,7 @@ async function boot() {
         labState.vehicleFrontGrip=t.frontGrip;labState.vehicleRearGrip=t.rearGrip;labState.vehicleRearHandbrakeGrip=t.rearHandbrakeGrip;
         labState.vehicleStableFrames=t.wheelContactCount===4?labState.vehicleStableFrames+1:0;
         camera.target.copyFrom(vehicle.getCameraTarget());
-        if(vehicleMeta)vehicleMeta.textContent=`Countach · ${t.speedKmh.toFixed(0)} km/h · wheels ${t.wheelContactCount}/4 · roll ${(Math.abs(t.roll)*57.2958).toFixed(1)}°`;
+        if(vehicleMeta)vehicleMeta.textContent=`Countach · ${t.speedKmh.toFixed(0)} km/h · slip ${Math.abs(t.slipAngleDegrees).toFixed(1)}° · wheels ${t.wheelContactCount}/4 · roll ${(Math.abs(t.roll)*57.2958).toFixed(1)}°`;
       }
       labState.frames = frameCounter;
       if (probeMesh) {
