@@ -105,6 +105,16 @@ Implemented and covered by automated tests:
 - [x] Bridge spans receive paired concrete girders and piers extending below the carved bed.
 - [x] Node and browser tests verify open river channels, finite water/shore/bridge geometry, every crossing's clearance and the presence of girders and piers.
 
+**Mountain tunnels and cuttings**
+- [x] Sample the uncut terrain along the road to detect natural mountain overburden; exclude water crossings so bridges remain independent.
+- [x] Detect four tunnel bores along the current circuit, approximately 1,170 m of total covered route, with eight entrance/exit portals.
+- [x] Preserve the natural mountain surface as the tunnel roof using a spatially indexed corridor; do not flatten the route through the bore.
+- [x] Build separate chunk-streamed inner arch liners, side walls, portal frames, transverse reinforcement ribs and local cyan light strips.
+- [x] Suppress cut/fill verges, drainage channels and exposed-edge guardrails inside the tunnel bores.
+- [x] Attach static Havok mesh colliders to all active tunnel lining chunks and dispose them with their streamed chunks.
+- [x] Browser smoke launches a dynamic body upward from inside a tunnel; it strikes the arch at the expected clearance, then returns to the road and settles.
+- [x] Node and browser tests validate finite bore geometry, eight portals, tunnel cover, streamed chunk coverage and physical roof contact.
+
 **Automated validation**
 - [x] Browser startup on WebGL 2, local Havok WASM, terrain collision and same-origin-only runtime requests.
 - [x] XYZ coverage, terrain Y-layers, multiple biomes and deterministic prop placement.
@@ -145,4 +155,4 @@ Still required:
 
 ## Current status
 
-The migration branch now contains the self-hosted Babylon.js/Havok runtime, deterministic XYZ chunk streaming, elevation-aware terrain, five observed biomes, a grade-limited 1.95 km road circuit, roadside safety details, two rivers, two lakes and three raised bridge spans with open channels, concrete girders and bed-anchored piers. The bridge and water system is still a procedural technical preview; the production car, vehicle suspension/tire simulation, full tunnel system, authored final assets, traffic and ragdolls remain future milestones.
+The migration branch now contains the self-hosted Babylon.js/Havok runtime, deterministic XYZ chunk streaming, elevation-aware terrain, five observed biomes, a grade-limited 1.95 km road circuit, roadside safety details, two rivers, two lakes, three raised bridge spans and four mountain tunnel bores. The bridges and tunnels use streamed geometry and Havok collision, but remain procedural technical-preview structures rather than final authored assets. The production car, vehicle suspension/tire simulation, retaining structures, final environment art, traffic and ragdolls remain future milestones.
