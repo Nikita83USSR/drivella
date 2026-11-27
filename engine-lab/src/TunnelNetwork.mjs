@@ -348,10 +348,11 @@ export function getTunnelStats(tunnels) {
   };
 }
 
-export function isTunnelSampleIndex(index, tunnels) {
-  return tunnels.some((tunnel) => {
-    const count = tunnel.path.length;
-    return tunnel.path.some((sample) => sample.index === index)
-      || tunnel.path.some((sample) => sample.index === (index + 1) % Math.max(count, 1));
-  });
+export function isTunnelSampleIndex(index, tunnels, sampleCount) {
+  const nextIndex = Number.isInteger(sampleCount) && sampleCount > 0
+    ? (index + 1) % sampleCount
+    : index + 1;
+  return tunnels.some((tunnel) =>
+    tunnel.path.some((sample) => sample.index === index || sample.index === nextIndex)
+  );
 }
