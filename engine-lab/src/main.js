@@ -717,6 +717,7 @@ let tunnelBodies;
 let tunnelProbeMesh = null;
 let tunnelProbeStableFrames = 0;
 let lastTunnelProbePosition = null;
+let tunnelProbeRoadY = null;
 let havokAttemptRunning = false;
 let havokInstance = null;
 let probeMesh = null;
@@ -847,6 +848,30 @@ function enableHavokPhysics() {
       addPhysicalProbe(scene, tunnelProbeMesh, 8, PhysicsShapeType.BOX, { friction: 1.6, restitution: 0.005 });
     }
 
+    const tunnelProbeTarget = tunnels.length
+      ? tunnels.reduce((best, tunnel) => {
+        const sample = tunnel.path[Math.floor(tunnel.path.length / 2)];
+        const score = Math.abs(sample.bank || 0);
+        return !best || score < best.score ? { sample, score } : best;
+      }, null)
+      : null;
+    if (tunnelProbeTarget) {
+      tunnelProbeRoadY = tunnelProbeTarget.sample.y;
+      tunnelProbeMesh = MeshBuilder.CreateBox("tunnel-ceiling-collision-probe", { size: 1 }, scene);
+      tunnelProbeMesh.position.set(
+        tunnelProbeTarget.sample.x,
+        tunnelProbeTarget.sample.y + 14,
+        tunnelProbeTarget.sample.z
+      );
+      const tunnelProbeMaterial = new StandardMaterial("tunnel-probe-material", scene);
+      tunnelProbeMaterial.diffuseColor = new Color3(0.76, 0.28, 0.92);
+      tunnelProbeMaterial.emissiveColor = new Color3(0.12, 0.025, 0.18);
+      tunnelProbeMaterial.metallic = 0.18;
+      tunnelProbeMaterial.roughness = 0.46;
+      tunnelProbeMesh.material = tunnelProbeMaterial;
+      addPhysicalProbe(scene, tunnelProbeMesh, 8, PhysicsShapeType.BOX, { friction: 1.6, restitution: 0.005 });
+    }
+
     for (let i = 0; i < 5; i += 1) {
       spawnDynamicBox(16 + (i % 2) * 6, 8 + i * 5.5, 5);
     }
@@ -931,6 +956,15 @@ async function boot() {
     waterMeshes = environment.waterMeshes;
     shoreMeshes = environment.shoreMeshes;
     roadBodies = environment.roadBodies;
+    tunnels = environment.tunnels;
+    tunnelMeshes = environment.tunnelMeshes;
+    tunnelBodies = environment.tunnelBodies;
+    labState.tunnelCount = environment.tunnelStats.count;
+    labState.tunnelLength = Number(environment.tunnelStats.totalLength.toFixed(1));
+    labState.tunnelChunks = environment.tunnelStats.chunks;
+    labState.tunnelMinCover = environment.tunnelStats.minCover === null
+      ? null
+      : Number(environment.tunnelStats.minCover.toFixed(2));
     labState.roadGuardrailSegments = environment.roadFurnitureStats.guardrailSegments;
     labState.roadDrainageSegments = environment.roadFurnitureStats.drainageSegments;
     labState.roadTransitionSegments = environment.roadFurnitureStats.transitionSegments;
@@ -962,6 +996,23 @@ async function boot() {
         lastProbeY = currentY;
         labState.probeStableFrames = probeStableFrames;
       }
+      if (tunnelProbeMesh) {
+        const position = tunnelProbeMesh.position;
+        labState.tunnelProbeY = Number(position.y.toFixed(3));
+        labState.tunnelProbeYAtRoof = tunnelProbeRoadY === null
+          ? null
+          : Number((tunnelProbeRoadY + TUNNEL_CLEAR_HEIGHT).toFixed(3));
+        if (lastTunnelProbePosition) {
+          const movement = Math.hypot(
+            position.x - lastTunnelProbePosition.x,
+            position.y - lastTunnelProbePosition.y,
+            position.z - lastTunnelProbePosition.z
+          );
+          tunnelProbeStableFrames = movement < 0.025 ? tunnelProbeStableFrames + 1 : 0;
+        }
+        lastTunnelProbePosition = { x: position.x, y: position.y, z: position.z };
+        labState.tunnelProbeStableFrames = tunnelProbeStableFrames;
+      }
       if (roadProbeMesh) {
         const position = roadProbeMesh.position;
         const roadContact = nearestRoadSurfaceInfo(position.x, position.z, roadSamples);
@@ -992,6 +1043,11 @@ async function boot() {
         labState.shoreChunks = shoreMeshes.size;
         if (waterMeta) {
           waterMeta.textContent = `Water: ${labState.riverCount} rivers · ${labState.lakeCount} lakes · ${waterMeshes.size} chunks · ${labState.bridgeCandidateCount} spans · ${labState.bridgeGirderSegments} girders · ${labState.bridgePiers} piers`;
+        }
+        labState.tunnelMeshCount = tunnelMeshes.size;
+        labState.tunnelBodyCount = tunnelBodies.size;
+        if (tunnelMeta) {
+          tunnelMeta.textContent = `Tunnels: ${labState.tunnelCount} bores · ${labState.tunnelLength} m · ${tunnelMeshes.size} chunks · ${labState.tunnelPortals} portals`;
         }
         const biomeTotals = { trees: 0, grass: 0, reeds: 0, rocks: 0 };
         const biomeDistribution = {};
