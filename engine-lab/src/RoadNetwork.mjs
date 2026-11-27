@@ -298,6 +298,16 @@ function sideProfile(sample, side) {
   };
 }
 
+const roadFurnitureProfileCache = new WeakMap();
+
+function getRoadFurnitureProfiles(samples) {
+  const cached = roadFurnitureProfileCache.get(samples);
+  if (cached) return cached;
+  const profiles = getRoadFurnitureProfiles(samples);
+  roadFurnitureProfileCache.set(samples, profiles);
+  return profiles;
+}
+
 function addBoxFace(geometry, origin, points, color) {
   addQuad(geometry, origin, points[0], points[1], points[2], points[3], color);
 }
@@ -354,7 +364,14 @@ function addGuardrailPost(geometry, origin, point, bottom, top, radius, color) {
 function terrainPointAtOffset(sample, side, offset, lift = 0.03) {
   const x = sample.x + sample.normalX * side * offset;
   const z = sample.z + sample.normalZ * side * offset;
-  return { x, y: terrainHeight(x, z) + lift, z };
+  const bankTaper = clamp(
+    (ROAD_TRANSITION_OFFSETS[ROAD_TRANSITION_OFFSETS.length - 1] - offset)
+      / (ROAD_TRANSITION_OFFSETS[ROAD_TRANSITION_OFFSETS.length - 1] - ROAD_EDGE_OUTER_OFFSET),
+    0,
+    1
+  );
+  const bankLift = sample.bank * (offset / ROAD_HALF_WIDTH) * bankTaper;
+  return { x, y: terrainHeight(x, z) + lift + bankLift, z };
 }
 
 function isChunkSegment(a, b, chunkX, chunkZ, chunkSize) {
@@ -476,7 +493,7 @@ export function buildRoadFurnitureChunkGeometry(
         if (index % 4 === 0) {
           addGuardrailPost(
             geometry, origin, groundA,
-            groundA.y + 0.08, groundA.y + 1.13,
+            groundA.y - 0.14, groundA.y + 1.13,
             0.075, ROAD_FURNITURE_COLORS.railPost
           );
           geometry.guardrailPosts += 1;
@@ -493,22 +510,24 @@ export function getRoadFurnitureStats(samples, chunkSize = ROAD_CHUNK_SIZE) {
     return { transitionSegments: 0, drainageSegments: 0, guardrailSegments: 0 };
   }
   const stats = { transitionSegments: 0, drainageSegments: 0, guardrailSegments: 0 };
+  const profiles = getRoadFurnitureProfiles(samples);
   for (let index = 0; index < samples.length; index += 1) {
     const nextIndex = (index + 1) % samples.length;
     const a = samples[index];
     const b = samples[nextIndex];
     const averageMagnitude = (
-      Math.abs(sideProfile(a, 1).delta)
-      + Math.abs(sideProfile(b, 1).delta)
-      + Math.abs(sideProfile(a, -1).delta)
-      + Math.abs(sideProfile(b, -1).delta)
+      Math.abs(profiles[index].left.delta)
+      + Math.abs(profiles[nextIndex].left.delta)
+      + Math.abs(profiles[index].right.delta)
+      + Math.abs(profiles[nextIndex].right.delta)
     ) * 0.25;
     if (averageMagnitude >= ROAD_EDGE_TRANSITION_THRESHOLD) {
       stats.transitionSegments += 1;
     }
     for (const side of [1, -1]) {
-      const profileA = sideProfile(a, side);
-      const profileB = sideProfile(b, side);
+      const sideKey = side === 1 ? "left" : "right";
+      const profileA = profiles[index][sideKey];
+      const profileB = profiles[nextIndex][sideKey];
       if (profileA.delta >= ROAD_DRAINAGE_RISE_THRESHOLD && profileB.delta >= ROAD_DRAINAGE_RISE_THRESHOLD) {
         stats.drainageSegments += 1;
       }
