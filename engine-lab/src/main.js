@@ -20,6 +20,7 @@ import HavokPhysics from "@babylonjs/havok";
 import { SpatialChunkManager } from "./SpatialChunkManager.mjs";
 import { terrainChunkLayer, terrainHeight, terrainMoisture } from "./TerrainField.mjs";
 import { generateBiomePlacements } from "./BiomeField.mjs";
+import { buildHydrologyChunkGeometry, classifyRoadHydrologyCrossings, getHydrologyStats } from "./HydrologyField.mjs";
 import { buildRoadChunkGeometry, buildRoadFurnitureChunkGeometry, generateMainRoadSamples, getRoadStats, getRoadFurnitureStats, nearestRoadSurfaceHeight, nearestRoadSurfaceInfo } from "./RoadNetwork.mjs";
 
 const canvas = document.getElementById("renderCanvas");
@@ -30,6 +31,7 @@ const renderMeta = document.getElementById("renderMeta");
 const fpsMeta = document.getElementById("fpsMeta");
 const worldMeta = document.getElementById("worldMeta");
 const roadMeta = document.getElementById("roadMeta");
+const waterMeta = document.getElementById("waterMeta");
 const dropButton = document.getElementById("dropButton");
 const resetButton = document.getElementById("resetButton");
 
@@ -60,6 +62,16 @@ const labState = {
   roadTransitionSegments: 0,
   roadFurnitureChunks: 0,
   roadSampleCount: 0,
+  waterChunks: 0,
+  shoreChunks: 0,
+  riverSegments: 0,
+  lakeTriangles: 0,
+  riverCount: 0,
+  lakeCount: 0,
+  bridgeCrossingCount: 0,
+  bridgeCandidateCount: 0,
+  unresolvedWaterCrossings: 0,
+  bridgeCrossings: [],
   error: null,
   spatial: null
 };
@@ -421,6 +433,10 @@ function createEnvironment(scene) {
   const roadSamples = generateMainRoadSamples();
   const roadStats = getRoadStats(roadSamples);
   const roadFurnitureStats = getRoadFurnitureStats(roadSamples);
+  const hydrologyStats = getHydrologyStats();
+  const bridgeClassification = classifyRoadHydrologyCrossings(roadSamples);
+  const waterMeshes = new Map();
+  const shoreMeshes = new Map();
   const roadMeshes = new Map();
   const roadFurnitureMeshes = new Map();
   const roadBodies = new Map();
@@ -436,6 +452,24 @@ function createEnvironment(scene) {
   roadFurnitureMaterial.specularPower = 14;
   roadFurnitureMaterial.useVertexColors = true;
   roadFurnitureMaterial.backFaceCulling = false;
+
+  const waterMaterial = new StandardMaterial("drivella-water-material", scene);
+  waterMaterial.diffuseColor = new Color3(0.42, 0.76, 0.84);
+  waterMaterial.emissiveColor = new Color3(0.025, 0.12, 0.17);
+  waterMaterial.specularColor = new Color3(0.68, 0.84, 0.9);
+  waterMaterial.specularPower = 96;
+  waterMaterial.useVertexColors = true;
+  waterMaterial.alpha = 0.84;
+  waterMaterial.transparencyMode = StandardMaterial.MATERIAL_ALPHABLEND;
+  waterMaterial.disableDepthWrite = true;
+  waterMaterial.backFaceCulling = false;
+
+  const shoreMaterial = new StandardMaterial("drivella-shore-material", scene);
+  shoreMaterial.diffuseColor = Color3.White();
+  shoreMaterial.specularColor = new Color3(0.1, 0.12, 0.1);
+  shoreMaterial.specularPower = 10;
+  shoreMaterial.useVertexColors = true;
+  shoreMaterial.backFaceCulling = false;
 
   const terrainMeshes = new Map();
   const terrainBodies = new Map();
@@ -458,7 +492,7 @@ function createEnvironment(scene) {
     radius: worldRadius,
     maxActiveChunks: 512,
     onCreate: (chunk) => {
-      const payload = { terrainMesh: null, biome: null, roadMesh: null, roadFurnitureMesh: null };
+      const payload = { terrainMesh: null, biome: null, roadMesh: null, roadFurnitureMesh: null, waterMesh: null, shoreMesh: null };
       if (chunk.y === terrainChunkLayer(chunk.x, chunk.z, 128)) {
         const mesh = createTerrainChunk(scene, chunk.x, chunk.y, chunk.z, 128, terrainMaterial);
         payload.terrainMesh = mesh;
@@ -487,6 +521,21 @@ function createEnvironment(scene) {
         if (furnitureMesh) {
           payload.roadFurnitureMesh = furnitureMesh;
           roadFurnitureMeshes.set(chunk.key, furnitureMesh);
+        }
+        const waterGeometry = buildHydrologyChunkGeometry(chunk.x, chunk.y, chunk.z, 128, terrainHeight);
+        const waterMesh = createCombinedPropMesh(
+          scene, `water-${chunk.x}-${chunk.y}-${chunk.z}`, waterGeometry.water, waterMaterial, roadOrigin
+        );
+        if (waterMesh) {
+          payload.waterMesh = waterMesh;
+          waterMeshes.set(chunk.key, waterMesh);
+        }
+        const shoreMesh = createCombinedPropMesh(
+          scene, `shore-${chunk.x}-${chunk.y}-${chunk.z}`, waterGeometry.shore, shoreMaterial, roadOrigin
+        );
+        if (shoreMesh) {
+          payload.shoreMesh = shoreMesh;
+          shoreMeshes.set(chunk.key, shoreMesh);
         }
         if (biome.rockMesh && scene.getPhysicsEngine()) {
           const rockBody = addPhysicalProbe(scene, biome.rockMesh, 0, PhysicsShapeType.MESH, { friction: 0.88, restitution: 0.04 });
@@ -518,6 +567,14 @@ function createEnvironment(scene) {
         payload.roadFurnitureMesh.dispose();
         roadFurnitureMeshes.delete(chunk.key);
       }
+      if (payload?.waterMesh) {
+        payload.waterMesh.dispose();
+        waterMeshes.delete(chunk.key);
+      }
+      if (payload?.shoreMesh) {
+        payload.shoreMesh.dispose();
+        shoreMeshes.delete(chunk.key);
+      }
       const rockBody = rockBodies.get(chunk.key);
       if (rockBody) {
         rockBody.dispose();
@@ -544,7 +601,7 @@ function createEnvironment(scene) {
   scene.imageProcessingConfiguration.exposure = 1.18;
   scene.imageProcessingConfiguration.contrast = 1.12;
 
-  return { camera, chunkManager, terrainMeshes, terrainBodies, biomeMeshes, rockBodies, roadSamples, roadStats, roadFurnitureStats, roadMeshes, roadFurnitureMeshes, roadBodies };
+  return { camera, chunkManager, terrainMeshes, terrainBodies, biomeMeshes, rockBodies, roadSamples, roadStats, roadFurnitureStats, hydrologyStats, bridgeClassification, waterMeshes, shoreMeshes, roadMeshes, roadFurnitureMeshes, roadBodies };
 }
 
 function addPhysicalProbe(scene, mesh, mass, shape, options = {}) {
@@ -567,6 +624,8 @@ let roadSamples;
 let roadStats;
 let roadMeshes;
 let roadFurnitureMeshes;
+let waterMeshes;
+let shoreMeshes;
 let roadBodies;
 let havokAttemptRunning = false;
 let havokInstance = null;
@@ -747,12 +806,20 @@ async function boot() {
     roadStats = environment.roadStats;
     roadMeshes = environment.roadMeshes;
     roadFurnitureMeshes = environment.roadFurnitureMeshes;
+    waterMeshes = environment.waterMeshes;
+    shoreMeshes = environment.shoreMeshes;
     roadBodies = environment.roadBodies;
     labState.roadGuardrailSegments = environment.roadFurnitureStats.guardrailSegments;
     labState.roadDrainageSegments = environment.roadFurnitureStats.drainageSegments;
     labState.roadTransitionSegments = environment.roadFurnitureStats.transitionSegments;
     labState.roadLength = Number(roadStats.length.toFixed(1));
     labState.roadSampleCount = roadSamples.length;
+    labState.riverCount = environment.hydrologyStats.riverCount;
+    labState.lakeCount = environment.hydrologyStats.lakeCount;
+    labState.bridgeCrossingCount = environment.bridgeClassification.crossings.length;
+    labState.bridgeCandidateCount = environment.bridgeClassification.candidateCount;
+    labState.unresolvedWaterCrossings = environment.bridgeClassification.unresolvedCount;
+    labState.bridgeCrossings = environment.bridgeClassification.crossings;
 
     scene.onAfterRenderObservable.add(() => {
       frameCounter += 1;
@@ -799,6 +866,8 @@ async function boot() {
         const terrainLayers = [...new Set([...terrainMeshes.values()].map((mesh) => mesh.metadata.chunkY))].sort((a, b) => a - b);
         labState.roadChunks = roadMeshes.size;
         labState.roadFurnitureChunks = roadFurnitureMeshes.size;
+        labState.waterChunks = waterMeshes.size;
+        labState.shoreChunks = shoreMeshes.size;
         const biomeTotals = { trees: 0, grass: 0, reeds: 0, rocks: 0 };
         const biomeDistribution = {};
         for (const props of biomeMeshes.values()) {
@@ -813,6 +882,7 @@ async function boot() {
         labState.biomeDistribution = biomeDistribution;
         worldMeta.textContent = `XYZ chunks: ${spatial.activeCount} · terrain: ${terrainMeshes.size} patches · Y layers ${terrainLayers.join("/") || "—"} · ${Object.values(spatial.axisCoverage).every(Boolean) ? "6/6 directions" : "coverage check pending"}`;
         roadMeta.textContent = `Road: ${roadMeshes.size} chunks · ${Math.round(roadStats.length)} m · transitions ${labState.roadTransitionSegments} · drains ${labState.roadDrainageSegments} · guardrails ${labState.roadGuardrailSegments}`;
+        waterMeta.textContent = `Water: ${labState.riverCount} rivers · ${labState.lakeCount} lakes · ${waterMeshes.size} chunks · ${labState.bridgeCrossingCount} road crossings (${labState.bridgeCandidateCount} bridge candidates)`;
         biomeMeta.textContent = `Biomes: ${biomeTypes.slice(0, 4).join("/") || "preparing"} · ${biomeTotals.trees} trees · ${biomeTotals.rocks} rocks`;
       }
     });
