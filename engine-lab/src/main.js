@@ -94,6 +94,7 @@ const labState = {
   vehicleReady:false,vehicleWheelbase:null,vehicleTrack:null,vehicleWheelRadius:null,
   vehicleWheelContacts:0,vehicleStableFrames:0,vehicleSpeedKmh:0,vehicleRoll:0,vehiclePitch:0,vehicleYaw:0,vehicleSteer:0,
   vehicleX:0,vehicleY:0,vehicleZ:0,vehicleDriveRequested:0,vehicleTotalSpringLoad:0,vehicleRearLongitudinalForce:0,vehicleTotalLongitudinalForce:0,
+  vehicleRoadSurfaceY:null,vehicleRoadDistance:null,vehicleRoadBodyBottomClearance:null,vehicleVelocityX:0,vehicleVelocityZ:0,vehicleAppliedForceX:0,vehicleAppliedForceZ:0,vehicleForwardX:0,vehicleForwardZ:0,vehicleWheelDiagnostics:[],
   vehicleForwardSpeed:0,vehicleLateralSpeed:0,vehicleSlipAngle:0,vehicleSlipAngleDegrees:0,vehicleYawRate:0,vehicleUnwrappedYaw:0,vehicleYawTurns:0,vehicleRearSlipAngle:0,vehicleRearSlipAngleDegrees:0,vehicleFrontGrip:0,vehicleRearGrip:0,vehicleRearHandbrakeGrip:0,vehicleParked:true,
   error:null,
   spatial: null
@@ -993,6 +994,13 @@ async function boot() {
         labState.vehicleRearSlipAngle=t.rearSlipAngle;labState.vehicleRearSlipAngleDegrees=t.rearSlipAngleDegrees;
         labState.vehicleFrontGrip=t.frontGrip;labState.vehicleRearGrip=t.rearGrip;labState.vehicleRearHandbrakeGrip=t.rearHandbrakeGrip;labState.vehicleParked=t.parked;
         labState.vehicleDriveRequested=t.driveRequested;labState.vehicleTotalSpringLoad=t.totalSpringLoad;labState.vehicleRearLongitudinalForce=t.rearLongitudinalForce;labState.vehicleTotalLongitudinalForce=t.totalLongitudinalForce;
+        labState.vehicleVelocityX=t.velocityX;labState.vehicleVelocityZ=t.velocityZ;
+        labState.vehicleAppliedForceX=t.appliedDriveForceWorldX;labState.vehicleAppliedForceZ=t.appliedDriveForceWorldZ;
+        labState.vehicleForwardX=t.bodyForwardX;labState.vehicleForwardZ=t.bodyForwardZ;labState.vehicleWheelDiagnostics=t.wheels;
+        const roadContact=nearestRoadSurfaceInfo(t.x,t.z,roadSamples);
+        labState.vehicleRoadSurfaceY=roadContact?Number(roadContact.y.toFixed(3)):null;
+        labState.vehicleRoadDistance=roadContact?Number(roadContact.distance.toFixed(3)):null;
+        labState.vehicleRoadBodyBottomClearance=roadContact?Number((t.y-.21-roadContact.y).toFixed(3)):null;
         labState.vehicleStableFrames=t.wheelContactCount===4?labState.vehicleStableFrames+1:0;
         camera.target.copyFrom(vehicle.getCameraTarget());
         if(vehicleMeta)vehicleMeta.textContent=`Countach · ${t.speedKmh.toFixed(0)} km/h · slip ${Math.abs(t.slipAngleDegrees).toFixed(1)}° · wheels ${t.wheelContactCount}/4 · roll ${(Math.abs(t.roll)*57.2958).toFixed(1)}°`;

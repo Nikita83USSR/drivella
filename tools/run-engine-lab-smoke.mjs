@@ -131,7 +131,10 @@ try {
       lateralSpeed:s.vehicleLateralSpeed,slipDegrees:s.vehicleSlipAngleDegrees,
       rearSlipDegrees:s.vehicleRearSlipAngleDegrees,yawRate:s.vehicleYawRate,
       steer:s.vehicleSteer,contacts:s.vehicleWheelContacts,roll:s.vehicleRoll,parked:s.vehicleParked,
-      driveRequested:s.vehicleDriveRequested,totalSpringLoad:s.vehicleTotalSpringLoad,rearLongitudinalForce:s.vehicleRearLongitudinalForce,totalLongitudinalForce:s.vehicleTotalLongitudinalForce
+      driveRequested:s.vehicleDriveRequested,totalSpringLoad:s.vehicleTotalSpringLoad,rearLongitudinalForce:s.vehicleRearLongitudinalForce,totalLongitudinalForce:s.vehicleTotalLongitudinalForce,
+      velocityX:s.vehicleVelocityX,velocityZ:s.vehicleVelocityZ,appliedForceX:s.vehicleAppliedForceX,appliedForceZ:s.vehicleAppliedForceZ,
+      forwardX:s.vehicleForwardX,forwardZ:s.vehicleForwardZ,roadY:s.vehicleRoadSurfaceY,roadDistance:s.vehicleRoadDistance,
+      bodyBottomClearance:s.vehicleRoadBodyBottomClearance,wheelDiagnostics:s.vehicleWheelDiagnostics
     };
   });
   const beforeDrive=await sampleVehicle();
@@ -184,6 +187,9 @@ try {
     vehiclePitch:window.__DRIVELLA_LAB__.vehiclePitch,vehicleYaw:window.__DRIVELLA_LAB__.vehicleYaw,
     vehicleX:window.__DRIVELLA_LAB__.vehicleX,vehicleY:window.__DRIVELLA_LAB__.vehicleY,vehicleZ:window.__DRIVELLA_LAB__.vehicleZ,
     vehicleDriveRequested:window.__DRIVELLA_LAB__.vehicleDriveRequested,vehicleTotalSpringLoad:window.__DRIVELLA_LAB__.vehicleTotalSpringLoad,
+    vehicleRoadSurfaceY:window.__DRIVELLA_LAB__.vehicleRoadSurfaceY,vehicleRoadDistance:window.__DRIVELLA_LAB__.vehicleRoadDistance,vehicleRoadBodyBottomClearance:window.__DRIVELLA_LAB__.vehicleRoadBodyBottomClearance,
+    vehicleVelocityX:window.__DRIVELLA_LAB__.vehicleVelocityX,vehicleVelocityZ:window.__DRIVELLA_LAB__.vehicleVelocityZ,
+    vehicleAppliedForceX:window.__DRIVELLA_LAB__.vehicleAppliedForceX,vehicleAppliedForceZ:window.__DRIVELLA_LAB__.vehicleAppliedForceZ,
     vehicleRearLongitudinalForce:window.__DRIVELLA_LAB__.vehicleRearLongitudinalForce,vehicleTotalLongitudinalForce:window.__DRIVELLA_LAB__.vehicleTotalLongitudinalForce,
     vehicleForwardSpeed:window.__DRIVELLA_LAB__.vehicleForwardSpeed,vehicleLateralSpeed:window.__DRIVELLA_LAB__.vehicleLateralSpeed,
     vehicleSlipAngleDegrees:window.__DRIVELLA_LAB__.vehicleSlipAngleDegrees,vehicleYawRate:window.__DRIVELLA_LAB__.vehicleYawRate,

@@ -75,7 +75,7 @@ export class VehicleController{
   if(!scene?.getPhysicsEngine?.())throw new Error("Vehicle requires active Havok Physics V2.");
   if(!Array.isArray(roadSamples)||roadSamples.length<2||!startSample)throw new TypeError("Vehicle requires sampled road and spawn point.");
   this.scene=scene;this.model=model;this.metrics=model.metrics;this.mass=P.mass;this.keys=new Set();this.steer=0;this.steerInput=0;this.handbrake=false;this.brake=false;this.throttle=false;this.parked=true;this.driveRequested=0;this.brakeRequested=0;this.lastDt=1/60;
-  this.wheelContacts=new Map();this.wheelSpin=new Map(WHEELS.map(w=>[w.key,0]));this.wheelPivots=new Map();this.materials=new Map();this.ray=new PhysicsRaycastResult();
+  this.wheelContacts=new Map();this.wheelSpin=new Map(WHEELS.map(w=>[w.key,0]));this.wheelPivots=new Map();this.materials=new Map();this.ray=new PhysicsRaycastResult();this.appliedDriveForceWorld=Vector3.Zero();
   const yaw=Math.atan2(startSample.tangentX,startSample.tangentZ),width=clamp(model.bodySize.x*.88,1.72,2.05),length=clamp(model.bodySize.z*.80,3.65,4.05);
   this.unwrappedYaw=yaw;this.initialYaw=yaw;this.lastYaw=yaw;
   this.colliderDimensions={width,height:P.colliderH,length};
@@ -142,6 +142,7 @@ export class VehicleController{
   if(this.brake){if(fwd>1)braking=P.brake;else drive=-P.engine*.48;}
   this.driveRequested=drive;this.brakeRequested=braking;
   const aero=P.drag*speed*speed,rolling=Math.abs(fwd)>.15?Math.sign(fwd)*this.mass*9.81*P.rolling:0,dragWheel=-(aero+rolling)*.25,driveRear=drive*.5,contacts=new Map();
+  this.appliedDriveForceWorld.set(0,0,0);
   for(const w of WHEELS){
    const anchor=Vector3.TransformCoordinates(this.wheelMount(w),matrix),end=anchor.add(new Vector3(0,-(P.max+this.metrics.wheelRadius+.16),0));
    physics.raycastToRef(anchor,end,this.ray,{ignoreBody:this.aggregate.body});
@@ -165,8 +166,11 @@ export class VehicleController{
    if(this.handbrake&&rear)longitudinal-=Math.sign(longV||fwd||1)*P.handbrake;
    if(this.parked&&Math.abs(longV)>.025)longitudinal-=Math.sign(longV)*P.parkingBrake;
    const tire=clampTireForce(longitudinal,lateral,limit);
-   this.aggregate.body.applyForce(forward.scale(tire.longitudinal).add(rightVector.scale(tire.lateral)),point);
-   const contact=contacts.get(w.key);contact.longitudinalSpeed=longV;contact.longitudinalForce=tire.longitudinal;contact.lateralSpeed=sideV;contact.lateralForce=tire.lateral;contact.tireUtilization=limit>0?Math.hypot(tire.longitudinal,tire.lateral)/limit:0;
+   const appliedForce=forward.scale(tire.longitudinal).add(rightVector.scale(tire.lateral));
+   this.aggregate.body.applyForce(appliedForce,point);this.appliedDriveForceWorld.addInPlace(appliedForce);
+   const contact=contacts.get(w.key);contact.longitudinalSpeed=longV;contact.longitudinalForce=tire.longitudinal;
+   contact.appliedForceX=appliedForce.x;contact.appliedForceZ=appliedForce.z;contact.pointY=point.y;contact.normalY=normal.y;
+   contact.lateralSpeed=sideV;contact.lateralForce=tire.lateral;contact.tireUtilization=limit>0?Math.hypot(tire.longitudinal,tire.lateral)/limit:0;
   }
   const anti=(lk,rk)=>{const l=contacts.get(lk),r=contacts.get(rk);if(!l?.hit||!r?.hit)return;const force=(l.compression-r.compression)*P.antiRoll;
    this.aggregate.body.applyForce(new Vector3(0,-force,0),l.anchor);this.aggregate.body.applyForce(new Vector3(0,force,0),r.anchor);};
@@ -198,6 +202,8 @@ export class VehicleController{
    springForce:Number((c?.springForce??0).toFixed(1)),steering:Number((c?.steerAngle??0).toFixed(4)),
    lateralSpeed:Number((c?.lateralSpeed??0).toFixed(3)),longitudinalSpeed:Number((c?.longitudinalSpeed??0).toFixed(3)),
    longitudinalForce:Number((c?.longitudinalForce??0).toFixed(1)),lateralForce:Number((c?.lateralForce??0).toFixed(1)),
+   appliedForceX:Number((c?.appliedForceX??0).toFixed(1)),appliedForceZ:Number((c?.appliedForceZ??0).toFixed(1)),
+   contactY:Number((c?.pointY??0).toFixed(3)),normalY:Number((c?.normalY??0).toFixed(3)),
    tireUtilization:Number((c?.tireUtilization??0).toFixed(3))
   };});
   const axleAverage=(axle,key)=>{const list=WHEELS.filter(w=>w.axle===axle).map(w=>this.wheelContacts.get(w.key)).filter(c=>c?.hit);
@@ -221,6 +227,9 @@ export class VehicleController{
    track:Number(this.metrics.track.toFixed(4)),wheelRadius:Number(this.metrics.wheelRadius.toFixed(4)),
    frontGrip:P.frontGrip,rearGrip:P.rearGrip,rearHandbrakeGrip:P.rearHandbrakeGrip,parked:this.parked,
    throttle:this.throttle,handbrake:this.handbrake,driveRequested:Number(this.driveRequested.toFixed(1)),brakeRequested:Number(this.brakeRequested.toFixed(1)),
+   velocityX:Number(v.x.toFixed(4)),velocityZ:Number(v.z.toFixed(4)),
+   appliedDriveForceWorldX:Number(this.appliedDriveForceWorld.x.toFixed(1)),appliedDriveForceWorldZ:Number(this.appliedDriveForceWorld.z.toFixed(1)),
+   bodyForwardX:Number(Math.sin(yaw).toFixed(4)),bodyForwardZ:Number(Math.cos(yaw).toFixed(4)),
    totalSpringLoad:Number(totalSpringLoad.toFixed(1)),rearLongitudinalForce:Number(rearLongitudinalForce.toFixed(1)),totalLongitudinalForce:Number(totalLongitudinalForce.toFixed(1)),wheels
   };
  }
