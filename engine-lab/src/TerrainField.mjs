@@ -1,3 +1,4 @@
+import { applyHydrologyCarve } from "./HydrologyField.mjs";
 import {
   MAIN_ROUTE_CONTROL_POINTS,
   ROAD_PROFILE_BLEND_RADIUS,
@@ -74,7 +75,8 @@ function rawTerrainHeight(x, z) {
   const valleyDistance = (worldZ - valleyAxis) / 52;
   const valley = -32 * Math.exp(-(valleyDistance * valleyDistance));
 
-  return reliefMask * (macroTilt + continental + ridged + detail + valley);
+  const baseHeight = reliefMask * (macroTilt + continental + ridged + detail + valley);
+  return applyHydrologyCarve(x, z, baseHeight);
 }
 
 
