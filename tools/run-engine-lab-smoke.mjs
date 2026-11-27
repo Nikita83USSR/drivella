@@ -128,6 +128,7 @@ try {
     return {
       x:s.vehicleX,z:s.vehicleZ,yaw:s.vehicleYaw,unwrappedYaw:s.vehicleUnwrappedYaw,
       bodyMass:s.vehicleBodyMass,gravityFactor:s.vehicleGravityFactor,physicsStep:s.vehiclePhysicsStep,physicsSubStep:s.vehiclePhysicsSubStep,
+      engineTimeStepMs:s.vehicleEngineTimeStepMs,deterministicLockstep:s.vehicleDeterministicLockstep,lockstepMaxSteps:s.vehicleLockstepMaxSteps,
       yawTurns:s.vehicleYawTurns,speedKmh:s.vehicleSpeedKmh,forwardSpeed:s.vehicleForwardSpeed,
       lateralSpeed:s.vehicleLateralSpeed,slipDegrees:s.vehicleSlipAngleDegrees,
       rearSlipDegrees:s.vehicleRearSlipAngleDegrees,yawRate:s.vehicleYawRate,
@@ -145,7 +146,7 @@ try {
   const beforeDrive=await sampleVehicle();
   if(beforeDrive.speedKmh>1.0||beforeDrive.parked!==true||beforeDrive.contacts!==4)throw new Error("Vehicle must remain parked with four wheel ray contacts before driver input: "+JSON.stringify(beforeDrive));
   if(Math.abs(beforeDrive.bodyMass-1250)>.5||Math.abs(beforeDrive.gravityFactor-1)>.001)throw new Error("Havok vehicle mass/gravity mismatch: "+JSON.stringify(beforeDrive));
-  if(Math.abs(beforeDrive.physicsStep-1/60)>.00001||Math.abs(beforeDrive.physicsSubStep-1000/60)>.02)throw new Error("Havok is not using matched fixed 60 Hz physics substeps: "+JSON.stringify(beforeDrive));
+  if(Math.abs(beforeDrive.physicsStep-1/60)>.00001||Math.abs(beforeDrive.physicsSubStep)>.001||Math.abs(beforeDrive.engineTimeStepMs-1000/60)>.02||beforeDrive.deterministicLockstep!==true||beforeDrive.lockstepMaxSteps!==4)throw new Error("Babylon Engine/Havok are not using bounded deterministic 60 Hz lockstep: "+JSON.stringify(beforeDrive));
   const handlingSamples={beforeDrive};
   await page.keyboard.down("w");
   await page.waitForTimeout(180);
@@ -212,6 +213,7 @@ try {
     vehicleX:window.__DRIVELLA_LAB__.vehicleX,vehicleY:window.__DRIVELLA_LAB__.vehicleY,vehicleZ:window.__DRIVELLA_LAB__.vehicleZ,
     vehicleBodyMass:window.__DRIVELLA_LAB__.vehicleBodyMass,vehicleGravityFactor:window.__DRIVELLA_LAB__.vehicleGravityFactor,
     vehiclePhysicsStep:window.__DRIVELLA_LAB__.vehiclePhysicsStep,vehiclePhysicsSubStep:window.__DRIVELLA_LAB__.vehiclePhysicsSubStep,
+    vehicleEngineTimeStepMs:window.__DRIVELLA_LAB__.vehicleEngineTimeStepMs,vehicleDeterministicLockstep:window.__DRIVELLA_LAB__.vehicleDeterministicLockstep,vehicleLockstepMaxSteps:window.__DRIVELLA_LAB__.vehicleLockstepMaxSteps,
     vehicleDriveRequested:window.__DRIVELLA_LAB__.vehicleDriveRequested,vehicleTotalSpringLoad:window.__DRIVELLA_LAB__.vehicleTotalSpringLoad,
     vehicleRoadSurfaceY:window.__DRIVELLA_LAB__.vehicleRoadSurfaceY,vehicleRoadDistance:window.__DRIVELLA_LAB__.vehicleRoadDistance,vehicleRoadBodyBottomClearance:window.__DRIVELLA_LAB__.vehicleRoadBodyBottomClearance,
     vehicleVelocityX:window.__DRIVELLA_LAB__.vehicleVelocityX,vehicleVelocityY:window.__DRIVELLA_LAB__.vehicleVelocityY,vehicleVelocityZ:window.__DRIVELLA_LAB__.vehicleVelocityZ,

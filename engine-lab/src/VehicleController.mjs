@@ -230,6 +230,7 @@ export class VehicleController{
    x:Number(p.x.toFixed(3)),y:Number(p.y.toFixed(3)),z:Number(p.z.toFixed(3)),
    bodyMass:Number(massProperties.mass.toFixed(2)),gravityFactor:Number(gravityFactor.toFixed(3)),
    physicsStep:Number(this.scene.getPhysicsEngine().getTimeStep().toFixed(6)),physicsSubStep:Number(this.scene.getPhysicsEngine().getSubTimeStep().toFixed(3)),
+   engineTimeStepMs:Number(this.scene.getEngine().getTimeStep().toFixed(3)),deterministicLockstep:this.scene.getEngine().isDeterministicLockStep(),lockstepMaxSteps:this.scene.getEngine().getLockstepMaxSteps(),
    speed:Number(motion.speed.toFixed(3)),speedKmh:Number((motion.speed*3.6).toFixed(1)),
    forwardSpeed:Number(motion.forwardSpeed.toFixed(3)),lateralSpeed:Number(motion.lateralSpeed.toFixed(3)),
    slipAngle:Number(motion.slipAngle.toFixed(4)),slipAngleDegrees:Number((motion.slipAngle*57.2957795).toFixed(2)),

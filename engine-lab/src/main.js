@@ -93,7 +93,7 @@ const labState = {
   tunnelProbeStableFrames: 0,
   vehicleReady:false,vehicleWheelbase:null,vehicleTrack:null,vehicleWheelRadius:null,
   vehicleWheelContacts:0,vehicleStableFrames:0,vehicleSpeedKmh:0,vehicleRoll:0,vehiclePitch:0,vehicleYaw:0,vehicleSteer:0,
-  vehicleX:0,vehicleY:0,vehicleZ:0,vehicleBodyMass:0,vehicleGravityFactor:1,vehiclePhysicsStep:0,vehiclePhysicsSubStep:0,vehicleDriveRequested:0,vehicleTotalSpringLoad:0,vehicleRearLongitudinalForce:0,vehicleTotalLongitudinalForce:0,
+  vehicleX:0,vehicleY:0,vehicleZ:0,vehicleBodyMass:0,vehicleGravityFactor:1,vehiclePhysicsStep:0,vehiclePhysicsSubStep:0,vehicleEngineTimeStepMs:0,vehicleDeterministicLockstep:false,vehicleLockstepMaxSteps:0,vehicleDriveRequested:0,vehicleTotalSpringLoad:0,vehicleRearLongitudinalForce:0,vehicleTotalLongitudinalForce:0,
   vehicleSpawnX:null,vehicleSpawnZ:null,vehicleSpawnGrade:null,vehicleSpawnDistanceFromRoadProbe:null,
   vehicleRoadSurfaceY:null,vehicleRoadDistance:null,vehicleRoadBodyBottomClearance:null,vehicleVelocityX:0,vehicleVelocityY:0,vehicleVelocityZ:0,vehicleMaxSuspensionCompression:0,vehicleAverageSuspensionCompression:0,vehicleAppliedForceX:0,vehicleAppliedForceZ:0,vehicleForwardX:0,vehicleForwardZ:0,vehicleWheelDiagnostics:[],
   vehicleForwardSpeed:0,vehicleLateralSpeed:0,vehicleSlipAngle:0,vehicleSlipAngleDegrees:0,vehicleYawRate:0,vehicleUnwrappedYaw:0,vehicleYawTurns:0,vehicleRearSlipAngle:0,vehicleRearSlipAngleDegrees:0,vehicleFrontGrip:0,vehicleRearGrip:0,vehicleRearHandbrakeGrip:0,vehicleParked:true,
@@ -779,9 +779,9 @@ async function enableHavokPhysics() {
 
   try {
     scene.enablePhysics(new Vector3(0, -9.81, 0), new HavokPlugin(false, havokInstance));
-    // Keep force impulses and gravity on the same fixed 60 Hz simulation step,
-    // even when rendering falls below 60 FPS. The substep value is milliseconds.
-    scene.getPhysicsEngine().setSubTimeStep(1000 / 60);
+    // Engine deterministic lockstep advances this scene in bounded 60 Hz steps.
+    // Havok uses the same fixed timestep for force impulses and world integration;
+    // max four catch-up steps prevent a slow render from stalling the browser.
     for (const [key, mesh] of terrainMeshes) {
       if (!terrainBodies.has(key)) {
         const body = addPhysicalProbe(scene, mesh, 0, PhysicsShapeType.MESH, { friction: 0.96, restitution: 0.02 });
@@ -941,7 +941,10 @@ async function createRenderer() {
       const webgpu = new WebGPUEngine(canvas, {
         antialias: true,
         adaptToDeviceRatio: true,
-        powerPreference: "high-performance"
+        powerPreference: "high-performance",
+        deterministicLockstep: true,
+        lockstepMaxSteps: 4,
+        timeStep: 1 / 60
       });
       await webgpu.initAsync();
       return { engine: webgpu, label: "WebGPU" };
@@ -954,7 +957,10 @@ async function createRenderer() {
     adaptToDeviceRatio: true,
     powerPreference: "high-performance",
     preserveDrawingBuffer: false,
-    stencil: true
+    stencil: true,
+    deterministicLockstep: true,
+    lockstepMaxSteps: 4,
+    timeStep: 1 / 60
   });
   return { engine: webgl, label: "WebGL " + (webgl.webGLVersion || "fallback") };
 }
@@ -1010,6 +1016,7 @@ async function boot() {
         labState.vehicleX=t.x;labState.vehicleY=t.y;labState.vehicleZ=t.z;labState.vehicleSpeedKmh=t.speedKmh;
         labState.vehicleBodyMass=t.bodyMass;labState.vehicleGravityFactor=t.gravityFactor;
         labState.vehiclePhysicsStep=t.physicsStep;labState.vehiclePhysicsSubStep=t.physicsSubStep;
+        labState.vehicleEngineTimeStepMs=t.engineTimeStepMs;labState.vehicleDeterministicLockstep=t.deterministicLockstep;labState.vehicleLockstepMaxSteps=t.lockstepMaxSteps;
         labState.vehicleRoll=t.roll;labState.vehiclePitch=t.pitch;labState.vehicleYaw=t.yaw;labState.vehicleSteer=t.steer;
         labState.vehicleWheelContacts=t.wheelContactCount;
         labState.vehicleForwardSpeed=t.forwardSpeed;labState.vehicleLateralSpeed=t.lateralSpeed;
