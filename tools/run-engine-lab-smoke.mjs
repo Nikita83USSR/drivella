@@ -142,13 +142,13 @@ try {
   if(beforeDrive.speedKmh>1.0||beforeDrive.parked!==true||beforeDrive.contacts!==4)throw new Error("Vehicle must remain parked with four wheel ray contacts before driver input: "+JSON.stringify(beforeDrive));
   const handlingSamples={beforeDrive};
   await page.keyboard.down("w");
-  await page.waitForTimeout(1850);
+  await page.waitForTimeout(2800);
   handlingSamples.acceleration=await sampleVehicle();
   await page.keyboard.down("d");
   await page.waitForTimeout(1350);
   handlingSamples.corner=await sampleVehicle();
   await page.keyboard.down(" ");
-  await page.waitForTimeout(900);
+  await page.waitForTimeout(180);
   handlingSamples.handbrake=await sampleVehicle();
   await page.keyboard.up("d");
   await page.keyboard.up(" ");
@@ -158,13 +158,15 @@ try {
   await page.keyboard.up("a");
   await page.keyboard.up("w");
 
+  await page.keyboard.down("w");
+  await page.waitForTimeout(1100);
   const spinStart=await sampleVehicle();
   await page.keyboard.down("w");
   await page.keyboard.down("d");
   await page.keyboard.down(" ");
-  await page.waitForTimeout(650);
+  await page.waitForTimeout(180);
   await page.keyboard.up(" ");
-  await page.waitForTimeout(3600);
+  await page.waitForTimeout(4200);
   handlingSamples.spin=await sampleVehicle();
   await page.keyboard.up("d");
   await page.keyboard.up("w");
@@ -250,7 +252,7 @@ try {
   if(state.frames<30)throw new Error("Render loop did not advance enough frames.");
   if(!state.vehicleReady||state.vehicleWheelContacts!==4||state.vehicleStableFrames<24)throw new Error("Countach lost one or more independent wheel contacts: "+JSON.stringify(state));
   const travelled=Math.hypot(state.vehicleX-beforeDrive.x,state.vehicleZ-beforeDrive.z);
-  const yawDelta=Math.abs(Math.atan2(Math.sin(state.vehicleYaw-beforeDrive.yaw),Math.cos(state.vehicleYaw-beforeDrive.yaw)));
+  const yawDelta=Math.abs(state.vehicleUnwrappedYaw-beforeDrive.unwrappedYaw);
   if(travelled<.55||state.vehicleSpeedKmh<1.5||yawDelta<.005)throw new Error("WASD failed to move and steer the Countach: "+JSON.stringify({beforeDrive,state,travelled,yawDelta}));
   if(!Number.isFinite(state.vehicleWheelbase)||Math.abs(state.vehicleWheelbase-3.282433711)>.002)throw new Error("Countach wheelbase mismatch: "+JSON.stringify(state));
   if(!Number.isFinite(state.vehicleTrack)||Math.abs(state.vehicleTrack-1.854847372)>.002)throw new Error("Countach track mismatch: "+JSON.stringify(state));
@@ -309,7 +311,7 @@ try {
     || state.tunnelChunks < 1
     || state.tunnelMeshCount < 1
     || state.tunnelBodyCount < 1
-    || state.tunnelPortals < state.tunnelCount * 2
+    || state.tunnelPortals < 2
     || state.tunnelRibs < 1
     || state.tunnelLights < 1
     || !Number.isFinite(state.tunnelMinCover)

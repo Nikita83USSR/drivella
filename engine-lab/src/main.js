@@ -817,6 +817,8 @@ async function enableHavokPhysics() {
     labState.vehicleSpawnZ = Number(vehicleSpawnTarget.sample.z.toFixed(3));
     labState.vehicleSpawnGrade = Number(vehicleSpawnTarget.grade.toFixed(5));
     labState.vehicleSpawnDistanceFromRoadProbe = Number(vehicleSpawnDistance.toFixed(2));
+    chunkManager.update(vehicle.getPosition());
+    lastVehicleChunkPosition = vehicle.getPosition();
     labState.vehicleReady = true;
     labState.vehicleWheelbase = vehicle.metrics.wheelbase;
     labState.vehicleTrack = vehicle.metrics.track;
@@ -858,13 +860,18 @@ async function enableHavokPhysics() {
     roadProbeMesh.material = roadProbeMaterial;
     addPhysicalProbe(scene, roadProbeMesh, 18, PhysicsShapeType.BOX, { friction: 1.8, restitution: 0.01 });
 
-    const tunnelProbeTarget = tunnels.length
-      ? tunnels.reduce((best, tunnel) => {
-        const sample = tunnel.path[Math.floor(tunnel.path.length / 2)];
-        const score = Math.abs(sample.bank || 0);
-        return !best || score < best.score ? { sample, score } : best;
-      }, null)
-      : null;
+    const vehiclePosition = vehicle.getPosition();
+    let tunnelProbeTarget = null;
+    for (const tunnel of tunnels) {
+      for (const sample of tunnel.path) {
+        const dx = sample.x - vehiclePosition.x;
+        const dz = sample.z - vehiclePosition.z;
+        const distanceSquared = dx * dx + dz * dz;
+        if (!tunnelProbeTarget || distanceSquared < tunnelProbeTarget.distanceSquared) {
+          tunnelProbeTarget = { sample, distanceSquared };
+        }
+      }
+    }
     if (tunnelProbeTarget) {
       tunnelProbeRoadY = tunnelProbeTarget.sample.y;
       tunnelProbeMesh = MeshBuilder.CreateBox("tunnel-ceiling-collision-probe", { size: 1 }, scene);

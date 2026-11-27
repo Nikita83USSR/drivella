@@ -2,6 +2,8 @@ import {Color3,Mesh,MeshBuilder,PhysicsAggregate,PhysicsShapeType,Quaternion,Sta
 import {PhysicsRaycastResult} from "@babylonjs/core/Physics/physicsRaycastResult.js";
 const WHEEL_PARTS=new Set(["front_tyre","front_rims","front_extra_NoMaterial","rear_tyre","rear_rims"]);
 const WHEELS=Object.freeze([Object.freeze({key:"frontLeft",axle:"front",side:-1}),Object.freeze({key:"frontRight",axle:"front",side:1}),Object.freeze({key:"rearLeft",axle:"rear",side:-1}),Object.freeze({key:"rearRight",axle:"rear",side:1})]);
+// Babylon 9.37.2 PhysicsMotionType enum: STATIC=0, ANIMATED=1, DYNAMIC=2.
+const BODY_MOTION=Object.freeze({STATIC:0,DYNAMIC:2});
 const P=Object.freeze({mass:1250,cg:.50,spawn:.05,colliderH:.42,rest:.32,min:.12,max:.55,maxComp:.20,spring:38000,damper:4200,bump:98000,antiRoll:26000,rollStiffness:16000,rollDamping:4000,maxRollTorque:9000,maxForce:16000,maxSteer:.49,engine:8600,brake:19500,handbrake:10500,parkingBrake:18000,frontGrip:1.22,rearGrip:1.04,rearHandbrakeGrip:.32,frontCornering:5600,rearCornering:3950,drag:.46,rolling:.012});
 const clamp=(v,a,b)=>Math.max(a,Math.min(b,v));
 export function wrapVehicleAngle(angle){return Math.atan2(Math.sin(angle),Math.cos(angle));}
@@ -83,10 +85,11 @@ export class VehicleController{
   this.chassis.position.set(startSample.x,startSample.y+P.cg+P.spawn,startSample.z);this.chassis.rotationQuaternion=Quaternion.RotationYawPitchRoll(yaw,0,0);
   this.chassis.isVisible=false;this.chassis.visibility=0;this.chassis.isPickable=false;this.chassis.checkCollisions=false;
   this.aggregate=new PhysicsAggregate(this.chassis,PhysicsShapeType.BOX,{mass:P.mass,friction:.2,restitution:.01},scene);
+  this.aggregate.body.setMotionType(BODY_MOTION.STATIC);
   this.aggregate.body.setLinearDamping(.018);this.aggregate.body.setAngularDamping(.42);
   this.bodyRoot=new TransformNode("drivella-countach-render-root",scene);this.bodyRoot.parent=this.chassis;this.bodyRoot.position.set(0,-P.cg-P.spawn,0);
   this.buildMaterials();this.buildBody();this.buildWheels();
-  this.keydown=e=>{const k=String(e.key||"").toLowerCase();if(["w","a","s","d","arrowup","arrowdown","arrowleft","arrowright"," "].includes(k)){e.preventDefault();this.parked=false;this.keys.add(k);}};
+  this.keydown=e=>{const k=String(e.key||"").toLowerCase();if(["w","a","s","d","arrowup","arrowdown","arrowleft","arrowright"," "].includes(k)){e.preventDefault();if(this.parked){this.aggregate.body.setMotionType(BODY_MOTION.DYNAMIC);this.aggregate.body.setLinearVelocity(Vector3.Zero());this.aggregate.body.setAngularVelocity(Vector3.Zero());this.parked=false;}this.keys.add(k);}};
   this.keyup=e=>this.keys.delete(String(e.key||"").toLowerCase());this.blur=()=>this.keys.clear();
   window.addEventListener("keydown",this.keydown,{passive:false});window.addEventListener("keyup",this.keyup);window.addEventListener("blur",this.blur);
   this.observer=scene.onBeforePhysicsObservable.add(()=>this.stepPhysics());this.syncVisuals();
@@ -131,9 +134,6 @@ export class VehicleController{
     heldContacts.set(w.key,{...w,hit:suspensionLength<=P.max+.025,anchor,point,normal,compression,springForce:0,steerAngle:0,longitudinalSpeed:0,lateralSpeed:0,tireUtilization:0});
    }
    this.wheelContacts=heldContacts;
-   this.aggregate.body.setLinearVelocity(Vector3.Zero());
-   this.aggregate.body.setAngularVelocity(Vector3.Zero());
-   this.aggregate.body.applyForce(new Vector3(0,this.mass*9.81,0),position);
    return;
   }
   const speed=Math.hypot(velocity.x,velocity.z),fade=clamp(speed/58,0,.58);this.lastDt=dt;this.steer+=(this.steerInput-this.steer)*clamp(dt*7.5,0,1);
