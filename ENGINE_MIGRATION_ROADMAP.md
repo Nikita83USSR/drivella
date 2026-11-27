@@ -156,3 +156,14 @@ Still required:
 ## Current status
 
 The migration branch now contains the self-hosted Babylon.js/Havok runtime, deterministic XYZ chunk streaming, elevation-aware terrain, five observed biomes, a grade-limited 1.95 km road circuit, roadside safety details, two rivers, two lakes, three raised bridge spans and four mountain tunnel bores. The bridges and tunnels use streamed geometry and Havok collision, but remain procedural technical-preview structures rather than final authored assets. The production car, vehicle suspension/tire simulation, retaining structures, final environment art, traffic and ragdolls remain future milestones.
+
+
+## Vehicle integration — Countach suspension and handling (prototype)
+
+- Imported BUILD 218 Countach geometry is the authority; the older BUILD 021 blueprint is not used for vehicle dimensions.
+- All eleven Countach data files are copied into `engine-lab/assets/`, loaded locally by the preview and cached locally by its service worker.
+- Wheelbase and track are derived from Countach wheel-centre metadata; tyre radius is measured from the decoded tyre triangles.
+- A hidden rigid chassis is sized from imported body bounds, has a lowered centre of mass, and drives four independent world-space wheel pivots.
+- Each wheel has its own Havok raycast contact, spring/damper forces and suspension travel; front steering uses Ackermann geometry, rear-wheel drive and handbrake change rear-axle traction, and tire forces obey a friction-circle limit.
+- World chunk streaming now follows the physical chassis rather than the orbit camera. Camera orbit stays independent as a presentation control.
+- The prototype remains on `engine-migration-foundation`; production `main` is unchanged and no release cutover is implied.

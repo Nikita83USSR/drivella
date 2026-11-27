@@ -17,6 +17,7 @@ import {
   WebGPUEngine
 } from "@babylonjs/core";
 import HavokPhysics from "@babylonjs/havok";
+import { VehicleController } from "./VehicleController.mjs";
 import { SpatialChunkManager } from "./SpatialChunkManager.mjs";
 import { registerTunnelCorridors, terrainChunkLayer, terrainHeight, terrainMoisture } from "./TerrainField.mjs";
 import { generateBiomePlacements } from "./BiomeField.mjs";
@@ -34,6 +35,7 @@ const worldMeta = document.getElementById("worldMeta");
 const roadMeta = document.getElementById("roadMeta");
 const waterMeta = document.getElementById("waterMeta");
 const tunnelMeta = document.getElementById("tunnelMeta");
+const vehicleMeta = document.getElementById("vehicleMeta");
 const dropButton = document.getElementById("dropButton");
 const resetButton = document.getElementById("resetButton");
 
@@ -89,7 +91,10 @@ const labState = {
   tunnelProbeYAtRoof: null,
   tunnelProbePeakY: null,
   tunnelProbeStableFrames: 0,
-  error: null,
+  vehicleReady:false,vehicleWheelbase:null,vehicleTrack:null,vehicleWheelRadius:null,
+  vehicleWheelContacts:0,vehicleStableFrames:0,vehicleSpeedKmh:0,vehicleRoll:0,vehiclePitch:0,vehicleYaw:0,vehicleSteer:0,
+  vehicleX:0,vehicleY:0,vehicleZ:0,
+  error:null,
   spatial: null
 };
 window.__DRIVELLA_LAB__ = labState;
@@ -721,6 +726,8 @@ let lastTunnelProbePosition = null;
 let tunnelProbeRoadY = null;
 let havokAttemptRunning = false;
 let havokInstance = null;
+let vehicle = null;
+let lastVehicleChunkPosition = null;
 let probeMesh = null;
 let roadProbeMesh = null;
 let roadProbeStableFrames = 0;
@@ -736,6 +743,7 @@ function findStableRoadProbeSample(samples) {
   for (let index = 0; index < samples.length; index += 1) {
     const previous = samples[(index - 1 + samples.length) % samples.length];
     const current = samples[index];
+    if (Math.hypot(current.x, current.z) < 32) continue;
     const next = samples[(index + 1) % samples.length];
     const distance = Math.hypot(next.x - previous.x, next.z - previous.z);
     const grade = Math.abs(next.y - previous.y) / Math.max(distance, 0.001);
@@ -762,7 +770,7 @@ function spawnDynamicBox(x, y, z) {
   return box;
 }
 
-function enableHavokPhysics() {
+async function enableHavokPhysics() {
   if (labState.physicsReady || !havokInstance) return;
 
   try {
@@ -791,6 +799,16 @@ function enableHavokPhysics() {
         tunnelBodies.set(key, body);
       }
     }
+
+    vehicle = await VehicleController.create(scene, { roadSamples, startSample: roadSamples[0] });
+    labState.vehicleReady = true;
+    labState.vehicleWheelbase = vehicle.metrics.wheelbase;
+    labState.vehicleTrack = vehicle.metrics.track;
+    labState.vehicleWheelRadius = vehicle.metrics.wheelRadius;
+    camera.target.copyFrom(vehicle.getCameraTarget());
+    camera.radius = 24;
+    camera.lowerRadiusLimit = 9;
+    if (vehicleMeta) vehicleMeta.textContent = "Countach loaded · 4 independent suspensions · RWD";
 
     probeMesh = MeshBuilder.CreateBox("falling-physics-probe", { size: 3 }, scene);
     // Keep the terrain collision probe on the broad, flat garage apron and
@@ -857,12 +875,12 @@ function enableHavokPhysics() {
     }
 
     for (let i = 0; i < 5; i += 1) {
-      spawnDynamicBox(16 + (i % 2) * 6, 8 + i * 5.5, 5);
+      spawnDynamicBox(44 + (i % 2) * 6, 8 + i * 5.5, 32);
     }
 
     labState.physicsReady = true;
     labState.physicsMode = "havok-wasm";
-    physicsMeta.textContent = "Physics: Havok Physics V2 · WASM from this repository";
+    physicsMeta.textContent = "Physics: Havok · 4 raycast spring/damper suspensions";
     dropButton.disabled = false;
     setStatus("3D engine and local physics ready", "ready");
   } catch (error) {
@@ -881,7 +899,7 @@ async function tryInitializeHavok() {
   try {
     const wasmUrl = new URL("./HavokPhysics.wasm", import.meta.url).href;
     havokInstance = await HavokPhysics({ locateFile: () => wasmUrl });
-    enableHavokPhysics();
+    await enableHavokPhysics();
   } catch (error) {
     labState.error = String(error);
     labState.physicsMode = "fallback";
@@ -963,6 +981,15 @@ async function boot() {
 
     scene.onAfterRenderObservable.add(() => {
       frameCounter += 1;
+      if(vehicle){
+        vehicle.syncVisuals();const t=vehicle.getTelemetry();
+        labState.vehicleX=t.x;labState.vehicleY=t.y;labState.vehicleZ=t.z;labState.vehicleSpeedKmh=t.speedKmh;
+        labState.vehicleRoll=t.roll;labState.vehiclePitch=t.pitch;labState.vehicleYaw=t.yaw;labState.vehicleSteer=t.steer;
+        labState.vehicleWheelContacts=t.wheelContactCount;
+        labState.vehicleStableFrames=t.wheelContactCount===4?labState.vehicleStableFrames+1:0;
+        camera.target.copyFrom(vehicle.getCameraTarget());
+        if(vehicleMeta)vehicleMeta.textContent=`Countach · ${t.speedKmh.toFixed(0)} km/h · wheels ${t.wheelContactCount}/4 · roll ${(Math.abs(t.roll)*57.2958).toFixed(1)}°`;
+      }
       labState.frames = frameCounter;
       if (probeMesh) {
         const currentY = probeMesh.position.y;
@@ -1021,8 +1048,10 @@ async function boot() {
         labState.roadProbeStableFrames = roadProbeStableFrames;
       }
       if (frameCounter % 18 === 0) fpsMeta.textContent = "FPS: " + engine.getFps().toFixed(0);
-      if (frameCounter % 6 === 0 && chunkManager && camera) {
-        const spatial = chunkManager.update(camera.target);
+      if(frameCounter%6===0&&chunkManager&&camera){
+        const player=vehicle?vehicle.getPosition():camera.target;
+        if(!lastVehicleChunkPosition||Vector3.Distance(player,lastVehicleChunkPosition)>18){chunkManager.update(player);lastVehicleChunkPosition=player.clone();}
+        const spatial=chunkManager.getStats();
         labState.spatial = spatial;
         const terrainLayers = [...new Set([...terrainMeshes.values()].map((mesh) => mesh.metadata.chunkY))].sort((a, b) => a - b);
         labState.roadChunks = roadMeshes.size;
@@ -1062,11 +1091,12 @@ async function boot() {
       camera.alpha = -Math.PI * 0.72;
       camera.beta = Math.PI * 0.34;
       camera.radius = chunkManager.radius * 0.88;
-      camera.target.set(0, 5, 0);
+      camera.target.copyFrom(vehicle?vehicle.getCameraTarget():new Vector3(0,5,0));
     });
 
     dropButton.addEventListener("click", () => {
-      spawnDynamicBox(camera.target.x - 12, camera.target.y + 42, camera.target.z - 8);
+      const target=vehicle?vehicle.getCameraTarget():camera.target;
+      spawnDynamicBox(target.x-12,target.y+42,target.z-8);
     });
 
     labState.ready = true;

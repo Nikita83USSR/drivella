@@ -12,6 +12,7 @@ on:
       - 'engine-lab/sw.js'
       - 'tools/run-engine-lab-smoke.mjs'
       - 'tools/test-spatial-chunks.mjs'
+      - 'tools/test-vehicle-controller.mjs'
       - '.github/workflows/engine-foundation.yml'
   pull_request:
     branches: [main]
@@ -20,6 +21,7 @@ on:
       - 'engine-lab/**'
       - 'tools/run-engine-lab-smoke.mjs'
       - 'tools/test-spatial-chunks.mjs'
+      - 'tools/test-vehicle-controller.mjs'
       - '.github/workflows/engine-foundation.yml'
 
 permissions:
@@ -44,6 +46,8 @@ jobs:
         run: node tools/test-spatial-chunks.mjs
       - name: Install pinned engine and build dependencies
         run: npm install --no-audit --no-fund
+      - name: Verify Countach geometry, Ackermann steering and tire friction
+        run: node tools/test-vehicle-controller.mjs
       - name: Build repository-local runtime
         run: npm run build:engine
       - name: Install Playwright

@@ -15,5 +15,30 @@
       "degradedModeAllowed": true
     }
   ],
-  "optional": []
+  "optional": [],
+  "countach": {
+    "version": 2,
+    "files": [
+      "./assets/countach_model_0.js",
+      "./assets/countach_model_0a.js",
+      "./assets/countach_model_0b.js",
+      "./assets/countach_model_0c.js",
+      "./assets/countach_model_0d.js",
+      "./assets/countach_model_1.js",
+      "./assets/countach_model_2.js",
+      "./assets/countach_model_3a.js",
+      "./assets/countach_model_3b.js",
+      "./assets/countach_model_3c.js",
+      "./assets/countach_model_3d.js"
+    ],
+    "metrics": {
+      "wheelbase": "metadata wheel-centre Z values",
+      "track": "metadata front wheel-centre X value",
+      "tyreRadius": "decoded tyre triangle geometry"
+    }
+  },
+  "vehicle": {
+    "module": "./src/VehicleController.mjs",
+    "simulation": "rigid chassis, four individual spring/damper raycasts, anti-roll forces, Ackermann steering and friction-limited tire forces"
+  }
 }

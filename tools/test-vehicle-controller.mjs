@@ -1,0 +1,10 @@
+import assert from "node:assert/strict";
+import {calculateAckermannAngles,clampTireForce,measureCountachRigMetrics} from "../engine-lab/src/VehicleController.mjs";
+const meta={wheelCenters:{front:[.9274236857891083,.3761336952447891,1.640242093503475],rear:[.9274236857891083,.38717761635780334,-1.6421916174888613]}};
+const m=measureCountachRigMetrics(meta,.365);assert.ok(Math.abs(m.track-1.8548473716)<1e-6);assert.ok(Math.abs(m.wheelbase-3.2824337110)<1e-6);
+const right=calculateAckermannAngles(.7,m.wheelbase,m.track);assert.ok(right.left>0&&right.right>right.left);
+const left=calculateAckermannAngles(-.7,m.wheelbase,m.track);assert.ok(left.right<0&&Math.abs(left.left)>Math.abs(left.right));
+assert.deepEqual(calculateAckermannAngles(0,m.wheelbase,m.track),{left:0,right:0});
+assert.deepEqual(clampTireForce(1800,900,4000),{longitudinal:1800,lateral:900,scale:1});
+const sat=clampTireForce(4000,3000,3500);assert.ok(Math.hypot(sat.longitudinal,sat.lateral)<=3500.000001&&sat.scale<1);
+console.log("VEHICLE CONTROLLER UNIT PASS",JSON.stringify({wheelbase:m.wheelbase,track:m.track,right,left,sat}));

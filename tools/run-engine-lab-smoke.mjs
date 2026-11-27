@@ -80,6 +80,20 @@ try {
     throw new Error("Havok did not initialize. Diagnostic: " + JSON.stringify(diagnostic) + " · pageErrors=" + JSON.stringify(pageErrors) + " · " + String(error));
   }
   try {
+    await page.waitForFunction(() =>
+      window.__DRIVELLA_LAB__?.vehicleReady === true
+      && window.__DRIVELLA_LAB__?.vehicleWheelContacts === 4
+      && window.__DRIVELLA_LAB__?.vehicleStableFrames >= 24,
+      null, { timeout: 90000 }
+    );
+  } catch (error) {
+    const diagnostic = await page.evaluate(() => window.__DRIVELLA_LAB__ || null);
+    await mkdir("artifacts", { recursive: true });
+    await page.screenshot({ path: "artifacts/engine-lab-vehicle-contact-timeout.png" }).catch(() => {});
+    throw new Error("Countach did not settle on four independent wheel contacts. Diagnostic: " + JSON.stringify(diagnostic) + " · " + String(error));
+  }
+
+  try {
     await page.waitForFunction(() => window.__DRIVELLA_LAB__?.probeStableFrames >= 30, null, { timeout: 60000 });
   } catch (error) {
     const diagnostic = await page.evaluate(() => window.__DRIVELLA_LAB__ || null);
@@ -109,10 +123,24 @@ try {
     throw new Error("Tunnel ceiling/road collision probe did not settle. Diagnostic: " + JSON.stringify(diagnostic) + " · " + String(error));
   }
 
+  const beforeDrive = await page.evaluate(() => ({x:window.__DRIVELLA_LAB__.vehicleX,z:window.__DRIVELLA_LAB__.vehicleZ,yaw:window.__DRIVELLA_LAB__.vehicleYaw}));
+  await page.keyboard.down("w");
+  await page.waitForTimeout(900);
+  await page.keyboard.down("d");
+  await page.waitForTimeout(800);
+  await page.keyboard.up("d");
+  await page.keyboard.up("w");
+  await page.waitForTimeout(450);
   const state = await page.evaluate(() => ({
     renderer: window.__DRIVELLA_LAB__.renderer,
     frames: window.__DRIVELLA_LAB__.frames,
     physicsMode: window.__DRIVELLA_LAB__.physicsMode,
+    vehicleReady:window.__DRIVELLA_LAB__.vehicleReady,vehicleWheelbase:window.__DRIVELLA_LAB__.vehicleWheelbase,
+    vehicleTrack:window.__DRIVELLA_LAB__.vehicleTrack,vehicleWheelRadius:window.__DRIVELLA_LAB__.vehicleWheelRadius,
+    vehicleWheelContacts:window.__DRIVELLA_LAB__.vehicleWheelContacts,vehicleStableFrames:window.__DRIVELLA_LAB__.vehicleStableFrames,
+    vehicleSpeedKmh:window.__DRIVELLA_LAB__.vehicleSpeedKmh,vehicleRoll:window.__DRIVELLA_LAB__.vehicleRoll,
+    vehiclePitch:window.__DRIVELLA_LAB__.vehiclePitch,vehicleYaw:window.__DRIVELLA_LAB__.vehicleYaw,
+    vehicleX:window.__DRIVELLA_LAB__.vehicleX,vehicleY:window.__DRIVELLA_LAB__.vehicleY,vehicleZ:window.__DRIVELLA_LAB__.vehicleZ,
     probeY: window.__DRIVELLA_LAB__.probeY,
     probeStableFrames: window.__DRIVELLA_LAB__.probeStableFrames,
     probeX: window.__DRIVELLA_LAB__.probeX,
@@ -164,7 +192,15 @@ try {
     roadProbeTargetGrade: window.__DRIVELLA_LAB__.roadProbeTargetGrade
   }));
 
-  if (state.frames < 30) throw new Error("Render loop did not advance enough frames.");
+  if(state.frames<30)throw new Error("Render loop did not advance enough frames.");
+  if(!state.vehicleReady||state.vehicleWheelContacts!==4||state.vehicleStableFrames<24)throw new Error("Countach lost one or more independent wheel contacts: "+JSON.stringify(state));
+  const travelled=Math.hypot(state.vehicleX-beforeDrive.x,state.vehicleZ-beforeDrive.z);
+  const yawDelta=Math.abs(Math.atan2(Math.sin(state.vehicleYaw-beforeDrive.yaw),Math.cos(state.vehicleYaw-beforeDrive.yaw)));
+  if(travelled<.55||state.vehicleSpeedKmh<1.5||yawDelta<.005)throw new Error("WASD failed to move and steer the Countach: "+JSON.stringify({beforeDrive,state,travelled,yawDelta}));
+  if(!Number.isFinite(state.vehicleWheelbase)||Math.abs(state.vehicleWheelbase-3.282433711)>.002)throw new Error("Countach wheelbase mismatch: "+JSON.stringify(state));
+  if(!Number.isFinite(state.vehicleTrack)||Math.abs(state.vehicleTrack-1.854847372)>.002)throw new Error("Countach track mismatch: "+JSON.stringify(state));
+  if(!Number.isFinite(state.vehicleWheelRadius)||state.vehicleWheelRadius<.22||state.vehicleWheelRadius>.55)throw new Error("Tyre radius was not decoded from Countach geometry: "+JSON.stringify(state));
+  if(Math.abs(state.vehicleRoll)>.32||Math.abs(state.vehiclePitch)>.32)throw new Error("Chassis attitude exceeded controlled test limits: "+JSON.stringify(state));
   if (!state.physicsMode.startsWith("havok")) throw new Error("Havok Physics V2 was not initialized.");
   if (state.probeStableFrames < 30) throw new Error("Physics probe did not settle after collision.");
   const probeClearance = state.probeY - 1.5 - state.terrainYAtProbe;
