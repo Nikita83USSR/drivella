@@ -254,3 +254,268 @@ export function getRoadStats(samples, chunkSize = ROAD_CHUNK_SIZE) {
     chunkKeys: [...chunkKeys].sort()
   };
 }
+
+
+export const ROAD_EDGE_TRANSITION_THRESHOLD = 0.85;
+export const ROAD_GUARDRAIL_DROP_THRESHOLD = 2.0;
+export const ROAD_DRAINAGE_RISE_THRESHOLD = 1.45;
+
+const ROAD_EDGE_OUTER_OFFSET = ROAD_HALF_WIDTH + ROAD_SHOULDER_WIDTH;
+const ROAD_EDGE_SAMPLE_OFFSET = 17.0;
+const ROAD_TRANSITION_OFFSETS = Object.freeze([8.6, 9.5, 10.4, 11.3, 12.2, 13.2, 14.6]);
+const ROAD_TRANSITION_LIFTS = Object.freeze([0.58, 0.42, 0.26, 0.12, 0.03, 0.03, 0.03]);
+
+const ROAD_FURNITURE_COLORS = Object.freeze({
+  cut: Object.freeze([
+    [0.34, 0.36, 0.34],
+    [0.32, 0.34, 0.32],
+    [0.29, 0.31, 0.30],
+    [0.27, 0.29, 0.28],
+    [0.26, 0.28, 0.27],
+    [0.25, 0.28, 0.26]
+  ]),
+  fill: Object.freeze([
+    [0.39, 0.34, 0.27],
+    [0.37, 0.32, 0.25],
+    [0.35, 0.30, 0.23],
+    [0.33, 0.29, 0.23],
+    [0.31, 0.29, 0.24],
+    [0.29, 0.29, 0.25]
+  ]),
+  drainBank: Object.freeze([0.24, 0.28, 0.27]),
+  drainBed: Object.freeze([0.105, 0.145, 0.15]),
+  rail: Object.freeze([0.43, 0.52, 0.55]),
+  railPost: Object.freeze([0.30, 0.37, 0.39])
+});
+
+function sideProfile(sample, side) {
+  const edge = offsetPoint(sample, side * ROAD_EDGE_OUTER_OFFSET, 0);
+  const far = offsetPoint(sample, side * ROAD_EDGE_SAMPLE_OFFSET, 0);
+  return {
+    edge,
+    far,
+    delta: far.y - edge.y
+  };
+}
+
+function addBoxFace(geometry, origin, points, color) {
+  addQuad(geometry, origin, points[0], points[1], points[2], points[3], color);
+}
+
+function addRailBeam(geometry, origin, a, b, halfThickness, halfHeight, color) {
+  const dx = b.x - a.x;
+  const dz = b.z - a.z;
+  const length = Math.hypot(dx, dz);
+  if (length < 0.001) return;
+  const nx = -dz / length;
+  const nz = dx / length;
+  const make = (point, side, vertical) => ({
+    x: point.x + nx * side * halfThickness,
+    y: point.y + vertical * halfHeight,
+    z: point.z + nz * side * halfThickness
+  });
+  const aLeftBottom = make(a, -1, -1);
+  const aRightBottom = make(a, 1, -1);
+  const aRightTop = make(a, 1, 1);
+  const aLeftTop = make(a, -1, 1);
+  const bLeftBottom = make(b, -1, -1);
+  const bRightBottom = make(b, 1, -1);
+  const bRightTop = make(b, 1, 1);
+  const bLeftTop = make(b, -1, 1);
+  addBoxFace(geometry, origin, [aLeftBottom, bLeftBottom, bRightBottom, aRightBottom], color);
+  addBoxFace(geometry, origin, [aLeftTop, aRightTop, bRightTop, bLeftTop], color);
+  addBoxFace(geometry, origin, [aLeftBottom, aLeftTop, bLeftTop, bLeftBottom], color);
+  addBoxFace(geometry, origin, [aRightBottom, bRightBottom, bRightTop, aRightTop], color);
+  addBoxFace(geometry, origin, [aLeftBottom, aRightBottom, aRightTop, aLeftTop], color);
+  addBoxFace(geometry, origin, [bLeftBottom, bLeftTop, bRightTop, bRightBottom], color);
+}
+
+function addGuardrailPost(geometry, origin, point, bottom, top, radius, color) {
+  const x0 = point.x - radius;
+  const x1 = point.x + radius;
+  const z0 = point.z - radius;
+  const z1 = point.z + radius;
+  const b0 = { x: x0, y: bottom, z: z0 };
+  const b1 = { x: x1, y: bottom, z: z0 };
+  const b2 = { x: x1, y: bottom, z: z1 };
+  const b3 = { x: x0, y: bottom, z: z1 };
+  const t0 = { x: x0, y: top, z: z0 };
+  const t1 = { x: x1, y: top, z: z0 };
+  const t2 = { x: x1, y: top, z: z1 };
+  const t3 = { x: x0, y: top, z: z1 };
+  addBoxFace(geometry, origin, [b0, b1, t1, t0], color);
+  addBoxFace(geometry, origin, [b1, b2, t2, t1], color);
+  addBoxFace(geometry, origin, [b2, b3, t3, t2], color);
+  addBoxFace(geometry, origin, [b3, b0, t0, t3], color);
+  addBoxFace(geometry, origin, [t0, t1, t2, t3], color);
+  addBoxFace(geometry, origin, [b3, b2, b1, b0], color);
+}
+
+function terrainPointAtOffset(sample, side, offset, lift = 0.03) {
+  const x = sample.x + sample.normalX * side * offset;
+  const z = sample.z + sample.normalZ * side * offset;
+  return { x, y: terrainHeight(x, z) + lift, z };
+}
+
+function isChunkSegment(a, b, chunkX, chunkZ, chunkSize) {
+  const midpointX = (a.x + b.x) * 0.5;
+  const midpointZ = (a.z + b.z) * 0.5;
+  return chunkIndex(midpointX, chunkSize) === chunkX
+    && chunkIndex(midpointZ, chunkSize) === chunkZ;
+}
+
+/**
+ * Build non-roadside geometry for one streamed road chunk. The terrain itself
+ * remains the continuous ground surface; these meshes only dress measurable
+ * cut/fill transitions, upper-side drainage and genuinely exposed drop-offs.
+ */
+export function buildRoadFurnitureChunkGeometry(
+  samples,
+  chunkX,
+  chunkY,
+  chunkZ,
+  chunkSize = ROAD_CHUNK_SIZE
+) {
+  if (!Array.isArray(samples) || samples.length < 8) {
+    throw new TypeError("Road furniture generation requires a closed sample path.");
+  }
+  if (![chunkX, chunkY, chunkZ].every(Number.isInteger)) {
+    throw new TypeError("Road furniture chunk coordinates must be integers.");
+  }
+  if (!Number.isFinite(chunkSize) || chunkSize <= 0) {
+    throw new RangeError("Road furniture chunk size must be a positive finite number.");
+  }
+
+  const geometry = {
+    positions: [],
+    colors: [],
+    indices: [],
+    transitionSegments: 0,
+    drainageSegments: 0,
+    guardrailSegments: 0,
+    guardrailPosts: 0
+  };
+  const origin = {
+    x: chunkX * chunkSize,
+    y: chunkY * chunkSize,
+    z: chunkZ * chunkSize
+  };
+  const profiles = samples.map((sample) => ({
+    left: sideProfile(sample, 1),
+    right: sideProfile(sample, -1)
+  }));
+
+  for (let index = 0; index < samples.length; index += 1) {
+    const nextIndex = (index + 1) % samples.length;
+    const a = samples[index];
+    const b = samples[nextIndex];
+    if (!isChunkSegment(a, b, chunkX, chunkZ, chunkSize)) continue;
+
+    for (const side of [1, -1]) {
+      const sideKey = side === 1 ? "left" : "right";
+      const profileA = profiles[index][sideKey];
+      const profileB = profiles[nextIndex][sideKey];
+      const averageDelta = (profileA.delta + profileB.delta) * 0.5;
+
+      // A tapered gravel/earth apron follows the actual terrain surface and
+      // visually closes the shoulder-to-slope transition without a hard cliff.
+      if (Math.abs(averageDelta) >= ROAD_EDGE_TRANSITION_THRESHOLD) {
+        const palette = averageDelta > 0
+          ? ROAD_FURNITURE_COLORS.cut
+          : ROAD_FURNITURE_COLORS.fill;
+        for (let band = 0; band < ROAD_TRANSITION_OFFSETS.length - 1; band += 1) {
+          const offsetA = ROAD_TRANSITION_OFFSETS[band];
+          const offsetB = ROAD_TRANSITION_OFFSETS[band + 1];
+          const liftA = ROAD_TRANSITION_LIFTS[band];
+          const liftB = ROAD_TRANSITION_LIFTS[band + 1];
+          const a0 = terrainPointAtOffset(a, side, offsetA, liftA);
+          const a1 = terrainPointAtOffset(a, side, offsetB, liftB);
+          const b0 = terrainPointAtOffset(b, side, offsetA, liftA);
+          const b1 = terrainPointAtOffset(b, side, offsetB, liftB);
+          addQuad(geometry, origin, a0, a1, b1, b0, palette[band]);
+        }
+        geometry.transitionSegments += 1;
+      }
+
+      // Drainage is only cut into the uphill side of a measurable cut.
+      if (
+        profileA.delta >= ROAD_DRAINAGE_RISE_THRESHOLD
+        && profileB.delta >= ROAD_DRAINAGE_RISE_THRESHOLD
+      ) {
+        const gutter = [
+          { offset: 8.95, lift: 0.045 },
+          { offset: 9.18, lift: -0.105 },
+          { offset: 9.72, lift: -0.105 },
+          { offset: 9.95, lift: 0.045 }
+        ].map((point) => ({
+          a: terrainPointAtOffset(a, side, point.offset, point.lift),
+          b: terrainPointAtOffset(b, side, point.offset, point.lift)
+        }));
+        addQuad(geometry, origin, gutter[0].a, gutter[1].a, gutter[1].b, gutter[0].b, ROAD_FURNITURE_COLORS.drainBank);
+        addQuad(geometry, origin, gutter[1].a, gutter[2].a, gutter[2].b, gutter[1].b, ROAD_FURNITURE_COLORS.drainBed);
+        addQuad(geometry, origin, gutter[2].a, gutter[3].a, gutter[3].b, gutter[2].b, ROAD_FURNITURE_COLORS.drainBank);
+        geometry.drainageSegments += 1;
+      }
+
+      // Guardrails are reserved for the side where the ground falls away.
+      if (
+        profileA.delta <= -ROAD_GUARDRAIL_DROP_THRESHOLD
+        && profileB.delta <= -ROAD_GUARDRAIL_DROP_THRESHOLD
+      ) {
+        const railOffset = ROAD_EDGE_OUTER_OFFSET - 0.18;
+        const groundA = terrainPointAtOffset(a, side, railOffset, ROAD_SHOULDER_OFFSET);
+        const groundB = terrainPointAtOffset(b, side, railOffset, ROAD_SHOULDER_OFFSET);
+        const topA = { ...groundA, y: groundA.y + 0.98 };
+        const topB = { ...groundB, y: groundB.y + 0.98 };
+        const midA = { ...groundA, y: groundA.y + 0.52 };
+        const midB = { ...groundB, y: groundB.y + 0.52 };
+        addRailBeam(geometry, origin, topA, topB, 0.095, 0.085, ROAD_FURNITURE_COLORS.rail);
+        addRailBeam(geometry, origin, midA, midB, 0.07, 0.065, ROAD_FURNITURE_COLORS.rail);
+        geometry.guardrailSegments += 1;
+
+        if (index % 4 === 0) {
+          addGuardrailPost(
+            geometry, origin, groundA,
+            groundA.y + 0.08, groundA.y + 1.13,
+            0.075, ROAD_FURNITURE_COLORS.railPost
+          );
+          geometry.guardrailPosts += 1;
+        }
+      }
+    }
+  }
+
+  return geometry;
+}
+
+export function getRoadFurnitureStats(samples, chunkSize = ROAD_CHUNK_SIZE) {
+  if (!Array.isArray(samples) || samples.length < 2) {
+    return { transitionSegments: 0, drainageSegments: 0, guardrailSegments: 0 };
+  }
+  const stats = { transitionSegments: 0, drainageSegments: 0, guardrailSegments: 0 };
+  for (let index = 0; index < samples.length; index += 1) {
+    const nextIndex = (index + 1) % samples.length;
+    const a = samples[index];
+    const b = samples[nextIndex];
+    const averageMagnitude = (
+      Math.abs(sideProfile(a, 1).delta)
+      + Math.abs(sideProfile(b, 1).delta)
+      + Math.abs(sideProfile(a, -1).delta)
+      + Math.abs(sideProfile(b, -1).delta)
+    ) * 0.25;
+    if (averageMagnitude >= ROAD_EDGE_TRANSITION_THRESHOLD) {
+      stats.transitionSegments += 1;
+    }
+    for (const side of [1, -1]) {
+      const profileA = sideProfile(a, side);
+      const profileB = sideProfile(b, side);
+      if (profileA.delta >= ROAD_DRAINAGE_RISE_THRESHOLD && profileB.delta >= ROAD_DRAINAGE_RISE_THRESHOLD) {
+        stats.drainageSegments += 1;
+      }
+      if (profileA.delta <= -ROAD_GUARDRAIL_DROP_THRESHOLD && profileB.delta <= -ROAD_GUARDRAIL_DROP_THRESHOLD) {
+        stats.guardrailSegments += 1;
+      }
+    }
+  }
+  return stats;
+}
