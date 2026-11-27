@@ -90,7 +90,7 @@ try {
     const diagnostic = await page.evaluate(() => window.__DRIVELLA_LAB__ || null);
     await mkdir("artifacts", { recursive: true });
     await page.screenshot({ path: "artifacts/engine-lab-vehicle-contact-timeout.png" }).catch(() => {});
-    throw new Error("Countach did not settle on four independent wheel contacts. Diagnostic: " + JSON.stringify(diagnostic) + " · " + String(error));
+    throw new Error("Countach did not settle on four independent wheel contacts. Diagnostic: " + JSON.stringify(diagnostic) + " · pageErrors=" + JSON.stringify(pageErrors) + " · consoleErrors=" + JSON.stringify(browserConsoleErrors) + " · " + String(error));
   }
 
   try {
