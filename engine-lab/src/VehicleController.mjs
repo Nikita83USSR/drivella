@@ -209,6 +209,8 @@ export class VehicleController{
   const axleAverage=(axle,key)=>{const list=WHEELS.filter(w=>w.axle===axle).map(w=>this.wheelContacts.get(w.key)).filter(c=>c?.hit);
    return list.length?list.reduce((sum,c)=>sum+(c[key]??0),0)/list.length:0;};
   const totalSpringLoad=wheels.reduce((sum,w)=>sum+(this.wheelContacts.get(w.key)?.springForce??0),0);
+  const maxSuspensionCompression=Math.max(0,...wheels.map(w=>w.compression));
+  const averageSuspensionCompression=wheels.reduce((sum,w)=>sum+w.compression,0)/Math.max(1,wheels.length);
   const rearLongitudinalForce=WHEELS.filter(w=>w.axle==="rear").reduce((sum,w)=>sum+(this.wheelContacts.get(w.key)?.longitudinalForce??0),0);
   const totalLongitudinalForce=WHEELS.reduce((sum,w)=>sum+(this.wheelContacts.get(w.key)?.longitudinalForce??0),0);
   const frontLateralSpeed=axleAverage("front","lateralSpeed"),rearLateralSpeed=axleAverage("rear","lateralSpeed");
@@ -227,7 +229,8 @@ export class VehicleController{
    track:Number(this.metrics.track.toFixed(4)),wheelRadius:Number(this.metrics.wheelRadius.toFixed(4)),
    frontGrip:P.frontGrip,rearGrip:P.rearGrip,rearHandbrakeGrip:P.rearHandbrakeGrip,parked:this.parked,
    throttle:this.throttle,handbrake:this.handbrake,driveRequested:Number(this.driveRequested.toFixed(1)),brakeRequested:Number(this.brakeRequested.toFixed(1)),
-   velocityX:Number(v.x.toFixed(4)),velocityZ:Number(v.z.toFixed(4)),
+   velocityX:Number(v.x.toFixed(4)),velocityY:Number(v.y.toFixed(4)),velocityZ:Number(v.z.toFixed(4)),
+   maxSuspensionCompression:Number(maxSuspensionCompression.toFixed(4)),averageSuspensionCompression:Number(averageSuspensionCompression.toFixed(4)),
    appliedDriveForceWorldX:Number(this.appliedDriveForceWorld.x.toFixed(1)),appliedDriveForceWorldZ:Number(this.appliedDriveForceWorld.z.toFixed(1)),
    bodyForwardX:Number(Math.sin(yaw).toFixed(4)),bodyForwardZ:Number(Math.cos(yaw).toFixed(4)),
    totalSpringLoad:Number(totalSpringLoad.toFixed(1)),rearLongitudinalForce:Number(rearLongitudinalForce.toFixed(1)),totalLongitudinalForce:Number(totalLongitudinalForce.toFixed(1)),wheels

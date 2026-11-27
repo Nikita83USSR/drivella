@@ -95,7 +95,7 @@ const labState = {
   vehicleWheelContacts:0,vehicleStableFrames:0,vehicleSpeedKmh:0,vehicleRoll:0,vehiclePitch:0,vehicleYaw:0,vehicleSteer:0,
   vehicleX:0,vehicleY:0,vehicleZ:0,vehicleDriveRequested:0,vehicleTotalSpringLoad:0,vehicleRearLongitudinalForce:0,vehicleTotalLongitudinalForce:0,
   vehicleSpawnX:null,vehicleSpawnZ:null,vehicleSpawnGrade:null,vehicleSpawnDistanceFromRoadProbe:null,
-  vehicleRoadSurfaceY:null,vehicleRoadDistance:null,vehicleRoadBodyBottomClearance:null,vehicleVelocityX:0,vehicleVelocityZ:0,vehicleAppliedForceX:0,vehicleAppliedForceZ:0,vehicleForwardX:0,vehicleForwardZ:0,vehicleWheelDiagnostics:[],
+  vehicleRoadSurfaceY:null,vehicleRoadDistance:null,vehicleRoadBodyBottomClearance:null,vehicleVelocityX:0,vehicleVelocityY:0,vehicleVelocityZ:0,vehicleMaxSuspensionCompression:0,vehicleAverageSuspensionCompression:0,vehicleAppliedForceX:0,vehicleAppliedForceZ:0,vehicleForwardX:0,vehicleForwardZ:0,vehicleWheelDiagnostics:[],
   vehicleForwardSpeed:0,vehicleLateralSpeed:0,vehicleSlipAngle:0,vehicleSlipAngleDegrees:0,vehicleYawRate:0,vehicleUnwrappedYaw:0,vehicleYawTurns:0,vehicleRearSlipAngle:0,vehicleRearSlipAngleDegrees:0,vehicleFrontGrip:0,vehicleRearGrip:0,vehicleRearHandbrakeGrip:0,vehicleParked:true,
   error:null,
   spatial: null
@@ -1013,7 +1013,8 @@ async function boot() {
         labState.vehicleRearSlipAngle=t.rearSlipAngle;labState.vehicleRearSlipAngleDegrees=t.rearSlipAngleDegrees;
         labState.vehicleFrontGrip=t.frontGrip;labState.vehicleRearGrip=t.rearGrip;labState.vehicleRearHandbrakeGrip=t.rearHandbrakeGrip;labState.vehicleParked=t.parked;
         labState.vehicleDriveRequested=t.driveRequested;labState.vehicleTotalSpringLoad=t.totalSpringLoad;labState.vehicleRearLongitudinalForce=t.rearLongitudinalForce;labState.vehicleTotalLongitudinalForce=t.totalLongitudinalForce;
-        labState.vehicleVelocityX=t.velocityX;labState.vehicleVelocityZ=t.velocityZ;
+        labState.vehicleVelocityX=t.velocityX;labState.vehicleVelocityY=t.velocityY;labState.vehicleVelocityZ=t.velocityZ;
+        labState.vehicleMaxSuspensionCompression=t.maxSuspensionCompression;labState.vehicleAverageSuspensionCompression=t.averageSuspensionCompression;
         labState.vehicleAppliedForceX=t.appliedDriveForceWorldX;labState.vehicleAppliedForceZ=t.appliedDriveForceWorldZ;
         labState.vehicleForwardX=t.bodyForwardX;labState.vehicleForwardZ=t.bodyForwardZ;labState.vehicleWheelDiagnostics=t.wheels;
         const roadContact=nearestRoadSurfaceInfo(t.x,t.z,roadSamples);

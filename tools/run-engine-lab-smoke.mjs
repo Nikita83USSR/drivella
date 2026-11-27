@@ -132,7 +132,9 @@ try {
       rearSlipDegrees:s.vehicleRearSlipAngleDegrees,yawRate:s.vehicleYawRate,
       steer:s.vehicleSteer,contacts:s.vehicleWheelContacts,roll:s.vehicleRoll,parked:s.vehicleParked,
       driveRequested:s.vehicleDriveRequested,totalSpringLoad:s.vehicleTotalSpringLoad,rearLongitudinalForce:s.vehicleRearLongitudinalForce,totalLongitudinalForce:s.vehicleTotalLongitudinalForce,
-      velocityX:s.vehicleVelocityX,velocityZ:s.vehicleVelocityZ,appliedForceX:s.vehicleAppliedForceX,appliedForceZ:s.vehicleAppliedForceZ,
+      velocityX:s.vehicleVelocityX,velocityY:s.vehicleVelocityY,velocityZ:s.vehicleVelocityZ,
+      maxCompression:s.vehicleMaxSuspensionCompression,averageCompression:s.vehicleAverageSuspensionCompression,
+      bottomClearance:s.vehicleRoadBodyBottomClearance,appliedForceX:s.vehicleAppliedForceX,appliedForceZ:s.vehicleAppliedForceZ,
       forwardX:s.vehicleForwardX,forwardZ:s.vehicleForwardZ,roadY:s.vehicleRoadSurfaceY,roadDistance:s.vehicleRoadDistance,
       spawnX:s.vehicleSpawnX,spawnZ:s.vehicleSpawnZ,spawnGrade:s.vehicleSpawnGrade,spawnToProbe:s.vehicleSpawnDistanceFromRoadProbe,
       bodyBottomClearance:s.vehicleRoadBodyBottomClearance,wheelDiagnostics:s.vehicleWheelDiagnostics
@@ -142,7 +144,13 @@ try {
   if(beforeDrive.speedKmh>1.0||beforeDrive.parked!==true||beforeDrive.contacts!==4)throw new Error("Vehicle must remain parked with four wheel ray contacts before driver input: "+JSON.stringify(beforeDrive));
   const handlingSamples={beforeDrive};
   await page.keyboard.down("w");
-  await page.waitForTimeout(2800);
+  await page.waitForTimeout(180);
+  handlingSamples.accelerationT180=await sampleVehicle();
+  await page.waitForTimeout(320);
+  handlingSamples.accelerationT500=await sampleVehicle();
+  await page.waitForTimeout(500);
+  handlingSamples.accelerationT1000=await sampleVehicle();
+  await page.waitForTimeout(1800);
   handlingSamples.acceleration=await sampleVehicle();
   await page.keyboard.down("d");
   await page.waitForTimeout(1350);
@@ -191,7 +199,8 @@ try {
     vehicleX:window.__DRIVELLA_LAB__.vehicleX,vehicleY:window.__DRIVELLA_LAB__.vehicleY,vehicleZ:window.__DRIVELLA_LAB__.vehicleZ,
     vehicleDriveRequested:window.__DRIVELLA_LAB__.vehicleDriveRequested,vehicleTotalSpringLoad:window.__DRIVELLA_LAB__.vehicleTotalSpringLoad,
     vehicleRoadSurfaceY:window.__DRIVELLA_LAB__.vehicleRoadSurfaceY,vehicleRoadDistance:window.__DRIVELLA_LAB__.vehicleRoadDistance,vehicleRoadBodyBottomClearance:window.__DRIVELLA_LAB__.vehicleRoadBodyBottomClearance,
-    vehicleVelocityX:window.__DRIVELLA_LAB__.vehicleVelocityX,vehicleVelocityZ:window.__DRIVELLA_LAB__.vehicleVelocityZ,
+    vehicleVelocityX:window.__DRIVELLA_LAB__.vehicleVelocityX,vehicleVelocityY:window.__DRIVELLA_LAB__.vehicleVelocityY,vehicleVelocityZ:window.__DRIVELLA_LAB__.vehicleVelocityZ,
+    vehicleMaxSuspensionCompression:window.__DRIVELLA_LAB__.vehicleMaxSuspensionCompression,vehicleAverageSuspensionCompression:window.__DRIVELLA_LAB__.vehicleAverageSuspensionCompression,
     vehicleAppliedForceX:window.__DRIVELLA_LAB__.vehicleAppliedForceX,vehicleAppliedForceZ:window.__DRIVELLA_LAB__.vehicleAppliedForceZ,
     vehicleRearLongitudinalForce:window.__DRIVELLA_LAB__.vehicleRearLongitudinalForce,vehicleTotalLongitudinalForce:window.__DRIVELLA_LAB__.vehicleTotalLongitudinalForce,
     vehicleForwardSpeed:window.__DRIVELLA_LAB__.vehicleForwardSpeed,vehicleLateralSpeed:window.__DRIVELLA_LAB__.vehicleLateralSpeed,
