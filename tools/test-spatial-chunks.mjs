@@ -183,6 +183,7 @@ let guardrailSegments = 0;
 let guardrailPosts = 0;
 let furnitureVertices = 0;
 let bridgePiers = 0;
+let bridgeGirderSegments = 0;
 for (const key of roadStats.chunkKeys) {
   const [x, z] = key.split(":").map(Number);
   const y = terrainChunkLayer(x, z, 128);
@@ -199,6 +200,7 @@ for (const key of roadStats.chunkKeys) {
   guardrailPosts += furniture.guardrailPosts;
   furnitureVertices += furniture.positions.length / 3;
   bridgePiers += furniture.bridgePiers;
+  bridgeGirderSegments += furniture.bridgeGirderSegments;
   assert.ok(furniture.positions.every(Number.isFinite), `road furniture chunk ${key} has invalid geometry`);
   assert.equal(furniture.indices.length % 3, 0, `road furniture chunk ${key} has incomplete triangles`);
 }
@@ -209,10 +211,11 @@ assert.ok(drainageSegments > 0, "uphill road cuts should receive drainage channe
 assert.ok(guardrailSegments > 0 && guardrailPosts > 0, "exposed road drops should receive guardrails and supports");
 assert.ok(furnitureVertices > 1000, "roadside transition and safety geometry should be generated");
 assert.ok(bridgePiers >= 4, "raised river crossings should receive visible structural support piers");
+assert.ok(bridgeGirderSegments >= 6, "raised river crossings should receive continuous structural deck girders");
 
 console.log("ROAD NETWORK TEST PASS", JSON.stringify({
   ...roadStats, roadSegments, roadVertices,
-  transitionSegments, drainageSegments, guardrailSegments, guardrailPosts, furnitureVertices, bridgePiers
+  transitionSegments, drainageSegments, guardrailSegments, guardrailPosts, furnitureVertices, bridgePiers, bridgeGirderSegments
 }));
 
 console.log("SPATIAL CHUNK TEST PASS", JSON.stringify(initial));
