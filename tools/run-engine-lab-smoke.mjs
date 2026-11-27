@@ -170,10 +170,17 @@ try {
   ) {
     throw new Error("Streamed water bodies, shorelines or road-water crossing classification are incomplete: " + JSON.stringify(state));
   }
-  if (!state.bridgeCrossings.every((crossing) =>
-    Number.isFinite(crossing.minClearance) && crossing.sampleCount > 0
-  )) {
-    throw new Error("Road-water crossings are missing measurable deck clearance: " + JSON.stringify(state.bridgeCrossings));
+  if (
+    state.unresolvedWaterCrossings !== 0
+    || state.bridgeCandidateCount !== state.bridgeCrossingCount
+    || !state.bridgeCrossings.every((crossing) =>
+      Number.isFinite(crossing.minClearance)
+      && crossing.minClearance >= 3.95
+      && crossing.structure === "bridge-candidate"
+      && crossing.sampleCount > 0
+    )
+  ) {
+    throw new Error("At least one road-water crossing lacks safe raised-deck clearance: " + JSON.stringify(state.bridgeCrossings));
   }
   if (state.roadProbeStableFrames < 30) {
     throw new Error("Dedicated road probe did not settle on the asphalt collision mesh: " + JSON.stringify(state));
