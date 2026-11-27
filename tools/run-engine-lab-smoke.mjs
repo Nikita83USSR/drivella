@@ -126,6 +126,15 @@ try {
     bridgePiers: window.__DRIVELLA_LAB__.bridgePiers,
     bridgeGirderSegments: window.__DRIVELLA_LAB__.bridgeGirderSegments,
     unresolvedWaterCrossings: window.__DRIVELLA_LAB__.unresolvedWaterCrossings,
+    tunnelCount: window.__DRIVELLA_LAB__.tunnelCount,
+    tunnelLength: window.__DRIVELLA_LAB__.tunnelLength,
+    tunnelChunks: window.__DRIVELLA_LAB__.tunnelChunks,
+    tunnelPortals: window.__DRIVELLA_LAB__.tunnelPortals,
+    tunnelRibs: window.__DRIVELLA_LAB__.tunnelRibs,
+    tunnelLights: window.__DRIVELLA_LAB__.tunnelLights,
+    tunnelMinCover: window.__DRIVELLA_LAB__.tunnelMinCover,
+    tunnelMeshCount: window.__DRIVELLA_LAB__.tunnelMeshCount,
+    tunnelBodyCount: window.__DRIVELLA_LAB__.tunnelBodyCount,
     bridgeCrossings: window.__DRIVELLA_LAB__.bridgeCrossings,
     roadYAtProbe: window.__DRIVELLA_LAB__.roadYAtProbe,
     roadDistanceAtProbe: window.__DRIVELLA_LAB__.roadDistanceAtProbe,
@@ -185,6 +194,20 @@ try {
     )
   ) {
     throw new Error("At least one road-water crossing lacks safe raised-deck clearance: " + JSON.stringify(state.bridgeCrossings));
+  }
+  if (
+    state.tunnelCount < 1
+    || state.tunnelLength < 48
+    || state.tunnelChunks < 1
+    || state.tunnelMeshCount < 1
+    || state.tunnelBodyCount < 1
+    || state.tunnelPortals < state.tunnelCount * 2
+    || state.tunnelRibs < 1
+    || state.tunnelLights < 1
+    || !Number.isFinite(state.tunnelMinCover)
+    || state.tunnelMinCover < 7.8
+  ) {
+    throw new Error("Mountain tunnel bores, portals, lining or Havok collision are incomplete: " + JSON.stringify(state));
   }
   if (state.roadProbeStableFrames < 30) {
     throw new Error("Dedicated road probe did not settle on the asphalt collision mesh: " + JSON.stringify(state));
