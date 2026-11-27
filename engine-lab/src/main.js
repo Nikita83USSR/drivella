@@ -71,6 +71,7 @@ const labState = {
   bridgeCrossingCount: 0,
   bridgeCandidateCount: 0,
   bridgePiers: 0,
+  bridgeGirderSegments: 0,
   unresolvedWaterCrossings: 0,
   bridgeCrossings: [],
   error: null,
@@ -516,8 +517,12 @@ function createEnvironment(scene) {
           }
         }
         const furnitureGeometry = buildRoadFurnitureChunkGeometry(roadSamples, chunk.x, chunk.y, chunk.z, 128);
-        payload.roadFurnitureStats = { bridgePiers: furnitureGeometry.bridgePiers };
+        payload.roadFurnitureStats = {
+          bridgePiers: furnitureGeometry.bridgePiers,
+          bridgeGirderSegments: furnitureGeometry.bridgeGirderSegments
+        };
         labState.bridgePiers += furnitureGeometry.bridgePiers;
+        labState.bridgeGirderSegments += furnitureGeometry.bridgeGirderSegments;
         const furnitureMesh = createCombinedPropMesh(
           scene, `road-furniture-${chunk.x}-${chunk.y}-${chunk.z}`, furnitureGeometry, roadFurnitureMaterial, roadOrigin
         );
@@ -578,6 +583,7 @@ function createEnvironment(scene) {
       }
       if (payload?.roadFurnitureStats) {
         labState.bridgePiers = Math.max(0, labState.bridgePiers - payload.roadFurnitureStats.bridgePiers);
+        labState.bridgeGirderSegments = Math.max(0, labState.bridgeGirderSegments - payload.roadFurnitureStats.bridgeGirderSegments);
       }
       if (payload?.hydrologyStats) {
         labState.riverSegments = Math.max(0, labState.riverSegments - payload.hydrologyStats.riverSegments);
@@ -888,7 +894,7 @@ async function boot() {
         labState.waterChunks = waterMeshes.size;
         labState.shoreChunks = shoreMeshes.size;
         if (waterMeta) {
-          waterMeta.textContent = `Water: ${labState.riverCount} rivers · ${labState.lakeCount} lakes · ${waterMeshes.size} chunks · ${labState.bridgeCandidateCount} spans · ${labState.bridgePiers} piers`;
+          waterMeta.textContent = `Water: ${labState.riverCount} rivers · ${labState.lakeCount} lakes · ${waterMeshes.size} chunks · ${labState.bridgeCandidateCount} spans · ${labState.bridgeGirderSegments} girders · ${labState.bridgePiers} piers`;
         }
         const biomeTotals = { trees: 0, grass: 0, reeds: 0, rocks: 0 };
         const biomeDistribution = {};
