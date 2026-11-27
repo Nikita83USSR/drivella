@@ -130,13 +130,14 @@ try {
       yawTurns:s.vehicleYawTurns,speedKmh:s.vehicleSpeedKmh,forwardSpeed:s.vehicleForwardSpeed,
       lateralSpeed:s.vehicleLateralSpeed,slipDegrees:s.vehicleSlipAngleDegrees,
       rearSlipDegrees:s.vehicleRearSlipAngleDegrees,yawRate:s.vehicleYawRate,
-      steer:s.vehicleSteer,contacts:s.vehicleWheelContacts,roll:s.vehicleRoll
+      steer:s.vehicleSteer,contacts:s.vehicleWheelContacts,roll:s.vehicleRoll,parked:s.vehicleParked
     };
   });
   const beforeDrive=await sampleVehicle();
+  if(beforeDrive.speedKmh>1.0||beforeDrive.parked!==true)throw new Error("Vehicle must remain parked at its selected flat spawn point: "+JSON.stringify(beforeDrive));
   const handlingSamples={beforeDrive};
   await page.keyboard.down("w");
-  await page.waitForTimeout(1150);
+  await page.waitForTimeout(1850);
   handlingSamples.acceleration=await sampleVehicle();
   await page.keyboard.down("d");
   await page.waitForTimeout(1350);
@@ -156,9 +157,10 @@ try {
   await page.keyboard.down("w");
   await page.keyboard.down("d");
   await page.keyboard.down(" ");
-  await page.waitForTimeout(4200);
-  handlingSamples.spin=await sampleVehicle();
+  await page.waitForTimeout(650);
   await page.keyboard.up(" ");
+  await page.waitForTimeout(3600);
+  handlingSamples.spin=await sampleVehicle();
   await page.keyboard.up("d");
   await page.keyboard.up("w");
   await page.waitForTimeout(400);
