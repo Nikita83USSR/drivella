@@ -226,7 +226,7 @@ export class VehicleController{
  }
  buildMaterials(){
   const p={bodyPaint:["#b80518","#ffffff",72],bodyPlastic:["#111a27","#a9c5e6",92],bodyBlack:["#05080f","#242d3c",18],
-   glass:["#10151b","#cbd2da",34,"#05070a"],bodyMetal:["#8798aa","#f0f5ff",120],bodyTail:["#6e0717","#ff687e",64],headlampR:["#c4d9ea","#ffffff",140,"#020409"],
+   glass:["#020306","#343d48",96,"#000000"],bodyMetal:["#8798aa","#f0f5ff",120],bodyTail:["#6e0717","#ff687e",64],headlampR:["#c4d9ea","#ffffff",140,"#020409"],
    headlampL:["#c4d9ea","#ffffff",140,"#020409"],sideMirror_bodyPlastic:["#101b2c","#8ba6c2",110],frontDetail_detailRed:["#b80518","#ffffff",140],
    frontDetail_bodyPlastic:["#111a27","#536275",30],exhaustA_chrome:["#a9b5c3","#ffffff",150],exhaustB_chrome:["#a9b5c3","#ffffff",150],
    tyre:["#11151d","#394454",12],rims:["#a7b5c6","#ffffff",150],wheelExtra:["#62758c","#dceaff",95]};
@@ -241,7 +241,10 @@ export class VehicleController{
   }
   this.materials.set("frontLowerPaint",cellMaterial(this.scene,"countach-toon-material-front-lower-paint","#b80518"));
   const glassMaterial=this.materials.get("glass");
-  glassMaterial.alpha=.95;
+  glassMaterial.alpha=1.0;
+  glassMaterial.transparencyMode=StandardMaterial.MATERIAL_OPAQUE;
+  glassMaterial.specularPower=96;
+  glassMaterial.emissiveColor.copyFrom(Color3.Black());
   glassMaterial.backFaceCulling=false;
   glassMaterial.twoSidedLighting=true;
   this.materials.set("turnSignalL",material(this.scene,"countach-turn-signal-left","#4a2108","#ffb65b",72,"#120600"));
