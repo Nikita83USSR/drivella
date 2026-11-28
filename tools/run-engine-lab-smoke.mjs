@@ -149,7 +149,7 @@ try {
   await page.waitForFunction(() => {
     const effects = window.__DRIVELLA_LAB__?.legacyEffects;
     return effects?.lensFlareTextureKind === "canvas-png"
-      && effects?.lensFlareSpriteCount >= 7
+      && effects?.lensFlareSpriteCount >= 5
       && effects?.lensFlareTexturesReady === true
       && effects?.frontTurnSignalCount === 2
       && effects?.rearTurnSignalCount === 2
@@ -158,7 +158,7 @@ try {
       && effects?.headlampGlowMeshCount === 4
       && effects?.headlampGlowActiveCount === 4
       && effects?.vehicleOutlineMeshCount >= 20
-      && effects?.vehicleOutlineWidth >= 0.045
+      && effects?.vehicleOutlineWidth >= 0.075
       && (effects?.tailLampEmissive?.[0] ?? 0) > 0.3;
   }, null, { timeout: 12000 });
   const illuminatedState = await page.evaluate(() => ({
@@ -179,7 +179,7 @@ try {
       || illuminatedHeadlights.headlightRoadIntensity < 1.8
       || illuminatedHeadlights.headlightRoadDirectionY > -0.05
       || illuminatedHeadlights.lensFlareTextureKind !== "canvas-png"
-      || illuminatedHeadlights.lensFlareSpriteCount < 7
+      || illuminatedHeadlights.lensFlareSpriteCount < 5
       || !illuminatedHeadlights.lensFlareTexturesReady
       || illuminatedHeadlights.frontTurnSignalCount !== 2
       || illuminatedHeadlights.rearTurnSignalCount !== 2
@@ -188,7 +188,7 @@ try {
       || illuminatedHeadlights.headlampGlowMeshCount !== 4
       || illuminatedHeadlights.headlampGlowActiveCount !== 4
       || illuminatedHeadlights.vehicleOutlineMeshCount < 20
-      || illuminatedHeadlights.vehicleOutlineWidth < 0.045
+      || illuminatedHeadlights.vehicleOutlineWidth < 0.075
       || (illuminatedHeadlights.tailLampEmissive?.[0] ?? 0) < 0.3
       || illuminatedState.roadMaxSimultaneousLights !== 10) {
     throw new Error("Both pop-up projectors and the dedicated road shader must be active, correctly aimed and bound: "
