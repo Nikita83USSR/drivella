@@ -617,6 +617,8 @@ export class LegacyVisualEffects {
       headlights: Boolean(this.headlightsDeployed),
       headlightLighting: Boolean(this.headlightsEnabled),
       headlightDeploy: Number(this.vehicle?.headlightDeploy ?? 0),
+      headlightBeamIntensity: Number(this.headlampSpots[0]?.intensity ?? 0),
+      headlightSourceCount: this.headlampSpots.length,
       errors: this.errors.slice()
     };
   }
