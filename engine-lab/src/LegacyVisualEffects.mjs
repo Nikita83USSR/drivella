@@ -483,9 +483,9 @@ export class LegacyVisualEffects {
       this.scene.lensFlaresEnabled = true;
       this.sunFlareSystem = new LensFlareSystem("drivella-horizon-lens-flares", this.sunMesh, this.scene);
       this.lensFlareSystems.push(this.sunFlareSystem);
-      new LensFlare(0.44, 0, new Color3(1, 0.48, 0.28), this.flareTextureUrl, this.sunFlareSystem);
-      new LensFlare(0.18, 0.34, new Color3(0.30, 0.74, 1), this.flareTextureUrl, this.sunFlareSystem);
-      new LensFlare(0.12, 0.62, new Color3(1, 0.28, 0.52), this.flareTextureUrl, this.sunFlareSystem);
+      new LensFlare(0.12, 0, new Color3(1, 0.48, 0.28), this.flareTextureUrl, this.sunFlareSystem);
+      new LensFlare(0.052, 0.34, new Color3(0.30, 0.74, 1), this.flareTextureUrl, this.sunFlareSystem);
+      new LensFlare(0.032, 0.62, new Color3(1, 0.28, 0.52), this.flareTextureUrl, this.sunFlareSystem);
     } catch (error) {
       this.recordError("lens flares", error);
       this.sunFlareSystem = null;
@@ -559,8 +559,8 @@ export class LegacyVisualEffects {
           const lampFlare = new LensFlareSystem("drivella-headlamp-flares-" + side, spot, this.scene);
           lampFlare.isEnabled = this.lensFlaresEnabled;
           this.lensFlareSystems.push(lampFlare);
-          new LensFlare(0.24, 0, new Color3(0.74, 0.86, 1), this.flareTextureUrl, lampFlare);
-          new LensFlare(0.09, 0.42, new Color3(0.35, 0.72, 1), this.flareTextureUrl, lampFlare);
+          new LensFlare(0.075, 0, new Color3(0.74, 0.86, 1), this.flareTextureUrl, lampFlare);
+          new LensFlare(0.028, 0.42, new Color3(0.35, 0.72, 1), this.flareTextureUrl, lampFlare);
         }
       }
 
