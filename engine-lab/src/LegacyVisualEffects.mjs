@@ -84,7 +84,7 @@ uniform float drivellaRoadHeadlightIntensity;
   getCustomCode(shaderType, shaderLanguage) {
     if (shaderType !== "fragment" || shaderLanguage !== ShaderLanguage.GLSL) return null;
     return {
-      CUSTOM_FRAGMENT_BEFORE_FOG: `
+      CUSTOM_FRAGMENT_DEFINITIONS: `
 #ifdef DRIVELLA_ROAD_HEADLIGHTS
 float drivellaRoadHeadlightEnergy(vec3 surfaceNormal) {
   if (drivellaRoadHeadlightIntensity <= 0.001) return 0.0;
@@ -114,6 +114,10 @@ float drivellaRoadHeadlightEnergy(vec3 surfaceNormal) {
   }
   return energy * drivellaRoadHeadlightIntensity;
 }
+#endif
+`,
+      CUSTOM_FRAGMENT_BEFORE_FOG: `
+#ifdef DRIVELLA_ROAD_HEADLIGHTS
 color.rgb += vec3(0.58, 0.78, 1.0) * (drivellaRoadHeadlightEnergy(normalW) * 0.46);
 #endif
 `
