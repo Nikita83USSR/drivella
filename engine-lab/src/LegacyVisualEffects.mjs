@@ -133,13 +133,16 @@ function makeLensFlarePngUrl() {
   if (!ctx) throw new Error("Canvas 2D context unavailable for lens flare texture");
   ctx.clearRect(0, 0, 256, 256);
   const flare = ctx.createRadialGradient(128, 128, 0, 128, 128, 128);
-  flare.addColorStop(0.00, "rgba(255,255,255,1.0)");
-  flare.addColorStop(0.12, "rgba(255,244,224,0.94)");
-  flare.addColorStop(0.28, "rgba(255,179,139,0.52)");
-  flare.addColorStop(0.52, "rgba(255,95,113,0.18)");
-  flare.addColorStop(0.76, "rgba(120,42,112,0.035)");
-  flare.addColorStop(0.92, "rgba(0,0,0,0.004)");
-  flare.addColorStop(1.00, "rgba(0,0,0,0)");
+  // A tiny hot core with a very light, wide feather. The old profile kept
+  // near-full opacity across the centre and read as a solid pink disc.
+  flare.addColorStop(0.000, "rgba(255,255,255,0.96)");
+  flare.addColorStop(0.018, "rgba(255,249,239,0.56)");
+  flare.addColorStop(0.055, "rgba(255,220,207,0.22)");
+  flare.addColorStop(0.120, "rgba(255,166,177,0.075)");
+  flare.addColorStop(0.235, "rgba(255,116,157,0.024)");
+  flare.addColorStop(0.420, "rgba(130,92,190,0.008)");
+  flare.addColorStop(0.680, "rgba(34,116,255,0.002)");
+  flare.addColorStop(1.000, "rgba(0,0,0,0)");
   ctx.fillStyle = flare;
   ctx.fillRect(0, 0, 256, 256);
   return canvas.toDataURL("image/png");
@@ -241,6 +244,7 @@ export class LegacyVisualEffects {
     this.wheelShadows = new Map();
     this.headlampSpots = [];
     this.headlampSpotBySide = new Map();
+    this.headlampGlowMeshes = [];
     this.headlightRoadPower = 0;
     this.headlightRoadPlugin = null;
     this.headlightRoadBindObserver = null;
@@ -483,9 +487,9 @@ export class LegacyVisualEffects {
       this.scene.lensFlaresEnabled = true;
       this.sunFlareSystem = new LensFlareSystem("drivella-horizon-lens-flares", this.sunMesh, this.scene);
       this.lensFlareSystems.push(this.sunFlareSystem);
-      new LensFlare(0.12, 0, new Color3(1, 0.48, 0.28), this.flareTextureUrl, this.sunFlareSystem);
-      new LensFlare(0.052, 0.34, new Color3(0.30, 0.74, 1), this.flareTextureUrl, this.sunFlareSystem);
-      new LensFlare(0.032, 0.62, new Color3(1, 0.28, 0.52), this.flareTextureUrl, this.sunFlareSystem);
+      new LensFlare(0.105, 0, new Color3(1, 0.58, 0.38), this.flareTextureUrl, this.sunFlareSystem);
+      new LensFlare(0.045, 0.34, new Color3(0.35, 0.78, 1), this.flareTextureUrl, this.sunFlareSystem);
+      new LensFlare(0.026, 0.62, new Color3(1, 0.34, 0.58), this.flareTextureUrl, this.sunFlareSystem);
     } catch (error) {
       this.recordError("lens flares", error);
       this.sunFlareSystem = null;
@@ -524,6 +528,10 @@ export class LegacyVisualEffects {
       for (const mesh of vehicle.bodyRoot?.getChildMeshes?.() ?? []) {
         this.registerShadowReceiver(mesh);
         this.applyVehicleOutline(mesh);
+        if (mesh.metadata?.headlightOptic
+            && (mesh.metadata.headlightPart === "lens" || mesh.metadata.headlightPart === "projector-core")) {
+          this.headlampGlowMeshes.push(mesh);
+        }
       }
       for (const pivot of vehicle.wheelPivots?.values?.() ?? []) {
         for (const mesh of pivot.getChildMeshes?.() ?? []) {
@@ -559,8 +567,10 @@ export class LegacyVisualEffects {
           const lampFlare = new LensFlareSystem("drivella-headlamp-flares-" + side, spot, this.scene);
           lampFlare.isEnabled = this.lensFlaresEnabled;
           this.lensFlareSystems.push(lampFlare);
-          new LensFlare(0.075, 0, new Color3(0.74, 0.86, 1), this.flareTextureUrl, lampFlare);
-          new LensFlare(0.028, 0.42, new Color3(0.35, 0.72, 1), this.flareTextureUrl, lampFlare);
+          // Headlamp flares are small optical ghosts; the physical lens glow supplies
+          // the visible halo at the projector itself.
+          new LensFlare(0.032, 0, new Color3(0.74, 0.86, 1), this.flareTextureUrl, lampFlare);
+          new LensFlare(0.012, 0.42, new Color3(0.35, 0.72, 1), this.flareTextureUrl, lampFlare);
         }
       }
 
@@ -614,8 +624,8 @@ export class LegacyVisualEffects {
   applyVehicleOutline(mesh) {
     if (!mesh || mesh.isDisposed?.()) return;
     mesh.renderOutline = this.outlinesEnabled;
-    mesh.outlineColor = new Color3(0.008, 0.014, 0.03);
-    mesh.outlineWidth = 0.020;
+    mesh.outlineColor = new Color3(0.010, 0.020, 0.050);
+    mesh.outlineWidth = 0.050;
     this.outlineMeshes.add(mesh);
   }
 
@@ -663,8 +673,23 @@ export class LegacyVisualEffects {
     // synthwave scene, while SpotLights provide visible local spill on nearby meshes.
     this.headlightRoadPower = beamPower * 2.35;
     for (const light of this.headlampSpots) light.intensity = 28 * beamPower;
-    const emissive = new Color3(0.01 + beamPower * 1.05, 0.025 + beamPower * 1.08, 0.05 + beamPower * 1.16);
+    const emissive = new Color3(0.008 + beamPower * 1.05, 0.014 + beamPower * 1.18, 0.026 + beamPower * 1.34);
     for (const material of this.vehicle?.headlampLensMaterials ?? []) material.emissiveColor.copyFrom(emissive);
+    // Feed the projector cores directly into the scene GlowLayer. This keeps
+    // the halo anchored to the pop-up lamps instead of over the cabin.
+    for (const mesh of this.headlampGlowMeshes) {
+      if (!mesh || mesh.isDisposed?.()) continue;
+      if (beamPower > 0.01) {
+        mesh.metadata = {
+          ...(mesh.metadata ?? {}),
+          neonGlowColor: [1.65 * beamPower, 2.05 * beamPower, 2.65 * beamPower]
+        };
+      } else if (mesh.metadata?.neonGlowColor) {
+        const metadata = { ...mesh.metadata };
+        delete metadata.neonGlowColor;
+        mesh.metadata = metadata;
+      }
+    }
     return beamPower > 0.01;
   }
 
@@ -860,6 +885,11 @@ export class LegacyVisualEffects {
       lensFlareSpriteCount: this.lensFlareSystems.reduce((sum, system) => sum + system.lensFlares.length, 0),
       lensFlareTexturesReady: this.lensFlareSystems.flatMap((system) => system.lensFlares)
         .every((flare) => Boolean(flare.texture?.isReady?.())),
+      headlampGlowMeshCount: this.headlampGlowMeshes.length,
+      headlampGlowActiveCount: this.headlampGlowMeshes.filter((mesh) => Boolean(mesh.metadata?.neonGlowColor)).length,
+      vehicleOutlineMeshCount: this.outlineMeshes.size,
+      vehicleOutlineWidth: this.outlineMeshes.values().next().value?.outlineWidth ?? 0,
+      glassMeshCount: this.vehicle?.bodyRoot?.getChildMeshes?.().filter((mesh) => mesh.name === "countach-glass").length ?? 0,
       frontTurnSignalCount: this.vehicle?.frontSignalMeshes?.size ?? 0,
       rearTurnSignalCount: this.vehicle?.rearSignalMeshes?.size ?? 0,
       fogLampCount: this.vehicle?.fogLightMeshes?.length ?? 0,
