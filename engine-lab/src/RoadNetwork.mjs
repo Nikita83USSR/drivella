@@ -260,54 +260,38 @@ export function getRoadStats(samples, chunkSize = ROAD_CHUNK_SIZE) {
 
 
 
-const ROAD_CURB_HEIGHT = 0.145;
-const ROAD_CURB_INNER_OFFSET = ROAD_HALF_WIDTH - 0.05;
-const ROAD_CURB_OUTER_OFFSET = ROAD_HALF_WIDTH + 0.29;
-const ROAD_CURB_COLORS = Object.freeze({
-  top: Object.freeze([0.13, 0.68, 0.98]),
-  alternate: Object.freeze([0.075, 0.42, 0.82]),
-  side: Object.freeze([0.035, 0.24, 0.49])
+const ROAD_STRIPE_INNER_OFFSET = ROAD_HALF_WIDTH + ROAD_SHOULDER_WIDTH - 0.34;
+const ROAD_STRIPE_OUTER_OFFSET = ROAD_HALF_WIDTH + ROAD_SHOULDER_WIDTH - 0.16;
+const ROAD_STRIPE_COLORS = Object.freeze({
+  cyan: Object.freeze([0.12, 0.72, 0.98]),
+  magenta: Object.freeze([0.92, 0.13, 0.56])
 });
 
-/**
- * Raised cyan-blue edge curbs. These are visual dressing only: road collision
- * remains on the original asphalt mesh and therefore cannot catch the tyres.
- */
+/** Two thin neon guidance stripes sit flush with the outside shoulder edge. */
 export function buildRoadCurbChunkGeometry(samples, chunkX, chunkY, chunkZ, chunkSize = ROAD_CHUNK_SIZE) {
-  if (!Array.isArray(samples) || samples.length < 8) {
-    throw new TypeError("Road curb generation requires a closed sample path.");
-  }
-  if (![chunkX, chunkY, chunkZ].every(Number.isInteger)) {
-    throw new TypeError("Road curb chunk coordinates must be integers.");
-  }
-  if (!Number.isFinite(chunkSize) || chunkSize <= 0) {
-    throw new RangeError("Road curb chunk size must be a positive finite number.");
-  }
+  if (!Array.isArray(samples) || samples.length < 8) throw new TypeError("Road stripe generation requires a closed sample path.");
+  if (![chunkX, chunkY, chunkZ].every(Number.isInteger)) throw new TypeError("Road stripe chunk coordinates must be integers.");
+  if (!Number.isFinite(chunkSize) || chunkSize <= 0) throw new RangeError("Road stripe chunk size must be a positive finite number.");
 
-  const geometry = { positions: [], colors: [], indices: [], segmentCount: 0 };
+  const geometry = {
+    positions: [], colors: [], indices: [], segmentCount: 0,
+    stripeWidth: ROAD_STRIPE_OUTER_OFFSET - ROAD_STRIPE_INNER_OFFSET,
+    height: 0.025
+  };
   const origin = { x: chunkX * chunkSize, y: chunkY * chunkSize, z: chunkZ * chunkSize };
+
   for (let index = 0; index < samples.length; index += 1) {
     const nextIndex = (index + 1) % samples.length;
-    const a = samples[index];
-    const b = samples[nextIndex];
-    const midpointX = (a.x + b.x) * 0.5;
-    const midpointZ = (a.z + b.z) * 0.5;
+    const a = samples[index], b = samples[nextIndex];
+    const midpointX = (a.x + b.x) * 0.5, midpointZ = (a.z + b.z) * 0.5;
     if (chunkIndex(midpointX, chunkSize) !== chunkX || chunkIndex(midpointZ, chunkSize) !== chunkZ) continue;
 
     for (const side of [1, -1]) {
-      const innerBottomA = offsetPoint(a, side * ROAD_CURB_INNER_OFFSET, ROAD_SURFACE_OFFSET - 0.012);
-      const innerBottomB = offsetPoint(b, side * ROAD_CURB_INNER_OFFSET, ROAD_SURFACE_OFFSET - 0.012);
-      const outerBottomA = offsetPoint(a, side * ROAD_CURB_OUTER_OFFSET, ROAD_SURFACE_OFFSET - 0.012);
-      const outerBottomB = offsetPoint(b, side * ROAD_CURB_OUTER_OFFSET, ROAD_SURFACE_OFFSET - 0.012);
-      const innerTopA = offsetPoint(a, side * ROAD_CURB_INNER_OFFSET, ROAD_SURFACE_OFFSET + ROAD_CURB_HEIGHT);
-      const innerTopB = offsetPoint(b, side * ROAD_CURB_INNER_OFFSET, ROAD_SURFACE_OFFSET + ROAD_CURB_HEIGHT);
-      const outerTopA = offsetPoint(a, side * ROAD_CURB_OUTER_OFFSET, ROAD_SURFACE_OFFSET + ROAD_CURB_HEIGHT);
-      const outerTopB = offsetPoint(b, side * ROAD_CURB_OUTER_OFFSET, ROAD_SURFACE_OFFSET + ROAD_CURB_HEIGHT);
-      const topColor = Math.floor(index / 5) % 2 === 0 ? ROAD_CURB_COLORS.top : ROAD_CURB_COLORS.alternate;
-
-      addQuad(geometry, origin, innerTopA, outerTopA, outerTopB, innerTopB, topColor);
-      addQuad(geometry, origin, innerBottomA, innerTopA, innerTopB, innerBottomB, ROAD_CURB_COLORS.side);
-      addQuad(geometry, origin, outerBottomA, outerBottomB, outerTopB, outerTopA, ROAD_CURB_COLORS.side);
+      const innerA = offsetPoint(a, side * ROAD_STRIPE_INNER_OFFSET, ROAD_SHOULDER_OFFSET + geometry.height);
+      const innerB = offsetPoint(b, side * ROAD_STRIPE_INNER_OFFSET, ROAD_SHOULDER_OFFSET + geometry.height);
+      const outerA = offsetPoint(a, side * ROAD_STRIPE_OUTER_OFFSET, ROAD_SHOULDER_OFFSET + geometry.height);
+      const outerB = offsetPoint(b, side * ROAD_STRIPE_OUTER_OFFSET, ROAD_SHOULDER_OFFSET + geometry.height);
+      addQuad(geometry, origin, innerA, outerA, outerB, innerB, side === 1 ? ROAD_STRIPE_COLORS.cyan : ROAD_STRIPE_COLORS.magenta);
       geometry.segmentCount += 1;
     }
   }
@@ -603,7 +587,8 @@ export function buildRoadFurnitureChunkGeometry(
         profileA.delta <= -ROAD_GUARDRAIL_DROP_THRESHOLD
         && profileB.delta <= -ROAD_GUARDRAIL_DROP_THRESHOLD
       ) {
-        const railOffset = ROAD_EDGE_OUTER_OFFSET - 0.18;
+        // Keep the metal barrier clearly outside the coloured shoulder strips.
+        const railOffset = ROAD_EDGE_OUTER_OFFSET + 1.65;
         const groundA = offsetPoint(a, side * railOffset, ROAD_SHOULDER_OFFSET);
         const groundB = offsetPoint(b, side * railOffset, ROAD_SHOULDER_OFFSET);
         const topA = { ...groundA, y: groundA.y + 0.98 };
