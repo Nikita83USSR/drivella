@@ -913,6 +913,9 @@ void main(void) {
 
   setHeadlightsDeployed(enabled) {
     this.headlightsDeployed = Boolean(enabled);
+    // Opening the pop-up modules also powers the projectors. Their road beam
+    // still fades in with the physical deployment animation in syncHeadlightOutput.
+    this.headlightsEnabled = this.headlightsDeployed;
     this.vehicle?.setHeadlightsDeployed?.(this.headlightsDeployed);
     this.syncHeadlightOutput();
     return this.headlightsDeployed;
@@ -979,8 +982,15 @@ void main(void) {
         this.outlinesEnabled = value;
         for (const mesh of this.outlineMeshes) {
           if (!mesh.isDisposed?.()) {
-            mesh.renderOutline = value;
-            if (mesh.edgesRenderer) mesh.edgesRenderer.isEnabled = value;
+            // Keep a single outline implementation. Babylon's OutlineRenderer
+            // can tint the silhouette from the red body material; the explicit
+            // edge pass below is always hard black instead.
+            mesh.renderOutline = false;
+            mesh.outlineColor = Color3.Black();
+            if (mesh.edgesRenderer) {
+              mesh.edgesRenderer.edgesColor = new Color4(0, 0, 0, 1);
+              mesh.edgesRenderer.isEnabled = value;
+            }
           }
         }
         break;
@@ -1124,6 +1134,11 @@ void main(void) {
             [...this.outlineMeshes].find((mesh) => mesh.edgesRenderer).edgesRenderer.edgesColor.b
           ]
         : null,
+      vehicleOutlineRenderPassMeshCount: [...this.outlineMeshes].filter((mesh) => Boolean(mesh.renderOutline)).length,
+      vehicleOutlineNonBlackEdgeMeshCount: [...this.outlineMeshes].filter((mesh) => {
+        const color = mesh.edgesRenderer?.edgesColor;
+        return color && (color.r > 0.01 || color.g > 0.01 || color.b > 0.01 || color.a < 0.99);
+      }).length,
       glassMeshCount: this.vehicle?.bodyRoot?.getChildMeshes?.().filter((mesh) => mesh.name === "countach-glass").length ?? 0,
       frontTurnSignalCount: this.vehicle?.frontSignalMeshes?.size ?? 0,
       rearTurnSignalCount: this.vehicle?.rearSignalMeshes?.size ?? 0,
