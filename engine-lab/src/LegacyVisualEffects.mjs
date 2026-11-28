@@ -251,6 +251,9 @@ export class LegacyVisualEffects {
     this.headlampOpticsSourceCount = 0;
     this.headlightRoadProbeEnergy = 0;
     this.headlightRoadProbeCounter = 0;
+    this.headlightRoadProbeMaxForwardDot = -1;
+    this.headlightRoadProbeNearestDistance = null;
+    this.headlightRoadProbeCandidateCount = 0;
     this.headlightRoadPower = 0;
     this.headlightRoadPlugin = null;
     this.headlightRoadBindObserver = null;
@@ -758,9 +761,12 @@ void main(void) {
   measureHeadlightRoadProbeEnergy() {
     if (!this.headlightsEnabled || this.headlightRoadPower <= 0.01 || !this.roadSamples?.length) return 0;
 
-    // Mirror the road material shader exactly: evaluate the real spline samples
-    // in front of each projector instead of probing arbitrary points on bends.
+    // Mirror the road material shader exactly and retain enough diagnostics to
+    // distinguish a direction mismatch from a missing road sample or bad range.
     let maximum = 0;
+    let maxForwardDot = -1;
+    let nearestDistance = Infinity;
+    let candidateCount = 0;
     for (const spot of this.headlampSpots) {
       if (spot.intensity <= 0.01) continue;
       const direction = spot.direction.clone().normalize();
@@ -769,10 +775,14 @@ void main(void) {
         const dy = sample.y - spot.position.y;
         const dz = sample.z - spot.position.z;
         const distanceSquared = dx * dx + dy * dy + dz * dz;
-        if (distanceSquared < 0.0001 || distanceSquared >= 10000) continue;
+        if (distanceSquared < 0.0001) continue;
         const distance = Math.sqrt(distanceSquared);
+        nearestDistance = Math.min(nearestDistance, distance);
+        if (distanceSquared >= 10000) continue;
+        candidateCount += 1;
         const inverseDistance = 1 / distance;
         const dotValue = (direction.x * dx + direction.y * dy + direction.z * dz) * inverseDistance;
+        maxForwardDot = Math.max(maxForwardDot, dotValue);
         const coneT = clamp((dotValue - 0.24) / (0.88 - 0.24), 0, 1);
         const cone = coneT * coneT * (3 - 2 * coneT);
         const range = 1 - clamp((distance - 72) / (140 - 72), 0, 1);
@@ -782,6 +792,9 @@ void main(void) {
         if (energy > maximum) maximum = energy;
       }
     }
+    this.headlightRoadProbeMaxForwardDot = Number(maxForwardDot.toFixed(4));
+    this.headlightRoadProbeNearestDistance = Number(nearestDistance.toFixed(3));
+    this.headlightRoadProbeCandidateCount = candidateCount;
     return Number(maximum.toFixed(4));
   }
 
@@ -1021,6 +1034,9 @@ void main(void) {
       headlampOpticsSourceCount: this.headlampOpticsSourceCount,
       headlampOpticsEnabled: Boolean(this.lensFlaresEnabled && this.headlightsEnabled),
       headlightRoadProbeEnergy: this.headlightRoadProbeEnergy,
+      headlightRoadProbeMaxForwardDot: this.headlightRoadProbeMaxForwardDot,
+      headlightRoadProbeNearestDistance: this.headlightRoadProbeNearestDistance,
+      headlightRoadProbeCandidateCount: this.headlightRoadProbeCandidateCount,
       glassDiffuseColor: this.vehicle?.materials?.get?.("glass")?.diffuseColor
         ? [this.vehicle.materials.get("glass").diffuseColor.r, this.vehicle.materials.get("glass").diffuseColor.g, this.vehicle.materials.get("glass").diffuseColor.b]
         : null,
