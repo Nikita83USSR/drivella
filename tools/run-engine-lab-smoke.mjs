@@ -170,10 +170,10 @@ try {
   }));
   const illuminatedHeadlights = illuminatedState.effects;
   const invalidHeadlightBeams = (illuminatedHeadlights?.headlightBeams ?? []).filter((beam) =>
-    beam.intensity < 5 || beam.positionDistance > 4.0 || beam.forwardAlignment < 0.82 || beam.directionY > 0.08
+    beam.intensity < 10 || beam.positionDistance > 4.0 || beam.forwardAlignment < 0.82 || beam.directionY > -0.05
   );
   if (illuminatedHeadlights?.headlightSourceCount !== 2 || illuminatedHeadlights?.headlightOpticPartCount !== 12
-      || illuminatedHeadlights.headlightBeamIntensity < 5 || illuminatedHeadlights.headlightBeams?.length !== 2
+      || illuminatedHeadlights.headlightBeamIntensity < 10 || illuminatedHeadlights.headlightBeams?.length !== 2
       || invalidHeadlightBeams.length || illuminatedState.roadMaxSimultaneousLights < 12) {
     throw new Error("Both pop-up projector beams must be active, located at the lamps and aimed down the road; the road material must include them: "
       + JSON.stringify({ illuminatedHeadlights, invalidHeadlightBeams, roadMaxSimultaneousLights: illuminatedState.roadMaxSimultaneousLights }));
@@ -397,14 +397,21 @@ try {
   if(!Number.isFinite(state.vehicleRoadDistance)||state.vehicleRoadDistance>7)throw new Error("Handling smoke left the asphalt corridor: "+JSON.stringify(state));
   const travelled=Math.hypot(state.vehicleX-beforeDrive.x,state.vehicleZ-beforeDrive.z);
   const yawDelta=Math.abs(state.vehicleUnwrappedYaw-beforeDrive.unwrappedYaw);
+  const yawSamples=[beforeDrive,...Object.values(handlingSamples),finalVehicle]
+    .map(sample=>sample?.unwrappedYaw).filter(Number.isFinite);
+  const yawExcursion=yawSamples.length?Math.max(...yawSamples)-Math.min(...yawSamples):0;
+  const maxSteerInput=Math.max(0,...Object.values(handlingSamples).map(sample=>Math.abs(sample?.steer??0)));
   const accelerationSpeedKmh=Math.max(
     handlingSamples.accelerationT180?.speedKmh??0,
     handlingSamples.accelerationT500?.speedKmh??0,
     handlingSamples.accelerationT1000?.speedKmh??0,
     handlingSamples.acceleration?.speedKmh??0
   );
-  // Headless SwiftShader frame pacing is slower than a real GPU; assert meaningful movement without requiring a fixed desktop-GPU displacement.
-  if(travelled<.25||accelerationSpeedKmh<1.5||yawDelta<.003)throw new Error("WASD failed to move and steer the Countach: "+JSON.stringify({beforeDrive,state,travelled,yawDelta,accelerationSpeedKmh,handlingSamples}));
+  // Countersteering can return the final heading close to its starting value.
+  // Check the full heading excursion and measured steering input instead of
+  // comparing only the net angle after opposite steering phases.
+  if(travelled<.25||accelerationSpeedKmh<1.5||yawExcursion<.001||maxSteerInput<.25)
+    throw new Error("WASD failed to move and steer the Countach: "+JSON.stringify({beforeDrive,state,travelled,yawDelta,yawExcursion,maxSteerInput,accelerationSpeedKmh,handlingSamples}));
   if(!Number.isFinite(state.vehicleWheelbase)||Math.abs(state.vehicleWheelbase-3.282433711)>.002)throw new Error("Countach wheelbase mismatch: "+JSON.stringify(state));
   if(!Number.isFinite(state.vehicleTrack)||Math.abs(state.vehicleTrack-1.854847372)>.002)throw new Error("Countach track mismatch: "+JSON.stringify(state));
   if(!Number.isFinite(state.vehicleWheelRadius)||state.vehicleWheelRadius<.22||state.vehicleWheelRadius>.55)throw new Error("Tyre radius was not decoded from Countach geometry: "+JSON.stringify(state));
