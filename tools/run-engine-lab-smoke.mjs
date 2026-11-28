@@ -156,7 +156,7 @@ try {
     return effects?.headlights === true && effects?.headlightDeploy >= 0.9;
   }, null, { timeout: 15000 });
   const deployedHeadlights = await page.evaluate(() => window.__DRIVELLA_LAB__?.legacyEffects ?? null);
-  if (!deployedHeadlights || deployedHeadlights.headlightSourceCount !== 2 || deployedHeadlights.headlightLighting !== false) {
+  if (!deployedHeadlights || deployedHeadlights.headlightSourceCount !== 2 || deployedHeadlights.headlightOpticPartCount !== 12 || deployedHeadlights.headlightLighting !== false) {
     throw new Error("Pop-up headlight deployment state is incorrect: " + JSON.stringify(deployedHeadlights));
   }
   await page.keyboard.press("h");
@@ -165,7 +165,7 @@ try {
     return effects?.headlightLighting === true && effects?.headlightBeamIntensity > 5;
   }, null, { timeout: 8000 });
   const illuminatedHeadlights = await page.evaluate(() => window.__DRIVELLA_LAB__?.legacyEffects ?? null);
-  if (illuminatedHeadlights?.headlightSourceCount !== 2 || illuminatedHeadlights.headlightBeamIntensity < 5) {
+  if (illuminatedHeadlights?.headlightSourceCount !== 2 || illuminatedHeadlights?.headlightOpticPartCount !== 12 || illuminatedHeadlights.headlightBeamIntensity < 5) {
     throw new Error("Both pop-up projector beams did not become active: " + JSON.stringify(illuminatedHeadlights));
   }
   await mkdir("artifacts", { recursive: true });

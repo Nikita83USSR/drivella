@@ -392,8 +392,9 @@ export class LegacyVisualEffects {
           2.2,
           this.scene
         );
-        spot.parent = vehicle.headlightPivots?.get?.(side) ?? vehicle.chassis;
-        spot.position.set(side * 0.67, -0.032, 0.255);
+        spot.parent = vehicle.headlightOpticRoots?.get?.(side) ?? vehicle.headlightPivots?.get?.(side) ?? vehicle.chassis;
+        spot.position.copyFrom(vehicle.headlightProjectorAims?.get?.(side) ?? new Vector3(side * 0.67, 0.11, 0.27));
+        spot.direction.set(0, 0, 1);
         spot.diffuse = new Color3(0.72, 0.86, 1);
         spot.specular = new Color3(0.72, 0.86, 1);
         spot.range = 86;
@@ -619,6 +620,7 @@ export class LegacyVisualEffects {
       headlightDeploy: Number(this.vehicle?.headlightDeploy ?? 0),
       headlightBeamIntensity: Number(this.headlampSpots[0]?.intensity ?? 0),
       headlightSourceCount: this.headlampSpots.length,
+      headlightOpticPartCount: [...(this.vehicle?.headlightOpticRoots?.values?.() ?? [])].reduce((count, root) => count + (root.getChildMeshes?.().length ?? 0), 0),
       errors: this.errors.slice()
     };
   }

@@ -9,6 +9,51 @@ const BODY_MOTION=Object.freeze({STATIC:0,DYNAMIC:2});
 const P=Object.freeze({mass:1250,cg:.50,spawn:.05,colliderH:.42,rest:.32,rideSag:.06,min:.12,max:.55,maxComp:.20,spring:38000,damper:4200,bump:98000,antiRoll:26000,maxLateralAccel:7.0,rollStiffness:16000,rollDamping:4000,maxRollTorque:9000,maxForce:16000,maxSteer:.49,engine:8600,brake:19500,handbrake:10500,parkingBrake:18000,frontGrip:1.22,rearGrip:1.04,rearHandbrakeGrip:.32,frontCornering:5600,rearCornering:3950,drag:.46,rolling:.012});
 const clamp=(v,a,b)=>Math.max(a,Math.min(b,v));
 export function calculatePopUpHeadlightAngle(deploy){const d=clamp(Number(deploy)||0,0,1),ease=d*d*(3-2*d);return Math.PI*.25*(1-ease);}
+const POP_LAMP_FACE_H=.22;
+const POP_LAMP_DIAG=Math.SQRT1_2;
+const POP_HINGE_Y=.79425; // Exact hood-surface datum from the original Countach body profile.
+function lampXBounds(side){return side<0?[-.895,-.445]:[.445,.895];}
+function lampFrontPoint(x,t,offset=0){
+ const yTop=.6961538461538462-.037;
+ const yBase=yTop-POP_LAMP_FACE_H*POP_LAMP_DIAG;
+ const zBase=2.60-POP_LAMP_FACE_H*POP_LAMP_DIAG;
+ return [x,yBase+t*POP_LAMP_DIAG-offset*POP_LAMP_DIAG,zBase+t*POP_LAMP_DIAG+offset*POP_LAMP_DIAG];
+}
+function lampRearPoint(x){return [x,POP_HINGE_Y-.003-.037,2.30];}
+function pushLampQuad(out,a,b,c,d){out.push(...a,...b,...c,...a,...c,...d);}
+function buildCountachPopUpOptics(side){
+ const [x0,x1]=lampXBounds(side),housing=[],front=[],bezel=[],lens=[],rings=[],core=[];
+ const A0=lampRearPoint(x0),A1=lampRearPoint(x1),B0=lampFrontPoint(x0,0),B1=lampFrontPoint(x1,0),C0=lampFrontPoint(x0,POP_LAMP_FACE_H),C1=lampFrontPoint(x1,POP_LAMP_FACE_H);
+ housing.push(...A0,...B0,...C0,...A1,...C1,...B1);
+ pushLampQuad(housing,A0,A1,B1,B0);
+ const inset=.008,t0=.008,t1=POP_LAMP_FACE_H-.008;
+ pushLampQuad(front,lampFrontPoint(x0+inset,t0,.002),lampFrontPoint(x1-inset,t0,.002),lampFrontPoint(x1-inset,t1,.002),lampFrontPoint(x0+inset,t1,.002));
+ const pad=.014,ix0=x0+.040,ix1=x1-.040,bt0=.014,bt1=POP_LAMP_FACE_H-.014,it0=.040,it1=POP_LAMP_FACE_H-.040,p=(x,t)=>lampFrontPoint(x,t,.006);
+ pushLampQuad(bezel,p(x0+pad,bt0),p(x1-pad,bt0),p(ix1,it0),p(ix0,it0));
+ pushLampQuad(bezel,p(x1-pad,bt0),p(x1-pad,bt1),p(ix1,it1),p(ix1,it0));
+ pushLampQuad(bezel,p(x1-pad,bt1),p(x0+pad,bt1),p(ix0,it1),p(ix1,it1));
+ pushLampQuad(bezel,p(x0+pad,bt1),p(x0+pad,bt0),p(ix0,it0),p(ix0,it1));
+ pushLampQuad(lens,lampFrontPoint(x0+.040,.040,.008),lampFrontPoint(x1-.040,.040,.008),lampFrontPoint(x1-.040,POP_LAMP_FACE_H-.040,.008),lampFrontPoint(x0+.040,POP_LAMP_FACE_H-.040,.008));
+ const segments=24,cy=POP_LAMP_FACE_H*.5,centers=[x0+(x1-x0)*.34,x0+(x1-x0)*.66],ro=.037,ri=.028;
+ for(const cx of centers)for(let i=0;i<segments;i++){
+  const a=i*Math.PI*2/segments,b=(i+1)*Math.PI*2/segments,point=(r,t)=>lampFrontPoint(cx+Math.cos(t)*r,cy+Math.sin(t)*r,.011);
+  const A=point(ro,a),B=point(ro,b),C=point(ri,b),D=point(ri,a);rings.push(...A,...B,...C,...A,...C,...D);
+ }
+ const r=.028;
+ for(const cx of centers){
+  const center=lampFrontPoint(cx,cy,.013);
+  for(let i=0;i<segments;i++){
+   const a=i*Math.PI*2/segments,b=(i+1)*Math.PI*2/segments,point=t=>lampFrontPoint(cx+Math.cos(t)*r,cy+Math.sin(t)*r,.013);
+   core.push(...center,...point(a),...point(b));
+  }
+ }
+ return {
+  housing:new Float32Array(housing),front:new Float32Array(front),bezel:new Float32Array(bezel),
+  lens:new Float32Array(lens),rings:new Float32Array(rings),core:new Float32Array(core),
+  projectorAim:new Vector3(side*.67, lampFrontPoint(side*.67,cy,.013)[1], lampFrontPoint(side*.67,cy,.013)[2])
+ };
+}
+
 export function calculateStaticSuspensionCompression(wheelCenterY,wheelRadius,rideSag=.06){
  return wheelRadius-wheelCenterY+rideSag;
 }
@@ -129,7 +174,7 @@ export class VehicleController{
   if(!scene?.getPhysicsEngine?.())throw new Error("Vehicle requires active Havok Physics V2.");
   if(!Array.isArray(roadSamples)||roadSamples.length<2||!startSample)throw new TypeError("Vehicle requires sampled road and spawn point.");
   this.scene=scene;this.model=model;this.startSample=startSample;this.metrics=model.metrics;this.mass=P.mass;this.keys=new Set();this.steer=0;this.steerInput=0;this.handbrake=false;this.brake=false;this.throttle=false;this.parked=true;this.driveRequested=0;this.brakeRequested=0;this.lastDt=1/60;
-  this.wheelContacts=new Map();this.wheelSpin=new Map(WHEELS.map(w=>[w.key,0]));this.wheelPivots=new Map();this.headlightPivots=new Map();this.headlightCaps=new Map();this.headlampLensMaterials=[];this.headlightDeploy=0;this.headlightDeployTarget=0;this.materials=new Map();this.ray=new PhysicsRaycastResult();this.appliedDriveForceWorld=Vector3.Zero();
+  this.wheelContacts=new Map();this.wheelSpin=new Map(WHEELS.map(w=>[w.key,0]));this.wheelPivots=new Map();this.headlightPivots=new Map();this.headlightCaps=new Map();this.headlightOpticRoots=new Map();this.headlightProjectorAims=new Map();this.headlampLensMaterials=[];this.headlightDeploy=0;this.headlightDeployTarget=0;this.materials=new Map();this.ray=new PhysicsRaycastResult();this.appliedDriveForceWorld=Vector3.Zero();
   const yaw=Math.atan2(startSample.tangentX,startSample.tangentZ),width=clamp(model.bodySize.x*.88,1.72,2.05),length=clamp(model.bodySize.z*.80,3.65,4.05);
   this.unwrappedYaw=yaw;this.initialYaw=yaw;this.lastYaw=yaw;
   this.colliderDimensions={width,height:P.colliderH,length};
@@ -176,15 +221,34 @@ export class VehicleController{
    const cap=triangleMesh(this.scene,"countach-popup-hood-cap-"+key,local,pivot,this.materials.get("bodyPaint"));
    cap.metadata={...(cap.metadata??{}),headlightCap:true};
    this.headlightCaps.set(side,cap);
-   const pod=MeshBuilder.CreateBox("countach-popup-lamp-pod-"+key,{width:.46,height:.105,depth:.17},this.scene);
-   pod.parent=pivot;pod.position.set(side*.67,-.078,.12);pod.material=this.materials.get("bodyBlack");pod.isPickable=false;
-   const centers=[side*.742,side*.598],lensMaterial=this.materials.get(side<0?"headlampL":"headlampR");
-   for(let index=0;index<centers.length;index++){
-    const ring=MeshBuilder.CreateCylinder("countach-popup-projector-ring-"+key+"-"+index,{diameter:.102,height:.026,tessellation:20},this.scene);
-    ring.parent=pivot;ring.rotation.x=Math.PI*.5;ring.position.set(centers[index],-.032,.205);ring.material=this.materials.get("bodyMetal");ring.isPickable=false;
-    const lens=MeshBuilder.CreateCylinder("countach-popup-projector-lens-"+key+"-"+index,{diameter:.067,height:.018,tessellation:20},this.scene);
-    lens.parent=pivot;lens.rotation.x=Math.PI*.5;lens.position.set(centers[index],-.032,.228);lens.material=lensMaterial;lens.isPickable=false;
+
+   // Match the original DRIVELLA optical mount exactly: offset, X/Z fit scale,
+   // -45° counter-rotation and the hood-surface datum before the shared hinge.
+   const mount=new TransformNode("countach-popup-optic-mount-"+key,this.scene);
+   mount.parent=pivot;mount.position.set(side*.23230,-.026,0);
+   const scaleNode=new TransformNode("countach-popup-optic-scale-"+key,this.scene);
+   scaleNode.parent=mount;scaleNode.scaling.set(.9215686274509803,1,.5687);
+   const rotationNode=new TransformNode("countach-popup-optic-counter-rotation-"+key,this.scene);
+   rotationNode.parent=scaleNode;rotationNode.rotation.x=-Math.PI*.25;
+   const opticsRoot=new TransformNode("countach-popup-optics-"+key,this.scene);
+   opticsRoot.parent=rotationNode;opticsRoot.position.set(0,-POP_HINGE_Y,-2.30);
+   this.headlightOpticRoots.set(side,opticsRoot);
+
+   const geometry=buildCountachPopUpOptics(side),glass=this.materials.get(side<0?"headlampL":"headlampR");
+   const parts=[
+    ["housing",geometry.housing,this.materials.get("bodyBlack")],
+    ["front",geometry.front,this.materials.get("bodyBlack")],
+    ["bezel",geometry.bezel,this.materials.get("bodyMetal")],
+    ["lens",geometry.lens,glass],
+    ["projector-rings",geometry.rings,this.materials.get("bodyMetal")],
+    ["projector-core",geometry.core,glass]
+   ];
+   for(const [partName,positions,material] of parts){
+    const mesh=triangleMesh(this.scene,"countach-popup-"+partName+"-"+key,positions,opticsRoot,material);
+    mesh.metadata={...(mesh.metadata??{}),headlightOptic:true,headlightSide:key,headlightPart:partName};
    }
+   this.headlightProjectorAims.set(side,geometry.projectorAim);
+   if(!this.headlampLensMaterials.includes(glass))this.headlampLensMaterials.push(glass);
   }
  }
  setHeadlightsDeployed(enabled){
