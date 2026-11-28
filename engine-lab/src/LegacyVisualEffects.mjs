@@ -115,19 +115,19 @@ fn drivellaRoadHeadlightEnergy(
   if (distSqL < 10000.0) {
     let distL = sqrt(max(distSqL, 0.000001));
     let toL = deltaL / max(distL, 0.001);
-    let coneL = smoothstep(0.24, 0.88, dot(beamDirection, -toL));
-    let rangeL = 1.0 - smoothstep(72.0, 140.0, distL);
-    let attenuationL = 1.0 / (1.0 + distSqL * 0.00048);
-    let diffuseL = clamp(abs(dot(normalize(surfaceNormal), toL)) * 1.85 + 0.30, 0.0, 1.0);
+    let coneL = smoothstep(0.93, 0.985, dot(beamDirection, -toL));
+    let rangeL = 1.0 - smoothstep(48.0, 82.0, distL);
+    let attenuationL = 1.0 / (1.0 + distSqL * 0.0012);
+    let diffuseL = clamp(max(dot(normalize(surfaceNormal), toL), 0.0) * 2.5, 0.0, 1.0);
     energy += coneL * rangeL * attenuationL * diffuseL;
   }
   if (distSqR < 10000.0) {
     let distR = sqrt(max(distSqR, 0.000001));
     let toR = deltaR / max(distR, 0.001);
-    let coneR = smoothstep(0.24, 0.88, dot(beamDirection, -toR));
-    let rangeR = 1.0 - smoothstep(72.0, 140.0, distR);
-    let attenuationR = 1.0 / (1.0 + distSqR * 0.00048);
-    let diffuseR = clamp(abs(dot(normalize(surfaceNormal), toR)) * 1.85 + 0.30, 0.0, 1.0);
+    let coneR = smoothstep(0.93, 0.985, dot(beamDirection, -toR));
+    let rangeR = 1.0 - smoothstep(48.0, 82.0, distR);
+    let attenuationR = 1.0 / (1.0 + distSqR * 0.0012);
+    let diffuseR = clamp(max(dot(normalize(surfaceNormal), toR), 0.0) * 2.5, 0.0, 1.0);
     energy += coneR * rangeR * attenuationR * diffuseR;
   }
   return energy * roadLightIntensity;
@@ -135,14 +135,14 @@ fn drivellaRoadHeadlightEnergy(
 `,
         CUSTOM_FRAGMENT_BEFORE_FRAGCOLOR: `
 color = vec4f(
-  color.rgb + vec3f(0.92, 0.96, 1.0) * (drivellaRoadHeadlightEnergy(
+  color.rgb + vec3f(0.92, 0.96, 1.0) * (clamp(drivellaRoadHeadlightEnergy(
     fragmentInputs.vPositionW,
     normalW,
     uniforms.drivellaRoadHeadlightPositionL,
     uniforms.drivellaRoadHeadlightPositionR,
     uniforms.drivellaRoadHeadlightDirection,
     uniforms.drivellaRoadHeadlightIntensity
-  ) * 1.25),
+  ) * 0.18, 0.0, 0.48)),
   color.a
 );
 `
@@ -164,19 +164,19 @@ float drivellaRoadHeadlightEnergy(vec3 surfaceNormal) {
   if (distSqL < 10000.0) {
     float distL = sqrt(max(distSqL, 0.000001));
     vec3 toL = deltaL / max(distL, 0.001);
-    float coneL = smoothstep(0.24, 0.88, dot(beamDirection, -toL));
-    float rangeL = 1.0 - smoothstep(72.0, 140.0, distL);
-    float attenuationL = 1.0 / (1.0 + distSqL * 0.00048);
-    float diffuseL = clamp(abs(dot(normalize(surfaceNormal), toL)) * 1.85 + 0.30, 0.0, 1.0);
+    float coneL = smoothstep(0.93, 0.985, dot(beamDirection, -toL));
+    float rangeL = 1.0 - smoothstep(48.0, 82.0, distL);
+    float attenuationL = 1.0 / (1.0 + distSqL * 0.0012);
+    float diffuseL = clamp(max(dot(normalize(surfaceNormal), toL), 0.0) * 2.5, 0.0, 1.0);
     energy += coneL * rangeL * attenuationL * diffuseL;
   }
   if (distSqR < 10000.0) {
     float distR = sqrt(max(distSqR, 0.000001));
     vec3 toR = deltaR / max(distR, 0.001);
-    float coneR = smoothstep(0.24, 0.88, dot(beamDirection, -toR));
-    float rangeR = 1.0 - smoothstep(72.0, 140.0, distR);
+    float coneR = smoothstep(0.93, 0.985, dot(beamDirection, -toR));
+    float rangeR = 1.0 - smoothstep(48.0, 82.0, distR);
     float attenuationR = 1.0 / (1.0 + distR * distR * 0.00048);
-    float diffuseR = clamp(abs(dot(normalize(surfaceNormal), toR)) * 1.85 + 0.30, 0.0, 1.0);
+    float diffuseR = clamp(max(dot(normalize(surfaceNormal), toR), 0.0) * 2.5, 0.0, 1.0);
     energy += coneR * rangeR * attenuationR * diffuseR;
   }
   return energy * drivellaRoadHeadlightIntensity;
@@ -185,7 +185,7 @@ float drivellaRoadHeadlightEnergy(vec3 surfaceNormal) {
 `,
       CUSTOM_FRAGMENT_BEFORE_FOG: `
 #ifdef DRIVELLA_ROAD_HEADLIGHTS
-color.rgb += vec3(0.92, 0.96, 1.0) * (drivellaRoadHeadlightEnergy(normalW) * 1.25);
+color.rgb += vec3(0.92, 0.96, 1.0) * clamp(drivellaRoadHeadlightEnergy(normalW) * 0.18, 0.0, 0.48);
 #endif
 `
     };
@@ -704,8 +704,8 @@ void main(void) {
           "drivella-countach-headlamp-" + side,
           Vector3.Zero(),
           new Vector3(0, -0.75, 0.66),
-          Math.PI / 3.2,
-          2.2,
+          Math.PI / 4.5,
+          5.0,
           this.scene
         );
         // The lens geometry is expressed in body-space coordinates inside a transformed
@@ -715,7 +715,7 @@ void main(void) {
         spot.direction.set(0, -0.75, 0.66);
         spot.diffuse = new Color3(0.72, 0.86, 1);
         spot.specular = new Color3(0.72, 0.86, 1);
-        spot.range = 86;
+        spot.range = 72;
         spot.intensity = 0;
         this.headlampSpots.push(spot);
         this.headlampSpotBySide.set(side, spot);
@@ -850,12 +850,12 @@ void main(void) {
         const inverseDistance = 1 / distance;
         const dotValue = (direction.x * dx + direction.y * dy + direction.z * dz) * inverseDistance;
         maxForwardDot = Math.max(maxForwardDot, dotValue);
-        const coneT = clamp((dotValue - 0.24) / (0.88 - 0.24), 0, 1);
+        const coneT = clamp((dotValue - 0.93) / (0.985 - 0.93), 0, 1);
         const cone = coneT * coneT * (3 - 2 * coneT);
-        const range = 1 - clamp((distance - 72) / (140 - 72), 0, 1);
-        const attenuation = 1 / (1 + distanceSquared * 0.00048);
-        const diffuse = clamp(Math.abs(dy * inverseDistance) * 1.85 + 0.30, 0, 1);
-        const energy = cone * range * attenuation * diffuse * this.headlightRoadPower * 1.25;
+        const range = 1 - clamp((distance - 48) / (82 - 48), 0, 1);
+        const attenuation = 1 / (1 + distanceSquared * 0.0012);
+        const diffuse = clamp(Math.max(dy * inverseDistance, 0) * 2.5, 0, 1);
+        const energy = clamp(cone * range * attenuation * diffuse * this.headlightRoadPower * 0.18, 0, 0.48);
         if (energy > maximum) maximum = energy;
       }
     }
@@ -871,7 +871,7 @@ void main(void) {
     const beamPower = this.headlightsEnabled ? deployPower : 0;
     const visibleLensPower = deployPower * (this.headlightsEnabled ? 1 : 0.28);
     this.headlightRoadPower = beamPower * 5.5;
-    for (const light of this.headlampSpots) light.intensity = 45 * beamPower;
+    for (const light of this.headlampSpots) light.intensity = 2.8 * beamPower;
     const emissive = new Color3(
       0.035 + visibleLensPower * 1.12,
       0.045 + visibleLensPower * 1.18,
