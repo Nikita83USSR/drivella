@@ -164,6 +164,16 @@ try {
     const effects = window.__DRIVELLA_LAB__?.legacyEffects;
     return effects?.headlightLighting === true && effects?.headlightBeamIntensity > 5;
   }, null, { timeout: 8000 });
+  await page.waitForFunction(() => {
+    const effects = window.__DRIVELLA_LAB__?.legacyEffects;
+    return effects?.lensFlareTextureKind === "canvas-png"
+      && effects?.lensFlareSpriteCount >= 7
+      && effects?.lensFlareTexturesReady === true
+      && effects?.frontTurnSignalCount === 2
+      && effects?.rearTurnSignalCount === 2
+      && effects?.fogLampCount === 2
+      && (effects?.tailLampEmissive?.[0] ?? 0) > 0.3;
+  }, null, { timeout: 12000 });
   const illuminatedState = await page.evaluate(() => ({
     effects: window.__DRIVELLA_LAB__?.legacyEffects ?? null,
     roadMaxSimultaneousLights: window.__DRIVELLA_LAB__?.roadMaxSimultaneousLights ?? 0
@@ -179,8 +189,15 @@ try {
       || illuminatedHeadlights.headlightRoadMeshCount < 1
       || illuminatedHeadlights.headlightRoadObservableBindCount < 1
       || illuminatedHeadlights.headlightRoadUniformBindCount < 1
-      || illuminatedHeadlights.headlightRoadIntensity < 1.0
+      || illuminatedHeadlights.headlightRoadIntensity < 1.8
       || illuminatedHeadlights.headlightRoadDirectionY > -0.05
+      || illuminatedHeadlights.lensFlareTextureKind !== "canvas-png"
+      || illuminatedHeadlights.lensFlareSpriteCount < 7
+      || !illuminatedHeadlights.lensFlareTexturesReady
+      || illuminatedHeadlights.frontTurnSignalCount !== 2
+      || illuminatedHeadlights.rearTurnSignalCount !== 2
+      || illuminatedHeadlights.fogLampCount !== 2
+      || (illuminatedHeadlights.tailLampEmissive?.[0] ?? 0) < 0.3
       || illuminatedState.roadMaxSimultaneousLights !== 10) {
     throw new Error("Both pop-up projectors and the dedicated road shader must be active, correctly aimed and bound: "
       + JSON.stringify({ illuminatedHeadlights, invalidHeadlightBeams, roadMaxSimultaneousLights: illuminatedState.roadMaxSimultaneousLights, pageErrors, browserConsoleErrors }));
