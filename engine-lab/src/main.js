@@ -560,7 +560,7 @@ function createEnvironment(scene) {
   const neonGlow = new GlowLayer("drivella-neon-glow", scene, { blurKernelSize: 18 });
   const environmentNeonGlow = neonGlow;
   // A single, tighter GlowLayer keeps the grid and raised kerbs neon without a second bloom pass.
-  neonGlow.intensity = 0.38;
+  neonGlow.intensity = 0.42;
   neonGlow.customEmissiveColorSelector = (mesh, _subMesh, material, result) => {
     const glow = mesh.metadata?.neonGlowColor;
     if (glow) {
@@ -741,14 +741,14 @@ function createEnvironment(scene) {
         labState.bridgePiers += furnitureGeometry.bridgePiers;
         labState.bridgeGirderSegments += furnitureGeometry.bridgeGirderSegments;
         const leftFenceMesh = createCombinedPropMesh(
-          scene, `road-fence-cyan-${chunk.x}-${chunk.y}-${chunk.z}`,
+          scene, `road-fence-pink-${chunk.x}-${chunk.y}-${chunk.z}`,
           roadCurbGeometry.left, roadCurbMaterial, roadOrigin,
-          { neonize: false, glowColor: [0.08, 0.78, 1.15] }
+          { neonize: false, glowColor: [1.25, 0.08, 0.60] }
         );
         const rightFenceMesh = createCombinedPropMesh(
-          scene, `road-fence-magenta-${chunk.x}-${chunk.y}-${chunk.z}`,
+          scene, `road-fence-cyan-${chunk.x}-${chunk.y}-${chunk.z}`,
           roadCurbGeometry.right, roadCurbMaterial, roadOrigin,
-          { neonize: false, glowColor: [1.10, 0.08, 0.58] }
+          { neonize: false, glowColor: [0.10, 0.92, 1.28] }
         );
         payload.roadCurbMeshes = [leftFenceMesh, rightFenceMesh].filter(Boolean);
         if (payload.roadCurbMeshes.length) roadCurbMeshes.set(chunk.key, payload.roadCurbMeshes);
