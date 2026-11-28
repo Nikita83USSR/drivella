@@ -673,7 +673,20 @@ export class LegacyVisualEffects {
     // transform can shift the child origin. Track its source in world space.
     plane.position.copyFrom(Vector3.Zero());
     plane.billboardMode = Mesh.BILLBOARDMODE_ALL;
-    const flareMaterial = this.lampFlareMaterials.get(kind).clone("drivella-lamp-flare-" + name);
+    // Do not clone a material that contains a DynamicTexture: Babylon's
+    // generic texture clone can lose the live canvas backing store. Build a
+    // per-lamp material and attach the original starburst texture directly.
+    const flareMaterial = new StandardMaterial("drivella-lamp-flare-" + name, this.scene);
+    flareMaterial.disableLighting = true;
+    flareMaterial.diffuseTexture = this.lampFlareTexture;
+    flareMaterial.emissiveTexture = this.lampFlareTexture;
+    flareMaterial.useAlphaFromDiffuseTexture = true;
+    flareMaterial.specularColor = Color3.Black();
+    flareMaterial.backFaceCulling = false;
+    flareMaterial.alpha = 1;
+    flareMaterial.alphaMode = Engine.ALPHA_ADD;
+    flareMaterial.transparencyMode = StandardMaterial.MATERIAL_ALPHABLEND;
+    flareMaterial.disableDepthWrite = true;
     plane.material = flareMaterial;
     plane.renderingGroupId = 2;
     plane.isPickable = false;
@@ -859,7 +872,7 @@ export class LegacyVisualEffects {
         )
         : Color3.White();
       item.flareMaterial.diffuseColor.copyFrom(flareColor);
-      item.flareMaterial.emissiveColor.copyFrom(flareColor.scale(1.18));
+      item.flareMaterial.emissiveColor.copyFrom(flareColor.scale(1.55));
       item.flareColor = [flareColor.r, flareColor.g, flareColor.b];
 
       item.plane.isVisible = intensity > 0.035;
@@ -891,7 +904,9 @@ export class LegacyVisualEffects {
       radiusPixels: item.radiusPixels,
       intensity: Number((item.intensity ?? 0).toFixed(3)),
       color: item.flareColor.map((value) => Number(value.toFixed(3))),
-      colorSource: item.sourceMaterial?.name ?? ""
+      colorSource: item.sourceMaterial?.name ?? "",
+      textureAttached: item.flareMaterial?.diffuseTexture === this.lampFlareTexture
+        && item.flareMaterial?.emissiveTexture === this.lampFlareTexture
     }));
   }
   createTrackLights() {
