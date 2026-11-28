@@ -205,7 +205,7 @@ export class VehicleController{
   this.observer=scene.onBeforePhysicsObservable.add(()=>this.stepPhysics());this.syncVisuals();
  }
  buildMaterials(){
-  const p={bodyPaint:["#b80518","#b8d7ff",92],bodyPlastic:["#111a27","#536275",30],bodyBlack:["#05080f","#242d3c",18],
+  const p={bodyPaint:["#b80518","#ffffff",72],bodyPlastic:["#111a27","#a9c5e6",92],bodyBlack:["#05080f","#242d3c",18],
    bodyMetal:["#8798aa","#f0f5ff",120],bodyTail:["#6e0717","#ff687e",64],headlampR:["#c4d9ea","#ffffff",140,"#152538"],
    headlampL:["#c4d9ea","#ffffff",140,"#152538"],sideMirror_bodyPlastic:["#101b2c","#8ba6c2",110],frontDetail_detailRed:["#b80518","#ffffff",140],
    frontDetail_bodyPlastic:["#111a27","#536275",30],exhaustA_chrome:["#a9b5c3","#ffffff",150],exhaustB_chrome:["#a9b5c3","#ffffff",150],
