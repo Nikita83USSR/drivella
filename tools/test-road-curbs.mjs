@@ -32,8 +32,8 @@ assert.ok(fence.segmentCount > 0 && fence.postCount > 0, "the neon fence must in
 assert.ok(fence.left.postCount > 0 && fence.right.postCount > 0, "both sides need visible fence posts");
 assert.ok(fence.left.positions.every(Number.isFinite) && fence.right.positions.every(Number.isFinite),
   "fence geometry must contain finite coordinates");
-assert.ok(hasColor(fence.left.colors, [0.06, 0.58, 1.0]), "the left fence rail must keep its cyan color");
-assert.ok(hasColor(fence.right.colors, [0.96, 0.045, 0.48]), "the right fence rail must keep its magenta color");
+assert.ok(hasColor(fence.left.colors, [0.96, 0.045, 0.48]), "the left fence rail must keep its magenta color");
+assert.ok(hasColor(fence.right.colors, [0.06, 0.58, 1.0]), "the right fence rail must keep its cyan color");
 
 const emptyNeighbor = buildRoadCurbChunkGeometry(samples, 1000, 0, 1000);
 assert.equal(emptyNeighbor.left.indices.length, 0, "distant chunks must not receive unrelated left fence geometry");
