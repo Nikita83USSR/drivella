@@ -1,7 +1,10 @@
 import {
   Color3,
+  Color4,
   DefaultRenderingPipeline,
+  Effect,
   MaterialPluginBase,
+  PostProcess,
   ShaderLanguage,
   DynamicTexture,
   LensFlare,
@@ -97,19 +100,19 @@ float drivellaRoadHeadlightEnergy(vec3 surfaceNormal) {
   if (distSqL < 10000.0) {
     float distL = sqrt(max(distSqL, 0.000001));
     vec3 toL = deltaL / max(distL, 0.001);
-    float coneL = smoothstep(0.60, 0.94, dot(beamDirection, -toL));
-    float rangeL = 1.0 - smoothstep(28.0, 100.0, distL);
-    float attenuationL = 1.0 / (1.0 + distSqL * 0.0018);
-    float diffuseL = clamp(abs(dot(normalize(surfaceNormal), toL)) * 0.72 + 0.10, 0.0, 0.82);
+    float coneL = smoothstep(0.24, 0.88, dot(beamDirection, -toL));
+    float rangeL = 1.0 - smoothstep(72.0, 140.0, distL);
+    float attenuationL = 1.0 / (1.0 + distSqL * 0.00048);
+    float diffuseL = clamp(abs(dot(normalize(surfaceNormal), toL)) * 1.85 + 0.30, 0.0, 1.0);
     energy += coneL * rangeL * attenuationL * diffuseL;
   }
   if (distSqR < 10000.0) {
     float distR = sqrt(max(distSqR, 0.000001));
     vec3 toR = deltaR / max(distR, 0.001);
-    float coneR = smoothstep(0.60, 0.94, dot(beamDirection, -toR));
-    float rangeR = 1.0 - smoothstep(28.0, 100.0, distR);
-    float attenuationR = 1.0 / (1.0 + distSqR * 0.0018);
-    float diffuseR = clamp(abs(dot(normalize(surfaceNormal), toR)) * 0.72 + 0.10, 0.0, 0.82);
+    float coneR = smoothstep(0.24, 0.88, dot(beamDirection, -toR));
+    float rangeR = 1.0 - smoothstep(72.0, 140.0, distR);
+    float attenuationR = 1.0 / (1.0 + distSqR * 0.00048);
+    float diffuseR = clamp(abs(dot(normalize(surfaceNormal), toR)) * 1.85 + 0.30, 0.0, 1.0);
     energy += coneR * rangeR * attenuationR * diffuseR;
   }
   return energy * drivellaRoadHeadlightIntensity;
@@ -118,7 +121,7 @@ float drivellaRoadHeadlightEnergy(vec3 surfaceNormal) {
 `,
       CUSTOM_FRAGMENT_BEFORE_FOG: `
 #ifdef DRIVELLA_ROAD_HEADLIGHTS
-color.rgb += vec3(0.58, 0.78, 1.0) * (drivellaRoadHeadlightEnergy(normalW) * 0.46);
+color.rgb += vec3(0.88, 0.93, 1.0) * (drivellaRoadHeadlightEnergy(normalW) * 0.92);
 #endif
 `
     };
@@ -133,37 +136,17 @@ function makeLensFlarePngUrl() {
   if (!ctx) throw new Error("Canvas 2D context unavailable for lens flare texture");
   ctx.clearRect(0, 0, 256, 256);
   const flare = ctx.createRadialGradient(128, 128, 0, 128, 128, 128);
-  // A tiny hot core with a very light, wide feather. The old profile kept
-  // near-full opacity across the centre and read as a solid pink disc.
-  flare.addColorStop(0.000, "rgba(255,255,255,0.96)");
-  flare.addColorStop(0.018, "rgba(255,249,239,0.56)");
-  flare.addColorStop(0.055, "rgba(255,220,207,0.22)");
-  flare.addColorStop(0.120, "rgba(255,166,177,0.075)");
-  flare.addColorStop(0.235, "rgba(255,116,157,0.024)");
-  flare.addColorStop(0.420, "rgba(130,92,190,0.008)");
-  flare.addColorStop(0.680, "rgba(34,116,255,0.002)");
+  // Low-opacity radial texture for the sun only. Headlamp diffraction is a
+  // separate additive pass, not an opaque pattern baked into a lens sprite.
+  flare.addColorStop(0.000, "rgba(255,255,255,0.44)");
+  flare.addColorStop(0.025, "rgba(255,249,239,0.30)");
+  flare.addColorStop(0.080, "rgba(255,220,207,0.14)");
+  flare.addColorStop(0.180, "rgba(255,166,177,0.045)");
+  flare.addColorStop(0.340, "rgba(255,116,157,0.012)");
+  flare.addColorStop(0.560, "rgba(130,92,190,0.003)");
   flare.addColorStop(1.000, "rgba(0,0,0,0)");
   ctx.fillStyle = flare;
   ctx.fillRect(0, 0, 256, 256);
-  ctx.save();
-  ctx.globalCompositeOperation = "lighter";
-  const horizontal = ctx.createLinearGradient(0, 128, 256, 128);
-  horizontal.addColorStop(0.00, "rgba(210,235,255,0)");
-  horizontal.addColorStop(0.42, "rgba(225,240,255,0.015)");
-  horizontal.addColorStop(0.50, "rgba(255,255,255,0.20)");
-  horizontal.addColorStop(0.58, "rgba(225,240,255,0.015)");
-  horizontal.addColorStop(1.00, "rgba(210,235,255,0)");
-  ctx.fillStyle = horizontal;
-  ctx.fillRect(0, 125, 256, 6);
-  const vertical = ctx.createLinearGradient(0, 0, 0, 256);
-  vertical.addColorStop(0.00, "rgba(210,235,255,0)");
-  vertical.addColorStop(0.43, "rgba(225,240,255,0.012)");
-  vertical.addColorStop(0.50, "rgba(255,255,255,0.13)");
-  vertical.addColorStop(0.57, "rgba(225,240,255,0.012)");
-  vertical.addColorStop(1.00, "rgba(210,235,255,0)");
-  ctx.fillStyle = vertical;
-  ctx.fillRect(125, 0, 6, 256);
-  ctx.restore();
   return canvas.toDataURL("image/png");
 }
 
@@ -264,6 +247,9 @@ export class LegacyVisualEffects {
     this.headlampSpots = [];
     this.headlampSpotBySide = new Map();
     this.headlampGlowMeshes = [];
+    this.headlampOpticsPostProcess = null;
+    this.headlampOpticsSourceCount = 0;
+    this.headlightRoadProbeEnergy = 0;
     this.headlightRoadPower = 0;
     this.headlightRoadPlugin = null;
     this.headlightRoadBindObserver = null;
@@ -309,6 +295,7 @@ export class LegacyVisualEffects {
     this.createPostProcessing();
     this.createSunRays();
     this.createLensFlares();
+    this.createHeadlampOpticsPostProcess();
     this.createTrackLights();
     this.scene.onNewMeshAddedObservable.add((mesh) => this.registerShadowReceiver(mesh));
     this.scene.onMeshRemovedObservable.add((mesh) => {
@@ -515,6 +502,87 @@ export class LegacyVisualEffects {
     }
   }
 
+  createHeadlampOpticsPostProcess() {
+    try {
+      Effect.ShadersStore.drivellaHeadlampOpticsPixelShader = `
+precision highp float;
+varying vec2 vUV;
+uniform sampler2D textureSampler;
+uniform vec4 headlampLeft;
+uniform vec4 headlampRight;
+uniform float screenAspect;
+uniform float opticsEnabled;
+float rayProfile(vec2 p, vec2 direction, float lengthFactor, float widthFactor) {
+  vec2 perpendicular = vec2(-direction.y, direction.x);
+  float along = abs(dot(p, direction) / max(lengthFactor, 0.001));
+  float across = dot(p, perpendicular) / max(widthFactor, 0.001);
+  return (1.0 - smoothstep(0.55, 1.0, along)) * exp(-across * across * 8.0);
+}
+vec3 headlampFlare(vec2 uv, vec4 source) {
+  if (source.w <= 0.001) return vec3(0.0);
+  vec2 p = vec2((uv.x - source.x) * screenAspect, uv.y - source.y) / max(source.z, 0.0001);
+  float d = length(p);
+  float core = 0.38 * exp(-d * d * 18.0);
+  float inner = 0.12 * exp(-d * d * 4.8);
+  float aura = 0.095 * exp(-d * d * 1.22);
+  float rings = exp(-pow(d - 1.72, 2.0) * 1800.0) * 0.055
+              + exp(-pow(d - 2.18, 2.0) * 1800.0) * 0.035;
+  float rays = rayProfile(p, vec2(1.0, 0.0), 2.10, 0.038) * 0.16
+             + rayProfile(p, vec2(0.0, 1.0), 1.15, 0.032) * 0.16
+             + rayProfile(p, normalize(vec2(0.707, 0.707)), 0.78, 0.027) * 0.24
+             + rayProfile(p, normalize(vec2(-0.707, 0.707)), 0.78, 0.027) * 0.24;
+  return vec3(0.91, 0.965, 1.0) * (core + inner + aura + rings + rays) * source.w;
+}
+void main(void) {
+  vec4 sceneColor = texture2D(textureSampler, vUV);
+  if (opticsEnabled < 0.5) {
+    gl_FragColor = sceneColor;
+    return;
+  }
+  vec3 flare = headlampFlare(vUV, headlampLeft) + headlampFlare(vUV, headlampRight);
+  gl_FragColor = vec4(sceneColor.rgb + flare, sceneColor.a);
+}`;
+      this.headlampOpticsPostProcess = new PostProcess(
+        "drivella-headlamp-diffraction", "drivellaHeadlampOptics",
+        ["headlampLeft", "headlampRight", "screenAspect", "opticsEnabled"], [],
+        1.0, this.camera, Texture.BILINEAR_SAMPLINGMODE, this.engine, false
+      );
+      this.headlampOpticsPostProcess.onApply = (effect) => {
+        this.syncHeadlampTransforms();
+        const width = Math.max(1, this.engine.getRenderWidth(true));
+        const height = Math.max(1, this.engine.getRenderHeight(true));
+        effect.setFloat("screenAspect", width / height);
+        effect.setFloat("opticsEnabled", this.lensFlaresEnabled ? 1 : 0);
+        this.headlampOpticsSourceCount = 0;
+        const cameraPosition = this.camera.globalPosition;
+        const transform = this.scene.getTransformMatrix();
+        for (const [side, uniformName] of [[-1, "headlampLeft"], [1, "headlampRight"]]) {
+          const spot = this.headlampSpotBySide.get(side);
+          if (!spot || !this.lensFlaresEnabled || !this.headlightsEnabled || spot.intensity <= 0.01) {
+            effect.setFloat4(uniformName, 0, 0, 0.03, 0);
+            continue;
+          }
+          const projected = Vector3.TransformCoordinates(spot.position, transform);
+          if (projected.z <= 0 || projected.z >= 1 || Math.abs(projected.x) > 1.08 || Math.abs(projected.y) > 1.08) {
+            effect.setFloat4(uniformName, 0, 0, 0.03, 0);
+            continue;
+          }
+          const toCamera = cameraPosition.subtract(spot.position).normalize();
+          const facing = Math.max(0, Vector3.Dot(spot.direction.clone().normalize(), toCamera));
+          const distance = Math.max(1, Vector3.Distance(cameraPosition, spot.position));
+          const distanceGain = clamp(17 / distance, 0.58, 1.6);
+          const intensity = clamp((spot.intensity / 40) * Math.pow(facing, 0.62) * distanceGain, 0, 1.6);
+          const radiusPixels = clamp(Math.min(width, height) * 0.028 * distanceGain, 9, 32);
+          effect.setFloat4(uniformName, projected.x * 0.5 + 0.5, 0.5 - projected.y * 0.5, radiusPixels / height, intensity);
+          if (intensity > 0.02) this.headlampOpticsSourceCount += 1;
+        }
+      };
+    } catch (error) {
+      this.recordError("headlamp diffraction optics", error);
+      this.headlampOpticsPostProcess = null;
+    }
+  }
+
   createTrackLights() {
     if (!this.roadSamples?.length) return;
     const count = 8;
@@ -582,13 +650,7 @@ export class LegacyVisualEffects {
         spot.intensity = 0;
         this.headlampSpots.push(spot);
         this.headlampSpotBySide.set(side, spot);
-        if (this.flareTextureUrl) {
-          const lampFlare = new LensFlareSystem("drivella-headlamp-flares-" + side, spot, this.scene);
-          lampFlare.isEnabled = this.lensFlaresEnabled;
-          this.lensFlareSystems.push(lampFlare);
-          // One centred flare per projector; no displaced coloured ghosts.
-          new LensFlare(0.046, 0, new Color3(0.82, 0.91, 1), this.flareTextureUrl, lampFlare);
-        }
+
       }
 
       // Decorative underbody lights follow the projectors in scene order so they
@@ -643,6 +705,16 @@ export class LegacyVisualEffects {
     mesh.renderOutline = this.outlinesEnabled;
     mesh.outlineColor = new Color3(0.004, 0.004, 0.008);
     mesh.outlineWidth = 0.082;
+    try {
+      if (!mesh.edgesRenderer) mesh.enableEdgesRendering(0.92, false);
+      if (mesh.edgesRenderer) {
+        mesh.edgesRenderer.edgesColor = new Color4(0.004, 0.005, 0.008, 1);
+        mesh.edgesRenderer.edgesWidth = 3.2;
+        mesh.edgesRenderer.isEnabled = this.outlinesEnabled;
+      }
+    } catch (error) {
+      this.recordError("toon edge renderer", error);
+    }
     this.outlineMeshes.add(mesh);
   }
 
@@ -682,15 +754,46 @@ export class LegacyVisualEffects {
     };
   }
 
+  measureHeadlightRoadProbeEnergy() {
+    if (!this.headlightsEnabled || this.headlightRoadPower <= 0.01 || !this.roadSamples?.length) return 0;
+    let maximum = 0;
+    for (const spot of this.headlampSpots) {
+      if (spot.intensity <= 0.01) continue;
+      for (const distance of [8, 16, 28, 42, 58]) {
+        const target = spot.position.add(spot.direction.scale(distance));
+        let nearest = null, nearestDistance = Infinity;
+        for (const sample of this.roadSamples) {
+          const dx = sample.x - target.x, dz = sample.z - target.z;
+          const distanceSquared = dx * dx + dz * dz;
+          if (distanceSquared < nearestDistance) {
+            nearestDistance = distanceSquared;
+            nearest = sample;
+          }
+        }
+        if (!nearest || nearestDistance > 18 * 18) continue;
+        const toLamp = new Vector3(spot.position.x - nearest.x, spot.position.y - nearest.y, spot.position.z - nearest.z);
+        const distanceToLamp = toLamp.length();
+        if (distanceToLamp < 0.01) continue;
+        toLamp.scaleInPlace(1 / distanceToLamp);
+        const dotValue = Vector3.Dot(spot.direction, toLamp.clone().scaleInPlace(-1));
+        const coneT = clamp((dotValue - 0.24) / (0.88 - 0.24), 0, 1);
+        const cone = coneT * coneT * (3 - 2 * coneT);
+        const range = 1 - clamp((distanceToLamp - 72) / (140 - 72), 0, 1);
+        const attenuation = 1 / (1 + distanceToLamp * distanceToLamp * 0.00048);
+        const diffuse = clamp(Math.abs(toLamp.y) * 1.85 + 0.30, 0, 1);
+        maximum = Math.max(maximum, cone * range * attenuation * diffuse * this.headlightRoadPower * 0.92);
+      }
+    }
+    return Number(maximum.toFixed(4));
+  }
+
   syncHeadlightOutput() {
     const deploy = this.vehicle?.headlightDeploy ?? 0;
     const deployPower = clamp((deploy - 0.12) / 0.88, 0, 1);
     const beamPower = this.headlightsEnabled ? deployPower : 0;
-    // H controls the road beam, but deployed projectors retain visible low-power
-    // white lens cores and halos, as real pop-up headlamps should.
     const visibleLensPower = deployPower * (this.headlightsEnabled ? 1 : 0.28);
-    this.headlightRoadPower = beamPower * 2.35;
-    for (const light of this.headlampSpots) light.intensity = 28 * beamPower;
+    this.headlightRoadPower = beamPower * 5.0;
+    for (const light of this.headlampSpots) light.intensity = 40 * beamPower;
     const emissive = new Color3(
       0.035 + visibleLensPower * 1.12,
       0.045 + visibleLensPower * 1.18,
@@ -703,9 +806,9 @@ export class LegacyVisualEffects {
         mesh.metadata = {
           ...(mesh.metadata ?? {}),
           neonGlowColor: [
-            0.42 + visibleLensPower * 1.45,
-            0.54 + visibleLensPower * 1.60,
-            0.72 + visibleLensPower * 1.82
+            0.70 + visibleLensPower * 1.65,
+            0.82 + visibleLensPower * 1.78,
+            1.00 + visibleLensPower * 1.95
           ]
         };
       } else if (mesh.metadata?.neonGlowColor) {
@@ -714,6 +817,7 @@ export class LegacyVisualEffects {
         mesh.metadata = metadata;
       }
     }
+    this.headlightRoadProbeEnergy = this.measureHeadlightRoadProbeEnergy();
     return beamPower > 0.01;
   }
 
@@ -794,7 +898,10 @@ export class LegacyVisualEffects {
       case "outlines":
         this.outlinesEnabled = value;
         for (const mesh of this.outlineMeshes) {
-          if (!mesh.isDisposed?.()) mesh.renderOutline = value;
+          if (!mesh.isDisposed?.()) {
+            mesh.renderOutline = value;
+            if (mesh.edgesRenderer) mesh.edgesRenderer.isEnabled = value;
+          }
         }
         break;
       case "headlights":
@@ -907,12 +1014,17 @@ export class LegacyVisualEffects {
       lensFlares: Boolean(this.lensFlareSystems.some((system) => system.isEnabled)),
       lensFlareTextureKind: this.flareTextureKind,
       lensFlareSpriteCount: this.lensFlareSystems.reduce((sum, system) => sum + system.lensFlares.length, 0),
+      headlampOpticsPostProcessReady: Boolean(this.headlampOpticsPostProcess),
+      headlampOpticsSourceCount: this.headlampOpticsSourceCount,
+      headlampOpticsEnabled: Boolean(this.lensFlaresEnabled && this.headlightsEnabled),
       lensFlareTexturesReady: this.lensFlareSystems.flatMap((system) => system.lensFlares)
         .every((flare) => Boolean(flare.texture?.isReady?.())),
       headlampGlowMeshCount: this.headlampGlowMeshes.length,
       headlampGlowActiveCount: this.headlampGlowMeshes.filter((mesh) => Boolean(mesh.metadata?.neonGlowColor)).length,
       vehicleOutlineMeshCount: this.outlineMeshes.size,
       vehicleOutlineWidth: this.outlineMeshes.values().next().value?.outlineWidth ?? 0,
+      vehicleOutlineEdgeMeshCount: [...this.outlineMeshes].filter((mesh) => Boolean(mesh.edgesRenderer?.isEnabled)).length,
+      vehicleOutlineEdgeWidth: [...this.outlineMeshes].find((mesh) => mesh.edgesRenderer)?.edgesRenderer?.edgesWidth ?? 0,
       glassMeshCount: this.vehicle?.bodyRoot?.getChildMeshes?.().filter((mesh) => mesh.name === "countach-glass").length ?? 0,
       frontTurnSignalCount: this.vehicle?.frontSignalMeshes?.size ?? 0,
       rearTurnSignalCount: this.vehicle?.rearSignalMeshes?.size ?? 0,
