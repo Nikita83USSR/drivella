@@ -17,8 +17,8 @@ export const ROAD_SHOULDER_OFFSET = 0.58;
 const ROAD_COLORS = Object.freeze({
   asphalt: Object.freeze([0.055, 0.055, 0.105]),
   shoulder: Object.freeze([0.075, 0.07, 0.13]),
-  edge: Object.freeze([0.82, 0.86, 0.94]),
-  center: Object.freeze([0.92, 0.96, 1.0])
+  edge: Object.freeze([1.0, 1.0, 1.0]),
+  center: Object.freeze([1.0, 1.0, 1.0])
 });
 
 function clamp(value, min, max) {
@@ -153,6 +153,7 @@ export function buildRoadChunkGeometry(samples, chunkX, chunkY, chunkZ, chunkSiz
   }
 
   const geometry = { positions: [], colors: [], indices: [], segmentCount: 0 };
+  const markingGeometry = { positions: [], colors: [], indices: [], segmentCount: 0 };
   const origin = {
     x: chunkX * chunkSize,
     y: chunkY * chunkSize,
@@ -179,33 +180,23 @@ export function buildRoadChunkGeometry(samples, chunkX, chunkY, chunkZ, chunkSiz
     addQuad(geometry, origin, current.center, current.rightEdge, next.rightEdge, next.center, ROAD_COLORS.asphalt);
     addQuad(geometry, origin, current.rightEdge, current.rightOuter, next.rightOuter, next.rightEdge, ROAD_COLORS.shoulder);
 
-    // Continuous pale edge lines.
-    addQuad(
-      geometry, origin,
-      current.leftMarking, offsetPoint(a, ROAD_HALF_WIDTH - 0.35, ROAD_SURFACE_OFFSET + 0.1),
-      offsetPoint(b, ROAD_HALF_WIDTH - 0.35, ROAD_SURFACE_OFFSET + 0.1), next.leftMarking,
-      ROAD_COLORS.edge
-    );
-    addQuad(
-      geometry, origin,
-      offsetPoint(a, -ROAD_HALF_WIDTH + 0.35, ROAD_SURFACE_OFFSET + 0.1), current.rightMarking,
-      next.rightMarking, offsetPoint(b, -ROAD_HALF_WIDTH + 0.35, ROAD_SURFACE_OFFSET + 0.1),
-      ROAD_COLORS.edge
-    );
-
-    // A synth-cyan broken centre line provides an unmistakable racing route.
-    if (Math.floor(index / 7) % 3 !== 2) {
-      addQuad(
-        geometry, origin,
-        current.centerDashLeft, current.centerDashRight,
-        next.centerDashRight, next.centerDashLeft,
-        ROAD_COLORS.center
-      );
+    // BUILD 223 lane paint: two crisp white, short dashes on the two lanes.
+    // Keep this geometry separate from asphalt and exclude it from scene bloom.
+    if (index % 6 === 0) {
+      for (const laneOffset of [-2.55, 2.55]) {
+        const halfMarkWidth = 0.045;
+        const markAInner = offsetPoint(a, laneOffset - halfMarkWidth, ROAD_SURFACE_OFFSET + 0.028);
+        const markAOuter = offsetPoint(a, laneOffset + halfMarkWidth, ROAD_SURFACE_OFFSET + 0.028);
+        const markBOuter = offsetPoint(b, laneOffset + halfMarkWidth, ROAD_SURFACE_OFFSET + 0.028);
+        const markBInner = offsetPoint(b, laneOffset - halfMarkWidth, ROAD_SURFACE_OFFSET + 0.028);
+        addQuad(markingGeometry, origin, markAInner, markAOuter, markBOuter, markBInner, ROAD_COLORS.edge);
+        markingGeometry.segmentCount += 1;
+      }
     }
     geometry.segmentCount += 1;
   }
 
-  return geometry;
+  return { ...geometry, markingGeometry };
 }
 
 export function nearestRoadSurfaceInfo(x, z, samples) {
@@ -260,25 +251,26 @@ export function getRoadStats(samples, chunkSize = ROAD_CHUNK_SIZE) {
 
 
 
-const ROAD_STRIPE_INNER_OFFSET = ROAD_HALF_WIDTH + ROAD_SHOULDER_WIDTH - 0.34;
-const ROAD_STRIPE_OUTER_OFFSET = ROAD_HALF_WIDTH + ROAD_SHOULDER_WIDTH - 0.16;
-const ROAD_STRIPE_COLORS = Object.freeze({
-  cyan: Object.freeze([0.12, 0.72, 0.98]),
-  magenta: Object.freeze([0.92, 0.13, 0.56])
+const ROAD_FENCE_OFFSET = 9.15;
+const ROAD_FENCE_COLORS = Object.freeze({
+  cyan: Object.freeze([0.06, 0.58, 1.0]),
+  magenta: Object.freeze([0.96, 0.045, 0.48])
 });
 
-/** Two thin neon guidance stripes sit flush with the outside shoulder edge. */
+/**
+ * BUILD 223 roadside fence: continuous neon side rails with regularly spaced
+ * uprights. White lane paint is generated separately by buildRoadChunkGeometry.
+ */
 export function buildRoadCurbChunkGeometry(samples, chunkX, chunkY, chunkZ, chunkSize = ROAD_CHUNK_SIZE) {
-  if (!Array.isArray(samples) || samples.length < 8) throw new TypeError("Road stripe generation requires a closed sample path.");
-  if (![chunkX, chunkY, chunkZ].every(Number.isInteger)) throw new TypeError("Road stripe chunk coordinates must be integers.");
-  if (!Number.isFinite(chunkSize) || chunkSize <= 0) throw new RangeError("Road stripe chunk size must be a positive finite number.");
+  if (!Array.isArray(samples) || samples.length < 8) throw new TypeError("Road fence generation requires a closed sample path.");
+  if (![chunkX, chunkY, chunkZ].every(Number.isInteger)) throw new TypeError("Road fence chunk coordinates must be integers.");
+  if (!Number.isFinite(chunkSize) || chunkSize <= 0) throw new RangeError("Road fence chunk size must be a positive finite number.");
 
-  const geometry = {
-    positions: [], colors: [], indices: [], segmentCount: 0,
-    stripeWidth: ROAD_STRIPE_OUTER_OFFSET - ROAD_STRIPE_INNER_OFFSET,
-    height: 0.025
-  };
+  const makeGeometry = () => ({ positions: [], colors: [], indices: [], segmentCount: 0, postCount: 0 });
+  const left = makeGeometry();
+  const right = makeGeometry();
   const origin = { x: chunkX * chunkSize, y: chunkY * chunkSize, z: chunkZ * chunkSize };
+  const rails = [{ side: 1, geometry: left, color: ROAD_FENCE_COLORS.cyan }, { side: -1, geometry: right, color: ROAD_FENCE_COLORS.magenta }];
 
   for (let index = 0; index < samples.length; index += 1) {
     const nextIndex = (index + 1) % samples.length;
@@ -286,16 +278,32 @@ export function buildRoadCurbChunkGeometry(samples, chunkX, chunkY, chunkZ, chun
     const midpointX = (a.x + b.x) * 0.5, midpointZ = (a.z + b.z) * 0.5;
     if (chunkIndex(midpointX, chunkSize) !== chunkX || chunkIndex(midpointZ, chunkSize) !== chunkZ) continue;
 
-    for (const side of [1, -1]) {
-      const innerA = offsetPoint(a, side * ROAD_STRIPE_INNER_OFFSET, ROAD_SHOULDER_OFFSET + geometry.height);
-      const innerB = offsetPoint(b, side * ROAD_STRIPE_INNER_OFFSET, ROAD_SHOULDER_OFFSET + geometry.height);
-      const outerA = offsetPoint(a, side * ROAD_STRIPE_OUTER_OFFSET, ROAD_SHOULDER_OFFSET + geometry.height);
-      const outerB = offsetPoint(b, side * ROAD_STRIPE_OUTER_OFFSET, ROAD_SHOULDER_OFFSET + geometry.height);
-      addQuad(geometry, origin, innerA, outerA, outerB, innerB, side === 1 ? ROAD_STRIPE_COLORS.cyan : ROAD_STRIPE_COLORS.magenta);
-      geometry.segmentCount += 1;
+    for (const rail of rails) {
+      const baseA = offsetPoint(a, rail.side * ROAD_FENCE_OFFSET, ROAD_SHOULDER_OFFSET);
+      const baseB = offsetPoint(b, rail.side * ROAD_FENCE_OFFSET, ROAD_SHOULDER_OFFSET);
+      const upperA = { ...baseA, y: baseA.y + 0.82 };
+      const upperB = { ...baseB, y: baseB.y + 0.82 };
+      const lowerA = { ...baseA, y: baseA.y + 0.34 };
+      const lowerB = { ...baseB, y: baseB.y + 0.34 };
+
+      addRailBeam(rail.geometry, origin, upperA, upperB, 0.055, 0.045, rail.color);
+      addRailBeam(rail.geometry, origin, lowerA, lowerB, 0.038, 0.032, rail.color);
+      rail.geometry.segmentCount += 1;
+
+      if (index % 9 === 0) {
+        addGuardrailPost(rail.geometry, origin, baseA, baseA.y - 0.02, baseA.y + 0.91, 0.045, rail.color);
+        rail.geometry.postCount += 1;
+      }
     }
   }
-  return geometry;
+
+  return {
+    left,
+    right,
+    segmentCount: left.segmentCount + right.segmentCount,
+    postCount: left.postCount + right.postCount,
+    railOffset: ROAD_FENCE_OFFSET
+  };
 }
 
 export const ROAD_EDGE_TRANSITION_THRESHOLD = 0.85;
@@ -587,10 +595,11 @@ export function buildRoadFurnitureChunkGeometry(
         profileA.delta <= -ROAD_GUARDRAIL_DROP_THRESHOLD
         && profileB.delta <= -ROAD_GUARDRAIL_DROP_THRESHOLD
       ) {
-        // Keep the metal barrier clearly outside the coloured shoulder strips.
-        const railOffset = ROAD_EDGE_OUTER_OFFSET + 1.65;
-        const groundA = terrainPointAtOffset(a, side, railOffset, 0.05);
-        const groundB = terrainPointAtOffset(b, side, railOffset, 0.05);
+        // Physical safety rail stays close to the shoulder; the visible neon
+        // fence is a separate, continuous pair at the legacy 9.15 m datum.
+        const railOffset = ROAD_EDGE_OUTER_OFFSET - 0.18;
+        const groundA = offsetPoint(a, side * railOffset, ROAD_SHOULDER_OFFSET);
+        const groundB = offsetPoint(b, side * railOffset, ROAD_SHOULDER_OFFSET);
         const topA = { ...groundA, y: groundA.y + 0.98 };
         const topB = { ...groundB, y: groundB.y + 0.98 };
         const midA = { ...groundA, y: groundA.y + 0.52 };
