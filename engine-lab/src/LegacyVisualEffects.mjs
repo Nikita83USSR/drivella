@@ -250,6 +250,7 @@ export class LegacyVisualEffects {
     this.headlampOpticsPostProcess = null;
     this.headlampOpticsSourceCount = 0;
     this.headlightRoadProbeEnergy = 0;
+    this.headlightRoadProbeCounter = 0;
     this.headlightRoadPower = 0;
     this.headlightRoadPlugin = null;
     this.headlightRoadBindObserver = null;
@@ -706,7 +707,7 @@ void main(void) {
     mesh.outlineColor = new Color3(0.004, 0.004, 0.008);
     mesh.outlineWidth = 0.082;
     try {
-      if (!mesh.edgesRenderer) mesh.enableEdgesRendering(0.92, false);
+      if (!mesh.edgesRenderer) mesh.enableEdgesRendering(0.92, true);
       if (mesh.edgesRenderer) {
         mesh.edgesRenderer.edgesColor = new Color4(0.004, 0.005, 0.008, 1);
         mesh.edgesRenderer.edgesWidth = 3.2;
@@ -817,7 +818,9 @@ void main(void) {
         mesh.metadata = metadata;
       }
     }
-    this.headlightRoadProbeEnergy = this.measureHeadlightRoadProbeEnergy();
+    if ((this.headlightRoadProbeCounter++ % 15) === 0) {
+      this.headlightRoadProbeEnergy = this.measureHeadlightRoadProbeEnergy();
+    }
     return beamPower > 0.01;
   }
 
@@ -1014,9 +1017,6 @@ void main(void) {
       lensFlares: Boolean(this.lensFlareSystems.some((system) => system.isEnabled)),
       lensFlareTextureKind: this.flareTextureKind,
       lensFlareSpriteCount: this.lensFlareSystems.reduce((sum, system) => sum + system.lensFlares.length, 0),
-      headlampOpticsPostProcessReady: Boolean(this.headlampOpticsPostProcess),
-      headlampOpticsSourceCount: this.headlampOpticsSourceCount,
-      headlampOpticsEnabled: Boolean(this.lensFlaresEnabled && this.headlightsEnabled),
       lensFlareTexturesReady: this.lensFlareSystems.flatMap((system) => system.lensFlares)
         .every((flare) => Boolean(flare.texture?.isReady?.())),
       headlampOpticsPostProcessReady: Boolean(this.headlampOpticsPostProcess),
