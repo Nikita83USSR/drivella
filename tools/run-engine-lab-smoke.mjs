@@ -146,6 +146,22 @@ try {
     const effects = window.__DRIVELLA_LAB__?.legacyEffects;
     return effects?.headlightLighting === true && effects?.headlightBeamIntensity > 5;
   }, null, { timeout: 8000 });
+  // The road-light diagnostic is sampled every 15 render frames. Wait for
+  // a fresh measurement after H is pressed; otherwise this can read the
+  // previous "headlights off" sample and report a false zero-energy failure.
+  try {
+    await page.waitForFunction(() => {
+      const effects = window.__DRIVELLA_LAB__?.legacyEffects;
+      return effects?.headlightRoadProbeCandidateCount > 0
+        && Number.isFinite(effects?.headlightRoadProbeNearestDistance)
+        && effects?.headlightRoadProbeMaxForwardDot > -1;
+    }, null, { timeout: 5000 });
+  } catch (error) {
+    const diagnostic = await page.evaluate(() => window.__DRIVELLA_LAB__?.legacyEffects ?? null);
+    throw new Error("Headlight road probe did not produce a fresh sample after the projectors were enabled: "
+      + JSON.stringify(diagnostic) + " · " + String(error));
+  }
+
   await page.waitForFunction(() => {
     const effects = window.__DRIVELLA_LAB__?.legacyEffects;
     return effects?.lensFlareTextureKind === "canvas-png"
