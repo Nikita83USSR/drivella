@@ -97,6 +97,13 @@ jobs:
               npm install --no-audit --no-fund
               npm run build:engine
               node tools/test-spatial-chunks.mjs
+              node tools/test-neon-palette.mjs
+              node tools/test-road-curbs.mjs
+              node tools/test-road-grid-mask.mjs
+              node tools/test-vehicle-controller.mjs
+              # npm install above can prune Playwright because it is a CI-only --no-save dependency.
+              npm install --no-save --no-audit --no-fund playwright
+              npx playwright install chromium
               node tools/run-engine-lab-smoke.mjs
             fi
 
