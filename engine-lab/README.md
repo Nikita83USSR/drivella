@@ -12,7 +12,7 @@ Published preview: [DRIVELLA 3D Engine Lab](https://nikita83ussr.github.io/drive
 - World objects retain their own source hues and material identity: green foliage, brown wood and shores, blue-gray stone, water, road markings and amber tunnel warnings.
 - Object colors receive a hue-preserving brightness/saturation lift; each streamed mesh emits a matching glow tint. The Countach keeps its original material palette.
 - The asphalt, shoulders and neutral-white lane markings match the stable game's dark road palette, have no emission, and are excluded from the world glow. Separate raised cyan-blue kerbs glow to match the major terrain grid; they are visual-only and do not alter tyre collision.
-- Legacy-style graphics are restored with Babylon-native post-processing: scene bloom, SSAO, screen-space reflections, directional shadows, the horizon sunset disc and aura, occlusion-aware volumetric sun rays, lens flares, car headlamps, red underbody lighting, wheel contact shadows and local track lights. Use **FX / F4** to toggle the effects.
+- Legacy-style graphics are restored with Babylon-native post-processing: scene bloom, SSAO, screen-space reflections, directional shadows, the horizon sunset disc and aura, occlusion-aware volumetric sun rays, lens flares, car headlamps, red underbody lighting, wheel contact shadows, Countach silhouette outlines and local track lights. Use **FX / F4** to toggle the effects.
 
 ## Local build
 

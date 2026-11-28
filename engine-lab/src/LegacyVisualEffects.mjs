@@ -103,6 +103,9 @@ export class LegacyVisualEffects {
     this.headlightsEnabled = false;
     this.underglowEnabled = true;
     this.lensFlaresEnabled = true;
+    this.outlinesEnabled = true;
+    this.outlineMeshes = new Set();
+    this.tailMaterial = null;
     this.sunEnabled = true;
     this.lastSunTextureUpdate = 0;
     this.vehicle = null;
@@ -347,9 +350,15 @@ export class LegacyVisualEffects {
     this.vehicle = vehicle;
     try {
       this.registerShadowReceiver(vehicle.chassis);
-      for (const mesh of vehicle.bodyRoot?.getChildMeshes?.() ?? []) this.registerShadowReceiver(mesh);
+      for (const mesh of vehicle.bodyRoot?.getChildMeshes?.() ?? []) {
+        this.registerShadowReceiver(mesh);
+        this.applyVehicleOutline(mesh);
+      }
       for (const pivot of vehicle.wheelPivots?.values?.() ?? []) {
-        for (const mesh of pivot.getChildMeshes?.() ?? []) this.registerShadowReceiver(mesh);
+        for (const mesh of pivot.getChildMeshes?.() ?? []) {
+          this.registerShadowReceiver(mesh);
+          this.applyVehicleOutline(mesh);
+        }
       }
 
       for (const side of [-1, 1]) {
@@ -409,21 +418,30 @@ export class LegacyVisualEffects {
         if (this.glowLayer) this.glowLayer.addExcludedMesh(disc);
       }
 
-      const bodyTail = vehicle.materials?.get?.("bodyTail");
-      if (bodyTail) bodyTail.emissiveColor = new Color3(0.24, 0.008, 0.018);
-      for (const key of ["headlampL", "headlampR"]) {
-        const lamp = vehicle.materials?.get?.(key);
-        if (lamp) lamp.emissiveColor = new Color3(0.52, 0.68, 0.9);
-      }
+      this.tailMaterial = vehicle.materials?.get?.("bodyTail") ?? null;
       this.setHeadlights(this.headlightsEnabled);
     } catch (error) {
       this.recordError("vehicle lighting", error);
     }
   }
 
+  applyVehicleOutline(mesh) {
+    if (!mesh || mesh.isDisposed?.()) return;
+    mesh.renderOutline = this.outlinesEnabled;
+    mesh.outlineColor = new Color3(0.008, 0.014, 0.03);
+    mesh.outlineWidth = 0.014;
+    this.outlineMeshes.add(mesh);
+  }
+
   setHeadlights(enabled) {
     this.headlightsEnabled = Boolean(enabled);
     for (const light of this.headlampSpots) light.intensity = this.headlightsEnabled ? 8.5 : 0;
+    for (const key of ["headlampL", "headlampR"]) {
+      const material = this.vehicle?.materials?.get?.(key);
+      if (material) material.emissiveColor = this.headlightsEnabled
+        ? new Color3(0.52, 0.68, 0.9)
+        : new Color3(0.01, 0.025, 0.05);
+    }
     return this.headlightsEnabled;
   }
 
@@ -471,6 +489,12 @@ export class LegacyVisualEffects {
         for (const light of this.underbodyLights) light.intensity = value ? 2.0 : 0;
         for (const shadow of this.wheelShadows.values()) shadow.setEnabled(value);
         break;
+      case "outlines":
+        this.outlinesEnabled = value;
+        for (const mesh of this.outlineMeshes) {
+          if (!mesh.isDisposed?.()) mesh.renderOutline = value;
+        }
+        break;
       case "headlights":
         this.setHeadlights(value);
         break;
@@ -492,6 +516,11 @@ export class LegacyVisualEffects {
     }
 
     if (!vehicle) return;
+    if (this.tailMaterial) {
+      this.tailMaterial.emissiveColor = vehicle.brake
+        ? new Color3(0.92, 0.018, 0.045)
+        : new Color3(0.24, 0.008, 0.018);
+    }
     for (const [key, shadow] of this.wheelShadows) {
       const pivot = vehicle.wheelPivots?.get?.(key);
       if (!pivot || pivot.isDisposed?.()) continue;
@@ -515,6 +544,7 @@ export class LegacyVisualEffects {
       godRays: Boolean(this.vls && this.vlsAttached),
       lensFlares: Boolean(this.lensFlareSystems.some((system) => system.isEnabled)),
       underglow: Boolean(this.underglowEnabled),
+      outlines: Boolean(this.outlinesEnabled),
       headlights: Boolean(this.headlightsEnabled),
       errors: this.errors.slice()
     };
