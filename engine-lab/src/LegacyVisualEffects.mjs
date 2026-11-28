@@ -39,21 +39,26 @@ class RoadHeadlightMaterialPlugin extends MaterialPluginBase {
   }
 
   isCompatible(shaderLanguage) {
-    return shaderLanguage === ShaderLanguage.GLSL;
+    this.lastShaderLanguage = shaderLanguage;
+    return shaderLanguage === ShaderLanguage.GLSL || shaderLanguage === ShaderLanguage.WGSL;
   }
 
   prepareDefines(defines) {
     defines.DRIVELLA_ROAD_HEADLIGHTS = true;
   }
 
-  getUniforms() {
+  getUniforms(shaderLanguage) {
+    const ubo = [
+      { name: "drivellaRoadHeadlightPositionL", size: 3, type: "vec3" },
+      { name: "drivellaRoadHeadlightPositionR", size: 3, type: "vec3" },
+      { name: "drivellaRoadHeadlightDirection", size: 3, type: "vec3" },
+      { name: "drivellaRoadHeadlightIntensity", size: 1, type: "float" }
+    ];
+    // WGSL exposes plugin UBO values through its generated uniforms struct;
+    // GLSL also needs explicit uniform declarations for non-UBO fallbacks.
+    if (shaderLanguage === ShaderLanguage.WGSL) return { ubo };
     return {
-      ubo: [
-        { name: "drivellaRoadHeadlightPositionL", size: 3, type: "vec3" },
-        { name: "drivellaRoadHeadlightPositionR", size: 3, type: "vec3" },
-        { name: "drivellaRoadHeadlightDirection", size: 3, type: "vec3" },
-        { name: "drivellaRoadHeadlightIntensity", size: 1, type: "float" }
-      ],
+      ubo,
       fragment: `
 #ifdef DRIVELLA_ROAD_HEADLIGHTS
 uniform vec3 drivellaRoadHeadlightPositionL;
@@ -85,7 +90,52 @@ uniform float drivellaRoadHeadlightIntensity;
   }
 
   getCustomCode(shaderType, shaderLanguage) {
-    if (shaderType !== "fragment" || shaderLanguage !== ShaderLanguage.GLSL) return null;
+    if (shaderType !== "fragment") return null;
+
+    if (shaderLanguage === ShaderLanguage.WGSL) {
+      return {
+        CUSTOM_FRAGMENT_DEFINITIONS: `
+fn drivellaRoadHeadlightEnergy(surfaceNormal: vec3f) -> f32 {
+  if (uniforms.drivellaRoadHeadlightIntensity <= 0.001) {
+    return 0.0;
+  }
+  let beamDirection = normalize(uniforms.drivellaRoadHeadlightDirection);
+  let deltaL = uniforms.drivellaRoadHeadlightPositionL - fragmentInputs.vPositionW;
+  let deltaR = uniforms.drivellaRoadHeadlightPositionR - fragmentInputs.vPositionW;
+  let distSqL = dot(deltaL, deltaL);
+  let distSqR = dot(deltaR, deltaR);
+  var energy = 0.0;
+  if (distSqL < 10000.0) {
+    let distL = sqrt(max(distSqL, 0.000001));
+    let toL = deltaL / max(distL, 0.001);
+    let coneL = smoothstep(0.24, 0.88, dot(beamDirection, -toL));
+    let rangeL = 1.0 - smoothstep(72.0, 140.0, distL);
+    let attenuationL = 1.0 / (1.0 + distSqL * 0.00048);
+    let diffuseL = clamp(abs(dot(normalize(surfaceNormal), toL)) * 1.85 + 0.30, 0.0, 1.0);
+    energy += coneL * rangeL * attenuationL * diffuseL;
+  }
+  if (distSqR < 10000.0) {
+    let distR = sqrt(max(distSqR, 0.000001));
+    let toR = deltaR / max(distR, 0.001);
+    let coneR = smoothstep(0.24, 0.88, dot(beamDirection, -toR));
+    let rangeR = 1.0 - smoothstep(72.0, 140.0, distR);
+    let attenuationR = 1.0 / (1.0 + distSqR * 0.00048);
+    let diffuseR = clamp(abs(dot(normalize(surfaceNormal), toR)) * 1.85 + 0.30, 0.0, 1.0);
+    energy += coneR * rangeR * attenuationR * diffuseR;
+  }
+  return energy * uniforms.drivellaRoadHeadlightIntensity;
+}
+`,
+        CUSTOM_FRAGMENT_BEFORE_FOG: `
+color = vec4f(
+  color.rgb + vec3f(0.92, 0.96, 1.0) * (drivellaRoadHeadlightEnergy(normalW) * 1.25),
+  color.a
+);
+`
+      };
+    }
+
+    if (shaderLanguage !== ShaderLanguage.GLSL) return null;
     return {
       CUSTOM_FRAGMENT_DEFINITIONS: `
 #ifdef DRIVELLA_ROAD_HEADLIGHTS
@@ -111,7 +161,7 @@ float drivellaRoadHeadlightEnergy(vec3 surfaceNormal) {
     vec3 toR = deltaR / max(distR, 0.001);
     float coneR = smoothstep(0.24, 0.88, dot(beamDirection, -toR));
     float rangeR = 1.0 - smoothstep(72.0, 140.0, distR);
-    float attenuationR = 1.0 / (1.0 + distSqR * 0.00048);
+    float attenuationR = 1.0 / (1.0 + distR * distR * 0.00048);
     float diffuseR = clamp(abs(dot(normalize(surfaceNormal), toR)) * 1.85 + 0.30, 0.0, 1.0);
     energy += coneR * rangeR * attenuationR * diffuseR;
   }
@@ -258,6 +308,7 @@ export class LegacyVisualEffects {
     this.headlightRoadPlugin = null;
     this.headlightRoadBindObserver = null;
     this.headlightRoadObservableBindCount = 0;
+    this.lastShaderLanguage = null;
     this.headlightRoadMaterial = roadMaterial ?? null;
     if (roadMaterial) {
       try {
@@ -497,9 +548,9 @@ export class LegacyVisualEffects {
       this.scene.lensFlaresEnabled = true;
       this.sunFlareSystem = new LensFlareSystem("drivella-horizon-lens-flares", this.sunMesh, this.scene);
       this.lensFlareSystems.push(this.sunFlareSystem);
-      new LensFlare(0.105, 0, new Color3(1, 0.58, 0.38), this.flareTextureUrl, this.sunFlareSystem);
-      new LensFlare(0.045, 0.34, new Color3(0.35, 0.78, 1), this.flareTextureUrl, this.sunFlareSystem);
-      new LensFlare(0.026, 0.62, new Color3(1, 0.34, 0.58), this.flareTextureUrl, this.sunFlareSystem);
+      // Keep one restrained halo at the sun. The older ghost sprites
+      // produced distracting screen streaks while orbiting the camera.
+      new LensFlare(0.055, 0, new Color3(1, 0.72, 0.56), this.flareTextureUrl, this.sunFlareSystem);
     } catch (error) {
       this.recordError("lens flares", error);
       this.sunFlareSystem = null;
@@ -519,23 +570,23 @@ uniform float opticsEnabled;
 float rayProfile(vec2 p, vec2 direction, float lengthFactor, float widthFactor) {
   vec2 perpendicular = vec2(-direction.y, direction.x);
   float along = abs(dot(p, direction) / max(lengthFactor, 0.001));
-  float across = dot(p, perpendicular) / max(widthFactor, 0.001);
-  return (1.0 - smoothstep(0.55, 1.0, along)) * exp(-across * across * 8.0);
+  float across = abs(dot(p, perpendicular));
+  float rayLength = 1.0 - smoothstep(0.48, 1.0, along);
+  float rayWidth = 1.0 - smoothstep(widthFactor * 0.42, widthFactor * 1.35, across);
+  return rayLength * rayWidth;
 }
 vec3 headlampFlare(vec2 uv, vec4 source) {
   if (source.w <= 0.001) return vec3(0.0);
   vec2 p = vec2((uv.x - source.x) * screenAspect, uv.y - source.y) / max(source.z, 0.0001);
   float d = length(p);
-  float core = 0.38 * exp(-d * d * 18.0);
-  float inner = 0.12 * exp(-d * d * 4.8);
-  float aura = 0.095 * exp(-d * d * 1.22);
-  float rings = exp(-pow(d - 1.72, 2.0) * 1800.0) * 0.055
-              + exp(-pow(d - 2.18, 2.0) * 1800.0) * 0.035;
-  float rays = rayProfile(p, vec2(1.0, 0.0), 2.10, 0.038) * 0.16
-             + rayProfile(p, vec2(0.0, 1.0), 1.15, 0.032) * 0.16
-             + rayProfile(p, normalize(vec2(0.707, 0.707)), 0.78, 0.027) * 0.24
-             + rayProfile(p, normalize(vec2(-0.707, 0.707)), 0.78, 0.027) * 0.24;
-  return vec3(0.91, 0.965, 1.0) * (core + inner + aura + rings + rays) * source.w;
+  float core = 0.34 * exp(-d * d * 20.0);
+  float inner = 0.10 * exp(-d * d * 5.2);
+  float aura = 0.075 * exp(-d * d * 1.35);
+  // A clean four-point diffraction cross; wider antialiased rays avoid
+  // sub-pixel flicker when the camera or car moves.
+  float rays = rayProfile(p, vec2(1.0, 0.0), 2.15, 0.105) * 0.18
+             + rayProfile(p, vec2(0.0, 1.0), 1.20, 0.085) * 0.16;
+  return vec3(0.91, 0.965, 1.0) * (core + inner + aura + rays) * source.w;
 }
 void main(void) {
   vec4 sceneColor = texture2D(textureSampler, vUV);
@@ -706,13 +757,15 @@ void main(void) {
 
   applyVehicleOutline(mesh) {
     if (!mesh || mesh.isDisposed?.()) return;
-    mesh.renderOutline = this.outlinesEnabled;
-    mesh.outlineColor = new Color3(0.004, 0.004, 0.008);
+    // Use one explicit black edge pass. Babylon's separate outline pass
+    // can inherit tinted material state on red body panels.
+    mesh.renderOutline = false;
+    mesh.outlineColor = Color3.Black();
     mesh.outlineWidth = 0.082;
     try {
       if (!mesh.edgesRenderer) mesh.enableEdgesRendering(0.92, true);
       if (mesh.edgesRenderer) {
-        mesh.edgesRenderer.edgesColor = new Color4(0.004, 0.005, 0.008, 1);
+        mesh.edgesRenderer.edgesColor = new Color4(0, 0, 0, 1);
         mesh.edgesRenderer.edgesWidth = 3.2;
         mesh.edgesRenderer.isEnabled = this.outlinesEnabled;
       }
@@ -1050,6 +1103,13 @@ void main(void) {
       vehicleOutlineWidth: this.outlineMeshes.values().next().value?.outlineWidth ?? 0,
       vehicleOutlineEdgeMeshCount: [...this.outlineMeshes].filter((mesh) => Boolean(mesh.edgesRenderer?.isEnabled)).length,
       vehicleOutlineEdgeWidth: [...this.outlineMeshes].find((mesh) => mesh.edgesRenderer)?.edgesRenderer?.edgesWidth ?? 0,
+      vehicleOutlineEdgeColor: [...this.outlineMeshes].find((mesh) => mesh.edgesRenderer)?.edgesRenderer?.edgesColor
+        ? [
+            [...this.outlineMeshes].find((mesh) => mesh.edgesRenderer).edgesRenderer.edgesColor.r,
+            [...this.outlineMeshes].find((mesh) => mesh.edgesRenderer).edgesRenderer.edgesColor.g,
+            [...this.outlineMeshes].find((mesh) => mesh.edgesRenderer).edgesRenderer.edgesColor.b
+          ]
+        : null,
       glassMeshCount: this.vehicle?.bodyRoot?.getChildMeshes?.().filter((mesh) => mesh.name === "countach-glass").length ?? 0,
       frontTurnSignalCount: this.vehicle?.frontSignalMeshes?.size ?? 0,
       rearTurnSignalCount: this.vehicle?.rearSignalMeshes?.size ?? 0,
@@ -1068,6 +1128,9 @@ void main(void) {
       headlightRoadObservableBindCount: this.headlightRoadObservableBindCount,
       headlightRoadMaterialFrozen: Boolean(this.headlightRoadMaterial?.isFrozen),
       headlightRoadPluginActive: Boolean(this.headlightRoadMaterial?.pluginManager?._activePlugins?.includes(this.headlightRoadPlugin)),
+      headlightRoadPluginGlslCompatible: Boolean(this.headlightRoadPlugin?.isCompatible?.(ShaderLanguage.GLSL)),
+      headlightRoadPluginWgslCompatible: Boolean(this.headlightRoadPlugin?.isCompatible?.(ShaderLanguage.WGSL)),
+      headlightRoadShaderLanguage: this.headlightRoadPlugin?.lastShaderLanguage ?? null,
       headlightRoadBindCallbackAvailable: typeof this.headlightRoadMaterial?._callbackPluginEventBindForSubMesh === "function",
       headlightRoadRunsCodeOnBind: Boolean(this.headlightRoadMaterial?._runsCodeOnBind?.()),
       headlightRoadMeshCount: roadMeshes.length,
