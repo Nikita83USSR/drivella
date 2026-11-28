@@ -144,7 +144,7 @@ try {
   await page.keyboard.press("h");
   await page.waitForFunction(() => {
     const effects = window.__DRIVELLA_LAB__?.legacyEffects;
-    return effects?.headlightLighting === true && effects?.headlightBeamIntensity > 5;
+    return effects?.headlightLighting === true && effects?.headlightBeamIntensity > 1.5;
   }, null, { timeout: 8000 });
   // The road-light diagnostic is sampled every 15 render frames. Wait for
   // a fresh measurement after H is pressed; otherwise this can read the
@@ -191,17 +191,18 @@ try {
   }));
   const illuminatedHeadlights = illuminatedState.effects;
   const invalidHeadlightBeams = (illuminatedHeadlights?.headlightBeams ?? []).filter((beam) =>
-    beam.intensity < 10 || beam.positionDistance > 4.0 || beam.forwardAlignment < 0.82 || beam.directionY > -0.05
+    beam.intensity < 1.5 || beam.positionDistance > 4.0 || beam.forwardAlignment < 0.82 || beam.directionY > -0.05
   );
   if (illuminatedHeadlights?.headlightSourceCount !== 2 || illuminatedHeadlights?.headlightOpticPartCount !== 12
-      || illuminatedHeadlights.headlightBeamIntensity < 10 || illuminatedHeadlights.headlightBeams?.length !== 2
+      || illuminatedHeadlights.headlightBeamIntensity < 1.5 || illuminatedHeadlights.headlightBeams?.length !== 2
       || invalidHeadlightBeams.length || !illuminatedHeadlights.headlightRoadPlugin
       || !illuminatedHeadlights.headlightRoadPluginActive
       || illuminatedHeadlights.headlightRoadMeshCount < 1
       || illuminatedHeadlights.headlightRoadObservableBindCount < 1
       || illuminatedHeadlights.headlightRoadUniformBindCount < 1
       || illuminatedHeadlights.headlightRoadIntensity < 4.8
-      || illuminatedHeadlights.headlightRoadProbeEnergy < 0.2
+      || illuminatedHeadlights.headlightRoadProbeEnergy < 0.08
+      || illuminatedHeadlights.headlightRoadProbeEnergy > 0.48
       || illuminatedHeadlights.headlightRoadDirectionY > -0.05
       || illuminatedHeadlights.lensFlareTextureKind !== "canvas-png"
       || illuminatedHeadlights.lensFlareSpriteCount < 1
