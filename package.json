@@ -1,0 +1,16 @@
+{
+  "name": "drivella",
+  "private": true,
+  "version": "0.1.0",
+  "description": "DRIVELLA browser game",
+  "scripts": {
+    "build:engine": "node engine-lab/build.mjs"
+  },
+  "dependencies": {
+    "@babylonjs/core": "9.37.2",
+    "@babylonjs/havok": "1.3.14"
+  },
+  "devDependencies": {
+    "esbuild": "0.28.2"
+  }
+}
