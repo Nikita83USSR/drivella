@@ -36,11 +36,12 @@ function makeHorizonSunTexture(scene) {
     const radius = 292;
     ctx.clearRect(0, 0, size, size);
 
-    const aura = ctx.createRadialGradient(center, center, radius * 0.36, center, center, 505);
+    const aura = ctx.createRadialGradient(center, center, radius * 0.36, center, center, 430);
     aura.addColorStop(0, "rgba(255,76,45,0.44)");
     aura.addColorStop(0.30, "rgba(255,54,70,0.26)");
     aura.addColorStop(0.66, "rgba(205,34,112,0.11)");
-    aura.addColorStop(1, "rgba(160,28,112,0)");
+    aura.addColorStop(0.88, "rgba(120,20,88,0.035)");
+    aura.addColorStop(1, "rgba(0,0,0,0)");
     ctx.fillStyle = aura;
     ctx.fillRect(0, 0, size, size);
 
@@ -114,6 +115,7 @@ export class LegacyVisualEffects {
     this.vehicle = null;
     this.wheelShadows = new Map();
     this.headlampSpots = [];
+    this.headlampSpotBySide = new Map();
     this.underbodyLights = [];
     this.trackLights = [];
     this.pipeline = null;
@@ -329,7 +331,7 @@ export class LegacyVisualEffects {
   createLensFlares() {
     if (!this.sunMesh) return;
     try {
-      const flareSvg = '<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 128 128"><defs><radialGradient id="g"><stop stop-color="#fff" stop-opacity="1"/><stop offset=".18" stop-color="#ffe7ce" stop-opacity=".85"/><stop offset=".42" stop-color="#ff9b83" stop-opacity=".32"/><stop offset="1" stop-color="#ff6470" stop-opacity="0"/></radialGradient></defs><rect width="128" height="128" fill="url(#g)"/></svg>';
+      const flareSvg = '<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 256 256"><defs><radialGradient id="g" cx="50%" cy="50%" r="50%"><stop stop-color="#fff" stop-opacity="1"/><stop offset=".18" stop-color="#ffe7ce" stop-opacity=".82"/><stop offset=".42" stop-color="#ff9b83" stop-opacity=".28"/><stop offset=".70" stop-color="#ff6470" stop-opacity=".07"/><stop offset=".88" stop-color="#000000" stop-opacity=".006"/><stop offset="1" stop-color="#000000" stop-opacity="0"/></radialGradient></defs><rect width="256" height="256" fill="url(#g)"/></svg>';
       this.flareTextureUrl = "data:image/svg+xml;base64," + btoa(flareSvg);
       this.scene.lensFlaresEnabled = true;
       this.sunFlareSystem = new LensFlareSystem("drivella-horizon-lens-flares", this.sunMesh, this.scene);
@@ -386,20 +388,23 @@ export class LegacyVisualEffects {
       for (const side of [-1, 1]) {
         const spot = new SpotLight(
           "drivella-countach-headlamp-" + side,
-          new Vector3(side * 0.62, 0.30, 1.65),
-          new Vector3(0, -0.10, 1).normalize(),
+          Vector3.Zero(),
+          new Vector3(0, -Math.SQRT1_2, Math.SQRT1_2),
           Math.PI / 3.2,
           2.2,
           this.scene
         );
-        spot.parent = vehicle.headlightOpticRoots?.get?.(side) ?? vehicle.headlightPivots?.get?.(side) ?? vehicle.chassis;
-        spot.position.copyFrom(vehicle.headlightProjectorAims?.get?.(side) ?? new Vector3(side * 0.67, 0.11, 0.27));
-        spot.direction.set(0, 0, 1);
+        // The lens geometry is expressed in body-space coordinates inside a transformed
+        // optics root. Keep the light unparented and update its world pose from that root;
+        // parenting a body-space projector point to the root double-transforms its offset.
+        spot.position.set(0, 0, 0);
+        spot.direction.set(0, -Math.SQRT1_2, Math.SQRT1_2);
         spot.diffuse = new Color3(0.72, 0.86, 1);
         spot.specular = new Color3(0.72, 0.86, 1);
         spot.range = 86;
         spot.intensity = 0;
         this.headlampSpots.push(spot);
+        this.headlampSpotBySide.set(side, spot);
         if (this.flareTextureUrl) {
           const lampFlare = new LensFlareSystem("drivella-headlamp-flares-" + side, spot, this.scene);
           lampFlare.isEnabled = this.lensFlaresEnabled;
@@ -445,6 +450,7 @@ export class LegacyVisualEffects {
       this.tailMaterial = vehicle.materials?.get?.("bodyTail") ?? null;
       vehicle.setHeadlightsDeployed?.(this.headlightsDeployed);
       this.setHeadlights(this.headlightsEnabled);
+      this.syncHeadlampTransforms();
     } catch (error) {
       this.recordError("vehicle lighting", error);
     }
@@ -456,6 +462,28 @@ export class LegacyVisualEffects {
     mesh.outlineColor = new Color3(0.008, 0.014, 0.03);
     mesh.outlineWidth = 0.020;
     this.outlineMeshes.add(mesh);
+  }
+
+  syncHeadlampTransforms() {
+    const vehicle = this.vehicle;
+    if (!vehicle) return;
+    // The local axis follows the slanted projector face. After the -45° optic
+    // counter-rotation it points down the road instead of into the sky.
+    const localBeamAxis = new Vector3(0, -Math.SQRT1_2, Math.SQRT1_2);
+    for (const side of [-1, 1]) {
+      const root = vehicle.headlightOpticRoots?.get?.(side);
+      const aim = vehicle.headlightProjectorAims?.get?.(side);
+      const spot = this.headlampSpotBySide.get(side);
+      if (!root || !aim || !spot || root.isDisposed?.()) continue;
+      root.computeWorldMatrix(true);
+      const world = root.getWorldMatrix();
+      const worldPosition = Vector3.TransformCoordinates(aim, world);
+      const worldDirection = Vector3.TransformNormal(localBeamAxis, world);
+      if (worldDirection.lengthSquared() > 1e-8) worldDirection.normalize();
+      else worldDirection.set(0, 0, 1);
+      spot.position.copyFrom(worldPosition);
+      spot.direction.copyFrom(worldDirection);
+    }
   }
 
   syncHeadlightOutput() {
@@ -572,6 +600,7 @@ export class LegacyVisualEffects {
     }
 
     if (!vehicle) return;
+    this.syncHeadlampTransforms();
     this.syncHeadlightOutput();
     if (this.tailMaterial) {
       this.tailMaterial.emissiveColor = vehicle.brake
@@ -592,6 +621,15 @@ export class LegacyVisualEffects {
   }
 
   getStatus() {
+    const forward = this.vehicle?.bodyRoot?.getDirection?.(Vector3.Forward())?.normalize?.() ?? new Vector3(0, 0, 1);
+    const bodyPosition = this.vehicle?.bodyRoot?.getAbsolutePosition?.() ?? Vector3.Zero();
+    const headlightBeams = [...this.headlampSpotBySide.entries()].map(([side, spot]) => ({
+      side: side < 0 ? "L" : "R",
+      intensity: Number(spot.intensity ?? 0),
+      positionDistance: Number(Vector3.Distance(spot.position, bodyPosition).toFixed(3)),
+      forwardAlignment: Number(Vector3.Dot(spot.direction.clone().normalize(), forward).toFixed(3)),
+      directionY: Number(spot.direction.y.toFixed(3))
+    }));
     return {
       bloom: Boolean(this.pipeline?.bloomEnabled),
       ssao: Boolean(this.ssao && this.ssaoAttached),
@@ -620,6 +658,7 @@ export class LegacyVisualEffects {
       headlightDeploy: Number(this.vehicle?.headlightDeploy ?? 0),
       headlightBeamIntensity: Number(this.headlampSpots[0]?.intensity ?? 0),
       headlightSourceCount: this.headlampSpots.length,
+      headlightBeams,
       headlightOpticPartCount: [...(this.vehicle?.headlightOpticRoots?.values?.() ?? [])].reduce((count, root) => count + (root.getChildMeshes?.().length ?? 0), 0),
       errors: this.errors.slice()
     };
