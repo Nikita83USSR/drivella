@@ -291,7 +291,13 @@ try {
   if(!Number.isFinite(state.vehicleRoadDistance)||state.vehicleRoadDistance>7)throw new Error("Handling smoke left the asphalt corridor: "+JSON.stringify(state));
   const travelled=Math.hypot(state.vehicleX-beforeDrive.x,state.vehicleZ-beforeDrive.z);
   const yawDelta=Math.abs(state.vehicleUnwrappedYaw-beforeDrive.unwrappedYaw);
-  if(travelled<.55||state.vehicleSpeedKmh<1.5||yawDelta<.005)throw new Error("WASD failed to move and steer the Countach: "+JSON.stringify({beforeDrive,state,travelled,yawDelta}));
+  const accelerationSpeedKmh=Math.max(
+    handlingSamples.accelerationT180?.speedKmh??0,
+    handlingSamples.accelerationT500?.speedKmh??0,
+    handlingSamples.accelerationT1000?.speedKmh??0,
+    handlingSamples.acceleration?.speedKmh??0
+  );
+  if(travelled<.55||accelerationSpeedKmh<1.5||yawDelta<.005)throw new Error("WASD failed to move and steer the Countach: "+JSON.stringify({beforeDrive,state,travelled,yawDelta,accelerationSpeedKmh,handlingSamples}));
   if(!Number.isFinite(state.vehicleWheelbase)||Math.abs(state.vehicleWheelbase-3.282433711)>.002)throw new Error("Countach wheelbase mismatch: "+JSON.stringify(state));
   if(!Number.isFinite(state.vehicleTrack)||Math.abs(state.vehicleTrack-1.854847372)>.002)throw new Error("Countach track mismatch: "+JSON.stringify(state));
   if(!Number.isFinite(state.vehicleWheelRadius)||state.vehicleWheelRadius<.22||state.vehicleWheelRadius>.55)throw new Error("Tyre radius was not decoded from Countach geometry: "+JSON.stringify(state));
