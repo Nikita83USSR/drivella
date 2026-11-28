@@ -1,0 +1,91 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+  <meta name="theme-color" content="#080d1a">
+  <meta name="description" content="DRIVELLA local browser 3D engine and physics foundation test">
+  <title>DRIVELLA — 3D Engine Lab</title>
+  <link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 64 64'%3E%3Cpath fill='%2308d9ff' d='M8 48 32 6l24 42H8Z'/%3E%3C/svg%3E">
+  <link rel="stylesheet" href="./styles.css">
+  <script>
+    if ("serviceWorker" in navigator && location.protocol !== "file:") {
+      window.addEventListener("load", () => {
+        navigator.serviceWorker.register("./sw.js", { scope: "./" }).catch(() => {});
+      });
+    }
+  </script>
+</head>
+<body>
+  <canvas id="renderCanvas" aria-label="Interactive three-dimensional DRIVELLA engine test scene"></canvas>
+  <header class="hud">
+    <div class="brand">
+      <div class="eyebrow">DRIVELLA / TECHNICAL PREVIEW</div>
+      <h1>3D ENGINE LAB</h1>
+      <p>Neon-grid terrain · synthwave world · local runtime</p>
+      <a class="back-link" href="../" aria-label="Вернуться к стабильной версии DRIVELLA">← ОСНОВНАЯ ВЕРСИЯ</a>
+    </div>
+    <div class="status-panel">
+      <div class="status-line"><span class="status-dot" id="statusDot"></span><strong id="engineStatus">Starting local engine…</strong></div>
+      <div class="status-meta" id="engineMeta">Babylon.js 9.37.2 · Havok 1.3.14</div>
+      <div class="status-meta" id="physicsMeta">Physics: initializing local WASM</div>
+      <div class="status-meta" id="worldMeta">XYZ chunks: initializing</div>
+      <div class="status-meta" id="biomeMeta">Biomes: preparing vegetation</div>
+      <div class="status-meta" id="roadMeta">Road: preparing spline</div>
+      <div class="status-meta" id="waterMeta">Water: preparing rivers and lakes</div>
+      <div class="status-meta" id="tunnelMeta">Tunnels: scanning mountain cover</div>
+      <div class="status-meta" id="vehicleMeta">Countach: loading local geometry</div>
+    </div>
+  </header>
+
+  <aside class="controls">
+    <div class="controls-title">DRIVELLA GTS / COUNTACH</div>
+    <p>W / ↑ accelerate · S / ↓ brake or reverse<br>A / ← D / → steer · Space handbrake<br>Mouse drag to orbit · wheel to zoom</p>
+    <div class="button-row">
+      <button id="dropButton" type="button" disabled>DROP RIGID BODY</button>
+      <button id="resetButton" type="button">RESET VIEW</button>
+      <button id="fxToggle" type="button" aria-controls="fxPanel" aria-expanded="false">FX / F4</button>
+    </div>
+    <div class="legend">
+      <span><i class="axis-x"></i> X</span>
+      <span><i class="axis-y"></i> Y</span>
+      <span><i class="axis-z"></i> Z</span>
+    </div>
+  </aside>
+
+  <aside class="fx-panel" id="fxPanel" aria-hidden="true">
+    <div class="fx-panel-title">DRIVELLA // LEGACY VISUAL FX</div>
+    <label><span>Scene Bloom</span><input type="checkbox" data-effect="bloom" checked></label>
+    <label><span>SSAO contact shadows</span><input type="checkbox" data-effect="ssao" checked></label>
+    <label><span>Screen-space reflections</span><input type="checkbox" data-effect="reflections" checked></label>
+    <label><span>Directional world shadows</span><input type="checkbox" data-effect="shadows" checked></label>
+    <label><span>Horizon sun + aura</span><input type="checkbox" data-effect="sun" checked></label>
+    <label><span>Atmospheric perspective</span><input type="checkbox" data-effect="atmosphere" checked></label>
+    <label><span>Volumetric God Rays</span><input type="checkbox" data-effect="godRays" checked></label>
+    <label><span>Lens flares</span><input type="checkbox" data-effect="lensFlares" checked></label>
+    <label><span>Red underbody + tyre shadows</span><input type="checkbox" data-effect="underglow" checked></label>
+    <label><span>Countach silhouette outlines</span><input type="checkbox" data-effect="outlines" checked></label>
+    <label><span>Headlights (L / H)</span><input type="checkbox" data-effect="headlights"></label>
+    <p>Changes apply immediately · F4 closes this panel</p>
+  </aside>
+
+  <footer class="footer">
+    <span>NO THIRD-PARTY RUNTIME HOSTS</span>
+    <span id="renderMeta">Renderer: initializing</span>
+    <span id="fpsMeta">FPS: —</span>
+  </footer>
+
+  <script src="./assets/countach_model_0.js"></script>
+  <script src="./assets/countach_model_0a.js"></script>
+  <script src="./assets/countach_model_0b.js"></script>
+  <script src="./assets/countach_model_0c.js"></script>
+  <script src="./assets/countach_model_0d.js"></script>
+  <script src="./assets/countach_model_1.js"></script>
+  <script src="./assets/countach_model_2.js"></script>
+  <script src="./assets/countach_model_3a.js"></script>
+  <script src="./assets/countach_model_3b.js"></script>
+  <script src="./assets/countach_model_3c.js"></script>
+  <script src="./assets/countach_model_3d.js"></script>
+  <script type="module" src="./vendor/drivella-engine.js"></script>
+</body>
+</html>
