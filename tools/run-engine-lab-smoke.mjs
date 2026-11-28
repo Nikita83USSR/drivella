@@ -178,7 +178,7 @@ try {
         && effects?.lampFlareTextureReady === true
         && effects?.lampFlareSpriteCount === 10
         && effects?.lampFlareAnchoringMaxError < 0.001
-        && effects?.lampFlareAnchors?.every((anchor) => anchor.parentIsSource && anchor.error < 0.001) === true
+        && effects?.lampFlareAnchors?.every((anchor) => anchor.sourceResolved && anchor.error < 0.001) === true
         && effects?.lampFlareTargetCount === 10
         && effects?.tailLampMeshCount === 1
         && effects?.roadSampleCount > 100
@@ -239,7 +239,7 @@ try {
        || illuminatedHeadlights.lampFlareSpriteCount !== 10
        || illuminatedHeadlights.lampFlareAnchoringMaxError >= 0.001
        || illuminatedHeadlights.lampFlareAnchors?.length !== 10
-       || illuminatedHeadlights.lampFlareAnchors?.some((anchor) => !anchor.parentIsSource || anchor.error >= 0.001)
+       || illuminatedHeadlights.lampFlareAnchors?.some((anchor) => !anchor.sourceResolved || anchor.error >= 0.001)
        || illuminatedHeadlights.lampFlareTargetCount !== 10
        || illuminatedHeadlights.tailLampMeshCount !== 1
        || illuminatedHeadlights.roadSampleCount < 100
@@ -336,7 +336,7 @@ try {
   handlingSamples.accelerationT1000=await sampleVehicle();
   if (handlingSamples.accelerationT1000.lampFlareAnchors.length !== 10
       || handlingSamples.accelerationT1000.lampFlareAnchoringMaxError >= 0.001
-      || handlingSamples.accelerationT1000.lampFlareAnchors.some((anchor) => !anchor.parentIsSource || anchor.error >= 0.001)) {
+      || handlingSamples.accelerationT1000.lampFlareAnchors.some((anchor) => !anchor.sourceResolved || anchor.error >= 0.001)) {
     throw new Error("Lamp starbursts detached from their source meshes while the vehicle was moving: "
       + JSON.stringify(handlingSamples.accelerationT1000.lampFlareAnchors));
   }
