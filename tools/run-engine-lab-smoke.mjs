@@ -161,33 +161,48 @@ try {
       + JSON.stringify(diagnostic) + " · " + String(error));
   }
 
-  await page.waitForFunction(() => {
-    const effects = window.__DRIVELLA_LAB__?.legacyEffects;
-    return effects?.lensFlareTextureKind === "canvas-png"
-      && effects?.lensFlareSpriteCount >= 1
-      && effects?.lensFlareTexturesReady === true
-      && effects?.frontTurnSignalCount === 2
-      && effects?.rearTurnSignalCount === 2
-      && effects?.fogLampCount === 2
-      && effects?.glassMeshCount === 1
-      && effects?.headlampGlowMeshCount === 4
-      && effects?.headlampGlowActiveCount === 4
-      && effects?.vehicleOutlineMeshCount >= 20
-      && effects?.vehicleOutlineWidth >= 0.075
-      && effects?.lampFlareTextureReady === true
-      && effects?.lampFlareSpriteCount === 10
-      && effects?.lampFlareAnchoringMaxError < 0.001
-      && effects?.lampFlareAnchors?.every((anchor) => anchor.parentIsSource && anchor.error < 0.001) === true
-      && effects?.lampFlareTargetCount === 10
-      && effects?.tailLampMeshCount === 1
-      && effects?.roadSampleCount > 100
-      && effects?.vehicleOutlineEdgeMeshCount >= 20
-      && effects?.vehicleOutlineEdgeWidth >= 3
-       && effects?.vehicleOutlineRenderPassMeshCount === 0
-       && effects?.vehicleOutlineNonBlackEdgeMeshCount === 0
-      && effects?.glassDiffuseColor?.every((channel) => channel <= 0.04)
-      && (effects?.tailLampEmissive?.[0] ?? 0) > 0.3;
-  }, null, { timeout: 12000 });
+  try {
+    await page.waitForFunction(() => {
+      const effects = window.__DRIVELLA_LAB__?.legacyEffects;
+      return effects?.lensFlareTextureKind === "canvas-png"
+        && effects?.lensFlareSpriteCount >= 1
+        && effects?.lensFlareTexturesReady === true
+        && effects?.frontTurnSignalCount === 2
+        && effects?.rearTurnSignalCount === 2
+        && effects?.fogLampCount === 2
+        && effects?.glassMeshCount === 1
+        && effects?.headlampGlowMeshCount === 4
+        && effects?.headlampGlowActiveCount === 4
+        && effects?.vehicleOutlineMeshCount >= 20
+        && effects?.vehicleOutlineWidth >= 0.075
+        && effects?.lampFlareTextureReady === true
+        && effects?.lampFlareSpriteCount === 10
+        && effects?.lampFlareAnchoringMaxError < 0.001
+        && effects?.lampFlareAnchors?.every((anchor) => anchor.parentIsSource && anchor.error < 0.001) === true
+        && effects?.lampFlareTargetCount === 10
+        && effects?.tailLampMeshCount === 1
+        && effects?.roadSampleCount > 100
+        && effects?.vehicleOutlineEdgeMeshCount >= 20
+        && effects?.vehicleOutlineEdgeWidth >= 3
+        && effects?.vehicleOutlineRenderPassMeshCount === 0
+        && effects?.vehicleOutlineNonBlackEdgeMeshCount === 0
+        && effects?.glassDiffuseColor?.every((channel) => channel <= 0.04)
+        && (effects?.tailLampEmissive?.[0] ?? 0) > 0.3;
+    }, null, { timeout: 12000 });
+  } catch (error) {
+    const diagnostic = await page.evaluate(() => ({
+      legacyEffects: window.__DRIVELLA_LAB__?.legacyEffects ?? null,
+      legacyEffectsErrors: window.__DRIVELLA_LAB__?.legacyEffects?.errors ?? [],
+      vehicle: {
+        ready: window.__DRIVELLA_LAB__?.vehicleReady,
+        x: window.__DRIVELLA_LAB__?.vehicleX,
+        z: window.__DRIVELLA_LAB__?.vehicleZ
+      }
+    }));
+    await mkdir("artifacts", { recursive: true });
+    await page.screenshot({ path: "artifacts/engine-lab-lamp-flare-anchor-timeout.png" }).catch(() => {});
+    throw new Error("Lamp flare world-anchor test timed out: " + JSON.stringify(diagnostic) + " · " + String(error));
+  }
   const illuminatedState = await page.evaluate(() => ({
     effects: window.__DRIVELLA_LAB__?.legacyEffects ?? null,
     roadMaxSimultaneousLights: window.__DRIVELLA_LAB__?.roadMaxSimultaneousLights ?? 0,
