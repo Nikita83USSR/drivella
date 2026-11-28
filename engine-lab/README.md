@@ -2,6 +2,8 @@
 
 This is an isolated browser-only migration test. It does not replace the existing game at the repository root.
 
+Published preview: [DRIVELLA 3D Engine Lab](https://nikita83ussr.github.io/drivella/engine-lab/). Open it from the main menu's **ЭКСПЕРИМЕНТ** entry; use the link in the upper-left panel to return to the stable game.
+
 ## Local build
 
 Requirements: Node.js 22+ and npm.
