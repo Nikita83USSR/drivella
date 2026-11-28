@@ -100,6 +100,13 @@ try {
     reason: "SSR is on-demand; headless SwiftShader is not a representative GPU target."
   };
 
+  // Keep the default visual effects verified above, then turn off the three
+  // most expensive optional passes only for the software-rendered physics run.
+  await page.locator("#fxToggle").click();
+  for (const effect of ["ssao", "shadows", "godRays"]) {
+    await page.locator('[data-effect="' + effect + '"]').uncheck();
+  }
+  await page.locator("#fxToggle").click();
 
   try {
     await page.waitForFunction(() => window.__DRIVELLA_LAB__?.physicsReady === true, null, { timeout: 90000 });
