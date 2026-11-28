@@ -175,7 +175,7 @@ float drivellaRoadHeadlightEnergy(vec3 surfaceNormal) {
     vec3 toR = deltaR / max(distR, 0.001);
     float coneR = smoothstep(0.93, 0.985, dot(beamDirection, -toR));
     float rangeR = 1.0 - smoothstep(48.0, 82.0, distR);
-    float attenuationR = 1.0 / (1.0 + distR * distR * 0.00048);
+    float attenuationR = 1.0 / (1.0 + distR * distR * 0.0012);
     float diffuseR = clamp(max(dot(normalize(surfaceNormal), toR), 0.0) * 2.5, 0.0, 1.0);
     energy += coneR * rangeR * attenuationR * diffuseR;
   }
