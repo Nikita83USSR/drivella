@@ -863,7 +863,7 @@ export class LegacyVisualEffects {
       frontTurnSignalCount: this.vehicle?.frontSignalMeshes?.size ?? 0,
       rearTurnSignalCount: this.vehicle?.rearSignalMeshes?.size ?? 0,
       fogLampCount: this.vehicle?.fogLightMeshes?.length ?? 0,
-      tailLampEmissive: this.tailMaterial?.emissiveColor?.toArray?.() ?? null,
+      tailLampEmissive: this.tailMaterial?.emissiveColor ? [this.tailMaterial.emissiveColor.r, this.tailMaterial.emissiveColor.g, this.tailMaterial.emissiveColor.b] : null,
       underglow: Boolean(this.underglowEnabled),
       outlines: Boolean(this.outlinesEnabled),
       headlights: Boolean(this.headlightsDeployed),
