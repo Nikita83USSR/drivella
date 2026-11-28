@@ -270,7 +270,7 @@ export function buildRoadCurbChunkGeometry(samples, chunkX, chunkY, chunkZ, chun
   const left = makeGeometry();
   const right = makeGeometry();
   const origin = { x: chunkX * chunkSize, y: chunkY * chunkSize, z: chunkZ * chunkSize };
-  const rails = [{ side: 1, geometry: left, color: ROAD_FENCE_COLORS.cyan }, { side: -1, geometry: right, color: ROAD_FENCE_COLORS.magenta }];
+  const rails = [{ side: 1, geometry: left, color: ROAD_FENCE_COLORS.magenta }, { side: -1, geometry: right, color: ROAD_FENCE_COLORS.cyan }];
 
   for (let index = 0; index < samples.length; index += 1) {
     const nextIndex = (index + 1) % samples.length;
