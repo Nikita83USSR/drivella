@@ -1392,7 +1392,7 @@ async function boot() {
         labState.roadCurbChunks = roadCurbMeshes.size;
         labState.roadMarkingChunks = roadMarkingMeshes.size;
         worldMeta.textContent = `XYZ chunks: ${spatial.activeCount} · terrain: ${terrainMeshes.size} patches · Y layers ${terrainLayers.join("/") || "—"} · ${Object.values(spatial.axisCoverage).every(Boolean) ? "6/6 directions" : "coverage check pending"}`;
-        roadMeta.textContent = `Road: ${roadMeshes.size} chunks · neon fence ${roadCurbMeshes.size} · white markings ${roadMarkingMeshes.size} · ${Math.round(roadStats.length)} m · transitions ${labState.roadTransitionSegments} · drains ${labState.roadDrainageSegments} · guardrails ${labState.roadGuardrailSegments}`;
+        roadMeta.textContent = `Road: ${roadMeshes.size} chunks · neon fence ${roadCurbMeshes.size} · white markings ${roadMarkingMeshes.size} · ${Math.round(roadStats.length)} m · transitions ${labState.roadTransitionSegments} · drains ${labState.roadDrainageSegments} · fenced drop zones ${labState.roadGuardrailSegments}`;
         biomeMeta.textContent = `Biomes: ${biomeTypes.slice(0, 4).join("/") || "preparing"} · ${biomeTotals.trees} trees · ${biomeTotals.rocks} rocks`;
       }
     });
