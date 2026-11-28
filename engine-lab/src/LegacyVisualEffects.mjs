@@ -112,6 +112,7 @@ export class LegacyVisualEffects {
     this.trackLights = [];
     this.pipeline = null;
     this.ssao = null;
+    this.ssaoAttached = false;
     this.ssr = null;
     this.vls = null;
     this.sunMesh = null;
@@ -247,6 +248,7 @@ export class LegacyVisualEffects {
       this.ssao.radius = 3.2;
       this.ssao.totalStrength = 0.82;
       this.ssao.expensiveBlur = false;
+      this.ssaoAttached = true;
     } catch (error) {
       this.recordError("SSAO", error);
       this.ssao = null;
@@ -436,7 +438,12 @@ export class LegacyVisualEffects {
         if (this.pipeline) this.pipeline.bloomEnabled = value;
         break;
       case "ssao":
-        if (this.ssao) this.ssao.isEnabled = value;
+        if (this.ssao && this.ssaoAttached !== value) {
+          const manager = this.scene.postProcessRenderPipelineManager;
+          if (value) manager.attachCamerasToRenderPipeline("drivella-legacy-ssao", [this.camera]);
+          else manager.detachCamerasFromRenderPipeline("drivella-legacy-ssao", [this.camera]);
+          this.ssaoAttached = value;
+        }
         break;
       case "reflections":
         if (this.ssr) this.ssr.isEnabled = value;
@@ -501,7 +508,7 @@ export class LegacyVisualEffects {
   getStatus() {
     return {
       bloom: Boolean(this.pipeline?.bloomEnabled),
-      ssao: Boolean(this.ssao?.isEnabled),
+      ssao: Boolean(this.ssao && this.ssaoAttached),
       reflections: Boolean(this.ssr?.isEnabled),
       shadows: Boolean(this.sunLight?.shadowEnabled),
       sun: Boolean(this.sunEnabled && this.sunMesh?.isEnabled()),
