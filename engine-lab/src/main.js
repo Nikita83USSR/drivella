@@ -19,12 +19,13 @@ import {
 } from "@babylonjs/core";
 import HavokPhysics from "@babylonjs/havok";
 import { neonizeGeometryColors } from "./NeonPalette.mjs";
+import { LegacyVisualEffects } from "./LegacyVisualEffects.mjs";
 import { VehicleController } from "./VehicleController.mjs";
 import { SpatialChunkManager } from "./SpatialChunkManager.mjs";
 import { registerTunnelCorridors, terrainChunkLayer, terrainHeight, terrainMoisture } from "./TerrainField.mjs";
 import { generateBiomePlacements } from "./BiomeField.mjs";
 import { buildHydrologyChunkGeometry, classifyRoadHydrologyCrossings, getHydrologyStats } from "./HydrologyField.mjs";
-import { buildRoadChunkGeometry, buildRoadFurnitureChunkGeometry, generateMainRoadSamples, getRoadStats, getRoadFurnitureStats, nearestRoadSurfaceHeight, nearestRoadSurfaceInfo } from "./RoadNetwork.mjs";
+import { buildRoadChunkGeometry, buildRoadCurbChunkGeometry, buildRoadFurnitureChunkGeometry, generateMainRoadSamples, getRoadStats, getRoadFurnitureStats, nearestRoadSurfaceHeight, nearestRoadSurfaceInfo } from "./RoadNetwork.mjs";
 import { buildTunnelChunkGeometry, detectTunnelSegments, getTunnelStats, TUNNEL_CLEAR_HEIGHT } from "./TunnelNetwork.mjs";
 
 const canvas = document.getElementById("renderCanvas");
@@ -40,6 +41,8 @@ const tunnelMeta = document.getElementById("tunnelMeta");
 const vehicleMeta = document.getElementById("vehicleMeta");
 const dropButton = document.getElementById("dropButton");
 const resetButton = document.getElementById("resetButton");
+const fxToggle = document.getElementById("fxToggle");
+const fxPanel = document.getElementById("fxPanel");
 
 const labState = {
   ready: false,
@@ -107,6 +110,7 @@ const labState = {
   spatial: null
 };
 window.__DRIVELLA_LAB__ = labState;
+let visualEffects = null;
 
 function setStatus(message, state = "warn") {
   statusText.textContent = message;
@@ -369,11 +373,12 @@ function appendRock(geometry, x, y, z, size, seed) {
   }
 }
 
-function createCombinedPropMesh(scene, name, geometry, material, position) {
+function createCombinedPropMesh(scene, name, geometry, material, position, options = {}) {
   if (!geometry.indices.length) return null;
-  const neonGlowColor = neonizeGeometryColors(geometry.colors);
+  const neonize = options.neonize !== false;
+  const neonGlowColor = options.glowColor ?? (neonize ? neonizeGeometryColors(geometry.colors) : null);
   const mesh = new Mesh(name, scene);
-  mesh.metadata = { ...(mesh.metadata ?? {}), neonGlowColor };
+  mesh.metadata = { ...(mesh.metadata ?? {}), ...(neonGlowColor ? { neonGlowColor } : {}) };
   const normals = [];
   VertexData.ComputeNormals(geometry.positions, geometry.indices, normals);
   const data = new VertexData();
@@ -548,6 +553,7 @@ function createEnvironment(scene) {
   scene.activeCamera = camera;
 
   const neonGlow = new GlowLayer("drivella-neon-glow", scene, { blurKernelSize: 28 });
+  const environmentNeonGlow = neonGlow;
   neonGlow.intensity = 0.72;
   neonGlow.customEmissiveColorSelector = (mesh, _subMesh, material, result) => {
     const glow = mesh.metadata?.neonGlowColor;
@@ -593,21 +599,30 @@ function createEnvironment(scene) {
   const shoreMeshes = new Map();
   const roadMeshes = new Map();
   const roadFurnitureMeshes = new Map();
+  const roadCurbMeshes = new Map();
   const tunnelMeshes = new Map();
   const tunnelBodies = new Map();
   const roadBodies = new Map();
   const roadMaterial = new StandardMaterial("drivella-road-material", scene);
   roadMaterial.diffuseColor = Color3.White();
-  roadMaterial.specularColor = new Color3(0.26, 0.3, 0.34);
-  roadMaterial.specularPower = 24;
-  roadMaterial.emissiveColor = new Color3(0.045, 0.045, 0.045);
+  roadMaterial.specularColor = new Color3(0.19, 0.23, 0.28);
+  roadMaterial.specularPower = 36;
+  roadMaterial.emissiveColor = Color3.Black();
   roadMaterial.useVertexColors = true;
   roadMaterial.backFaceCulling = false;
+  roadMaterial.disableLighting = false;
+  const roadCurbMaterial = new StandardMaterial("drivella-road-curb-material", scene);
+  roadCurbMaterial.diffuseColor = Color3.White();
+  roadCurbMaterial.emissiveColor = new Color3(0.10, 0.48, 0.88);
+  roadCurbMaterial.specularColor = Color3.Black();
+  roadCurbMaterial.disableLighting = true;
+  roadCurbMaterial.useVertexColors = true;
+  roadCurbMaterial.backFaceCulling = false;
   const roadFurnitureMaterial = new StandardMaterial("drivella-road-furniture-material", scene);
   roadFurnitureMaterial.diffuseColor = Color3.White();
   roadFurnitureMaterial.specularColor = new Color3(0.18, 0.21, 0.22);
   roadFurnitureMaterial.specularPower = 14;
-  roadFurnitureMaterial.emissiveColor = new Color3(0.055, 0.055, 0.055);
+  roadFurnitureMaterial.emissiveColor = Color3.Black();
   roadFurnitureMaterial.useVertexColors = true;
   roadFurnitureMaterial.backFaceCulling = false;
 
@@ -677,13 +692,16 @@ function createEnvironment(scene) {
         if (biome.vegetationMesh || biome.rockMesh) biomeMeshes.set(chunk.key, biome);
 
         const roadGeometry = buildRoadChunkGeometry(roadSamples, chunk.x, chunk.y, chunk.z, 128);
+        const roadCurbGeometry = buildRoadCurbChunkGeometry(roadSamples, chunk.x, chunk.y, chunk.z, 128);
         const roadOrigin = new Vector3(chunk.x * 128, chunk.y * 128, chunk.z * 128);
         const roadMesh = createCombinedPropMesh(
-          scene, `road-${chunk.x}-${chunk.y}-${chunk.z}`, roadGeometry, roadMaterial, roadOrigin
+          scene, `road-${chunk.x}-${chunk.y}-${chunk.z}`, roadGeometry, roadMaterial, roadOrigin,
+          { neonize: false }
         );
         if (roadMesh) {
           payload.roadMesh = roadMesh;
           roadMeshes.set(chunk.key, roadMesh);
+          environmentNeonGlow.addExcludedMesh(roadMesh);
           if (scene.getPhysicsEngine()) {
             const roadBody = addPhysicalProbe(scene, roadMesh, 0, PhysicsShapeType.MESH, { friction: 0.94, restitution: 0.02 });
             roadBodies.set(chunk.key, roadBody);
@@ -696,12 +714,22 @@ function createEnvironment(scene) {
         };
         labState.bridgePiers += furnitureGeometry.bridgePiers;
         labState.bridgeGirderSegments += furnitureGeometry.bridgeGirderSegments;
+        const curbMesh = createCombinedPropMesh(
+          scene, `road-curbs-${chunk.x}-${chunk.y}-${chunk.z}`, roadCurbGeometry, roadCurbMaterial, roadOrigin,
+          { neonize: false, glowColor: [0.10, 0.60, 1.0] }
+        );
+        if (curbMesh) {
+          payload.roadCurbMesh = curbMesh;
+          roadCurbMeshes.set(chunk.key, curbMesh);
+        }
         const furnitureMesh = createCombinedPropMesh(
-          scene, `road-furniture-${chunk.x}-${chunk.y}-${chunk.z}`, furnitureGeometry, roadFurnitureMaterial, roadOrigin
+          scene, `road-furniture-${chunk.x}-${chunk.y}-${chunk.z}`, furnitureGeometry, roadFurnitureMaterial, roadOrigin,
+          { neonize: false }
         );
         if (furnitureMesh) {
           payload.roadFurnitureMesh = furnitureMesh;
           roadFurnitureMeshes.set(chunk.key, furnitureMesh);
+          environmentNeonGlow.addExcludedMesh(furnitureMesh);
         }
         const tunnelGeometry = buildTunnelChunkGeometry(tunnels, chunk.x, chunk.y, chunk.z, 128);
         payload.tunnelGeometryStats = {
@@ -779,6 +807,10 @@ function createEnvironment(scene) {
         payload.roadMesh.dispose();
         roadMeshes.delete(chunk.key);
       }
+      if (payload?.roadCurbMesh) {
+        payload.roadCurbMesh.dispose();
+        roadCurbMeshes.delete(chunk.key);
+      }
       if (payload?.roadFurnitureMesh) {
         payload.roadFurnitureMesh.dispose();
         roadFurnitureMeshes.delete(chunk.key);
@@ -839,7 +871,7 @@ function createEnvironment(scene) {
   scene.imageProcessingConfiguration.exposure = 1.18;
   scene.imageProcessingConfiguration.contrast = 1.12;
 
-  return { camera, neonGlow, chunkManager, terrainMeshes, terrainGridMeshes, terrainBodies, biomeMeshes, rockBodies, roadSamples, roadStats, roadFurnitureStats, hydrologyStats, bridgeClassification, tunnels, tunnelStats, tunnelSpatialStats, tunnelMeshes, tunnelBodies, waterMeshes, shoreMeshes, roadMeshes, roadFurnitureMeshes, roadBodies };
+  return { camera, sun, neonGlow, chunkManager, terrainMeshes, terrainGridMeshes, terrainBodies, biomeMeshes, rockBodies, roadSamples, roadStats, roadFurnitureStats, hydrologyStats, bridgeClassification, tunnels, tunnelStats, tunnelSpatialStats, tunnelMeshes, tunnelBodies, waterMeshes, shoreMeshes, roadMeshes, roadCurbMeshes, roadFurnitureMeshes, roadBodies };
 }
 
 function addPhysicalProbe(scene, mesh, mass, shape, options = {}) {
@@ -963,6 +995,7 @@ async function enableHavokPhysics() {
       vehicleSpawnTarget.sample.z-roadProbeTarget.sample.z
     );
     vehicle = await VehicleController.create(scene, { roadSamples, startSample: vehicleSpawnTarget.sample });
+    visualEffects?.attachVehicle(vehicle);
     labState.vehicleSpawnX = Number(vehicleSpawnTarget.sample.x.toFixed(3));
     labState.vehicleSpawnZ = Number(vehicleSpawnTarget.sample.z.toFixed(3));
     labState.vehicleSpawnGrade = Number(vehicleSpawnTarget.grade.toFixed(5));
@@ -1082,6 +1115,32 @@ async function tryInitializeHavok() {
   }
 }
 
+
+function wireVisualEffectsControls() {
+  if (!visualEffects) return;
+  const controls = fxPanel?.querySelectorAll("[data-effect]") ?? [];
+  for (const input of controls) {
+    input.addEventListener("change", () => visualEffects.setEnabled(input.dataset.effect, input.checked));
+  }
+  fxToggle?.addEventListener("click", () => {
+    const open = fxPanel?.classList.toggle("open") ?? false;
+    fxPanel?.setAttribute("aria-hidden", open ? "false" : "true");
+  });
+  window.addEventListener("keydown", (event) => {
+    if (event.repeat) return;
+    if (event.key === "F4") {
+      event.preventDefault();
+      const open = fxPanel?.classList.toggle("open") ?? false;
+      fxPanel?.setAttribute("aria-hidden", open ? "false" : "true");
+    }
+    if (event.key.toLowerCase() === "l" || event.key.toLowerCase() === "h") {
+      visualEffects.toggleHeadlights();
+      const lamp = fxPanel?.querySelector('[data-effect="headlights"]');
+      if (lamp) lamp.checked = visualEffects.headlightsEnabled;
+    }
+  });
+}
+
 async function createRenderer() {
   try {
     if ("gpu" in navigator) {
@@ -1123,6 +1182,13 @@ async function boot() {
     scene = new Scene(engine);
     const environment = createEnvironment(scene);
     camera = environment.camera;
+    visualEffects = new LegacyVisualEffects(scene, engine, camera, environment.sun, {
+      glowLayer: environment.neonGlow,
+      roadSamples: environment.roadSamples
+    });
+    labState.legacyEffectsReady = visualEffects.ready;
+    labState.legacyEffects = visualEffects.getStatus();
+    wireVisualEffectsControls();
     chunkManager = environment.chunkManager;
     terrainMeshes = environment.terrainMeshes;
     terrainGridMeshes = environment.terrainGridMeshes;
@@ -1158,6 +1224,8 @@ async function boot() {
     labState.bridgeCrossings = environment.bridgeClassification.crossings;
 
     scene.onAfterRenderObservable.add(() => {
+      visualEffects?.update(vehicle);
+      if (visualEffects) labState.legacyEffects = visualEffects.getStatus();
       frameCounter += 1;
       if(vehicle){
         vehicle.syncVisuals();const t=vehicle.getTelemetry();
@@ -1273,8 +1341,9 @@ async function boot() {
         labState.biomes = biomeTotals;
         labState.biomeTypes = biomeTypes;
         labState.biomeDistribution = biomeDistribution;
+        labState.roadCurbChunks = roadCurbMeshes.size;
         worldMeta.textContent = `XYZ chunks: ${spatial.activeCount} · terrain: ${terrainMeshes.size} patches · Y layers ${terrainLayers.join("/") || "—"} · ${Object.values(spatial.axisCoverage).every(Boolean) ? "6/6 directions" : "coverage check pending"}`;
-        roadMeta.textContent = `Road: ${roadMeshes.size} chunks · ${Math.round(roadStats.length)} m · transitions ${labState.roadTransitionSegments} · drains ${labState.roadDrainageSegments} · guardrails ${labState.roadGuardrailSegments}`;
+        roadMeta.textContent = `Road: ${roadMeshes.size} chunks · neon curbs ${roadCurbMeshes.size} · ${Math.round(roadStats.length)} m · transitions ${labState.roadTransitionSegments} · drains ${labState.roadDrainageSegments} · guardrails ${labState.roadGuardrailSegments}`;
         biomeMeta.textContent = `Biomes: ${biomeTypes.slice(0, 4).join("/") || "preparing"} · ${biomeTotals.trees} trees · ${biomeTotals.rocks} rocks`;
       }
     });

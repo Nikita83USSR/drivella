@@ -14,6 +14,7 @@ on:
       - 'tools/test-spatial-chunks.mjs'
       - 'tools/test-vehicle-controller.mjs'
       - 'tools/test-neon-palette.mjs'
+      - 'tools/test-road-curbs.mjs'
       - '.github/workflows/engine-foundation.yml'
   pull_request:
     branches: [main]
@@ -23,6 +24,7 @@ on:
       - 'tools/run-engine-lab-smoke.mjs'
       - 'tools/test-spatial-chunks.mjs'
       - 'tools/test-vehicle-controller.mjs'
+      - 'tools/test-road-curbs.mjs'
       - '.github/workflows/engine-foundation.yml'
 
 permissions:
@@ -47,6 +49,8 @@ jobs:
         run: node tools/test-spatial-chunks.mjs
       - name: Verify hue-preserving neon object palette
         run: node tools/test-neon-palette.mjs
+      - name: Verify raised non-emissive-road kerb geometry
+        run: node tools/test-road-curbs.mjs
       - name: Install pinned engine and build dependencies
         run: npm install --no-audit --no-fund
       - name: Verify Countach geometry, Ackermann steering and tire friction
