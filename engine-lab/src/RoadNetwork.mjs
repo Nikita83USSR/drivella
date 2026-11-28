@@ -501,6 +501,8 @@ export function buildRoadFurnitureChunkGeometry(
     drainageSegments: 0,
     guardrailSegments: 0,
     guardrailPosts: 0,
+    fencedDropSegments: 0,
+    fencedDropPosts: 0,
     bridgePiers: 0,
     bridgeGirderSegments: 0
   };
@@ -601,9 +603,16 @@ export function buildRoadFurnitureChunkGeometry(
         geometry.drainageSegments += 1;
       }
 
-      // The neon side fence is the single roadside barrier. Do not add a
-      // second metallic rail 0.7 m inside it: it looked like a duplicate fence.
-      // getRoadFurnitureStats still records exposed-drop coverage for QA.
+      // The neon side fence is the single roadside safety barrier. Do not
+      // add a second metallic rail 0.7 m inside it. Record exposed-drop
+      // coverage only where that shared neon fence has its own support posts.
+      if (
+        profileA.delta <= -ROAD_GUARDRAIL_DROP_THRESHOLD
+        && profileB.delta <= -ROAD_GUARDRAIL_DROP_THRESHOLD
+      ) {
+        geometry.fencedDropSegments += 1;
+        if (index % 9 === 0) geometry.fencedDropPosts += 1;
+      }
     }
   }
 
