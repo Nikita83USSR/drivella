@@ -618,7 +618,8 @@ function createEnvironment(scene) {
   roadMaterial.useVertexColors = true;
   roadMaterial.backFaceCulling = false;
   roadMaterial.disableLighting = false;
-  roadMaterial.maxSimultaneousLights = 16;
+  // 2 environment + 8 track + 2 projector lights; stay within WebGL uniform-buffer limits.
+  roadMaterial.maxSimultaneousLights = 12;
   labState.roadMaxSimultaneousLights = roadMaterial.maxSimultaneousLights;
   const roadCurbMaterial = new StandardMaterial("drivella-road-curb-material", scene);
   roadCurbMaterial.diffuseColor = Color3.White();
