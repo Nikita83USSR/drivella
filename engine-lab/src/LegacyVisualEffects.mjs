@@ -39,7 +39,6 @@ class RoadHeadlightMaterialPlugin extends MaterialPluginBase {
   }
 
   isCompatible(shaderLanguage) {
-    this.lastShaderLanguage = shaderLanguage;
     return shaderLanguage === ShaderLanguage.GLSL || shaderLanguage === ShaderLanguage.WGSL;
   }
 
@@ -91,6 +90,7 @@ uniform float drivellaRoadHeadlightIntensity;
 
   getCustomCode(shaderType, shaderLanguage) {
     if (shaderType !== "fragment") return null;
+    this.lastShaderLanguage = shaderLanguage;
 
     if (shaderLanguage === ShaderLanguage.WGSL) {
       return {
