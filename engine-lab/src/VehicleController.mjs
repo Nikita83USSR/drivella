@@ -107,7 +107,7 @@ async function decodeModel(meta,encoded){
  const stream=new Blob([packed]).stream().pipeThrough(new DecompressionStream("deflate")),raw=new Uint8Array(await new Response(stream).arrayBuffer());
  if(raw.byteLength!==meta.rawBytes)throw new Error("Countach geometry byte-count integrity check failed.");
  const view=new DataView(raw.buffer,raw.byteOffset,raw.byteLength),parts=new Map(),bounds={min:new Vector3(Infinity,Infinity,Infinity),max:new Vector3(-Infinity,-Infinity,-Infinity)};
- const movingCaps={left:[],right:[]},frontLowerPaint=[];
+ const movingCaps={left:[],right:[]},rearSignals={left:[],right:[]},frontLowerPaint=[];
  let hoodCapTriangles=0,frontOverlayTriangles=0,lowerPanelTriangles=0;
  for(const part of meta.parts){
   // Replace the source model's fixed optics with the moving DRIVELLA pop-up modules.
@@ -140,6 +140,14 @@ async function decodeModel(meta,encoded){
     Math.abs(p[0])>=.62&&Math.abs(p[0])<=1.07&&p[1]>=.57&&p[1]<=.68&&p[2]>=2.47&&p[2]<=2.71
    );
    if(oldLowerBlackHeadlampPanel){for(const point of triangle)frontLowerPaint.push(...point);lowerPanelTriangles++;continue;}
+   if(part.name==="bodyTail"){
+    const centerX=(triangle[0][0]+triangle[1][0]+triangle[2][0])/3;
+    if(Math.abs(centerX)>.935){
+     const target=centerX<0?rearSignals.left:rearSignals.right;
+     for(const point of triangle)target.push(point[0],point[1],point[2]-.004);
+     continue;
+    }
+   }
    for(const point of triangle){pos[writeAt++]=point[0];pos[writeAt++]=point[1];pos[writeAt++]=point[2];}
   }
   parts.set(part.name,writeAt===pos.length?pos:pos.slice(0,writeAt));
@@ -149,6 +157,11 @@ async function decodeModel(meta,encoded){
  }
  parts.set("movingLampCapL",new Float32Array(movingCaps.left));
  parts.set("movingLampCapR",new Float32Array(movingCaps.right));
+ if(rearSignals.left.length!==18||rearSignals.right.length!==18){
+  throw new Error("Countach rear indicator extraction mismatch: "+JSON.stringify({left:rearSignals.left.length/9,right:rearSignals.right.length/9}));
+ }
+ parts.set("bodyTailSignalL",new Float32Array(rearSignals.left));
+ parts.set("bodyTailSignalR",new Float32Array(rearSignals.right));
  if(frontLowerPaint.length)parts.set("frontLowerPaint",new Float32Array(frontLowerPaint));
  const rf=tyreRadius(parts.get("front_tyre")),rr=tyreRadius(parts.get("rear_tyre"));
  const metrics=measureCountachRigMetrics(meta,(rf+rr)*.5);
@@ -185,7 +198,7 @@ export class VehicleController{
   this.aggregate.body.setMotionType(BODY_MOTION.STATIC);
   this.aggregate.body.setLinearDamping(.018);this.aggregate.body.setAngularDamping(.42);
   this.bodyRoot=new TransformNode("drivella-countach-render-root",scene);this.bodyRoot.parent=this.chassis;this.bodyRoot.position.set(0,-P.cg-P.spawn,0);
-  this.buildMaterials();this.buildBody();this.buildHeadlights();this.buildWheels();
+  this.buildMaterials();this.buildBody();this.buildHeadlights();this.buildSignals();this.buildWheels();
   this.keydown=e=>{const k=String(e.key||"").toLowerCase();if(["w","a","s","d","arrowup","arrowdown","arrowleft","arrowright"," "].includes(k)){e.preventDefault();if(this.parked){this.aggregate.body.setMotionType(BODY_MOTION.DYNAMIC);this.aggregate.body.setLinearVelocity(Vector3.Zero());this.aggregate.body.setAngularVelocity(Vector3.Zero());this.parked=false;}this.keys.add(k);}};
   this.keyup=e=>this.keys.delete(String(e.key||"").toLowerCase());this.blur=()=>this.keys.clear();
   window.addEventListener("keydown",this.keydown,{passive:false});window.addEventListener("keyup",this.keyup);window.addEventListener("blur",this.blur);
@@ -194,10 +207,12 @@ export class VehicleController{
  buildMaterials(){
   const p={bodyPaint:["#b80518","#b8d7ff",92],bodyPlastic:["#111a27","#536275",30],bodyBlack:["#05080f","#242d3c",18],
    bodyMetal:["#8798aa","#f0f5ff",120],bodyTail:["#6e0717","#ff687e",64],headlampR:["#c4d9ea","#ffffff",140,"#152538"],
-   headlampL:["#c4d9ea","#ffffff",140,"#152538"],sideMirror_bodyPlastic:["#101b2c","#8ba6c2",80],frontDetail_detailRed:["#b80518","#b8d7ff",92],
+   headlampL:["#c4d9ea","#ffffff",140,"#152538"],sideMirror_bodyPlastic:["#101b2c","#8ba6c2",110],frontDetail_detailRed:["#b80518","#ffffff",140],
    frontDetail_bodyPlastic:["#111a27","#536275",30],exhaustA_chrome:["#a9b5c3","#ffffff",150],exhaustB_chrome:["#a9b5c3","#ffffff",150],
    tyre:["#11151d","#394454",12],rims:["#a7b5c6","#ffffff",150],wheelExtra:["#62758c","#dceaff",95]};
-  const toonParts=new Set(["bodyPaint","bodyPlastic","bodyBlack","sideMirror_bodyPlastic","frontDetail_detailRed","frontDetail_bodyPlastic"]);
+  // Keep edge outlines for the toon look, but use StandardMaterial on paint and glazing
+  // so the body can receive sharp specular highlights instead of flat CellMaterial bands.
+  const toonParts=new Set(["bodyBlack","frontDetail_bodyPlastic"]);
   for(const [n,v] of Object.entries(p)){
    const mat=toonParts.has(n)
     ?cellMaterial(this.scene,"countach-toon-material-"+n,v[0])
@@ -205,9 +220,39 @@ export class VehicleController{
    this.materials.set(n,mat);
   }
   this.materials.set("frontLowerPaint",cellMaterial(this.scene,"countach-toon-material-front-lower-paint","#b80518"));
+  this.materials.set("turnSignalL",material(this.scene,"countach-turn-signal-left","#4a2108","#ffb65b",72,"#120600"));
+  this.materials.set("turnSignalR",material(this.scene,"countach-turn-signal-right","#4a2108","#ffb65b",72,"#120600"));
+  this.materials.set("fogLamp",material(this.scene,"countach-fog-lamp","#d7e5f4","#ffffff",180,"#7c9ab8"));
   this.headlampLensMaterials=[this.materials.get("headlampL"),this.materials.get("headlampR")];
+  this.turnSignalMaterials=new Map([[-1,this.materials.get("turnSignalL")],[1,this.materials.get("turnSignalR")]]);
+  this.tailMaterial=this.materials.get("bodyTail");
  }
- buildBody(){for(const [n,pos] of this.model.parts)if(!WHEEL_PARTS.has(n)&&!n.startsWith("movingLampCap"))triangleMesh(this.scene,"countach-"+n,pos,this.bodyRoot,this.materials.get(n)??this.materials.get("bodyPlastic"));}
+ buildBody(){for(const [n,pos] of this.model.parts)if(!WHEEL_PARTS.has(n)&&!n.startsWith("movingLampCap")&&!n.startsWith("bodyTailSignal"))triangleMesh(this.scene,"countach-"+n,pos,this.bodyRoot,this.materials.get(n)??this.materials.get("bodyPlastic"));}
+ buildSignals(){
+  const quad=(a,b,c,d)=>new Float32Array([...a,...b,...c,...a,...c,...d]);
+  this.frontSignalMeshes=new Map();
+  this.rearSignalMeshes=new Map();
+  this.fogLightMeshes=[];
+  for(const side of [-1,1]){
+   const key=side<0?"L":"R";
+   const x0=side<0?-.87:.72,x1=side<0?-.72:.87;
+   const amber=quad([x0,.360,2.981],[x1,.360,2.981],[x1,.270,2.981],[x0,.270,2.981]);
+   const front=triangleMesh(this.scene,"countach-front-turn-signal-"+key,amber,this.bodyRoot,this.turnSignalMaterials.get(side));
+   front.metadata={...(front.metadata??{}),vehicleSignal:true,signalSide:key,signalPosition:"front"};
+   this.frontSignalMeshes.set(side,front);
+   const rearData=this.model.parts.get("bodyTailSignal"+key);
+   if(!rearData)throw new Error("Countach rear turn signal geometry is missing: "+key);
+   const rear=triangleMesh(this.scene,"countach-rear-turn-signal-"+key,rearData,this.bodyRoot,this.turnSignalMaterials.get(side));
+   rear.metadata={...(rear.metadata??{}),vehicleSignal:true,signalSide:key,signalPosition:"rear"};
+   this.rearSignalMeshes.set(side,rear);
+   // Inboard white running/fog lamps from the original Countach bumper layout.
+   const fx0=side<0?-.655:.555,fx1=side<0?-.555:.655;
+   const fogGeometry=quad([fx0,.360,2.981],[fx1,.360,2.981],[fx1,.270,2.981],[fx0,.270,2.981]);
+   const fog=triangleMesh(this.scene,"countach-front-fog-lamp-"+key,fogGeometry,this.bodyRoot,this.materials.get("fogLamp"));
+   fog.metadata={...(fog.metadata??{}),vehicleFogLamp:true};
+   this.fogLightMeshes.push(fog);
+  }
+ }
  buildHeadlights(){
   const hinge=new Vector3(0,.76,2.30);
   for(const side of [-1,1]){
