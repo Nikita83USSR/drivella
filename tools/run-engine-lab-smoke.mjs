@@ -183,7 +183,7 @@ try {
       || illuminatedHeadlights.headlightRoadDirectionY > -0.05
       || illuminatedState.roadMaxSimultaneousLights !== 10) {
     throw new Error("Both pop-up projectors and the dedicated road shader must be active, correctly aimed and bound: "
-      + JSON.stringify({ illuminatedHeadlights, invalidHeadlightBeams, roadMaxSimultaneousLights: illuminatedState.roadMaxSimultaneousLights }));
+      + JSON.stringify({ illuminatedHeadlights, invalidHeadlightBeams, roadMaxSimultaneousLights: illuminatedState.roadMaxSimultaneousLights, pageErrors, browserConsoleErrors }));
   }
   await mkdir("artifacts", { recursive: true });
   await page.screenshot({ path: "artifacts/engine-lab-popup-headlights-preview.png" });
