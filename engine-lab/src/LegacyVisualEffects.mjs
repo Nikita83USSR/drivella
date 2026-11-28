@@ -817,8 +817,13 @@ export class LegacyVisualEffects {
         facingDirection = bodyBackward;
       }
 
+      item.parent.computeWorldMatrix(true);
       item.plane.computeWorldMatrix(true);
       const worldPosition = item.plane.getAbsolutePosition();
+      const expectedAnchor = Vector3.TransformCoordinates(item.anchorPosition, item.parent.getWorldMatrix());
+      item.anchorError = Vector3.Distance(expectedAnchor, worldPosition);
+      item.parentIsSource = item.plane.parent === item.parent;
+      item.worldPosition = [worldPosition.x, worldPosition.y, worldPosition.z];
       const toCamera = cameraPosition.subtract(worldPosition);
       const distance = Math.max(1, toCamera.length());
       toCamera.scaleInPlace(1 / distance);
@@ -845,20 +850,14 @@ export class LegacyVisualEffects {
   }
 
   getLampFlareAnchorDiagnostics() {
-    return this.lampFlareObjects.map((item) => {
-      item.parent.computeWorldMatrix(true);
-      item.plane.computeWorldMatrix(true);
-      const expected = Vector3.TransformCoordinates(item.anchorPosition, item.parent.getWorldMatrix());
-      const actual = item.plane.getAbsolutePosition();
-      return {
-        name: item.name,
-        parent: item.plane.parent?.name ?? "",
-        parentIsSource: item.plane.parent === item.parent,
-        position: [actual.x, actual.y, actual.z].map((value) => Number(value.toFixed(5))),
-        error: Number(Vector3.Distance(expected, actual).toFixed(6)),
-        visible: Boolean(item.plane.isVisible)
-      };
-    });
+    return this.lampFlareObjects.map((item) => ({
+      name: item.name,
+      parent: item.plane.parent?.name ?? "",
+      parentIsSource: Boolean(item.parentIsSource ?? item.plane.parent === item.parent),
+      position: (item.worldPosition ?? item.plane.getAbsolutePosition().asArray()).map((value) => Number(value.toFixed(5))),
+      error: Number((item.anchorError ?? 0).toFixed(6)),
+      visible: Boolean(item.plane.isVisible)
+    }));
   }
   createTrackLights() {
     if (!this.roadSamples?.length) return;
@@ -1290,6 +1289,7 @@ export class LegacyVisualEffects {
         compilationError: subMesh.effect?.getCompilationError?.() ?? ""
       }))
     }));
+    const lampFlareAnchors = this.getLampFlareAnchorDiagnostics();
     const headlightBeams = [...this.headlampSpotBySide.entries()].map(([side, spot]) => ({
       side: side < 0 ? "L" : "R",
       intensity: Number(spot.intensity ?? 0),
@@ -1327,9 +1327,8 @@ export class LegacyVisualEffects {
       lampFlareSourceCount: this.lampFlareSourceCount,
       lampFlareTargetCount: this.lampFlareTargetCount,
       lampFlareSourceCounts: { ...this.lampFlareSourceCounts },
-      lampFlareAnchors: this.getLampFlareAnchorDiagnostics(),
-      lampFlareAnchoringMaxError: this.getLampFlareAnchorDiagnostics()
-        .reduce((maximum, item) => Math.max(maximum, item.error), 0),
+      lampFlareAnchors,
+      lampFlareAnchoringMaxError: lampFlareAnchors.reduce((maximum, item) => Math.max(maximum, item.error), 0),
       tailLampMeshCount: this.tailLampMesh ? 1 : 0,
       lampFlaresEnabled: Boolean(this.lensFlaresEnabled),
       roadSampleCount: this.roadSamples?.length ?? 0,
