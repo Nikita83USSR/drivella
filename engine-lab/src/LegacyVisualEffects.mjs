@@ -1033,6 +1033,10 @@ void main(void) {
       headlampOpticsShaderReady: Boolean(this.headlampOpticsPostProcess?.getEffect?.()?.isReady?.()),
       headlampOpticsSourceCount: this.headlampOpticsSourceCount,
       headlampOpticsEnabled: Boolean(this.lensFlaresEnabled && this.headlightsEnabled),
+      roadSampleCount: this.roadSamples?.length ?? 0,
+      roadSampleFirst: this.roadSamples?.[0]
+        ? [this.roadSamples[0].x, this.roadSamples[0].y, this.roadSamples[0].z]
+        : null,
       headlightRoadProbeEnergy: this.headlightRoadProbeEnergy,
       headlightRoadProbeMaxForwardDot: this.headlightRoadProbeMaxForwardDot,
       headlightRoadProbeNearestDistance: this.headlightRoadProbeNearestDistance,
