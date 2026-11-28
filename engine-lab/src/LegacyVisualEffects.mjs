@@ -219,9 +219,21 @@ export class LegacyVisualEffects {
     this.headlampSpotBySide = new Map();
     this.headlightRoadPower = 0;
     this.headlightRoadPlugin = null;
+    this.headlightRoadBindObserver = null;
+    this.headlightRoadObservableBindCount = 0;
+    this.headlightRoadMaterial = roadMaterial ?? null;
     if (roadMaterial) {
       try {
         this.headlightRoadPlugin = new RoadHeadlightMaterialPlugin(roadMaterial, () => this.getRoadHeadlightUniforms());
+        // StandardMaterial calls onBindObservable for each road submesh after
+        // binding its UBO. Some frozen/unchanged-material paths skip the plugin
+        // bind callback, so upload our live UBO values here before ubo.update().
+        this.headlightRoadBindObserver = roadMaterial.onBindObservable.add(() => {
+          const uniformBuffer = roadMaterial._uniformBuffer;
+          if (!uniformBuffer || !this.headlightRoadPlugin) return;
+          this.headlightRoadPlugin.bindForSubMesh(uniformBuffer);
+          this.headlightRoadObservableBindCount += 1;
+        });
       } catch (error) {
         this.recordError("road headlight material plugin", error);
       }
@@ -793,6 +805,12 @@ export class LegacyVisualEffects {
       headlightBeams,
       headlightRoadPlugin: Boolean(this.headlightRoadPlugin),
       headlightRoadUniformBindCount: this.headlightRoadPlugin?.bindCount ?? 0,
+      headlightRoadObservableBindCount: this.headlightRoadObservableBindCount,
+      headlightRoadMaterialFrozen: Boolean(this.headlightRoadMaterial?.isFrozen),
+      headlightRoadPluginActive: Boolean(this.headlightRoadMaterial?.pluginManager?._activePlugins?.includes(this.headlightRoadPlugin)),
+      headlightRoadMeshCount: this.headlightRoadMaterial
+        ? this.scene.meshes.filter((mesh) => mesh.material === this.headlightRoadMaterial).length
+        : 0,
       headlightRoadIntensity: Number(this.headlightRoadPlugin?.lastBound?.intensity ?? 0),
       headlightRoadDirectionY: Number(this.headlightRoadPlugin?.lastBound?.directionY ?? 0),
       headlightOpticPartCount: [...(this.vehicle?.headlightOpticRoots?.values?.() ?? [])].reduce((count, root) => count + (root.getChildMeshes?.().length ?? 0), 0),
