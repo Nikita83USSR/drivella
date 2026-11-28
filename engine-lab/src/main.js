@@ -1225,9 +1225,12 @@ async function boot() {
     scene = new Scene(engine);
     const environment = createEnvironment(scene);
     camera = environment.camera;
+    // Resolve the road spline before the lighting controller is created. Both
+    // the road renderer and the headlight probe then share the same sample array.
+    roadSamples = Array.isArray(environment.roadSamples) ? environment.roadSamples : [];
     visualEffects = new LegacyVisualEffects(scene, engine, camera, environment.sun, {
       glowLayer: environment.neonGlow,
-      roadSamples: environment.roadSamples,
+      roadSamples,
       roadMaterial: environment.roadMaterial
     });
     labState.legacyEffectsReady = visualEffects.ready;
@@ -1239,7 +1242,6 @@ async function boot() {
     terrainBodies = environment.terrainBodies;
     biomeMeshes = environment.biomeMeshes;
     rockBodies = environment.rockBodies;
-    roadSamples = environment.roadSamples;
     roadStats = environment.roadStats;
     roadMeshes = environment.roadMeshes;
     roadMarkingMeshes = environment.roadMarkingMeshes;
