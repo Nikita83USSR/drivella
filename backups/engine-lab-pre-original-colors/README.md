@@ -1,0 +1,38 @@
+# DRIVELLA Engine Lab
+
+This is an isolated browser-only migration test. It does not replace the existing game at the repository root.
+
+Published preview: [DRIVELLA 3D Engine Lab](https://nikita83ussr.github.io/drivella/engine-lab/). Open it from the main menu's **ЭКСПЕРИМЕНТ** entry; use the link in the upper-left panel to return to the stable game.
+
+## Controls and visual style
+
+- Drive with **W/A/S/D** or the arrow keys; Space is the handbrake.
+- Orbit the camera with the mouse only; the mouse wheel controls zoom.
+- Terrain uses the same 10 m minor / 50 m major neon-grid rhythm as the stable DRIVELLA renderer.
+- Roads, bridges, tunnels, water, vegetation, rocks and the Countach use a synthwave emissive palette with a glow pass.
+
+## Local build
+
+Requirements: Node.js 22+ and npm.
+
+\`\`\`sh
+npm install
+npm run build:engine
+\`\`\`
+
+The build produces:
+- \`vendor/drivella-engine.js\`: tree-shaken Babylon.js runtime plus the local app.
+- \`vendor/HavokPhysics.wasm\`: Havok WebAssembly runtime.
+- \`licenses/\`: redistribution notices for Babylon.js and Havok.
+
+Serve the repository over HTTP (for example \`npx http-server .\`) and open \`/engine-lab/\`. Do not open the page with \`file://\`; browsers restrict ES modules, WebAssembly and service workers on file URLs.
+
+## Runtime guarantees
+
+- No public CDN imports or remote asset URLs.
+- Havok resolves its WASM from the same directory as the local engine bundle.
+- If Havok is unavailable, the 3D renderer remains active in reduced mode and retries the local WASM.
+- The service worker caches successfully downloaded same-origin files for later launches.
+- Future optional assets will be loaded independently and must have procedural/low-detail fallbacks.
+
+The GitHub Actions workflow builds the runtime bundle, runs a headless browser smoke test, and commits the generated runtime files back to the branch that triggered the build (including the published main branch). npm is a build-time source only; players do not contact npm.
