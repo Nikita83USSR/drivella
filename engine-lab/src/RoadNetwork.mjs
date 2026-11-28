@@ -153,7 +153,7 @@ export function buildRoadChunkGeometry(samples, chunkX, chunkY, chunkZ, chunkSiz
   }
 
   const geometry = { positions: [], colors: [], indices: [], segmentCount: 0 };
-  const markingGeometry = { positions: [], colors: [], indices: [], segmentCount: 0 };
+  const markingGeometry = { positions: [], colors: [], indices: [], segmentCount: 0, edgeSegmentCount: 0, centerDashSegmentCount: 0 };
   const origin = {
     x: chunkX * chunkSize,
     y: chunkY * chunkSize,
@@ -180,18 +180,31 @@ export function buildRoadChunkGeometry(samples, chunkX, chunkY, chunkZ, chunkSiz
     addQuad(geometry, origin, current.center, current.rightEdge, next.rightEdge, next.center, ROAD_COLORS.asphalt);
     addQuad(geometry, origin, current.rightEdge, current.rightOuter, next.rightOuter, next.rightEdge, ROAD_COLORS.shoulder);
 
-    // BUILD 223 lane paint: two crisp white, short dashes on the two lanes.
-    // Keep this geometry separate from asphalt and exclude it from scene bloom.
-    if (index % 6 === 0) {
-      for (const laneOffset of [-2.55, 2.55]) {
-        const halfMarkWidth = 0.045;
-        const markAInner = offsetPoint(a, laneOffset - halfMarkWidth, ROAD_SURFACE_OFFSET + 0.028);
-        const markAOuter = offsetPoint(a, laneOffset + halfMarkWidth, ROAD_SURFACE_OFFSET + 0.028);
-        const markBOuter = offsetPoint(b, laneOffset + halfMarkWidth, ROAD_SURFACE_OFFSET + 0.028);
-        const markBInner = offsetPoint(b, laneOffset - halfMarkWidth, ROAD_SURFACE_OFFSET + 0.028);
-        addQuad(markingGeometry, origin, markAInner, markAOuter, markBOuter, markBInner, ROAD_COLORS.edge);
-        markingGeometry.segmentCount += 1;
-      }
+    // BUILD 224 lane paint: continuous white edge lines plus a broken
+    // centre divider. These are flat asphalt markings, not roadside rails.
+    // Keep them on their own non-bloom mesh so the paint stays crisp at speed.
+    const markingLift = ROAD_SURFACE_OFFSET + 0.045;
+    for (const edgeOffset of [-5.55, 5.55]) {
+      const halfMarkWidth = 0.075;
+      const markAInner = offsetPoint(a, edgeOffset - halfMarkWidth, markingLift);
+      const markAOuter = offsetPoint(a, edgeOffset + halfMarkWidth, markingLift);
+      const markBOuter = offsetPoint(b, edgeOffset + halfMarkWidth, markingLift);
+      const markBInner = offsetPoint(b, edgeOffset - halfMarkWidth, markingLift);
+      addQuad(markingGeometry, origin, markAInner, markAOuter, markBOuter, markBInner, ROAD_COLORS.edge);
+      markingGeometry.segmentCount += 1;
+      markingGeometry.edgeSegmentCount += 1;
+    }
+    // At 3.2 m sample spacing this gives 6.4 m painted dashes with a
+    // 9.6 m gap, rather than tiny marks that read like another barrier.
+    if (index % 5 < 2) {
+      const halfMarkWidth = 0.075;
+      const markAInner = offsetPoint(a, -halfMarkWidth, markingLift);
+      const markAOuter = offsetPoint(a, halfMarkWidth, markingLift);
+      const markBOuter = offsetPoint(b, halfMarkWidth, markingLift);
+      const markBInner = offsetPoint(b, -halfMarkWidth, markingLift);
+      addQuad(markingGeometry, origin, markAInner, markAOuter, markBOuter, markBInner, ROAD_COLORS.center);
+      markingGeometry.segmentCount += 1;
+      markingGeometry.centerDashSegmentCount += 1;
     }
     geometry.segmentCount += 1;
   }
@@ -334,8 +347,6 @@ const ROAD_FURNITURE_COLORS = Object.freeze({
   ]),
   drainBank: Object.freeze([0.24, 0.28, 0.27]),
   drainBed: Object.freeze([0.105, 0.145, 0.15]),
-  rail: Object.freeze([0.43, 0.52, 0.55]),
-  railPost: Object.freeze([0.30, 0.37, 0.39]),
   bridgeConcrete: Object.freeze([0.35, 0.38, 0.39])
 });
 
@@ -590,33 +601,9 @@ export function buildRoadFurnitureChunkGeometry(
         geometry.drainageSegments += 1;
       }
 
-      // Guardrails are reserved for the side where the ground falls away.
-      if (
-        profileA.delta <= -ROAD_GUARDRAIL_DROP_THRESHOLD
-        && profileB.delta <= -ROAD_GUARDRAIL_DROP_THRESHOLD
-      ) {
-        // Physical safety rail stays close to the shoulder; the visible neon
-        // fence is a separate, continuous pair at the legacy 9.15 m datum.
-        const railOffset = ROAD_EDGE_OUTER_OFFSET - 0.18;
-        const groundA = offsetPoint(a, side * railOffset, ROAD_SHOULDER_OFFSET);
-        const groundB = offsetPoint(b, side * railOffset, ROAD_SHOULDER_OFFSET);
-        const topA = { ...groundA, y: groundA.y + 0.98 };
-        const topB = { ...groundB, y: groundB.y + 0.98 };
-        const midA = { ...groundA, y: groundA.y + 0.52 };
-        const midB = { ...groundB, y: groundB.y + 0.52 };
-        addRailBeam(geometry, origin, topA, topB, 0.095, 0.085, ROAD_FURNITURE_COLORS.rail);
-        addRailBeam(geometry, origin, midA, midB, 0.07, 0.065, ROAD_FURNITURE_COLORS.rail);
-        geometry.guardrailSegments += 1;
-
-        if (index % 4 === 0) {
-          addGuardrailPost(
-            geometry, origin, groundA,
-            groundA.y - 0.14, groundA.y + 1.13,
-            0.075, ROAD_FURNITURE_COLORS.railPost
-          );
-          geometry.guardrailPosts += 1;
-        }
-      }
+      // The neon side fence is the single roadside barrier. Do not add a
+      // second metallic rail 0.7 m inside it: it looked like a duplicate fence.
+      // getRoadFurnitureStats still records exposed-drop coverage for QA.
     }
   }
 
