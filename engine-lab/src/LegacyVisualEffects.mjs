@@ -650,7 +650,7 @@ export class LegacyVisualEffects {
         material.diffuseTexture = texture;
         material.emissiveTexture = texture;
         material.useAlphaFromDiffuseTexture = true;
-        material.diffuseColor = Color3.White();
+        material.diffuseColor.copyFrom(tint);
         material.emissiveColor.copyFrom(tint);
         material.specularColor = Color3.Black();
         material.backFaceCulling = false;
@@ -671,7 +671,7 @@ export class LegacyVisualEffects {
     const plane = MeshBuilder.CreatePlane("drivella-lamp-star-" + name, { size: 1 }, this.scene);
     plane.parent = parent;
     plane.position.copyFrom(localCenter);
-    plane.position.addInPlace(localNormal.scale(0.045));
+    plane.position.addInPlace(localNormal.clone().scaleInPlace(0.045));
     plane.billboardMode = Mesh.BILLBOARDMODE_ALL;
     plane.material = this.lampFlareMaterials.get(kind);
     plane.renderingGroupId = 2;
@@ -796,6 +796,7 @@ export class LegacyVisualEffects {
       const itemName = item.name;
       let power = 0;
       let facingDirection = bodyForward;
+      if (!this.lensFlaresEnabled) power = 0;
       if (itemName.startsWith("headlamp-")) {
         const side = itemName.endsWith("left") ? -1 : 1;
         power = headLampPower.get(itemName) ?? 0;
@@ -823,7 +824,7 @@ export class LegacyVisualEffects {
       toCamera.scaleInPlace(1 / distance);
       const facing = Math.max(0, Vector3.Dot(facingDirection.clone().normalize(), toCamera));
       const distanceGain = clamp(19 / distance, 0.58, 1.75);
-      const intensity = power * Math.pow(facing, 0.72) * distanceGain;
+      const intensity = this.lensFlaresEnabled ? power * Math.pow(facing, 0.72) * distanceGain : 0;
       item.intensity = intensity;
       item.plane.isVisible = intensity > 0.035;
       item.plane.visibility = clamp(intensity, 0, 1);
@@ -852,6 +853,8 @@ export class LegacyVisualEffects {
       return {
         name: item.name,
         parent: item.plane.parent?.name ?? "",
+        parentIsSource: item.plane.parent === item.parent,
+        position: [actual.x, actual.y, actual.z].map((value) => Number(value.toFixed(5))),
         error: Number(Vector3.Distance(expected, actual).toFixed(6)),
         visible: Boolean(item.plane.isVisible)
       };
