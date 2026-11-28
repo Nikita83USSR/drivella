@@ -621,9 +621,9 @@ export function buildRoadFurnitureChunkGeometry(
 
 export function getRoadFurnitureStats(samples, chunkSize = ROAD_CHUNK_SIZE, tunnels = []) {
   if (!Array.isArray(samples) || samples.length < 2) {
-    return { transitionSegments: 0, drainageSegments: 0, guardrailSegments: 0 };
+    return { transitionSegments: 0, drainageSegments: 0, fencedDropSegments: 0 };
   }
-  const stats = { transitionSegments: 0, drainageSegments: 0, guardrailSegments: 0, bridgePiers: 0, bridgeGirderSegments: 0 };
+  const stats = { transitionSegments: 0, drainageSegments: 0, fencedDropSegments: 0, bridgePiers: 0, bridgeGirderSegments: 0 };
   const profiles = getRoadFurnitureProfiles(samples);
   for (let index = 0; index < samples.length; index += 1) {
     const nextIndex = (index + 1) % samples.length;
@@ -647,7 +647,7 @@ export function getRoadFurnitureStats(samples, chunkSize = ROAD_CHUNK_SIZE, tunn
         stats.drainageSegments += 1;
       }
       if (profileA.delta <= -ROAD_GUARDRAIL_DROP_THRESHOLD && profileB.delta <= -ROAD_GUARDRAIL_DROP_THRESHOLD) {
-        stats.guardrailSegments += 1;
+        stats.fencedDropSegments += 1;
       }
     }
   }
