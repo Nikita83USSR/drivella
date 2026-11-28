@@ -175,6 +175,9 @@ try {
   if (illuminatedHeadlights?.headlightSourceCount !== 2 || illuminatedHeadlights?.headlightOpticPartCount !== 12
       || illuminatedHeadlights.headlightBeamIntensity < 10 || illuminatedHeadlights.headlightBeams?.length !== 2
       || invalidHeadlightBeams.length || !illuminatedHeadlights.headlightRoadPlugin
+      || !illuminatedHeadlights.headlightRoadPluginActive
+      || illuminatedHeadlights.headlightRoadMeshCount < 1
+      || illuminatedHeadlights.headlightRoadObservableBindCount < 1
       || illuminatedHeadlights.headlightRoadUniformBindCount < 1
       || illuminatedHeadlights.headlightRoadIntensity < 1.0
       || illuminatedHeadlights.headlightRoadDirectionY > -0.05
