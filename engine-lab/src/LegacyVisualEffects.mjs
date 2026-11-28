@@ -666,12 +666,12 @@ export class LegacyVisualEffects {
     }
   }
 
-  addLampFlare(name, parent, localCenter, localNormal, kind, radiusPixels) {
-    if (!parent || !this.lampFlareTexture || !this.lampFlareMaterials.has(kind)) return null;
+  addLampFlare(name, sourceParent, localCenter, localNormal, kind, radiusPixels) {
+    if (!sourceParent || !this.lampFlareTexture || !this.lampFlareMaterials.has(kind)) return null;
     const plane = MeshBuilder.CreatePlane("drivella-lamp-star-" + name, { size: 1 }, this.scene);
-    plane.parent = parent;
-    plane.position.copyFrom(localCenter);
-    plane.position.addInPlace(localNormal.clone().scaleInPlace(0.045));
+    // Do not parent a billboard to a rotated lamp mesh: Babylon's billboard
+    // transform can shift the child origin. Track its source in world space.
+    plane.position.copyFrom(Vector3.Zero());
     plane.billboardMode = Mesh.BILLBOARDMODE_ALL;
     plane.material = this.lampFlareMaterials.get(kind);
     plane.renderingGroupId = 2;
@@ -686,8 +686,8 @@ export class LegacyVisualEffects {
       lampFlareKind: kind,
       lampFlareSource: name
     };
-    const anchorPosition = plane.position.clone();
-    const item = { name, plane, parent, anchorPosition, kind, radiusPixels, intensity: 0 };
+    const anchorPosition = localCenter.clone().addInPlace(localNormal.clone().scaleInPlace(0.045));
+    const item = { name, plane, sourceParent, anchorPosition, kind, radiusPixels, intensity: 0, anchorError: Infinity, sourceResolved: false };
     this.lampFlareObjects.push(item);
     return item;
   }
@@ -817,12 +817,13 @@ export class LegacyVisualEffects {
         facingDirection = bodyBackward;
       }
 
-      item.parent.computeWorldMatrix(true);
+      item.sourceParent.computeWorldMatrix(true);
+      const expectedAnchor = Vector3.TransformCoordinates(item.anchorPosition, item.sourceParent.getWorldMatrix());
+      item.plane.position.copyFrom(expectedAnchor);
       item.plane.computeWorldMatrix(true);
       const worldPosition = item.plane.getAbsolutePosition();
-      const expectedAnchor = Vector3.TransformCoordinates(item.anchorPosition, item.parent.getWorldMatrix());
       item.anchorError = Vector3.Distance(expectedAnchor, worldPosition);
-      item.parentIsSource = item.plane.parent === item.parent;
+      item.sourceResolved = !item.sourceParent.isDisposed?.();
       item.worldPosition = [worldPosition.x, worldPosition.y, worldPosition.z];
       const toCamera = cameraPosition.subtract(worldPosition);
       const distance = Math.max(1, toCamera.length());
@@ -852,10 +853,10 @@ export class LegacyVisualEffects {
   getLampFlareAnchorDiagnostics() {
     return this.lampFlareObjects.map((item) => ({
       name: item.name,
-      parent: item.plane.parent?.name ?? "",
-      parentIsSource: Boolean(item.parentIsSource ?? item.plane.parent === item.parent),
-      position: (item.worldPosition ?? item.plane.getAbsolutePosition().asArray()).map((value) => Number(value.toFixed(5))),
-      error: Number((item.anchorError ?? 0).toFixed(6)),
+      source: item.sourceParent?.name ?? "",
+      sourceResolved: Boolean(item.sourceResolved),
+      position: (item.worldPosition ?? item.plane.position.asArray()).map((value) => Number(value.toFixed(5))),
+      error: Number((item.anchorError ?? Infinity).toFixed(6)),
       visible: Boolean(item.plane.isVisible)
     }));
   }
