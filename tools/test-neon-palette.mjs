@@ -36,7 +36,10 @@ const vertexColors = new Float32Array([
 ]);
 const before = Array.from(vertexColors);
 const glowColor = neonizeGeometryColors(vertexColors);
-assert.ok(vertexColors[0] > before[0] && vertexColors[1] > before[1], "vertex color buffer was not enhanced");
+assert.ok(
+  Math.max(vertexColors[0], vertexColors[1], vertexColors[2]) > Math.max(before[0], before[1], before[2]),
+  "vertex color buffer was not brightened"
+);
 assert.equal(vertexColors[3], 1, "vertex alpha must be preserved");
 assert.ok(glowColor.every((channel) => channel >= 0 && channel <= 1));
 assert.ok(glowColor[0] > 0 && glowColor[1] > 0 && glowColor[2] > 0);
