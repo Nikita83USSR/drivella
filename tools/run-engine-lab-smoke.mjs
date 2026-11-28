@@ -174,8 +174,12 @@ try {
   );
   if (illuminatedHeadlights?.headlightSourceCount !== 2 || illuminatedHeadlights?.headlightOpticPartCount !== 12
       || illuminatedHeadlights.headlightBeamIntensity < 10 || illuminatedHeadlights.headlightBeams?.length !== 2
-      || invalidHeadlightBeams.length || illuminatedState.roadMaxSimultaneousLights < 12) {
-    throw new Error("Both pop-up projector beams must be active, located at the lamps and aimed down the road; the road material must include them: "
+      || invalidHeadlightBeams.length || !illuminatedHeadlights.headlightRoadPlugin
+      || illuminatedHeadlights.headlightRoadUniformBindCount < 1
+      || illuminatedHeadlights.headlightRoadIntensity < 1.0
+      || illuminatedHeadlights.headlightRoadDirectionY > -0.05
+      || illuminatedState.roadMaxSimultaneousLights !== 10) {
+    throw new Error("Both pop-up projectors and the dedicated road shader must be active, correctly aimed and bound: "
       + JSON.stringify({ illuminatedHeadlights, invalidHeadlightBeams, roadMaxSimultaneousLights: illuminatedState.roadMaxSimultaneousLights }));
   }
   await mkdir("artifacts", { recursive: true });
