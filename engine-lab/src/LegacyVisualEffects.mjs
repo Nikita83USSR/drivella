@@ -854,7 +854,7 @@ void main(void) {
         const cone = coneT * coneT * (3 - 2 * coneT);
         const range = 1 - clamp((distance - 48) / (82 - 48), 0, 1);
         const attenuation = 1 / (1 + distanceSquared * 0.0012);
-        const diffuse = clamp(Math.max(dy * inverseDistance, 0) * 2.5, 0, 1);
+        const diffuse = clamp(Math.max(-dy * inverseDistance, 0) * 2.5, 0, 1);
         const energy = clamp(cone * range * attenuation * diffuse * this.headlightRoadPower * 0.18, 0, 0.48);
         if (energy > maximum) maximum = energy;
       }
