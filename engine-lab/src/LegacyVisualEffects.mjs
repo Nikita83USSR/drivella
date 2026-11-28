@@ -121,7 +121,7 @@ float drivellaRoadHeadlightEnergy(vec3 surfaceNormal) {
 `,
       CUSTOM_FRAGMENT_BEFORE_FOG: `
 #ifdef DRIVELLA_ROAD_HEADLIGHTS
-color.rgb += vec3(0.88, 0.93, 1.0) * (drivellaRoadHeadlightEnergy(normalW) * 0.92);
+color.rgb += vec3(0.92, 0.96, 1.0) * (drivellaRoadHeadlightEnergy(normalW) * 1.25);
 #endif
 `
     };
@@ -757,32 +757,29 @@ void main(void) {
 
   measureHeadlightRoadProbeEnergy() {
     if (!this.headlightsEnabled || this.headlightRoadPower <= 0.01 || !this.roadSamples?.length) return 0;
+
+    // Mirror the road material shader exactly: evaluate the real spline samples
+    // in front of each projector instead of probing arbitrary points on bends.
     let maximum = 0;
     for (const spot of this.headlampSpots) {
       if (spot.intensity <= 0.01) continue;
-      for (const distance of [8, 16, 28, 42, 58]) {
-        const target = spot.position.add(spot.direction.scale(distance));
-        let nearest = null, nearestDistance = Infinity;
-        for (const sample of this.roadSamples) {
-          const dx = sample.x - target.x, dz = sample.z - target.z;
-          const distanceSquared = dx * dx + dz * dz;
-          if (distanceSquared < nearestDistance) {
-            nearestDistance = distanceSquared;
-            nearest = sample;
-          }
-        }
-        if (!nearest || nearestDistance > 18 * 18) continue;
-        const toLamp = new Vector3(spot.position.x - nearest.x, spot.position.y - nearest.y, spot.position.z - nearest.z);
-        const distanceToLamp = toLamp.length();
-        if (distanceToLamp < 0.01) continue;
-        toLamp.scaleInPlace(1 / distanceToLamp);
-        const dotValue = Vector3.Dot(spot.direction, toLamp.clone().scaleInPlace(-1));
+      const direction = spot.direction.clone().normalize();
+      for (const sample of this.roadSamples) {
+        const dx = sample.x - spot.position.x;
+        const dy = sample.y - spot.position.y;
+        const dz = sample.z - spot.position.z;
+        const distanceSquared = dx * dx + dy * dy + dz * dz;
+        if (distanceSquared < 0.0001 || distanceSquared >= 10000) continue;
+        const distance = Math.sqrt(distanceSquared);
+        const inverseDistance = 1 / distance;
+        const dotValue = (direction.x * dx + direction.y * dy + direction.z * dz) * inverseDistance;
         const coneT = clamp((dotValue - 0.24) / (0.88 - 0.24), 0, 1);
         const cone = coneT * coneT * (3 - 2 * coneT);
-        const range = 1 - clamp((distanceToLamp - 72) / (140 - 72), 0, 1);
-        const attenuation = 1 / (1 + distanceToLamp * distanceToLamp * 0.00048);
-        const diffuse = clamp(Math.abs(toLamp.y) * 1.85 + 0.30, 0, 1);
-        maximum = Math.max(maximum, cone * range * attenuation * diffuse * this.headlightRoadPower * 0.92);
+        const range = 1 - clamp((distance - 72) / (140 - 72), 0, 1);
+        const attenuation = 1 / (1 + distanceSquared * 0.00048);
+        const diffuse = clamp(Math.abs(dy * inverseDistance) * 1.85 + 0.30, 0, 1);
+        const energy = cone * range * attenuation * diffuse * this.headlightRoadPower * 1.25;
+        if (energy > maximum) maximum = energy;
       }
     }
     return Number(maximum.toFixed(4));
@@ -793,8 +790,8 @@ void main(void) {
     const deployPower = clamp((deploy - 0.12) / 0.88, 0, 1);
     const beamPower = this.headlightsEnabled ? deployPower : 0;
     const visibleLensPower = deployPower * (this.headlightsEnabled ? 1 : 0.28);
-    this.headlightRoadPower = beamPower * 5.0;
-    for (const light of this.headlampSpots) light.intensity = 40 * beamPower;
+    this.headlightRoadPower = beamPower * 5.5;
+    for (const light of this.headlampSpots) light.intensity = 45 * beamPower;
     const emissive = new Color3(
       0.035 + visibleLensPower * 1.12,
       0.045 + visibleLensPower * 1.18,
