@@ -761,6 +761,7 @@ export class LegacyVisualEffects {
 
   updateLampFlares(vehicle = this.vehicle) {
     if (!vehicle || !this.lampFlareObjects.length) return;
+    this.syncHeadlampTransforms();
     const cameraPosition = this.camera.globalPosition;
     const bodyForward = vehicle.bodyRoot?.getDirection?.(Vector3.Forward())?.normalize?.()
       ?? new Vector3(0, 0, 1);
@@ -1254,7 +1255,6 @@ export class LegacyVisualEffects {
         ? new Color3(1.65, 0.48, 0.045)
         : new Color3(0.012, 0.004, 0.001);
     }
-    this.updateLampFlares(vehicle);
     for (const [key, shadow] of this.wheelShadows) {
       const pivot = vehicle.wheelPivots?.get?.(key);
       if (!pivot || pivot.isDisposed?.()) continue;
