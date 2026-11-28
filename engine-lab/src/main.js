@@ -618,8 +618,9 @@ function createEnvironment(scene) {
   roadMaterial.useVertexColors = true;
   roadMaterial.backFaceCulling = false;
   roadMaterial.disableLighting = false;
-  // 2 environment + 8 track + 2 projector lights; stay within WebGL uniform-buffer limits.
-  roadMaterial.maxSimultaneousLights = 12;
+  // 2 environment + 8 track lights. Headlights are injected as a dedicated
+  // road-material shader contribution so they do not consume WebGL light slots.
+  roadMaterial.maxSimultaneousLights = 10;
   labState.roadMaxSimultaneousLights = roadMaterial.maxSimultaneousLights;
   const roadCurbMaterial = new StandardMaterial("drivella-road-curb-material", scene);
   roadCurbMaterial.diffuseColor = Color3.White();
@@ -881,7 +882,7 @@ function createEnvironment(scene) {
   scene.imageProcessingConfiguration.exposure = 1.18;
   scene.imageProcessingConfiguration.contrast = 1.12;
 
-  return { camera, sun, neonGlow, chunkManager, terrainMeshes, terrainGridMeshes, terrainBodies, biomeMeshes, rockBodies, roadSamples, roadStats, roadFurnitureStats, hydrologyStats, bridgeClassification, tunnels, tunnelStats, tunnelSpatialStats, tunnelMeshes, tunnelBodies, waterMeshes, shoreMeshes, roadMeshes, roadCurbMeshes, roadFurnitureMeshes, roadBodies };
+  return { camera, sun, neonGlow, roadMaterial, chunkManager, terrainMeshes, terrainGridMeshes, terrainBodies, biomeMeshes, rockBodies, roadSamples, roadStats, roadFurnitureStats, hydrologyStats, bridgeClassification, tunnels, tunnelStats, tunnelSpatialStats, tunnelMeshes, tunnelBodies, waterMeshes, shoreMeshes, roadMeshes, roadCurbMeshes, roadFurnitureMeshes, roadBodies };
 }
 
 function addPhysicalProbe(scene, mesh, mass, shape, options = {}) {
@@ -1203,7 +1204,8 @@ async function boot() {
     camera = environment.camera;
     visualEffects = new LegacyVisualEffects(scene, engine, camera, environment.sun, {
       glowLayer: environment.neonGlow,
-      roadSamples: environment.roadSamples
+      roadSamples: environment.roadSamples,
+      roadMaterial: environment.roadMaterial
     });
     labState.legacyEffectsReady = visualEffects.ready;
     labState.legacyEffects = visualEffects.getStatus();
