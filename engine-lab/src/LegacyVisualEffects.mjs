@@ -1,6 +1,8 @@
 import {
   Color3,
   DefaultRenderingPipeline,
+  MaterialPluginBase,
+  ShaderLanguage,
   DynamicTexture,
   LensFlare,
   LensFlareSystem,
@@ -19,6 +21,105 @@ import {
 } from "@babylonjs/core";
 
 const clamp = (value, min, max) => Math.max(min, Math.min(max, value));
+
+class RoadHeadlightMaterialPlugin extends MaterialPluginBase {
+  constructor(material, getState) {
+    super(material, "DrivellaRoadHeadlights", 150, { DRIVELLA_ROAD_HEADLIGHTS: false });
+    this.getState = getState;
+    this.bindCount = 0;
+    this.lastBound = { intensity: 0, directionY: 0 };
+    this._enable(true);
+  }
+
+  getClassName() {
+    return "RoadHeadlightMaterialPlugin";
+  }
+
+  isCompatible(shaderLanguage) {
+    return shaderLanguage === ShaderLanguage.GLSL;
+  }
+
+  prepareDefines(defines) {
+    defines.DRIVELLA_ROAD_HEADLIGHTS = true;
+  }
+
+  getUniforms() {
+    return {
+      ubo: [
+        { name: "drivellaRoadHeadlightPositionL", size: 3, type: "vec3" },
+        { name: "drivellaRoadHeadlightPositionR", size: 3, type: "vec3" },
+        { name: "drivellaRoadHeadlightDirection", size: 3, type: "vec3" },
+        { name: "drivellaRoadHeadlightIntensity", size: 1, type: "float" }
+      ],
+      fragment: `
+#ifdef DRIVELLA_ROAD_HEADLIGHTS
+uniform vec3 drivellaRoadHeadlightPositionL;
+uniform vec3 drivellaRoadHeadlightPositionR;
+uniform vec3 drivellaRoadHeadlightDirection;
+uniform float drivellaRoadHeadlightIntensity;
+#endif
+`
+    };
+  }
+
+  bindForSubMesh(uniformBuffer) {
+    const state = this.getState?.() ?? {};
+    const positionL = state.positionL ?? Vector3.Zero();
+    const positionR = state.positionR ?? Vector3.Zero();
+    const direction = state.direction ?? new Vector3(0, 0, 1);
+    const intensity = Math.max(0, Number(state.intensity) || 0);
+    uniformBuffer.updateVector3("drivellaRoadHeadlightPositionL", positionL);
+    uniformBuffer.updateVector3("drivellaRoadHeadlightPositionR", positionR);
+    uniformBuffer.updateVector3("drivellaRoadHeadlightDirection", direction);
+    uniformBuffer.updateFloat("drivellaRoadHeadlightIntensity", intensity);
+    this.bindCount += 1;
+    this.lastBound = {
+      intensity,
+      directionY: Number(direction.y.toFixed(4)),
+      positionL: positionL.clone(),
+      positionR: positionR.clone()
+    };
+  }
+
+  getCustomCode(shaderType, shaderLanguage) {
+    if (shaderType !== "fragment" || shaderLanguage !== ShaderLanguage.GLSL) return null;
+    return {
+      CUSTOM_FRAGMENT_BEFORE_FOG: `
+#ifdef DRIVELLA_ROAD_HEADLIGHTS
+float drivellaRoadHeadlightEnergy(vec3 surfaceNormal) {
+  if (drivellaRoadHeadlightIntensity <= 0.001) return 0.0;
+  vec3 beamDirection = normalize(drivellaRoadHeadlightDirection);
+  vec3 deltaL = drivellaRoadHeadlightPositionL - vPositionW;
+  vec3 deltaR = drivellaRoadHeadlightPositionR - vPositionW;
+  float distSqL = dot(deltaL, deltaL);
+  float distSqR = dot(deltaR, deltaR);
+  float energy = 0.0;
+  if (distSqL < 10000.0) {
+    float distL = sqrt(max(distSqL, 0.000001));
+    vec3 toL = deltaL / max(distL, 0.001);
+    float coneL = smoothstep(0.60, 0.94, dot(beamDirection, -toL));
+    float rangeL = 1.0 - smoothstep(28.0, 100.0, distL);
+    float attenuationL = 1.0 / (1.0 + distSqL * 0.0018);
+    float diffuseL = clamp(abs(dot(normalize(surfaceNormal), toL)) * 0.72 + 0.10, 0.0, 0.82);
+    energy += coneL * rangeL * attenuationL * diffuseL;
+  }
+  if (distSqR < 10000.0) {
+    float distR = sqrt(max(distSqR, 0.000001));
+    vec3 toR = deltaR / max(distR, 0.001);
+    float coneR = smoothstep(0.60, 0.94, dot(beamDirection, -toR));
+    float rangeR = 1.0 - smoothstep(28.0, 100.0, distR);
+    float attenuationR = 1.0 / (1.0 + distSqR * 0.0018);
+    float diffuseR = clamp(abs(dot(normalize(surfaceNormal), toR)) * 0.72 + 0.10, 0.0, 0.82);
+    energy += coneR * rangeR * attenuationR * diffuseR;
+  }
+  return energy * drivellaRoadHeadlightIntensity;
+}
+color.rgb += vec3(0.58, 0.78, 1.0) * (drivellaRoadHeadlightEnergy(normalW) * 0.46);
+#endif
+`
+    };
+  }
+}
 
 function makeHorizonSunTexture(scene) {
   const texture = new DynamicTexture(
@@ -92,7 +193,7 @@ function makeHorizonSunTexture(scene) {
 }
 
 export class LegacyVisualEffects {
-  constructor(scene, engine, camera, sunLight, { glowLayer = null, roadSamples = [] } = {}) {
+  constructor(scene, engine, camera, sunLight, { glowLayer = null, roadSamples = [], roadMaterial = null } = {}) {
     this.scene = scene;
     this.engine = engine;
     this.camera = camera;
@@ -116,6 +217,15 @@ export class LegacyVisualEffects {
     this.wheelShadows = new Map();
     this.headlampSpots = [];
     this.headlampSpotBySide = new Map();
+    this.headlightRoadPower = 0;
+    this.headlightRoadPlugin = null;
+    if (roadMaterial) {
+      try {
+        this.headlightRoadPlugin = new RoadHeadlightMaterialPlugin(roadMaterial, () => this.getRoadHeadlightUniforms());
+      } catch (error) {
+        this.recordError("road headlight material plugin", error);
+      }
+    }
     this.underbodyLights = [];
     this.trackLights = [];
     this.pipeline = null;
@@ -493,10 +603,25 @@ export class LegacyVisualEffects {
     }
   }
 
+  getRoadHeadlightUniforms() {
+    const left = this.headlampSpotBySide.get(-1);
+    const right = this.headlampSpotBySide.get(1);
+    const direction = left && right
+      ? left.direction.add(right.direction).normalize()
+      : (left?.direction ?? right?.direction ?? new Vector3(0, 0, 1)).clone().normalize();
+    return {
+      positionL: left?.position ?? Vector3.Zero(),
+      positionR: right?.position ?? Vector3.Zero(),
+      direction,
+      intensity: this.headlightRoadPower
+    };
+  }
+
   syncHeadlightOutput() {
     const deploy = this.vehicle?.headlightDeploy ?? 0;
     const deployPower = clamp((deploy - 0.12) / 0.88, 0, 1);
     const beamPower = this.headlightsEnabled ? deployPower : 0;
+    this.headlightRoadPower = beamPower * 1.25;
     for (const light of this.headlampSpots) light.intensity = 14 * beamPower;
     const emissive = new Color3(0.01 + beamPower * 0.78, 0.025 + beamPower * 0.82, 0.05 + beamPower * 0.92);
     for (const material of this.vehicle?.headlampLensMaterials ?? []) material.emissiveColor.copyFrom(emissive);
@@ -666,6 +791,10 @@ export class LegacyVisualEffects {
       headlightBeamIntensity: Number(this.headlampSpots[0]?.intensity ?? 0),
       headlightSourceCount: this.headlampSpots.length,
       headlightBeams,
+      headlightRoadPlugin: Boolean(this.headlightRoadPlugin),
+      headlightRoadUniformBindCount: this.headlightRoadPlugin?.bindCount ?? 0,
+      headlightRoadIntensity: Number(this.headlightRoadPlugin?.lastBound?.intensity ?? 0),
+      headlightRoadDirectionY: Number(this.headlightRoadPlugin?.lastBound?.directionY ?? 0),
       headlightOpticPartCount: [...(this.vehicle?.headlightOpticRoots?.values?.() ?? [])].reduce((count, root) => count + (root.getChildMeshes?.().length ?? 0), 0),
       errors: this.errors.slice()
     };
