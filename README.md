@@ -2,9 +2,10 @@
 
 A browser-based synthwave drift-racing prototype with a custom low-poly 3D car, a procedural neon environment, and a hand-built WebGL renderer.
 
-> **Status:** Playable prototype under active development. Current renderer reference: **v0.19.57 / BUILD 223**.
+> **Status:** Stable browser build **v0.19.58 / BUILD 224**. A separate experimental Babylon.js + Havok 3D-world preview is available from the main menu.
 > **Release identification:** every published game change increments the visible BUILD number in the HUD and startup screen; README and rendering architecture are updated in the same release.
 
+- **BUILD 224 / v0.19.58:** add a separate **ЭКСПЕРИМЕНТ** entry beside **СТАРТ**. It opens the Babylon.js + Havok preview in a new tab at `/engine-lab/`, keeping the stable WebGL game unchanged. The experimental page includes a return link to the stable game; all runtime files are served from this repository.
 - **BUILD 212:** add a clickable F3 diagnostics copy button. It copies the full diagnostic text, including the current CPU/GPU pass timings, and falls back to the legacy selection-based clipboard path when needed.
 
 - **BUILD 218 / v0.19.52:** reduce the road-car reflection blend to 0.225 and add a subtle vertical fade so the reflected vehicle image diminishes farther up the screen. Production shader and pixel regressions cover the intensity reduction and height fade.
@@ -15,6 +16,10 @@ A browser-based synthwave drift-racing prototype with a custom low-poly 3D car, 
 - **BUILD 220 / v0.19.54:** fix the reverse-direction tyre-force sign so lateral grip always opposes sideways motion in the car's coordinate frame, including when longitudinal velocity crosses zero. S now brakes to a standstill, then engages reverse only after a 280 ms hold; it no longer chatters between forward and reverse near zero speed. Limit yaw rate by current total speed and cap the complete two-axis velocity vector at 86 m/s (310 km/h), not just forward velocity. F3 exposes the yaw limit and reverse state. In-game drift feel still requires validation.
 
 - **BUILD 211:** preserve the original asphalt-reflection kernel and spatial resolution while skipping road-environment and vehicle-mirror shader work when their effects are disabled or the projected mirror is invalid. In races only, mirror capture refreshes every second frame below 62 FPS and returns to full rate above 70 FPS; the garage remains full-rate. F3 separates mirror capture CPU/GPU timing from the rest of the world pass.
+
+## Experimental 3D version
+
+The main menu's **ЭКСПЕРИМЕНТ** entry opens the separate [DRIVELLA 3D Engine Lab](https://nikita83ussr.github.io/drivella/engine-lab/). It runs the locally bundled Babylon.js 9.37.2 renderer and Havok 1.3.14 physics with streamed XYZ terrain, five biomes, a 1.95 km elevated road circuit, rivers, lakes, bridges and mountain tunnels. This is a technical preview: it is not yet a replacement for the stable root game, and its vehicle feel, final environment art and performance still need acceptance testing.
 
 ## Current game
 
