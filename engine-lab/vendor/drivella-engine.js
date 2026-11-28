@@ -35388,8 +35388,12 @@ vec3 lampDiffraction(vec2 uv, vec4 source, vec3 tint) {
   float aura = 0.105 * exp(-d * d * 1.22);
   // Four-point optical diffraction: a sharp horizontal/vertical cross sits
   // on the actual luminous element, surrounded by a soft radial aura.
+  // Restore the old BUILD 183 eight-point star: long horizontal/vertical
+  // rays plus four shorter diagonal rays, all centered on the lamp itself.
   float rays = rayProfile(p, vec2(1.0, 0.0), 2.25, 0.095) * 0.22
-             + rayProfile(p, vec2(0.0, 1.0), 1.28, 0.078) * 0.19;
+             + rayProfile(p, vec2(0.0, 1.0), 1.28, 0.078) * 0.19
+             + rayProfile(p, vec2(0.7071068, 0.7071068), 0.92, 0.070) * 0.115
+             + rayProfile(p, vec2(-0.7071068, 0.7071068), 0.92, 0.070) * 0.115;
   return tint * (core + inner + aura + rays) * source.w;
 }
 void main(void) {
