@@ -7,6 +7,7 @@ import {
   Mesh,
   MeshBuilder,
   PointLight,
+  Scene,
   ShadowGenerator,
   SSAORenderingPipeline,
   SSRRenderingPipeline,
@@ -107,6 +108,7 @@ export class LegacyVisualEffects {
     this.outlineMeshes = new Set();
     this.tailMaterial = null;
     this.sunEnabled = true;
+    this.atmosphereEnabled = true;
     this.lastSunTextureUpdate = 0;
     this.vehicle = null;
     this.wheelShadows = new Map();
@@ -128,6 +130,7 @@ export class LegacyVisualEffects {
     this.flareTextureUrl = null;
     this.vlsAttached = false;
 
+    this.createAtmosphere();
     this.createHorizonSun();
     this.createShadowSystem();
     this.createPostProcessing();
@@ -147,6 +150,16 @@ export class LegacyVisualEffects {
     const message = String(error?.message ?? error);
     this.errors.push(name + ": " + message);
     console.warn("DRIVELLA legacy FX " + name + " unavailable:", error);
+  }
+
+  createAtmosphere() {
+    // Subtle night-blue aerial perspective: distant mountains and horizon
+    // fade into the sky instead of ending at a hard geometry cutoff.
+    this.scene.fogMode = Scene.FOGMODE_EXP2;
+    this.scene.fogColor = new Color3(0.045, 0.055, 0.14);
+    this.scene.fogDensity = 0.00112;
+    this.scene.fogEnabled = true;
+    this.atmosphereEnabled = true;
   }
 
   createHorizonSun() {
@@ -473,6 +486,10 @@ export class LegacyVisualEffects {
         this.sunEnabled = value;
         this.sunMesh?.setEnabled(value);
         break;
+      case "atmosphere":
+        this.atmosphereEnabled = value;
+        this.scene.fogEnabled = value;
+        break;
       case "godRays":
         if (this.vls && this.vlsAttached !== value) {
           if (value) this.camera.attachPostProcess(this.vls);
@@ -541,6 +558,7 @@ export class LegacyVisualEffects {
       reflections: Boolean(this.ssr?.isEnabled),
       shadows: Boolean(this.sunLight?.shadowEnabled),
       sun: Boolean(this.sunEnabled && this.sunMesh?.isEnabled()),
+      atmosphere: Boolean(this.atmosphereEnabled && this.scene.fogEnabled),
       godRays: Boolean(this.vls && this.vlsAttached),
       lensFlares: Boolean(this.lensFlareSystems.some((system) => system.isEnabled)),
       underglow: Boolean(this.underglowEnabled),

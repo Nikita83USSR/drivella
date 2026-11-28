@@ -81,7 +81,7 @@ try {
       effects: state?.legacyEffects ?? null
     };
   });
-  const requiredEffects = ["bloom", "ssao", "reflections", "shadows", "sun", "godRays", "lensFlares", "underglow", "outlines"];
+  const requiredEffects = ["bloom", "ssao", "reflections", "shadows", "sun", "atmosphere", "godRays", "lensFlares", "underglow", "outlines"];
   const missingEffects = requiredEffects.filter((name) => initialEffects.effects?.[name] !== true);
   if (!initialEffects.ready || missingEffects.length) {
     throw new Error("Legacy visual-effects stack did not initialize completely: " + JSON.stringify({ initialEffects, missingEffects }));
