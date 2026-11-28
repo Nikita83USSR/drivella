@@ -1,5 +1,5 @@
 import assert from "node:assert/strict";
-import { buildRoadChunkGeometry, buildRoadCurbChunkGeometry, generateMainRoadSamples } from "../engine-lab/src/RoadNetwork.mjs";
+import { buildRoadChunkGeometry, buildRoadCurbChunkGeometry, buildRoadFurnitureChunkGeometry, generateMainRoadSamples } from "../engine-lab/src/RoadNetwork.mjs";
 
 const samples = generateMainRoadSamples();
 const road = buildRoadChunkGeometry(samples, 0, 0, 0);
@@ -22,7 +22,10 @@ assert.ok(hasColor(road.colors, oldGameAsphalt), "asphalt must retain the stable
 assert.ok(hasColor(road.colors, oldGameShoulder), "road shoulders must stay subdued, not neon");
 assert.ok(hasColor(whiteMarkings.colors, pureWhite), "lane dashes must be crisp pure white");
 
-assert.ok(whiteMarkings.segmentCount > 0, "both white lane-marking series must be counted");
+assert.ok(whiteMarkings.edgeSegmentCount > 0, "continuous white road-edge lines must be generated");
+assert.ok(whiteMarkings.centerDashSegmentCount > 0, "the dashed white centre divider must be generated");
+assert.equal(whiteMarkings.segmentCount, whiteMarkings.edgeSegmentCount + whiteMarkings.centerDashSegmentCount,
+  "all visible road-marking sections must be counted");
 assert.equal(whiteMarkings.positions.length % 3, 0, "marking positions must be valid XYZ triples");
 assert.equal(whiteMarkings.colors.length % 4, 0, "marking colors must be valid RGBA values");
 assert.ok(whiteMarkings.positions.every(Number.isFinite), "marking geometry must contain finite coordinates");
@@ -35,8 +38,12 @@ assert.ok(fence.left.positions.every(Number.isFinite) && fence.right.positions.e
 assert.ok(hasColor(fence.left.colors, [0.96, 0.045, 0.48]), "the left fence rail must keep its magenta color");
 assert.ok(hasColor(fence.right.colors, [0.06, 0.58, 1.0]), "the right fence rail must keep its cyan color");
 
+const furniture = buildRoadFurnitureChunkGeometry(samples, 0, 0, 0);
+assert.equal(furniture.guardrailSegments, 0, "do not render a second metallic fence beside the neon roadside barrier");
+assert.equal(furniture.guardrailPosts, 0, "the duplicate metallic fence posts must be absent");
+
 const emptyNeighbor = buildRoadCurbChunkGeometry(samples, 1000, 0, 1000);
 assert.equal(emptyNeighbor.left.indices.length, 0, "distant chunks must not receive unrelated left fence geometry");
 assert.equal(emptyNeighbor.right.indices.length, 0, "distant chunks must not receive unrelated right fence geometry");
 
-console.log("ROAD VISUALS PASS: crisp white lane dashes separated from cyan/magenta neon fence at 9.15 m.");
+console.log("ROAD VISUALS PASS: solid white edge lines + dashed centre divider; single cyan/magenta neon fence at 9.15 m.");
