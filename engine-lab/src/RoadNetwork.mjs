@@ -13,11 +13,12 @@ export const ROAD_SHOULDER_WIDTH = 2.4;
 export const ROAD_SURFACE_OFFSET = 1.05;
 export const ROAD_SHOULDER_OFFSET = 0.58;
 
+// Match the old stable game's dark asphalt and subdued shoulder materials.
 const ROAD_COLORS = Object.freeze({
-  asphalt: Object.freeze([0.11, 0.13, 0.16]),
-  shoulder: Object.freeze([0.25, 0.29, 0.25]),
-  edge: Object.freeze([0.72, 0.83, 0.84]),
-  center: Object.freeze([0.08, 0.58, 0.78])
+  asphalt: Object.freeze([0.055, 0.055, 0.105]),
+  shoulder: Object.freeze([0.075, 0.07, 0.13]),
+  edge: Object.freeze([0.82, 0.86, 0.94]),
+  center: Object.freeze([0.92, 0.96, 1.0])
 });
 
 function clamp(value, min, max) {

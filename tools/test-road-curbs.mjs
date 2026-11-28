@@ -7,6 +7,17 @@ const curbs = buildRoadCurbChunkGeometry(samples, 0, 0, 0);
 
 assert.ok(road.indices.length > 0, "the asphalt geometry must be present");
 assert.ok(curbs.indices.length > 0, "raised neon kerbs must be generated");
+
+const oldGameAsphalt = [0.055, 0.055, 0.105];
+const oldGameShoulder = [0.075, 0.07, 0.13];
+const oldGameWhiteMarking = [0.92, 0.96, 1.0];
+const hasColor = (colors, expected) => colors.some((_, index) => {
+  if (index % 4 !== 0) return false;
+  return expected.every((value, channel) => Math.abs(colors[index + channel] - value) < 1e-6);
+});
+assert.ok(hasColor(road.colors, oldGameAsphalt), "asphalt must retain the stable game's dark blue-black tone");
+assert.ok(hasColor(road.colors, oldGameShoulder), "road shoulders must stay subdued, not neon");
+assert.ok(hasColor(road.colors, oldGameWhiteMarking), "lane marks must be neutral white rather than synth-cyan");
 assert.ok(curbs.segmentCount > 0, "kerb segments must be counted");
 assert.equal(curbs.positions.length % 3, 0, "kerb positions must be valid XYZ triples");
 assert.equal(curbs.colors.length % 4, 0, "kerb colours must be valid RGBA values");
