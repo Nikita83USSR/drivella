@@ -175,9 +175,11 @@ export class LegacyVisualEffects {
       mesh.isBlocker = false;
       mesh.alwaysSelectAsActiveMesh = true;
       mesh.renderingGroupId = 0;
+      mesh.applyFog = false;
       mesh.metadata = { ...(mesh.metadata ?? {}), isFX: true, noShadowCaster: true };
       const material = new StandardMaterial("drivella-horizon-sunset-material", this.scene);
       material.disableLighting = true;
+      material.fogEnabled = false;
       material.backFaceCulling = false;
       material.diffuseTexture = texture;
       material.opacityTexture = texture;
@@ -232,10 +234,12 @@ export class LegacyVisualEffects {
   createPostProcessing() {
     try {
       this.pipeline = new DefaultRenderingPipeline("drivella-legacy-render-pipeline", true, this.scene, [this.camera]);
+      // The GlowLayer below owns local neon halos. Keep scene-wide bloom
+      // subtle so emissive meshes are not bloomed a second time.
       this.pipeline.bloomEnabled = true;
-      this.pipeline.bloomThreshold = 0.78;
-      this.pipeline.bloomWeight = 0.34;
-      this.pipeline.bloomKernel = 64;
+      this.pipeline.bloomThreshold = 0.94;
+      this.pipeline.bloomWeight = 0.11;
+      this.pipeline.bloomKernel = 48;
       this.pipeline.bloomScale = 0.5;
       this.pipeline.fxaaEnabled = true;
       this.pipeline.imageProcessingEnabled = true;
@@ -244,9 +248,9 @@ export class LegacyVisualEffects {
       try {
         this.pipeline = new DefaultRenderingPipeline("drivella-legacy-render-pipeline-fallback", false, this.scene, [this.camera]);
         this.pipeline.bloomEnabled = true;
-        this.pipeline.bloomThreshold = 0.82;
-        this.pipeline.bloomWeight = 0.26;
-        this.pipeline.bloomKernel = 48;
+        this.pipeline.bloomThreshold = 0.95;
+        this.pipeline.bloomWeight = 0.10;
+        this.pipeline.bloomKernel = 40;
         this.pipeline.bloomScale = 0.5;
         this.pipeline.fxaaEnabled = true;
       } catch (fallbackError) {
@@ -272,19 +276,23 @@ export class LegacyVisualEffects {
 
     try {
       this.ssr = new SSRRenderingPipeline(
-        "drivella-legacy-screen-space-reflections",
+        "drivella-screen-space-reflections",
         this.scene,
         [this.camera],
         false
       );
-      this.ssr.isEnabled = true;
-      this.ssr.strength = 0.72;
-      this.ssr.reflectivityThreshold = 0.085;
-      this.ssr.roughnessFactor = 0.18;
-      this.ssr.maxDistance = 280;
-      this.ssr.maxSteps = 28;
-      this.ssr.step = 3;
-      this.ssr.blurDispersionStrength = 0.012;
+      // SSR is optional and starts detached. On activation it uses one
+      // ray-march pass: no roughness blur/combine passes or huge ray budget.
+      this.ssr.isEnabled = false;
+      this.ssr.strength = 0.42;
+      this.ssr.reflectivityThreshold = 0.18;
+      this.ssr.roughnessFactor = 0;
+      this.ssr.maxDistance = 96;
+      this.ssr.maxSteps = 14;
+      this.ssr.step = 4;
+      this.ssr.samples = 1;
+      this.ssr.blurDispersionStrength = 0;
+      this.ssr.reflectionSpecularFalloffExponent = 2;
       this.ssr.attenuateScreenBorders = true;
     } catch (error) {
       this.recordError("screen-space reflections", error);
@@ -477,7 +485,16 @@ export class LegacyVisualEffects {
         }
         break;
       case "reflections":
-        if (this.ssr) this.ssr.isEnabled = value;
+        if (!this.ssr?.isSupported) {
+          this.recordError("screen-space reflections", "SSR is not supported by this renderer.");
+          return false;
+        }
+        try {
+          this.ssr.isEnabled = value;
+        } catch (error) {
+          this.recordError("screen-space reflections toggle", error);
+          return false;
+        }
         break;
       case "shadows":
         if (this.sunLight) this.sunLight.shadowEnabled = value;
@@ -555,9 +572,20 @@ export class LegacyVisualEffects {
     return {
       bloom: Boolean(this.pipeline?.bloomEnabled),
       ssao: Boolean(this.ssao && this.ssaoAttached),
-      reflections: Boolean(this.ssr?.isEnabled),
+      reflections: Boolean(this.ssr?.isSupported && this.ssr?.isEnabled),
+      reflectionsSupported: Boolean(this.ssr?.isSupported),
+      reflectionsQuality: this.ssr ? {
+        strength: this.ssr.strength,
+        maxDistance: this.ssr.maxDistance,
+        maxSteps: this.ssr.maxSteps,
+        step: this.ssr.step,
+        blurDispersionStrength: this.ssr.blurDispersionStrength
+      } : null,
+      bloomWeight: this.pipeline?.bloomWeight ?? null,
+      glowIntensity: this.glowLayer?.intensity ?? null,
       shadows: Boolean(this.sunLight?.shadowEnabled),
       sun: Boolean(this.sunEnabled && this.sunMesh?.isEnabled()),
+      sunFogExcluded: Boolean(this.sunMesh?.applyFog === false && this.sunMaterial?.fogEnabled === false),
       atmosphere: Boolean(this.atmosphereEnabled && this.scene.fogEnabled),
       godRays: Boolean(this.vls && this.vlsAttached),
       lensFlares: Boolean(this.lensFlareSystems.some((system) => system.isEnabled)),
