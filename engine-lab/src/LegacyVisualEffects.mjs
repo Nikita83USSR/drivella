@@ -767,6 +767,25 @@ export class LegacyVisualEffects {
   getStatus() {
     const forward = this.vehicle?.bodyRoot?.getDirection?.(Vector3.Forward())?.normalize?.() ?? new Vector3(0, 0, 1);
     const bodyPosition = this.vehicle?.bodyRoot?.getAbsolutePosition?.() ?? Vector3.Zero();
+    const roadMeshes = this.headlightRoadMaterial
+      ? this.scene.meshes.filter((mesh) => mesh.material === this.headlightRoadMaterial)
+      : [];
+    const activeMeshes = this.scene.getActiveMeshes?.()?.data ?? [];
+    const cameraPlanes = this.camera?.getFrustumPlanes?.() ?? null;
+    const roadMeshDiagnostics = roadMeshes.slice(0, 8).map((mesh) => ({
+      name: mesh.name,
+      enabled: mesh.isEnabled(),
+      visible: mesh.isVisible,
+      visibility: Number(mesh.visibility ?? 1),
+      inFrustum: cameraPlanes ? mesh.isInFrustum(cameraPlanes) : null,
+      active: activeMeshes.includes(mesh),
+      subMeshes: mesh.subMeshes?.length ?? 0,
+      effects: (mesh.subMeshes ?? []).map((subMesh) => ({
+        hasEffect: Boolean(subMesh.effect),
+        ready: Boolean(subMesh.effect?.isReady?.()),
+        compilationError: subMesh.effect?.getCompilationError?.() ?? ""
+      }))
+    }));
     const headlightBeams = [...this.headlampSpotBySide.entries()].map(([side, spot]) => ({
       side: side < 0 ? "L" : "R",
       intensity: Number(spot.intensity ?? 0),
@@ -808,9 +827,12 @@ export class LegacyVisualEffects {
       headlightRoadObservableBindCount: this.headlightRoadObservableBindCount,
       headlightRoadMaterialFrozen: Boolean(this.headlightRoadMaterial?.isFrozen),
       headlightRoadPluginActive: Boolean(this.headlightRoadMaterial?.pluginManager?._activePlugins?.includes(this.headlightRoadPlugin)),
-      headlightRoadMeshCount: this.headlightRoadMaterial
-        ? this.scene.meshes.filter((mesh) => mesh.material === this.headlightRoadMaterial).length
-        : 0,
+      headlightRoadBindCallbackAvailable: typeof this.headlightRoadMaterial?._callbackPluginEventBindForSubMesh === "function",
+      headlightRoadRunsCodeOnBind: Boolean(this.headlightRoadMaterial?._runsCodeOnBind?.()),
+      headlightRoadMeshCount: roadMeshes.length,
+      headlightRoadActiveMeshCount: roadMeshDiagnostics.filter((mesh) => mesh.active).length,
+      headlightRoadInFrustumMeshCount: roadMeshDiagnostics.filter((mesh) => mesh.inFrustum).length,
+      headlightRoadMeshDiagnostics: roadMeshDiagnostics,
       headlightRoadIntensity: Number(this.headlightRoadPlugin?.lastBound?.intensity ?? 0),
       headlightRoadDirectionY: Number(this.headlightRoadPlugin?.lastBound?.directionY ?? 0),
       headlightOpticPartCount: [...(this.vehicle?.headlightOpticRoots?.values?.() ?? [])].reduce((count, root) => count + (root.getChildMeshes?.().length ?? 0), 0),
