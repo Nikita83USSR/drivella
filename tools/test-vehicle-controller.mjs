@@ -1,7 +1,7 @@
 import assert from "node:assert/strict";
 import { readFile } from "node:fs/promises";
 import { inflateSync } from "node:zlib";
-import { calculateAckermannAngles, calculateLateralTireForce, calculateSpeedSteerLimit, calculateStaticSuspensionCompression, calculateVehicleMotionTelemetry, clampTireForce, measureCountachRigMetrics, wrapVehicleAngle } from "../engine-lab/src/VehicleController.mjs";
+import { calculateAckermannAngles, calculateAntiRollForces, calculateLateralTireForce, calculateSpeedSteerLimit, calculateStaticSuspensionCompression, calculateVehicleMotionTelemetry, clampTireForce, measureCountachRigMetrics, wrapVehicleAngle } from "../engine-lab/src/VehicleController.mjs";
 
 const assetDir = new URL("../engine-lab/assets/", import.meta.url);
 const names = [
@@ -70,6 +70,11 @@ assert.deepEqual(calculateAckermannAngles(0, rig.wheelbase, rig.track), { left: 
 assert.equal(calculateSpeedSteerLimit(0,rig.wheelbase,7,.49),.49);
 assert.ok(calculateSpeedSteerLimit(7.5,rig.wheelbase,7,.49)<.49);
 assert.ok(calculateSpeedSteerLimit(15,rig.wheelbase,7,.49)<calculateSpeedSteerLimit(7.5,rig.wheelbase,7,.49));
+const antiRollLeft=calculateAntiRollForces(.18,.02,26000);
+assert.ok(antiRollLeft.leftY>0&&antiRollLeft.rightY<0,"A compressed left suspension must be lifted while the right side is pushed down.");
+const antiRollRight=calculateAntiRollForces(.02,.18,26000);
+assert.ok(antiRollRight.leftY<0&&antiRollRight.rightY>0,"A compressed right suspension must be lifted while the left side is pushed down.");
+assert.deepEqual(calculateAntiRollForces(.08,.08,26000),{leftY:0,rightY:0});
 assert.deepEqual(clampTireForce(1800, 900, 4000), { longitudinal: 1800, lateral: 900, scale: 1 });
 const saturated = clampTireForce(4000, 3000, 3500);
 assert.ok(Math.hypot(saturated.longitudinal, saturated.lateral) <= 3500.000001 && saturated.scale < 1);
@@ -90,4 +95,4 @@ console.log("COUNTACH SOURCE GEOMETRY PASS", JSON.stringify({
   track: rig.track,
   measuredWheelRadius: rig.wheelRadius
 }));
-console.log("VEHICLE CONTROLLER UNIT PASS", JSON.stringify({ right, left, saturated, frontStaticCompression, rearStaticCompression,steerLow:calculateSpeedSteerLimit(0,rig.wheelbase,7,.49),steerMid:calculateSpeedSteerLimit(7.5,rig.wheelbase,7,.49),steerHigh:calculateSpeedSteerLimit(15,rig.wheelbase,7,.49) }));
+console.log("VEHICLE CONTROLLER UNIT PASS", JSON.stringify({ right, left, saturated, frontStaticCompression, rearStaticCompression,steerLow:calculateSpeedSteerLimit(0,rig.wheelbase,7,.49),steerMid:calculateSpeedSteerLimit(7.5,rig.wheelbase,7,.49),steerHigh:calculateSpeedSteerLimit(15,rig.wheelbase,7,.49),antiRollLeft,antiRollRight }));

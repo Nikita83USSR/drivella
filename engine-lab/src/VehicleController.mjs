@@ -26,6 +26,10 @@ export function calculateSpeedSteerLimit(speed,wheelbase,maxLateralAccel,maximum
  if(v<=.5)return maximumAngle;
  return Math.min(maximumAngle,Math.atan(wheelbase*maxLateralAccel/(v*v)));
 }
+export function calculateAntiRollForces(leftCompression,rightCompression,stiffness){
+ const force=(leftCompression-rightCompression)*Math.max(0,stiffness);
+ return {leftY:force,rightY:-force};
+}
 export function calculateAckermannAngles(input,wheelbase,track,maximumAngle=P.maxSteer){
  const centre=clamp(input,-1,1)*maximumAngle;if(Math.abs(centre)<1e-5)return {left:0,right:0};
  const dir=Math.sign(centre),radius=wheelbase/Math.tan(Math.abs(centre)),half=track*.5;
@@ -189,8 +193,8 @@ export class VehicleController{
    contact.appliedForceX=appliedForce.x;contact.appliedForceZ=appliedForce.z;contact.pointY=point.y;contact.normalY=normal.y;
    contact.lateralSpeed=sideV;contact.lateralForce=tire.lateral;contact.tireUtilization=limit>0?Math.hypot(tire.longitudinal,tire.lateral)/limit:0;
   }
-  const anti=(lk,rk)=>{const l=contacts.get(lk),r=contacts.get(rk);if(!l?.hit||!r?.hit)return;const force=(l.compression-r.compression)*P.antiRoll;
-   this.aggregate.body.applyForce(new Vector3(0,-force,0),l.anchor);this.aggregate.body.applyForce(new Vector3(0,force,0),r.anchor);};
+  const anti=(lk,rk)=>{const l=contacts.get(lk),r=contacts.get(rk);if(!l?.hit||!r?.hit)return;const force=calculateAntiRollForces(l.compression,r.compression,P.antiRoll);
+   this.aggregate.body.applyForce(new Vector3(0,force.leftY,0),l.anchor);this.aggregate.body.applyForce(new Vector3(0,force.rightY,0),r.anchor);};
   anti("frontLeft","frontRight");anti("rearLeft","rearRight");
   const orientation=this.chassis.rotationQuaternion??Quaternion.Identity();
   const bodyRoll=orientation.toEulerAngles().z;
