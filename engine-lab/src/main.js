@@ -111,6 +111,7 @@ const labState = {
 };
 window.__DRIVELLA_LAB__ = labState;
 let visualEffects = null;
+let roadCurbMeshes = new Map();
 
 function setStatus(message, state = "warn") {
   statusText.textContent = message;
@@ -1125,6 +1126,7 @@ function wireVisualEffectsControls() {
   fxToggle?.addEventListener("click", () => {
     const open = fxPanel?.classList.toggle("open") ?? false;
     fxPanel?.setAttribute("aria-hidden", open ? "false" : "true");
+    fxToggle?.setAttribute("aria-expanded", open ? "true" : "false");
   });
   window.addEventListener("keydown", (event) => {
     if (event.repeat) return;
@@ -1198,6 +1200,7 @@ async function boot() {
     roadSamples = environment.roadSamples;
     roadStats = environment.roadStats;
     roadMeshes = environment.roadMeshes;
+    roadCurbMeshes = environment.roadCurbMeshes;
     roadFurnitureMeshes = environment.roadFurnitureMeshes;
     waterMeshes = environment.waterMeshes;
     shoreMeshes = environment.shoreMeshes;

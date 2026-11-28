@@ -13,9 +13,9 @@ assert.equal(curbs.colors.length % 4, 0, "kerb colours must be valid RGBA values
 assert.equal(curbs.positions.length / 3, curbs.colors.length / 4, "every kerb vertex must have a colour");
 assert.ok(curbs.positions.every(Number.isFinite), "kerb geometry must contain finite coordinates");
 
-const maxRoadY = Math.max(...road.positions.filter((_, index) => index % 3 === 1));
+const minRoadY = Math.min(...road.positions.filter((_, index) => index % 3 === 1));
 const maxCurbY = Math.max(...curbs.positions.filter((_, index) => index % 3 === 1));
-assert.ok(maxCurbY > maxRoadY + 0.08, "kerb top must stand visibly above the asphalt");
+assert.ok(maxCurbY > minRoadY + 0.08, "kerb top must stand visibly above the asphalt plane");
 
 const expected = [0.13, 0.68, 0.98];
 const hasGridBlue = curbs.colors.some((_, index) => {

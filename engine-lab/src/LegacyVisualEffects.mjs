@@ -89,28 +89,6 @@ function makeHorizonSunTexture(scene) {
   return { texture, draw };
 }
 
-function makeFlareTexture(scene) {
-  const texture = new DynamicTexture(
-    "drivella-flare-texture",
-    { width: 128, height: 128 },
-    scene,
-    true,
-    Texture.TRILINEAR_SAMPLINGMODE
-  );
-  texture.hasAlpha = true;
-  const ctx = texture.getContext();
-  const gradient = ctx.createRadialGradient(64, 64, 1, 64, 64, 62);
-  gradient.addColorStop(0, "rgba(255,255,255,1)");
-  gradient.addColorStop(0.13, "rgba(255,238,215,0.85)");
-  gradient.addColorStop(0.36, "rgba(255,160,130,0.26)");
-  gradient.addColorStop(1, "rgba(255,100,100,0)");
-  ctx.clearRect(0, 0, 128, 128);
-  ctx.fillStyle = gradient;
-  ctx.fillRect(0, 0, 128, 128);
-  texture.update();
-  return texture;
-}
-
 export class LegacyVisualEffects {
   constructor(scene, engine, camera, sunLight, { glowLayer = null, roadSamples = [] } = {}) {
     this.scene = scene;
@@ -141,7 +119,9 @@ export class LegacyVisualEffects {
     this.sunTextureDraw = null;
     this.shadowGenerator = null;
     this.sunFlareSystem = null;
-    this.flareTexture = null;
+    this.lensFlareSystems = [];
+    this.flareTextureUrl = null;
+    this.vlsAttached = false;
 
     this.createHorizonSun();
     this.createShadowSystem();
@@ -170,6 +150,7 @@ export class LegacyVisualEffects {
       mesh.position.set(0, 38, 820);
       mesh.billboardMode = Mesh.BILLBOARDMODE_ALL;
       mesh.isPickable = false;
+      mesh.isBlocker = false;
       mesh.alwaysSelectAsActiveMesh = true;
       mesh.renderingGroupId = 0;
       mesh.metadata = { ...(mesh.metadata ?? {}), isFX: true, noShadowCaster: true };
@@ -218,6 +199,7 @@ export class LegacyVisualEffects {
     if (this.shadowReceivers.has(mesh)) return;
     try {
       mesh.receiveShadows = true;
+      mesh.isBlocker = true;
       this.shadowGenerator.addShadowCaster(mesh, false);
       this.shadowReceivers.add(mesh);
     } catch (error) {
@@ -305,6 +287,7 @@ export class LegacyVisualEffects {
       this.vls.decay = 0.965;
       this.vls.weight = 0.34;
       this.vls.density = 0.82;
+      this.vlsAttached = true;
     } catch (error) {
       this.recordError("volumetric God Rays", error);
       this.vls = null;
@@ -314,11 +297,14 @@ export class LegacyVisualEffects {
   createLensFlares() {
     if (!this.sunMesh) return;
     try {
-      this.flareTexture = makeFlareTexture(this.scene);
+      const flareSvg = '<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 128 128"><defs><radialGradient id="g"><stop stop-color="#fff" stop-opacity="1"/><stop offset=".18" stop-color="#ffe7ce" stop-opacity=".85"/><stop offset=".42" stop-color="#ff9b83" stop-opacity=".32"/><stop offset="1" stop-color="#ff6470" stop-opacity="0"/></radialGradient></defs><rect width="128" height="128" fill="url(#g)"/></svg>';
+      this.flareTextureUrl = "data:image/svg+xml;base64," + btoa(flareSvg);
+      this.scene.lensFlaresEnabled = true;
       this.sunFlareSystem = new LensFlareSystem("drivella-horizon-lens-flares", this.sunMesh, this.scene);
-      new LensFlare(0.44, 0, new Color3(1, 0.48, 0.28), this.flareTexture, this.sunFlareSystem);
-      new LensFlare(0.18, 0.34, new Color3(0.30, 0.74, 1), this.flareTexture, this.sunFlareSystem);
-      new LensFlare(0.12, 0.62, new Color3(1, 0.28, 0.52), this.flareTexture, this.sunFlareSystem);
+      this.lensFlareSystems.push(this.sunFlareSystem);
+      new LensFlare(0.44, 0, new Color3(1, 0.48, 0.28), this.flareTextureUrl, this.sunFlareSystem);
+      new LensFlare(0.18, 0.34, new Color3(0.30, 0.74, 1), this.flareTextureUrl, this.sunFlareSystem);
+      new LensFlare(0.12, 0.62, new Color3(1, 0.28, 0.52), this.flareTextureUrl, this.sunFlareSystem);
     } catch (error) {
       this.recordError("lens flares", error);
       this.sunFlareSystem = null;
@@ -374,6 +360,12 @@ export class LegacyVisualEffects {
         spot.range = 86;
         spot.intensity = 0;
         this.headlampSpots.push(spot);
+        if (this.flareTextureUrl) {
+          const lampFlare = new LensFlareSystem("drivella-headlamp-flares-" + side, spot, this.scene);
+          this.lensFlareSystems.push(lampFlare);
+          new LensFlare(0.24, 0, new Color3(0.74, 0.86, 1), this.flareTextureUrl, lampFlare);
+          new LensFlare(0.09, 0.42, new Color3(0.35, 0.72, 1), this.flareTextureUrl, lampFlare);
+        }
 
         const under = new PointLight(
           "drivella-countach-underbody-" + side,
@@ -384,7 +376,7 @@ export class LegacyVisualEffects {
         under.diffuse = new Color3(1, 0.018, 0.035);
         under.specular = new Color3(0.75, 0.012, 0.025);
         under.range = 10.5;
-        under.intensity = 2.0;
+        under.intensity = this.underglowEnabled ? 2.0 : 0;
         this.underbodyLights.push(under);
       }
 
@@ -415,6 +407,7 @@ export class LegacyVisualEffects {
         const lamp = vehicle.materials?.get?.(key);
         if (lamp) lamp.emissiveColor = new Color3(0.52, 0.68, 0.9);
       }
+      for (const system of this.lensFlareSystems) system.isEnabled = true;
       this.setHeadlights(this.headlightsEnabled);
     } catch (error) {
       this.recordError("vehicle lighting", error);
@@ -451,10 +444,14 @@ export class LegacyVisualEffects {
         this.sunMesh?.setEnabled(value);
         break;
       case "godRays":
-        if (this.vls) this.vls.enabled = value;
+        if (this.vls && this.vlsAttached !== value) {
+          if (value) this.camera.attachPostProcess(this.vls);
+          else this.camera.detachPostProcess(this.vls);
+          this.vlsAttached = value;
+        }
         break;
       case "lensFlares":
-        if (this.sunFlareSystem) this.sunFlareSystem.isEnabled = value;
+        for (const system of this.lensFlareSystems) system.isEnabled = value;
         break;
       case "underglow":
         this.underglowEnabled = value;
@@ -491,7 +488,7 @@ export class LegacyVisualEffects {
         point.y - vehicle.metrics.wheelRadius + 0.022,
         point.z
       );
-      shadow.scaling.set(1.0, 1.0, clamp(1.12 + Math.abs(vehicle.getTelemetry().speedKmh) * 0.0005, 1.12, 1.42));
+      shadow.scaling.set(1.0, 1.0, 1.18);
     }
   }
 
@@ -502,8 +499,8 @@ export class LegacyVisualEffects {
       reflections: Boolean(this.ssr?.isEnabled),
       shadows: Boolean(this.sunLight?.shadowEnabled),
       sun: Boolean(this.sunEnabled && this.sunMesh?.isEnabled()),
-      godRays: Boolean(this.vls?.enabled),
-      lensFlares: Boolean(this.sunFlareSystem?.isEnabled),
+      godRays: Boolean(this.vls && this.vlsAttached),
+      lensFlares: Boolean(this.lensFlareSystems.some((system) => system.isEnabled)),
       underglow: Boolean(this.underglowEnabled),
       headlights: Boolean(this.headlightsEnabled),
       errors: this.errors.slice()
