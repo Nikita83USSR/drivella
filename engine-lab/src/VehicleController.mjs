@@ -124,7 +124,7 @@ export class VehicleController{
  wheelMount(w){const c=this.metrics.wheelCenters[w.axle];return new Vector3(w.side*c[0],c[1]+P.rest-P.cg-P.spawn-P.rideSag,c[2]);}
  stepPhysics(){
   if(!this.aggregate?.body||this.aggregate.body.isDisposed)return;const physics=this.scene.getPhysicsEngine();if(!physics?.raycastToRef)return;
-  const dt=clamp(this.scene.getEngine().getDeltaTime()/1000,1/1000,1),matrix=this.bodyMatrix(),yaw=this.yawOf(matrix),position=this.chassis.position.clone();
+  const dt=clamp(physics.getTimeStep(),1/240,1/30),matrix=this.bodyMatrix(),yaw=this.yawOf(matrix),position=this.chassis.position.clone();
   this.unwrappedYaw+=wrapVehicleAngle(yaw-this.lastYaw);this.lastYaw=yaw;
   const velocity=this.aggregate.body.getLinearVelocity(),angular=this.aggregate.body.getAngularVelocity();
   const left=this.keys.has("a")||this.keys.has("arrowleft"),right=this.keys.has("d")||this.keys.has("arrowright");
@@ -174,7 +174,7 @@ export class VehicleController{
    if(spring<=.5)continue;
    // Havok applyForce scales by its fixed 1/60 step even when the world uses a variable frame delta.
    // Convert Newtons to an impulse using the exact same dt that Havok will integrate this frame.
-   this.aggregate.body.applyImpulse(new Vector3(normal.x*spring/Math.max(normal.y,.35),spring,normal.z*spring/Math.max(normal.y,.35)).scale(dt),point);
+   this.aggregate.body.applyForce(new Vector3(normal.x*spring/Math.max(normal.y,.35),spring,normal.z*spring/Math.max(normal.y,.35)),point);
    const wa=yaw+steer,nf=new Vector3(Math.sin(wa),0,Math.cos(wa)),forward=nf.subtract(normal.scale(Vector3.Dot(nf,normal))).normalize();
    const rightVector=Vector3.Cross(normal,forward).normalize(),wheelV=velocity.add(Vector3.Cross(angular,lever));
    const longV=Vector3.Dot(wheelV,forward),sideV=Vector3.Dot(wheelV,rightVector),rear=w.axle==="rear",mu=rear&&this.handbrake?P.rearHandbrakeGrip:rear?P.rearGrip:P.frontGrip,limit=mu*spring;
@@ -184,20 +184,20 @@ export class VehicleController{
    if(this.parked&&Math.abs(longV)>.025)longitudinal-=Math.sign(longV)*P.parkingBrake;
    const tire=clampTireForce(longitudinal,lateral,limit);
    const appliedForce=forward.scale(tire.longitudinal).add(rightVector.scale(tire.lateral));
-   this.aggregate.body.applyImpulse(appliedForce.scale(dt),point);this.appliedDriveForceWorld.addInPlace(appliedForce);
+   this.aggregate.body.applyForce(appliedForce,point);this.appliedDriveForceWorld.addInPlace(appliedForce);
    const contact=contacts.get(w.key);contact.longitudinalSpeed=longV;contact.longitudinalForce=tire.longitudinal;
    contact.appliedForceX=appliedForce.x;contact.appliedForceZ=appliedForce.z;contact.pointY=point.y;contact.normalY=normal.y;
    contact.lateralSpeed=sideV;contact.lateralForce=tire.lateral;contact.tireUtilization=limit>0?Math.hypot(tire.longitudinal,tire.lateral)/limit:0;
   }
   const anti=(lk,rk)=>{const l=contacts.get(lk),r=contacts.get(rk);if(!l?.hit||!r?.hit)return;const force=(l.compression-r.compression)*P.antiRoll;
-   this.aggregate.body.applyImpulse(new Vector3(0,-force*dt,0),l.anchor);this.aggregate.body.applyImpulse(new Vector3(0,force*dt,0),r.anchor);};
+   this.aggregate.body.applyForce(new Vector3(0,-force,0),l.anchor);this.aggregate.body.applyForce(new Vector3(0,force,0),r.anchor);};
   anti("frontLeft","frontRight");anti("rearLeft","rearRight");
   const orientation=this.chassis.rotationQuaternion??Quaternion.Identity();
   const bodyRoll=orientation.toEulerAngles().z;
   const rollAxis=Vector3.TransformNormal(Vector3.Forward(),matrix).normalize();
   const rollRate=Vector3.Dot(angular,rollAxis);
   const rollTorque=clamp(-bodyRoll*P.rollStiffness-rollRate*P.rollDamping,-P.maxRollTorque,P.maxRollTorque);
-  this.aggregate.body.applyAngularImpulse(rollAxis.scale(rollTorque*dt));
+  this.aggregate.body.applyTorque(rollAxis.scale(rollTorque));
   for(const c of contacts.values())if(c.hit)this.wheelSpin.set(c.key,(this.wheelSpin.get(c.key)??0)+c.longitudinalSpeed/this.metrics.wheelRadius*dt);
   this.wheelContacts=contacts;
  }
@@ -238,7 +238,7 @@ export class VehicleController{
   return {
    x:Number(p.x.toFixed(3)),y:Number(p.y.toFixed(3)),z:Number(p.z.toFixed(3)),
    bodyMass:Number(massProperties.mass.toFixed(2)),gravityFactor:Number(gravityFactor.toFixed(3)),
-   physicsStep:Number(clamp(this.scene.getEngine().getDeltaTime()/1000,1/1000,1).toFixed(6)),physicsSubStep:Number(this.scene.getPhysicsEngine().getSubTimeStep().toFixed(3)),
+   physicsStep:Number(this.scene.getPhysicsEngine().getTimeStep().toFixed(6)),physicsSubStep:Number(this.scene.getPhysicsEngine().getSubTimeStep().toFixed(3)),
    engineTimeStepMs:Number(this.scene.getEngine().getTimeStep().toFixed(3)),deterministicLockstep:this.scene.getEngine().isDeterministicLockStep(),lockstepMaxSteps:this.scene.getEngine().getLockstepMaxSteps(),
    speed:Number(motion.speed.toFixed(3)),speedKmh:Number((motion.speed*3.6).toFixed(1)),
    forwardSpeed:Number(motion.forwardSpeed.toFixed(3)),lateralSpeed:Number(motion.lateralSpeed.toFixed(3)),

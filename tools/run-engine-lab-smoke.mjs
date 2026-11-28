@@ -146,7 +146,7 @@ try {
   const beforeDrive=await sampleVehicle();
   if(beforeDrive.speedKmh>1.0||beforeDrive.parked!==true||beforeDrive.contacts!==4)throw new Error("Vehicle must remain parked with four wheel ray contacts before driver input: "+JSON.stringify(beforeDrive));
   if(Math.abs(beforeDrive.bodyMass-1250)>.5||Math.abs(beforeDrive.gravityFactor-1)>.001)throw new Error("Havok vehicle mass/gravity mismatch: "+JSON.stringify(beforeDrive));
-  if(!Number.isFinite(beforeDrive.physicsStep)||beforeDrive.physicsStep<.001||beforeDrive.physicsStep>1||Math.abs(beforeDrive.physicsSubStep)>.001||beforeDrive.deterministicLockstep!==false)throw new Error("Havok is not using one variable frame step with force impulses scaled to the same delta: "+JSON.stringify(beforeDrive));
+  if(Math.abs(beforeDrive.physicsStep-1/60)>.00001||Math.abs(beforeDrive.physicsSubStep)>.001||Math.abs(beforeDrive.engineTimeStepMs-1000/60)>.02||beforeDrive.deterministicLockstep!==true||beforeDrive.lockstepMaxSteps!==4)throw new Error("Babylon Engine and Havok are not using bounded deterministic 60 Hz lockstep: "+JSON.stringify(beforeDrive));
   const handlingSamples={beforeDrive};
   await page.keyboard.down("w");
   await page.waitForTimeout(180);
