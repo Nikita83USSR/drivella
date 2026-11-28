@@ -95,13 +95,13 @@ uniform float drivellaRoadHeadlightIntensity;
     if (shaderLanguage === ShaderLanguage.WGSL) {
       return {
         CUSTOM_FRAGMENT_DEFINITIONS: `
-fn drivellaRoadHeadlightEnergy(surfaceNormal: vec3f) -> f32 {
+fn drivellaRoadHeadlightEnergy(surfacePosition: vec3f, surfaceNormal: vec3f) -> f32 {
   if (uniforms.drivellaRoadHeadlightIntensity <= 0.001) {
     return 0.0;
   }
   let beamDirection = normalize(uniforms.drivellaRoadHeadlightDirection);
-  let deltaL = uniforms.drivellaRoadHeadlightPositionL - fragmentInputs.vPositionW;
-  let deltaR = uniforms.drivellaRoadHeadlightPositionR - fragmentInputs.vPositionW;
+  let deltaL = uniforms.drivellaRoadHeadlightPositionL - surfacePosition;
+  let deltaR = uniforms.drivellaRoadHeadlightPositionR - surfacePosition;
   let distSqL = dot(deltaL, deltaL);
   let distSqR = dot(deltaR, deltaR);
   var energy = 0.0;
@@ -128,7 +128,7 @@ fn drivellaRoadHeadlightEnergy(surfaceNormal: vec3f) -> f32 {
 `,
         CUSTOM_FRAGMENT_BEFORE_FOG: `
 color = vec4f(
-  color.rgb + vec3f(0.92, 0.96, 1.0) * (drivellaRoadHeadlightEnergy(normalW) * 1.25),
+  color.rgb + vec3f(0.92, 0.96, 1.0) * (drivellaRoadHeadlightEnergy(fragmentInputs.vPositionW, normalW) * 1.25),
   color.a
 );
 `
