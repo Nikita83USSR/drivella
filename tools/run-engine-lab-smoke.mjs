@@ -165,8 +165,14 @@ try {
     return effects?.headlightLighting === true && effects?.headlightBeamIntensity > 5;
   }, null, { timeout: 8000 });
   const illuminatedHeadlights = await page.evaluate(() => window.__DRIVELLA_LAB__?.legacyEffects ?? null);
-  if (illuminatedHeadlights?.headlightSourceCount !== 2 || illuminatedHeadlights?.headlightOpticPartCount !== 12 || illuminatedHeadlights.headlightBeamIntensity < 5) {
-    throw new Error("Both pop-up projector beams did not become active: " + JSON.stringify(illuminatedHeadlights));
+  const invalidHeadlightBeams = (illuminatedHeadlights?.headlightBeams ?? []).filter((beam) =>
+    beam.intensity < 5 || beam.positionDistance > 4.0 || beam.forwardAlignment < 0.82 || beam.directionY > 0.08
+  );
+  if (illuminatedHeadlights?.headlightSourceCount !== 2 || illuminatedHeadlights?.headlightOpticPartCount !== 12
+      || illuminatedHeadlights.headlightBeamIntensity < 5 || illuminatedHeadlights.headlightBeams?.length !== 2
+      || invalidHeadlightBeams.length || (window.__DRIVELLA_LAB__?.roadMaxSimultaneousLights ?? 0) < 12) {
+    throw new Error("Both pop-up projector beams must be active, located at the lamps and aimed down the road; the road material must include them: "
+      + JSON.stringify({ illuminatedHeadlights, invalidHeadlightBeams, roadMaxSimultaneousLights: window.__DRIVELLA_LAB__?.roadMaxSimultaneousLights }));
   }
   await mkdir("artifacts", { recursive: true });
   await page.screenshot({ path: "artifacts/engine-lab-popup-headlights-preview.png" });
