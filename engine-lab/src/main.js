@@ -1390,7 +1390,7 @@ async function boot() {
         const averageRenderMs = renderCosts.length
           ? renderCosts.reduce((sum, value) => sum + value, 0) / renderCosts.length
           : 0;
-        const measuredFps = fpsWindowFrames * 1000 / elapsed;
+        const measuredFps = frameIntervals.length * 1000 / elapsed;
         const babylonFps = engine.getFps();
         fpsMeta.textContent = `FPS ${measuredFps.toFixed(0)} (Babylon ${babylonFps.toFixed(0)}) · ${averageFrameMs.toFixed(1)} ms avg / ${p95FrameMs.toFixed(1)} p95 · CPU ${averageRenderMs.toFixed(1)} ms`;
         labState.frameMetrics = {
