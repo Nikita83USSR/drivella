@@ -64,11 +64,11 @@ jobs:
           path: artifacts/
           if-no-files-found: ignore
           retention-days: 7
-      - name: Commit generated runtime files to migration branch
-        if: github.event_name == 'push' && github.ref == 'refs/heads/engine-migration-foundation'
+      - name: Commit generated runtime files to the published branch
+        if: github.event_name == 'push' && (github.ref == 'refs/heads/main' || github.ref == 'refs/heads/engine-migration-foundation')
         run: |
           set -e
-          BRANCH="engine-migration-foundation"
+          BRANCH="${GITHUB_REF#refs/heads/}"
           git config user.name "github-actions[bot]"
           git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
 

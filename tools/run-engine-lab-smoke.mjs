@@ -203,6 +203,10 @@ try {
   }));
 
   const state = await page.evaluate(() => ({
+    cameraKeyboardEnabled: window.__DRIVELLA_LAB__.cameraKeyboardEnabled,
+    neonGlowReady: window.__DRIVELLA_LAB__.neonGlowReady,
+    terrainGridChunks: window.__DRIVELLA_LAB__.terrainGridChunks,
+    terrainGridMeshCount: window.__DRIVELLA_LAB__.terrainGridMeshCount,
     renderer: window.__DRIVELLA_LAB__.renderer,
     frames: window.__DRIVELLA_LAB__.frames,
     physicsMode: window.__DRIVELLA_LAB__.physicsMode,
@@ -276,6 +280,12 @@ try {
     roadProbeTargetGrade: window.__DRIVELLA_LAB__.roadProbeTargetGrade
   }));
 
+  if (state.cameraKeyboardEnabled !== false) {
+    throw new Error("Camera keyboard input is still attached; vehicle steering keys must not orbit the camera: " + JSON.stringify(state));
+  }
+  if (state.neonGlowReady !== true || state.terrainGridChunks < 1 || state.terrainGridMeshCount < 1) {
+    throw new Error("Neon scene presentation did not initialize a glow layer and terrain grid: " + JSON.stringify(state));
+  }
   if(state.frames<30)throw new Error("Render loop did not advance enough frames.");
   if(!state.vehicleReady||state.vehicleWheelContacts!==4||state.vehicleStableFrames<24)throw new Error("Countach lost one or more independent wheel contacts: "+JSON.stringify(state));
   if(!Number.isFinite(state.vehicleRoadDistance)||state.vehicleRoadDistance>7)throw new Error("Handling smoke left the asphalt corridor: "+JSON.stringify(state));

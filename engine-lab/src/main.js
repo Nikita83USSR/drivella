@@ -4,6 +4,7 @@ import {
   Color4,
   DirectionalLight,
   Engine,
+  GlowLayer,
   HavokPlugin,
   HemisphericLight,
   Mesh,
@@ -42,6 +43,10 @@ const resetButton = document.getElementById("resetButton");
 const labState = {
   ready: false,
   renderer: "initializing",
+  cameraKeyboardEnabled: false,
+  neonGlowReady: false,
+  terrainGridChunks: 0,
+  terrainGridMeshCount: 0,
   physicsReady: false,
   physicsMode: "initializing",
   frames: 0,
@@ -108,32 +113,30 @@ function setStatus(message, state = "warn") {
 }
 
 function terrainColorAt(height, slopeAmount, moisture, distanceFromStart) {
-  if (distanceFromStart < 80) {
-    return [0.45, 0.48, 0.47];
-  }
-
   let base;
-  if (height > 138) {
-    base = [0.62, 0.68, 0.73];
+  if (distanceFromStart < 80) {
+    base = [0.016, 0.023, 0.082];
+  } else if (height > 138) {
+    base = [0.035, 0.028, 0.125];
   } else if (slopeAmount > 0.58) {
-    base = [0.39, 0.43, 0.46];
+    base = [0.045, 0.018, 0.105];
   } else if (height < -82) {
-    base = moisture > 0.52 ? [0.19, 0.36, 0.29] : [0.27, 0.36, 0.31];
+    base = moisture > 0.52 ? [0.008, 0.055, 0.088] : [0.035, 0.028, 0.11];
   } else if (moisture > 0.555) {
-    base = [0.17, 0.34, 0.22];
+    base = [0.008, 0.052, 0.092];
   } else if (moisture < 0.315) {
-    base = [0.47, 0.39, 0.24];
+    base = [0.075, 0.018, 0.09];
   } else {
-    base = [0.35, 0.45, 0.25];
+    base = [0.022, 0.028, 0.115];
   }
 
-  const slopeBlend = Math.max(0, Math.min(0.58, (slopeAmount - 0.2) * 0.68));
-  const rockTint = [0.48, 0.53, 0.57];
-  const variation = (moisture - 0.5) * 0.045;
+  const slopeBlend = Math.max(0, Math.min(0.35, (slopeAmount - 0.2) * 0.44));
+  const rockTint = [0.055, 0.025, 0.17];
+  const variation = (moisture - 0.5) * 0.012;
   return [
-    Math.max(0, Math.min(1, base[0] * (1 - slopeBlend) + rockTint[0] * slopeBlend + variation)),
-    Math.max(0, Math.min(1, base[1] * (1 - slopeBlend) + rockTint[1] * slopeBlend + variation)),
-    Math.max(0, Math.min(1, base[2] * (1 - slopeBlend) + rockTint[2] * slopeBlend + variation))
+    Math.max(0, Math.min(0.14, base[0] * (1 - slopeBlend) + rockTint[0] * slopeBlend + variation)),
+    Math.max(0, Math.min(0.14, base[1] * (1 - slopeBlend) + rockTint[1] * slopeBlend + variation)),
+    Math.max(0, Math.min(0.22, base[2] * (1 - slopeBlend) + rockTint[2] * slopeBlend + variation))
   ];
 }
 
@@ -200,6 +203,150 @@ function createTerrainChunk(scene, chunkX, chunkY, chunkZ, chunkSize, material) 
   terrain.material = material;
   terrain.metadata = { spatialChunk: true, chunkX, chunkY, chunkZ };
   return terrain;
+}
+
+function pushGridQuad(geometry, origin, a, b, c, d) {
+  const base = geometry.positions.length / 3;
+  for (const point of [a, b, c, d]) {
+    geometry.positions.push(point[0] - origin.x, point[1] - origin.y, point[2] - origin.z);
+  }
+  geometry.indices.push(base, base + 2, base + 1, base, base + 3, base + 2);
+}
+
+function createTerrainGridMesh(scene, name, geometry, material, origin) {
+  if (!geometry.indices.length) return null;
+  const mesh = new Mesh(name, scene);
+  const normals = [];
+  VertexData.ComputeNormals(geometry.positions, geometry.indices, normals);
+  const data = new VertexData();
+  data.positions = geometry.positions;
+  data.indices = geometry.indices;
+  data.normals = normals;
+  data.applyToMesh(mesh, true);
+  mesh.position.copyFrom(origin);
+  mesh.material = material;
+  mesh.isPickable = false;
+  mesh.alwaysSelectAsActiveMesh = true;
+  mesh.metadata = { spatialChunk: true, terrainGrid: true };
+  return mesh;
+}
+
+function createTerrainGridChunk(scene, chunkX, chunkY, chunkZ, chunkSize, minorMaterial, majorMaterial) {
+  const half = chunkSize * 0.5;
+  const origin = new Vector3(chunkX * chunkSize, chunkY * chunkSize, chunkZ * chunkSize);
+  const minX = chunkX * chunkSize - half;
+  const maxX = minX + chunkSize;
+  const minZ = chunkZ * chunkSize - half;
+  const maxZ = minZ + chunkSize;
+  const sampleSegments = Math.ceil(chunkSize / 4);
+  const sampleStep = chunkSize / sampleSegments;
+  const minor = { positions: [], indices: [] };
+  const major = { positions: [], indices: [] };
+
+  const addXLine = (worldX, isMajor) => {
+    const target = isMajor ? major : minor;
+    const halfWidth = isMajor ? 0.085 : 0.028;
+    for (let segment = 0; segment < sampleSegments; segment += 1) {
+      const z0 = minZ + segment * sampleStep;
+      const z1 = z0 + sampleStep;
+      const y0 = terrainHeight(worldX, z0) + 0.17;
+      const y1 = terrainHeight(worldX, z1) + 0.17;
+      pushGridQuad(target, origin,
+        [worldX - halfWidth, y0, z0],
+        [worldX + halfWidth, y0, z0],
+        [worldX + halfWidth, y1, z1],
+        [worldX - halfWidth, y1, z1]);
+    }
+  };
+
+  const addZLine = (worldZ, isMajor) => {
+    const target = isMajor ? major : minor;
+    const halfWidth = isMajor ? 0.085 : 0.028;
+    for (let segment = 0; segment < sampleSegments; segment += 1) {
+      const x0 = minX + segment * sampleStep;
+      const x1 = x0 + sampleStep;
+      const y0 = terrainHeight(x0, worldZ) + 0.17;
+      const y1 = terrainHeight(x1, worldZ) + 0.17;
+      pushGridQuad(target, origin,
+        [x0, y0, worldZ - halfWidth],
+        [x1, y1, worldZ - halfWidth],
+        [x1, y1, worldZ + halfWidth],
+        [x0, y0, worldZ + halfWidth]);
+    }
+  };
+
+  const firstX = Math.ceil((minX - 0.0001) / 10) * 10;
+  for (let worldX = firstX; worldX < maxX - 0.0001; worldX += 10) {
+    const isMajor = Math.abs(worldX / 50 - Math.round(worldX / 50)) < 0.000001;
+    addXLine(worldX, isMajor);
+  }
+  const firstZ = Math.ceil((minZ - 0.0001) / 10) * 10;
+  for (let worldZ = firstZ; worldZ < maxZ - 0.0001; worldZ += 10) {
+    const isMajor = Math.abs(worldZ / 50 - Math.round(worldZ / 50)) < 0.000001;
+    addZLine(worldZ, isMajor);
+  }
+
+  return {
+    minorMesh: createTerrainGridMesh(scene, "terrain-grid-minor-" + chunkX + "-" + chunkY + "-" + chunkZ, minor, minorMaterial, origin),
+    majorMesh: createTerrainGridMesh(scene, "terrain-grid-major-" + chunkX + "-" + chunkY + "-" + chunkZ, major, majorMaterial, origin)
+  };
+}
+
+function mixNeonColor(a, b, amount) {
+  return [
+    a[0] + (b[0] - a[0]) * amount,
+    a[1] + (b[1] - a[1]) * amount,
+    a[2] + (b[2] - a[2]) * amount
+  ];
+}
+
+function neonVertexColor(name, r, g, b) {
+  const luminance = r * 0.2126 + g * 0.7152 + b * 0.0722;
+  const t = Math.max(0, Math.min(1, (luminance - 0.08) / 0.62));
+
+  if (name.startsWith("road-furniture-")) {
+    const base = mixNeonColor([0.025, 0.018, 0.12], [0.035, 0.38, 0.78], t);
+    return r > g * 1.18 ? mixNeonColor(base, [1.0, 0.055, 0.42], 0.58) : base;
+  }
+  if (name.startsWith("road-")) {
+    if (r > 0.58 && g > 0.62 && b > 0.62) return [0.95, 0.055, 0.48];
+    if (g > r * 2.4 && b > r * 2.3) return [0.025, 0.76, 1.0];
+    if (r > 0.18 && g > 0.18) return [0.12, 0.035, 0.32];
+    return [0.018, 0.014, 0.075];
+  }
+  if (name.startsWith("tunnel-")) {
+    if (r > g * 1.18 && g > b * 1.65) return [1.0, 0.045, 0.34];
+    if (g > 0.68 && b > 0.78) return [0.025, 0.86, 1.0];
+    return mixNeonColor([0.075, 0.018, 0.24], [0.58, 0.055, 0.82], t);
+  }
+  if (name.startsWith("water-")) {
+    return mixNeonColor([0.012, 0.31, 0.62], [0.025, 0.84, 1.0], t);
+  }
+  if (name.startsWith("shore-")) {
+    return mixNeonColor([0.16, 0.018, 0.28], [0.95, 0.045, 0.42], t);
+  }
+  if (name.startsWith("vegetation-")) {
+    if (g > r * 1.12 && g > b * 1.08) {
+      return mixNeonColor([0.025, 0.22, 0.48], [0.02, 0.88, 0.96], t);
+    }
+    return mixNeonColor([0.16, 0.018, 0.25], [0.86, 0.035, 0.48], t);
+  }
+  if (name.startsWith("rocks-")) {
+    const violet = mixNeonColor([0.10, 0.018, 0.34], [0.55, 0.045, 0.86], t);
+    return b > r * 1.12 ? mixNeonColor(violet, [0.025, 0.58, 0.96], 0.46) : violet;
+  }
+  return mixNeonColor([0.06, 0.02, 0.24], [0.08, 0.68, 0.96], t);
+}
+
+function applyNeonPalette(geometry, name) {
+  if (!Array.isArray(geometry.colors)) return;
+  for (let index = 0; index < geometry.colors.length; index += 4) {
+    const color = neonVertexColor(name, geometry.colors[index], geometry.colors[index + 1], geometry.colors[index + 2]);
+    geometry.colors[index] = color[0];
+    geometry.colors[index + 1] = color[1];
+    geometry.colors[index + 2] = color[2];
+    geometry.colors[index + 3] = 1;
+  }
 }
 
 function pushFlatTriangle(positions, colors, indices, a, b, c, color) {
@@ -280,6 +427,7 @@ function appendRock(geometry, x, y, z, size, seed) {
 
 function createCombinedPropMesh(scene, name, geometry, material, position) {
   if (!geometry.indices.length) return null;
+  applyNeonPalette(geometry, name);
   const mesh = new Mesh(name, scene);
   const normals = [];
   VertexData.ComputeNormals(geometry.positions, geometry.indices, normals);
@@ -421,12 +569,12 @@ function createSpatialReference(scene, worldRadius) {
 function createEnvironment(scene) {
   const worldRadius = 420;
   const skyLight = new HemisphericLight("sky-fill", new Vector3(0, 1, 0), scene);
-  skyLight.intensity = 1.42;
+  skyLight.intensity = 0.92;
   skyLight.groundColor = new Color3(0.035, 0.055, 0.1);
 
   const sun = new DirectionalLight("sun", new Vector3(-0.45, -1, 0.3), scene);
   sun.position = new Vector3(70, 130, -40);
-  sun.intensity = 2.3;
+  sun.intensity = 1.2;
 
   const camera = new ArcRotateCamera(
     "world-orbit-camera",
@@ -437,6 +585,14 @@ function createEnvironment(scene) {
     scene
   );
   camera.attachControl(canvas, true);
+  // Mouse drag and wheel remain attached; camera orbit is never keyboard-driven.
+  const cameraKeyboardInput = camera.inputs.attached.keyboard;
+  if (cameraKeyboardInput) camera.inputs.remove(cameraKeyboardInput);
+  camera.keysUp = [];
+  camera.keysDown = [];
+  camera.keysLeft = [];
+  camera.keysRight = [];
+  labState.cameraKeyboardEnabled = Boolean(camera.inputs.attached.keyboard);
   camera.lowerRadiusLimit = 28;
   camera.upperRadiusLimit = worldRadius * 2.2;
   camera.lowerBetaLimit = 0.015;
@@ -446,11 +602,26 @@ function createEnvironment(scene) {
   camera.inertia = 0.78;
   scene.activeCamera = camera;
 
+  const neonGlow = new GlowLayer("drivella-neon-glow", scene, { blurKernelSize: 28 });
+  neonGlow.intensity = 0.72;
+  labState.neonGlowReady = true;
+
+  const terrainGridMinorMaterial = new StandardMaterial("terrain-grid-minor-material", scene);
+  terrainGridMinorMaterial.diffuseColor = new Color3(0.025, 0.22, 0.48);
+  terrainGridMinorMaterial.emissiveColor = new Color3(0.025, 0.28, 0.68);
+  terrainGridMinorMaterial.disableLighting = true;
+  terrainGridMinorMaterial.backFaceCulling = false;
+  const terrainGridMajorMaterial = new StandardMaterial("terrain-grid-major-material", scene);
+  terrainGridMajorMaterial.diffuseColor = new Color3(0.14, 0.72, 0.98);
+  terrainGridMajorMaterial.emissiveColor = new Color3(0.12, 0.62, 1.0);
+  terrainGridMajorMaterial.disableLighting = true;
+  terrainGridMajorMaterial.backFaceCulling = false;
+
   const terrainMaterial = new StandardMaterial("terrain-material", scene);
   terrainMaterial.diffuseColor = Color3.White();
   terrainMaterial.specularColor = new Color3(0.28, 0.38, 0.48);
   terrainMaterial.specularPower = 24;
-  terrainMaterial.emissiveColor = new Color3(0.12, 0.15, 0.095);
+  terrainMaterial.emissiveColor = new Color3(0.008, 0.008, 0.035);
   terrainMaterial.backFaceCulling = false;
   terrainMaterial.twoSidedLighting = true;
   terrainMaterial.useVertexColors = true;
@@ -474,18 +645,20 @@ function createEnvironment(scene) {
   roadMaterial.diffuseColor = Color3.White();
   roadMaterial.specularColor = new Color3(0.26, 0.3, 0.34);
   roadMaterial.specularPower = 24;
+  roadMaterial.emissiveColor = new Color3(0.018, 0.014, 0.075);
   roadMaterial.useVertexColors = true;
   roadMaterial.backFaceCulling = false;
   const roadFurnitureMaterial = new StandardMaterial("drivella-road-furniture-material", scene);
   roadFurnitureMaterial.diffuseColor = Color3.White();
   roadFurnitureMaterial.specularColor = new Color3(0.18, 0.21, 0.22);
   roadFurnitureMaterial.specularPower = 14;
+  roadFurnitureMaterial.emissiveColor = new Color3(0.075, 0.012, 0.16);
   roadFurnitureMaterial.useVertexColors = true;
   roadFurnitureMaterial.backFaceCulling = false;
 
   const tunnelMaterial = new StandardMaterial("drivella-tunnel-material", scene);
   tunnelMaterial.diffuseColor = Color3.White();
-  tunnelMaterial.emissiveColor = new Color3(0.08, 0.12, 0.16);
+  tunnelMaterial.emissiveColor = new Color3(0.11, 0.018, 0.22);
   tunnelMaterial.specularColor = new Color3(0.28, 0.34, 0.39);
   tunnelMaterial.specularPower = 28;
   tunnelMaterial.useVertexColors = true;
@@ -493,7 +666,7 @@ function createEnvironment(scene) {
 
   const waterMaterial = new StandardMaterial("drivella-water-material", scene);
   waterMaterial.diffuseColor = new Color3(0.42, 0.76, 0.84);
-  waterMaterial.emissiveColor = new Color3(0.025, 0.12, 0.17);
+  waterMaterial.emissiveColor = new Color3(0.018, 0.22, 0.42);
   waterMaterial.specularColor = new Color3(0.68, 0.84, 0.9);
   waterMaterial.specularPower = 96;
   waterMaterial.useVertexColors = true;
@@ -504,12 +677,14 @@ function createEnvironment(scene) {
 
   const shoreMaterial = new StandardMaterial("drivella-shore-material", scene);
   shoreMaterial.diffuseColor = Color3.White();
+  shoreMaterial.emissiveColor = new Color3(0.16, 0.012, 0.12);
   shoreMaterial.specularColor = new Color3(0.1, 0.12, 0.1);
   shoreMaterial.specularPower = 10;
   shoreMaterial.useVertexColors = true;
   shoreMaterial.backFaceCulling = false;
 
   const terrainMeshes = new Map();
+  const terrainGridMeshes = new Map();
   const terrainBodies = new Map();
   const biomeMeshes = new Map();
   const rockBodies = new Map();
@@ -517,12 +692,14 @@ function createEnvironment(scene) {
   biomeMaterial.diffuseColor = Color3.White();
   biomeMaterial.specularColor = new Color3(0.06, 0.08, 0.07);
   biomeMaterial.specularPower = 8;
+  biomeMaterial.emissiveColor = new Color3(0.025, 0.095, 0.20);
   biomeMaterial.useVertexColors = true;
   biomeMaterial.backFaceCulling = false;
   const rockMaterial = new StandardMaterial("biome-rock-material", scene);
   rockMaterial.diffuseColor = Color3.White();
   rockMaterial.specularColor = new Color3(0.14, 0.17, 0.2);
   rockMaterial.specularPower = 18;
+  rockMaterial.emissiveColor = new Color3(0.075, 0.018, 0.22);
   rockMaterial.useVertexColors = true;
   rockMaterial.backFaceCulling = false;
   const chunkManager = new SpatialChunkManager({
@@ -530,11 +707,16 @@ function createEnvironment(scene) {
     radius: worldRadius,
     maxActiveChunks: 512,
     onCreate: (chunk) => {
-      const payload = { terrainMesh: null, biome: null, roadMesh: null, roadFurnitureMesh: null, roadFurnitureStats: null, tunnelMesh: null, tunnelGeometryStats: null, waterMesh: null, shoreMesh: null, hydrologyStats: null };
+      const payload = { terrainMesh: null, terrainGrid: null, biome: null, roadMesh: null, roadFurnitureMesh: null, roadFurnitureStats: null, tunnelMesh: null, tunnelGeometryStats: null, waterMesh: null, shoreMesh: null, hydrologyStats: null };
       if (chunk.y === terrainChunkLayer(chunk.x, chunk.z, 128)) {
         const mesh = createTerrainChunk(scene, chunk.x, chunk.y, chunk.z, 128, terrainMaterial);
         payload.terrainMesh = mesh;
         terrainMeshes.set(chunk.key, mesh);
+        const terrainGrid = createTerrainGridChunk(scene, chunk.x, chunk.y, chunk.z, 128, terrainGridMinorMaterial, terrainGridMajorMaterial);
+        payload.terrainGrid = terrainGrid;
+        terrainGridMeshes.set(chunk.key, terrainGrid);
+        labState.terrainGridChunks = terrainGridMeshes.size;
+        labState.terrainGridMeshCount += Number(Boolean(terrainGrid.minorMesh)) + Number(Boolean(terrainGrid.majorMesh));
         const biome = createBiomeChunk(scene, chunk, 128, biomeMaterial, rockMaterial);
         payload.biome = biome;
         if (biome.vegetationMesh || biome.rockMesh) biomeMeshes.set(chunk.key, biome);
@@ -620,6 +802,14 @@ function createEnvironment(scene) {
       return payload;
     },
     onDispose: (payload, chunk) => {
+      if (payload?.terrainGrid) {
+        payload.terrainGrid.minorMesh?.dispose();
+        payload.terrainGrid.majorMesh?.dispose();
+        terrainGridMeshes.delete(chunk.key);
+        labState.terrainGridChunks = terrainGridMeshes.size;
+        labState.terrainGridMeshCount = Math.max(0, labState.terrainGridMeshCount
+          - Number(Boolean(payload.terrainGrid.minorMesh)) - Number(Boolean(payload.terrainGrid.majorMesh)));
+      }
       const body = terrainBodies.get(chunk.key);
       if (body) {
         body.dispose();
@@ -694,7 +884,7 @@ function createEnvironment(scene) {
   scene.imageProcessingConfiguration.exposure = 1.18;
   scene.imageProcessingConfiguration.contrast = 1.12;
 
-  return { camera, chunkManager, terrainMeshes, terrainBodies, biomeMeshes, rockBodies, roadSamples, roadStats, roadFurnitureStats, hydrologyStats, bridgeClassification, tunnels, tunnelStats, tunnelSpatialStats, tunnelMeshes, tunnelBodies, waterMeshes, shoreMeshes, roadMeshes, roadFurnitureMeshes, roadBodies };
+  return { camera, neonGlow, chunkManager, terrainMeshes, terrainGridMeshes, terrainBodies, biomeMeshes, rockBodies, roadSamples, roadStats, roadFurnitureStats, hydrologyStats, bridgeClassification, tunnels, tunnelStats, tunnelSpatialStats, tunnelMeshes, tunnelBodies, waterMeshes, shoreMeshes, roadMeshes, roadFurnitureMeshes, roadBodies };
 }
 
 function addPhysicalProbe(scene, mesh, mass, shape, options = {}) {
@@ -710,6 +900,7 @@ let scene;
 let camera;
 let chunkManager;
 let terrainMeshes;
+let terrainGridMeshes;
 let terrainBodies;
 let biomeMeshes;
 let rockBodies;
@@ -765,7 +956,8 @@ function spawnDynamicBox(x, y, z) {
   const box = MeshBuilder.CreateBox("runtime-test-crate", { size: 5 }, scene);
   box.position.set(x, y, z);
   const mat = new StandardMaterial("runtime-test-crate-material", scene);
-  mat.diffuseColor = new Color3(0.12, 0.56, 0.72);
+  mat.diffuseColor = new Color3(0.025, 0.58, 0.9);
+  mat.emissiveColor = new Color3(0.015, 0.24, 0.48);
   mat.metallic = 0.28;
   mat.roughness = 0.42;
   box.material = mat;
@@ -978,6 +1170,7 @@ async function boot() {
     camera = environment.camera;
     chunkManager = environment.chunkManager;
     terrainMeshes = environment.terrainMeshes;
+    terrainGridMeshes = environment.terrainGridMeshes;
     terrainBodies = environment.terrainBodies;
     biomeMeshes = environment.biomeMeshes;
     rockBodies = environment.rockBodies;
