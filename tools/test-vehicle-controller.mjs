@@ -24,6 +24,29 @@ const raw = inflateSync(Buffer.from(encoded, "base64"));
 assert.equal(raw.byteLength, meta.rawBytes, "Decompressed Countach bytes must match its metadata.");
 const view = new DataView(raw.buffer, raw.byteOffset, raw.byteLength);
 
+// The two outboard pairs of the original bodyTail mesh are independent rear
+// indicator lenses. Keep exactly two triangles per side out of the red brake lens.
+const bodyTailPart=meta.parts.find((entry)=>entry.name==="bodyTail");
+assert.ok(bodyTailPart,"Countach bodyTail geometry must exist.");
+const rearSignalTriangles={left:0,right:0};
+for(let index=0;index<bodyTailPart.indexCount;index+=3){
+  const points=[];
+  for(let vertex=0;vertex<3;vertex++){
+    const vertexIndex=view.getUint16(bodyTailPart.indexOffset+(index+vertex)*2,true);
+    const offset=bodyTailPart.vertexOffset+vertexIndex*6;
+    points.push([
+      view.getInt16(offset,true)/meta.unitsPerGameUnit,
+      view.getInt16(offset+2,true)/meta.unitsPerGameUnit,
+      view.getInt16(offset+4,true)/meta.unitsPerGameUnit
+    ]);
+  }
+  const centerX=(points[0][0]+points[1][0]+points[2][0])/3;
+  if(Math.abs(centerX)>.935)rearSignalTriangles[centerX<0?"left":"right"]++;
+}
+assert.deepEqual(rearSignalTriangles,{left:2,right:2},
+  "Rear amber indicator lenses must remain separate from the red brake-light mesh.");
+console.log("COUNTACH REAR SIGNAL GEOMETRY PASS",JSON.stringify(rearSignalTriangles));
+
 function tyreRadius(partName) {
   const part = meta.parts.find((entry) => entry.name === partName);
   assert.ok(part, `Missing ${partName} triangle metadata.`);
