@@ -135,7 +135,7 @@ try {
   await page.keyboard.press("l");
   await page.waitForFunction(() => {
     const effects = window.__DRIVELLA_LAB__?.legacyEffects;
-    return effects?.headlights === true && effects?.headlightDeploy >= 0.9;
+    return effects?.headlights === true && effects?.headlightDeploy >= 0.98;
   }, null, { timeout: 15000 });
   const deployedHeadlights = await page.evaluate(() => window.__DRIVELLA_LAB__?.legacyEffects ?? null);
   if (!deployedHeadlights || deployedHeadlights.headlightSourceCount !== 2 || deployedHeadlights.headlightOpticPartCount !== 12 || deployedHeadlights.headlightLighting !== false) {
