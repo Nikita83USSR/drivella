@@ -1,5 +1,9 @@
 # DRIVELLA — browser 3D engine migration
 
+## Published preview route
+
+The experimental engine lab is published from the `main` branch at `https://nikita83ussr.github.io/drivella/engine-lab/` and is reachable from the main menu. The stable game remains at the repository root. Development can continue on `engine-migration-foundation`; only reviewed changes should be copied into the published preview. The two experiences do not require the player to switch Git branches.
+
 ## Non-negotiable architecture
 
 DRIVELLA remains a browser game. The game runs in the player's normal browser and is served from the DRIVELLA GitHub Pages origin. No desktop launcher, remote game server, third-party CDN, third-party asset host, remote API, or runtime dependency on another website is required.
