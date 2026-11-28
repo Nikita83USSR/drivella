@@ -24,11 +24,11 @@ const raw = inflateSync(Buffer.from(encoded, "base64"));
 assert.equal(raw.byteLength, meta.rawBytes, "Decompressed Countach bytes must match its metadata.");
 const view = new DataView(raw.buffer, raw.byteOffset, raw.byteLength);
 
-// Diagnostic map for the source's black material: the exported Countach has no
-// named glass material, so identify its window polygons before reassigning them.
+// The exported Countach stores the side windows, windshield and rear glass
+// inside bodyBlack. Confirm their measured panels remain separate from vents.
 const bodyBlackPart = meta.parts.find((entry) => entry.name === "bodyBlack");
 assert.ok(bodyBlackPart, "Countach bodyBlack geometry must exist.");
-const bodyBlackTriangleMap = [];
+const glassTriangles = { side: 0, windshield: 0, rear: 0 };
 for (let index = 0; index < bodyBlackPart.indexCount; index += 3) {
   const points = [];
   for (let vertex = 0; vertex < 3; vertex += 1) {
@@ -41,21 +41,14 @@ for (let index = 0; index < bodyBlackPart.indexCount; index += 3) {
     ]);
   }
   const center = [0, 1, 2].map((axis) => (points[0][axis] + points[1][axis] + points[2][axis]) / 3);
-  const a = points[1].map((value, axis) => value - points[0][axis]);
-  const b = points[2].map((value, axis) => value - points[0][axis]);
-  const normal = [
-    a[1] * b[2] - a[2] * b[1],
-    a[2] * b[0] - a[0] * b[2],
-    a[0] * b[1] - a[1] * b[0]
-  ];
-  const length = Math.hypot(...normal) || 1;
-  bodyBlackTriangleMap.push({
-    triangle: index / 3,
-    center: center.map((value) => Number(value.toFixed(3))),
-    normal: normal.map((value) => Number((value / length).toFixed(2)))
-  });
+  const [x, y, z] = center, ax = Math.abs(x);
+  if (ax >= .72 && ax <= 1.13 && y >= 1.0 && y <= 1.36 && z >= -.60 && z <= .90) glassTriangles.side += 1;
+  else if (ax <= .91 && y >= 1.0 && y <= 1.30 && z >= .70 && z <= 1.22) glassTriangles.windshield += 1;
+  else if (ax <= .28 && y >= 1.28 && y <= 1.40 && z >= -.40 && z <= -.35) glassTriangles.rear += 1;
 }
-console.log("COUNTACH BODY BLACK TRIANGLE MAP", JSON.stringify(bodyBlackTriangleMap));
+assert.deepEqual(glassTriangles, { side: 16, windshield: 14, rear: 8 },
+  "All Countach windows must be split from black vents and body trim.");
+console.log("COUNTACH GLASS GEOMETRY PASS", JSON.stringify(glassTriangles));
 
 
 // The two outboard pairs of the original bodyTail mesh are independent rear
