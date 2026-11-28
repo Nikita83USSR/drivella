@@ -145,6 +145,25 @@ function makeLensFlarePngUrl() {
   flare.addColorStop(1.000, "rgba(0,0,0,0)");
   ctx.fillStyle = flare;
   ctx.fillRect(0, 0, 256, 256);
+  ctx.save();
+  ctx.globalCompositeOperation = "lighter";
+  const horizontal = ctx.createLinearGradient(0, 128, 256, 128);
+  horizontal.addColorStop(0.00, "rgba(210,235,255,0)");
+  horizontal.addColorStop(0.42, "rgba(225,240,255,0.015)");
+  horizontal.addColorStop(0.50, "rgba(255,255,255,0.20)");
+  horizontal.addColorStop(0.58, "rgba(225,240,255,0.015)");
+  horizontal.addColorStop(1.00, "rgba(210,235,255,0)");
+  ctx.fillStyle = horizontal;
+  ctx.fillRect(0, 125, 256, 6);
+  const vertical = ctx.createLinearGradient(0, 0, 0, 256);
+  vertical.addColorStop(0.00, "rgba(210,235,255,0)");
+  vertical.addColorStop(0.43, "rgba(225,240,255,0.012)");
+  vertical.addColorStop(0.50, "rgba(255,255,255,0.13)");
+  vertical.addColorStop(0.57, "rgba(225,240,255,0.012)");
+  vertical.addColorStop(1.00, "rgba(210,235,255,0)");
+  ctx.fillStyle = vertical;
+  ctx.fillRect(125, 0, 6, 256);
+  ctx.restore();
   return canvas.toDataURL("image/png");
 }
 
@@ -567,10 +586,8 @@ export class LegacyVisualEffects {
           const lampFlare = new LensFlareSystem("drivella-headlamp-flares-" + side, spot, this.scene);
           lampFlare.isEnabled = this.lensFlaresEnabled;
           this.lensFlareSystems.push(lampFlare);
-          // Headlamp flares are small optical ghosts; the physical lens glow supplies
-          // the visible halo at the projector itself.
-          new LensFlare(0.032, 0, new Color3(0.74, 0.86, 1), this.flareTextureUrl, lampFlare);
-          new LensFlare(0.012, 0.42, new Color3(0.35, 0.72, 1), this.flareTextureUrl, lampFlare);
+          // One centred flare per projector; no displaced coloured ghosts.
+          new LensFlare(0.046, 0, new Color3(0.82, 0.91, 1), this.flareTextureUrl, lampFlare);
         }
       }
 
@@ -624,8 +641,8 @@ export class LegacyVisualEffects {
   applyVehicleOutline(mesh) {
     if (!mesh || mesh.isDisposed?.()) return;
     mesh.renderOutline = this.outlinesEnabled;
-    mesh.outlineColor = new Color3(0.010, 0.020, 0.050);
-    mesh.outlineWidth = 0.050;
+    mesh.outlineColor = new Color3(0.004, 0.004, 0.008);
+    mesh.outlineWidth = 0.082;
     this.outlineMeshes.add(mesh);
   }
 
@@ -669,20 +686,27 @@ export class LegacyVisualEffects {
     const deploy = this.vehicle?.headlightDeploy ?? 0;
     const deployPower = clamp((deploy - 0.12) / 0.88, 0, 1);
     const beamPower = this.headlightsEnabled ? deployPower : 0;
-    // Stronger output is intentional: the road shader adds a soft beam to a dark
-    // synthwave scene, while SpotLights provide visible local spill on nearby meshes.
+    // H controls the road beam, but deployed projectors retain visible low-power
+    // white lens cores and halos, as real pop-up headlamps should.
+    const visibleLensPower = deployPower * (this.headlightsEnabled ? 1 : 0.28);
     this.headlightRoadPower = beamPower * 2.35;
     for (const light of this.headlampSpots) light.intensity = 28 * beamPower;
-    const emissive = new Color3(0.008 + beamPower * 1.05, 0.014 + beamPower * 1.18, 0.026 + beamPower * 1.34);
+    const emissive = new Color3(
+      0.035 + visibleLensPower * 1.12,
+      0.045 + visibleLensPower * 1.18,
+      0.065 + visibleLensPower * 1.28
+    );
     for (const material of this.vehicle?.headlampLensMaterials ?? []) material.emissiveColor.copyFrom(emissive);
-    // Feed the projector cores directly into the scene GlowLayer. This keeps
-    // the halo anchored to the pop-up lamps instead of over the cabin.
     for (const mesh of this.headlampGlowMeshes) {
       if (!mesh || mesh.isDisposed?.()) continue;
-      if (beamPower > 0.01) {
+      if (visibleLensPower > 0.01) {
         mesh.metadata = {
           ...(mesh.metadata ?? {}),
-          neonGlowColor: [1.65 * beamPower, 2.05 * beamPower, 2.65 * beamPower]
+          neonGlowColor: [
+            0.42 + visibleLensPower * 1.45,
+            0.54 + visibleLensPower * 1.60,
+            0.72 + visibleLensPower * 1.82
+          ]
         };
       } else if (mesh.metadata?.neonGlowColor) {
         const metadata = { ...mesh.metadata };
