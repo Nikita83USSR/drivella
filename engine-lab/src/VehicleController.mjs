@@ -107,7 +107,8 @@ async function decodeModel(meta,encoded){
  const stream=new Blob([packed]).stream().pipeThrough(new DecompressionStream("deflate")),raw=new Uint8Array(await new Response(stream).arrayBuffer());
  if(raw.byteLength!==meta.rawBytes)throw new Error("Countach geometry byte-count integrity check failed.");
  const view=new DataView(raw.buffer,raw.byteOffset,raw.byteLength),parts=new Map(),bounds={min:new Vector3(Infinity,Infinity,Infinity),max:new Vector3(-Infinity,-Infinity,-Infinity)};
- const movingCaps={left:[],right:[]},rearSignals={left:[],right:[]},frontLowerPaint=[];
+ const movingCaps={left:[],right:[]},rearSignals={left:[],right:[]},frontLowerPaint=[],glassData=[];
+ const glassTriangles={side:0,windshield:0,rear:0};
  let hoodCapTriangles=0,frontOverlayTriangles=0,lowerPanelTriangles=0;
  for(const part of meta.parts){
   // Replace the source model's fixed optics with the moving DRIVELLA pop-up modules.
@@ -140,6 +141,21 @@ async function decodeModel(meta,encoded){
     Math.abs(p[0])>=.62&&Math.abs(p[0])<=1.07&&p[1]>=.57&&p[1]<=.68&&p[2]>=2.47&&p[2]<=2.71
    );
    if(oldLowerBlackHeadlampPanel){for(const point of triangle)frontLowerPaint.push(...point);lowerPanelTriangles++;continue;}
+   if(part.name==="bodyBlack"){
+    const center=[0,1,2].map(axis=>(triangle[0][axis]+triangle[1][axis]+triangle[2][axis])/3);
+    const ax=Math.abs(center[0]),y=center[1],z=center[2];
+    let glassKind=null;
+    // The exported Countach stores all glazing in bodyBlack. These three
+    // measured panels are separate from the rocker vents and front intakes.
+    if(ax>=.72&&ax<=1.13&&y>=1.0&&y<=1.36&&z>=-.60&&z<=.90)glassKind="side";
+    else if(ax<=.91&&y>=1.0&&y<=1.30&&z>=.70&&z<=1.22)glassKind="windshield";
+    else if(ax<=.28&&y>=1.28&&y<=1.40&&z>=-.40&&z<=-.35)glassKind="rear";
+    if(glassKind){
+     glassTriangles[glassKind]++;
+     for(const point of triangle)glassData.push(...point);
+     continue;
+    }
+   }
    if(part.name==="bodyTail"){
     const centerX=(triangle[0][0]+triangle[1][0]+triangle[2][0])/3;
     if(Math.abs(centerX)>.935){
@@ -162,6 +178,10 @@ async function decodeModel(meta,encoded){
  }
  parts.set("bodyTailSignalL",new Float32Array(rearSignals.left));
  parts.set("bodyTailSignalR",new Float32Array(rearSignals.right));
+ if(glassTriangles.side!==16||glassTriangles.windshield!==14||glassTriangles.rear!==8){
+  throw new Error("Countach glass extraction mismatch: "+JSON.stringify(glassTriangles));
+ }
+ parts.set("glass",new Float32Array(glassData));
  if(frontLowerPaint.length)parts.set("frontLowerPaint",new Float32Array(frontLowerPaint));
  const rf=tyreRadius(parts.get("front_tyre")),rr=tyreRadius(parts.get("rear_tyre"));
  const metrics=measureCountachRigMetrics(meta,(rf+rr)*.5);
@@ -206,8 +226,8 @@ export class VehicleController{
  }
  buildMaterials(){
   const p={bodyPaint:["#b80518","#ffffff",72],bodyPlastic:["#111a27","#a9c5e6",92],bodyBlack:["#05080f","#242d3c",18],
-   bodyMetal:["#8798aa","#f0f5ff",120],bodyTail:["#6e0717","#ff687e",64],headlampR:["#c4d9ea","#ffffff",140,"#152538"],
-   headlampL:["#c4d9ea","#ffffff",140,"#152538"],sideMirror_bodyPlastic:["#101b2c","#8ba6c2",110],frontDetail_detailRed:["#b80518","#ffffff",140],
+   glass:["#07182b","#d8efff",48,"#030a14"],bodyMetal:["#8798aa","#f0f5ff",120],bodyTail:["#6e0717","#ff687e",64],headlampR:["#c4d9ea","#ffffff",140,"#020409"],
+   headlampL:["#c4d9ea","#ffffff",140,"#020409"],sideMirror_bodyPlastic:["#101b2c","#8ba6c2",110],frontDetail_detailRed:["#b80518","#ffffff",140],
    frontDetail_bodyPlastic:["#111a27","#536275",30],exhaustA_chrome:["#a9b5c3","#ffffff",150],exhaustB_chrome:["#a9b5c3","#ffffff",150],
    tyre:["#11151d","#394454",12],rims:["#a7b5c6","#ffffff",150],wheelExtra:["#62758c","#dceaff",95]};
   // Keep edge outlines for the toon look, but use StandardMaterial on paint and glazing
@@ -220,6 +240,10 @@ export class VehicleController{
    this.materials.set(n,mat);
   }
   this.materials.set("frontLowerPaint",cellMaterial(this.scene,"countach-toon-material-front-lower-paint","#b80518"));
+  const glassMaterial=this.materials.get("glass");
+  glassMaterial.alpha=.98;
+  glassMaterial.backFaceCulling=false;
+  glassMaterial.twoSidedLighting=true;
   this.materials.set("turnSignalL",material(this.scene,"countach-turn-signal-left","#4a2108","#ffb65b",72,"#120600"));
   this.materials.set("turnSignalR",material(this.scene,"countach-turn-signal-right","#4a2108","#ffb65b",72,"#120600"));
   this.materials.set("fogLamp",material(this.scene,"countach-fog-lamp","#d7e5f4","#ffffff",180,"#7c9ab8"));
