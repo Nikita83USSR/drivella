@@ -135,14 +135,14 @@ fn drivellaRoadHeadlightEnergy(
 `,
         CUSTOM_FRAGMENT_BEFORE_FRAGCOLOR: `
 color = vec4f(
-  color.rgb + vec3f(0.92, 0.96, 1.0) * (clamp(drivellaRoadHeadlightEnergy(
+  color.rgb + vec3f(0.92, 0.96, 1.0) * clamp(drivellaRoadHeadlightEnergy(
     fragmentInputs.vPositionW,
     normalW,
     uniforms.drivellaRoadHeadlightPositionL,
     uniforms.drivellaRoadHeadlightPositionR,
     uniforms.drivellaRoadHeadlightDirection,
     uniforms.drivellaRoadHeadlightIntensity
-  ) * 0.18, 0.0, 0.48)),
+  ) * 0.18, 0.0, 0.48),
   color.a
 );
 `
@@ -640,7 +640,7 @@ void main(void) {
           const facing = Math.max(0, Vector3.Dot(spot.direction.clone().normalize(), toCamera));
           const distance = Math.max(1, Vector3.Distance(cameraPosition, spot.position));
           const distanceGain = clamp(17 / distance, 0.58, 1.6);
-          const intensity = clamp((spot.intensity / 40) * Math.pow(facing, 0.62) * distanceGain, 0, 1.6);
+          const intensity = clamp((spot.intensity / 2.8) * Math.pow(facing, 0.62) * distanceGain, 0, 1.6);
           const radiusPixels = clamp(Math.min(width, height) * 0.028 * distanceGain, 9, 32);
           effect.setFloat4(uniformName, projected.x * 0.5 + 0.5, 0.5 - projected.y * 0.5, radiusPixels / height, intensity);
           if (intensity > 0.02) this.headlampOpticsSourceCount += 1;
