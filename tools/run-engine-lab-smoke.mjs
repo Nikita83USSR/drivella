@@ -71,6 +71,27 @@ try {
     await page.screenshot({ path: "artifacts/engine-lab-startup-timeout.png" }).catch(() => {});
     throw new Error("3D scene did not reach ready state. Diagnostic: " + JSON.stringify(diagnostic) + " · pageErrors=" + JSON.stringify(pageErrors) + " · " + String(error));
   }
+
+  // Verify the legacy graphics stack while fully enabled, then lower the
+  // headless SwiftShader workload for the separate Havok driving test.
+  const initialEffects = await page.evaluate(() => {
+    const state = window.__DRIVELLA_LAB__;
+    return {
+      ready: state?.legacyEffectsReady === true,
+      effects: state?.legacyEffects ?? null
+    };
+  });
+  const requiredEffects = ["bloom", "ssao", "reflections", "shadows", "sun", "godRays", "lensFlares", "underglow"];
+  const missingEffects = requiredEffects.filter((name) => initialEffects.effects?.[name] !== true);
+  if (!initialEffects.ready || missingEffects.length) {
+    throw new Error("Legacy visual-effects stack did not initialize completely: " + JSON.stringify({ initialEffects, missingEffects }));
+  }
+  await page.locator("#fxToggle").click();
+  for (const effect of ["bloom", "ssao", "reflections", "shadows", "godRays"]) {
+    await page.locator('[data-effect="' + effect + '"]').uncheck();
+  }
+  await page.locator("#fxToggle").click();
+
   try {
     await page.waitForFunction(() => window.__DRIVELLA_LAB__?.physicsReady === true, null, { timeout: 90000 });
   } catch (error) {
@@ -209,6 +230,9 @@ try {
     terrainGridMeshCount: window.__DRIVELLA_LAB__.terrainGridMeshCount,
     renderer: window.__DRIVELLA_LAB__.renderer,
     frames: window.__DRIVELLA_LAB__.frames,
+    legacyEffectsReady: window.__DRIVELLA_LAB__.legacyEffectsReady,
+    legacyEffects: window.__DRIVELLA_LAB__.legacyEffects,
+    roadCurbChunks: window.__DRIVELLA_LAB__.roadCurbChunks,
     physicsMode: window.__DRIVELLA_LAB__.physicsMode,
     vehicleReady:window.__DRIVELLA_LAB__.vehicleReady,vehicleWheelbase:window.__DRIVELLA_LAB__.vehicleWheelbase,
     vehicleTrack:window.__DRIVELLA_LAB__.vehicleTrack,vehicleWheelRadius:window.__DRIVELLA_LAB__.vehicleWheelRadius,
@@ -287,6 +311,13 @@ try {
     throw new Error("Neon scene presentation did not initialize a glow layer and terrain grid: " + JSON.stringify(state));
   }
   if(state.frames<30)throw new Error("Render loop did not advance enough frames.");
+  if (!state.legacyEffectsReady || state.roadCurbChunks < 1) {
+    throw new Error("Legacy FX or neon kerbs did not initialize in the scene: " + JSON.stringify({
+      legacyEffectsReady: state.legacyEffectsReady,
+      legacyEffects: state.legacyEffects,
+      roadCurbChunks: state.roadCurbChunks
+    }));
+  }
   if(!state.vehicleReady||state.vehicleWheelContacts!==4||state.vehicleStableFrames<24)throw new Error("Countach lost one or more independent wheel contacts: "+JSON.stringify(state));
   if(!Number.isFinite(state.vehicleRoadDistance)||state.vehicleRoadDistance>7)throw new Error("Handling smoke left the asphalt corridor: "+JSON.stringify(state));
   const travelled=Math.hypot(state.vehicleX-beforeDrive.x,state.vehicleZ-beforeDrive.z);
@@ -403,8 +434,20 @@ try {
     throw new Error("Unexpected browser console errors: " + unexpectedConsoleErrors.join(" | "));
   }
 
+  await page.locator("#fxToggle").click();
+  for (const effect of ["bloom", "ssao", "reflections", "shadows", "godRays"]) {
+    await page.locator('[data-effect="' + effect + '"]').check();
+  }
+  await page.locator("#fxToggle").click();
+  await page.waitForTimeout(300);
+  const restoredEffects = await page.evaluate(() => window.__DRIVELLA_LAB__?.legacyEffects ?? null);
+  if (requiredEffects.some((name) => restoredEffects?.[name] !== true)) {
+    throw new Error("Legacy graphics effects did not restore after the physics smoke test: " + JSON.stringify(restoredEffects));
+  }
+
   await mkdir("artifacts", { recursive: true });
   await page.screenshot({ path: "artifacts/engine-lab-spatial-preview.png" });
+  console.log("LEGACY GRAPHICS EFFECTS PASS", JSON.stringify({ initialEffects, restoredEffects }));
   console.log("ENGINE LAB PASS", JSON.stringify(state));
   console.log("VEHICLE HANDLING ACCEPTANCE DATA",JSON.stringify(handlingSamples));
   console.log("RUNTIME NETWORK PASS: same-origin requests only.");

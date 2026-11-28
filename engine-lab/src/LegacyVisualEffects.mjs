@@ -102,6 +102,7 @@ export class LegacyVisualEffects {
     this.shadowReceivers = new Set();
     this.headlightsEnabled = false;
     this.underglowEnabled = true;
+    this.lensFlaresEnabled = true;
     this.sunEnabled = true;
     this.lastSunTextureUpdate = 0;
     this.vehicle = null;
@@ -130,6 +131,10 @@ export class LegacyVisualEffects {
     this.createLensFlares();
     this.createTrackLights();
     this.scene.onNewMeshAddedObservable.add((mesh) => this.registerShadowReceiver(mesh));
+    this.scene.onMeshRemovedObservable.add((mesh) => {
+      if (!this.shadowReceivers.delete(mesh)) return;
+      this.shadowGenerator?.removeShadowCaster(mesh);
+    });
     this.scene.meshes.slice().forEach((mesh) => this.registerShadowReceiver(mesh));
     this.ready = true;
   }
@@ -362,6 +367,7 @@ export class LegacyVisualEffects {
         this.headlampSpots.push(spot);
         if (this.flareTextureUrl) {
           const lampFlare = new LensFlareSystem("drivella-headlamp-flares-" + side, spot, this.scene);
+          lampFlare.isEnabled = this.lensFlaresEnabled;
           this.lensFlareSystems.push(lampFlare);
           new LensFlare(0.24, 0, new Color3(0.74, 0.86, 1), this.flareTextureUrl, lampFlare);
           new LensFlare(0.09, 0.42, new Color3(0.35, 0.72, 1), this.flareTextureUrl, lampFlare);
@@ -407,7 +413,6 @@ export class LegacyVisualEffects {
         const lamp = vehicle.materials?.get?.(key);
         if (lamp) lamp.emissiveColor = new Color3(0.52, 0.68, 0.9);
       }
-      for (const system of this.lensFlareSystems) system.isEnabled = true;
       this.setHeadlights(this.headlightsEnabled);
     } catch (error) {
       this.recordError("vehicle lighting", error);
@@ -451,6 +456,7 @@ export class LegacyVisualEffects {
         }
         break;
       case "lensFlares":
+        this.lensFlaresEnabled = value;
         for (const system of this.lensFlareSystems) system.isEnabled = value;
         break;
       case "underglow":
