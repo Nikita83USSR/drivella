@@ -233,6 +233,8 @@ assert.ok(Math.abs(nearestRoadSurfaceHeight(0, 0, roadSamplesA) - 1.05) < 0.001,
   "road start/finish elevation must remain 1.05 m above central terrain");
 let roadSegments = 0;
 let roadVertices = 0;
+let roadMarkingSegments = 0;
+let roadMarkingVertices = 0;
 let transitionSegments = 0;
 let drainageSegments = 0;
 let guardrailSegments = 0;
@@ -246,8 +248,13 @@ for (const key of roadStats.chunkKeys) {
   const chunkGeometry = buildRoadChunkGeometry(roadSamplesA, x, y, z, 128);
   roadSegments += chunkGeometry.segmentCount;
   roadVertices += chunkGeometry.positions.length / 3;
+  const markingGeometry = chunkGeometry.markingGeometry;
+  roadMarkingSegments += markingGeometry.segmentCount;
+  roadMarkingVertices += markingGeometry.positions.length / 3;
   assert.ok(chunkGeometry.indices.length > 0, `route chunk ${key} should contain road geometry`);
   assert.ok(chunkGeometry.positions.every(Number.isFinite), `road chunk ${key} has invalid geometry`);
+  assert.ok(markingGeometry.indices.length > 0, `route chunk ${key} should contain separated white lane markings`);
+  assert.ok(markingGeometry.positions.every(Number.isFinite), `road markings in chunk ${key} have invalid geometry`);
 
   const furniture = buildRoadFurnitureChunkGeometry(roadSamplesA, x, y, z, 128);
   transitionSegments += furniture.transitionSegments;
@@ -261,7 +268,9 @@ for (const key of roadStats.chunkKeys) {
   assert.equal(furniture.indices.length % 3, 0, `road furniture chunk ${key} has incomplete triangles`);
 }
 assert.ok(roadSegments > roadSamplesA.length * 0.9, "road chunks should cover nearly every spline segment");
-assert.ok(roadVertices > 10000, "road mesh should contain actual asphalt, shoulders and markings");
+assert.ok(roadVertices > roadSegments * 15, "asphalt and shoulder mesh must retain their continuous surface geometry");
+assert.ok(roadMarkingSegments > roadSegments / 4, "separated white lane dashes must cover the route");
+assert.ok(roadMarkingVertices > roadMarkingSegments * 3, "white lane dashes must contain real visible geometry");
 assert.ok(transitionSegments > 0, "cut/fill transitions should be dressed where terrain diverges from the road shoulder");
 assert.ok(drainageSegments > 0, "uphill road cuts should receive drainage channels");
 assert.ok(guardrailSegments > 0 && guardrailPosts > 0, "exposed road drops should receive guardrails and supports");
@@ -270,7 +279,7 @@ assert.ok(bridgePiers >= 4, "raised river crossings should receive visible struc
 assert.ok(bridgeGirderSegments >= 6, "raised river crossings should receive continuous structural deck girders");
 
 console.log("ROAD NETWORK TEST PASS", JSON.stringify({
-  ...roadStats, roadSegments, roadVertices,
+  ...roadStats, roadSegments, roadVertices, roadMarkingSegments, roadMarkingVertices,
   transitionSegments, drainageSegments, guardrailSegments, guardrailPosts, furnitureVertices, bridgePiers, bridgeGirderSegments
 }));
 
