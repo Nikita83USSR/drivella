@@ -155,10 +155,10 @@ async function decodeModel(meta,encoded){
  return {parts,bounds,bodySize:bounds.max.subtract(bounds.min),metrics,headlampGeometry:{capTrianglesPerSide:29,frontOverlayTriangles,lowerPanelTriangles}};
 }
 function material(scene,name,diffuse,specular,power,emissive=null){
- const m=new StandardMaterial(name,scene);m.diffuseColor=Color3.FromHexString(diffuse);m.specularColor=Color3.FromHexString(specular);m.specularPower=power;m.backFaceCulling=true;if(emissive)m.emissiveColor=Color3.FromHexString(emissive);return m;
+ const m=new StandardMaterial(name,scene);m.diffuseColor=Color3.FromHexString(diffuse);m.specularColor=Color3.FromHexString(specular);m.specularPower=power;m.backFaceCulling=false;m.twoSidedLighting=true;if(emissive)m.emissiveColor=Color3.FromHexString(emissive);return m;
 }
 function cellMaterial(scene,name,diffuse){
- const m=new CellMaterial(name,scene);m.diffuseColor=Color3.FromHexString(diffuse);m.computeHighLevel=true;m.maxSimultaneousLights=4;m.backFaceCulling=true;return m;
+ const m=new CellMaterial(name,scene);m.diffuseColor=Color3.FromHexString(diffuse);m.computeHighLevel=true;m.maxSimultaneousLights=4;m.backFaceCulling=false;m.twoSidedLighting=true;return m;
 }
 function triangleMesh(scene,name,pos,parent,mat){
  if(!pos?.length||pos.length%9!==0)throw new Error("Invalid Countach triangle geometry: "+name);
