@@ -1,4 +1,4 @@
-const CACHE_NAME="drivella-engine-lab-v9-lamp-flare-optics";
+const CACHE_NAME="drivella-engine-lab-v10-lamp-starburst-texture-fix";
 const SHELL=["./","./index.html","./styles.css","./vendor/drivella-engine.js","./assets/countach_model_0.js","./assets/countach_model_0a.js","./assets/countach_model_0b.js","./assets/countach_model_0c.js","./assets/countach_model_0d.js","./assets/countach_model_1.js","./assets/countach_model_2.js","./assets/countach_model_3a.js","./assets/countach_model_3b.js","./assets/countach_model_3c.js","./assets/countach_model_3d.js"];
 self.addEventListener("install",event=>event.waitUntil((async()=>{const cache=await caches.open(CACHE_NAME);for(const u of SHELL){try{await cache.add(u);}catch(e){console.warn("DRIVELLA cache skipped:",u,e);}}self.skipWaiting();})()));
 self.addEventListener("activate",event=>event.waitUntil((async()=>{const keys=await caches.keys();await Promise.all(keys.filter(k=>k.startsWith("drivella-engine-lab-")&&k!==CACHE_NAME).map(k=>caches.delete(k)));await self.clients.claim();})()));
