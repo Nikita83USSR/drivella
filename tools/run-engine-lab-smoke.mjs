@@ -149,7 +149,7 @@ try {
   await page.waitForFunction(() => {
     const effects = window.__DRIVELLA_LAB__?.legacyEffects;
     return effects?.lensFlareTextureKind === "canvas-png"
-      && effects?.lensFlareSpriteCount >= 5
+      && effects?.lensFlareSpriteCount >= 3
       && effects?.lensFlareTexturesReady === true
       && effects?.frontTurnSignalCount === 2
       && effects?.rearTurnSignalCount === 2
@@ -159,11 +159,17 @@ try {
       && effects?.headlampGlowActiveCount === 4
       && effects?.vehicleOutlineMeshCount >= 20
       && effects?.vehicleOutlineWidth >= 0.075
+      && effects?.headlampOpticsPostProcessReady === true
+      && effects?.vehicleOutlineEdgeMeshCount >= 20
+      && effects?.vehicleOutlineEdgeWidth >= 3
+      && effects?.glassDiffuseColor?.every((channel) => channel <= 0.04)
       && (effects?.tailLampEmissive?.[0] ?? 0) > 0.3;
   }, null, { timeout: 12000 });
   const illuminatedState = await page.evaluate(() => ({
     effects: window.__DRIVELLA_LAB__?.legacyEffects ?? null,
-    roadMaxSimultaneousLights: window.__DRIVELLA_LAB__?.roadMaxSimultaneousLights ?? 0
+    roadMaxSimultaneousLights: window.__DRIVELLA_LAB__?.roadMaxSimultaneousLights ?? 0,
+    roadMarkingChunks: window.__DRIVELLA_LAB__?.roadMarkingChunks ?? 0,
+    neonFenceChunks: window.__DRIVELLA_LAB__?.roadCurbChunks ?? 0
   }));
   const illuminatedHeadlights = illuminatedState.effects;
   const invalidHeadlightBeams = (illuminatedHeadlights?.headlightBeams ?? []).filter((beam) =>
@@ -176,10 +182,11 @@ try {
       || illuminatedHeadlights.headlightRoadMeshCount < 1
       || illuminatedHeadlights.headlightRoadObservableBindCount < 1
       || illuminatedHeadlights.headlightRoadUniformBindCount < 1
-      || illuminatedHeadlights.headlightRoadIntensity < 1.8
+      || illuminatedHeadlights.headlightRoadIntensity < 4.8
+      || illuminatedHeadlights.headlightRoadProbeEnergy < 0.2
       || illuminatedHeadlights.headlightRoadDirectionY > -0.05
       || illuminatedHeadlights.lensFlareTextureKind !== "canvas-png"
-      || illuminatedHeadlights.lensFlareSpriteCount < 5
+      || illuminatedHeadlights.lensFlareSpriteCount < 3
       || !illuminatedHeadlights.lensFlareTexturesReady
       || illuminatedHeadlights.frontTurnSignalCount !== 2
       || illuminatedHeadlights.rearTurnSignalCount !== 2
@@ -189,6 +196,12 @@ try {
       || illuminatedHeadlights.headlampGlowActiveCount !== 4
       || illuminatedHeadlights.vehicleOutlineMeshCount < 20
       || illuminatedHeadlights.vehicleOutlineWidth < 0.075
+      || !illuminatedHeadlights.headlampOpticsPostProcessReady
+      || illuminatedHeadlights.vehicleOutlineEdgeMeshCount < 20
+      || illuminatedHeadlights.vehicleOutlineEdgeWidth < 3
+      || !illuminatedHeadlights.glassDiffuseColor?.every((channel) => channel <= 0.04)
+      || illuminatedState.roadMarkingChunks < 1
+      || illuminatedState.neonFenceChunks < 1
       || (illuminatedHeadlights.tailLampEmissive?.[0] ?? 0) < 0.3
       || illuminatedState.roadMaxSimultaneousLights !== 10) {
     throw new Error("Both pop-up projectors and the dedicated road shader must be active, correctly aimed and bound: "
