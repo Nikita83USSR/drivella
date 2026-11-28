@@ -125,6 +125,26 @@ color.rgb += vec3(0.58, 0.78, 1.0) * (drivellaRoadHeadlightEnergy(normalW) * 0.4
   }
 }
 
+function makeLensFlarePngUrl() {
+  const canvas = document.createElement("canvas");
+  canvas.width = 256;
+  canvas.height = 256;
+  const ctx = canvas.getContext("2d");
+  if (!ctx) throw new Error("Canvas 2D context unavailable for lens flare texture");
+  ctx.clearRect(0, 0, 256, 256);
+  const flare = ctx.createRadialGradient(128, 128, 0, 128, 128, 128);
+  flare.addColorStop(0.00, "rgba(255,255,255,1.0)");
+  flare.addColorStop(0.12, "rgba(255,244,224,0.94)");
+  flare.addColorStop(0.28, "rgba(255,179,139,0.52)");
+  flare.addColorStop(0.52, "rgba(255,95,113,0.18)");
+  flare.addColorStop(0.76, "rgba(120,42,112,0.035)");
+  flare.addColorStop(0.92, "rgba(0,0,0,0.004)");
+  flare.addColorStop(1.00, "rgba(0,0,0,0)");
+  ctx.fillStyle = flare;
+  ctx.fillRect(0, 0, 256, 256);
+  return canvas.toDataURL("image/png");
+}
+
 function makeHorizonSunTexture(scene) {
   const texture = new DynamicTexture(
     "drivella-horizon-sun-texture",
@@ -257,6 +277,7 @@ export class LegacyVisualEffects {
     this.sunFlareSystem = null;
     this.lensFlareSystems = [];
     this.flareTextureUrl = null;
+    this.flareTextureKind = "unavailable";
     this.vlsAttached = false;
 
     this.createAtmosphere();
@@ -457,8 +478,8 @@ export class LegacyVisualEffects {
   createLensFlares() {
     if (!this.sunMesh) return;
     try {
-      const flareSvg = '<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 256 256"><defs><radialGradient id="g" cx="50%" cy="50%" r="50%"><stop stop-color="#fff" stop-opacity="1"/><stop offset=".18" stop-color="#ffe7ce" stop-opacity=".82"/><stop offset=".42" stop-color="#ff9b83" stop-opacity=".28"/><stop offset=".70" stop-color="#ff6470" stop-opacity=".07"/><stop offset=".88" stop-color="#000000" stop-opacity=".006"/><stop offset="1" stop-color="#000000" stop-opacity="0"/></radialGradient></defs><rect width="256" height="256" fill="url(#g)"/></svg>';
-      this.flareTextureUrl = "data:image/svg+xml;base64," + btoa(flareSvg);
+      this.flareTextureUrl = makeLensFlarePngUrl();
+      this.flareTextureKind = "canvas-png";
       this.scene.lensFlaresEnabled = true;
       this.sunFlareSystem = new LensFlareSystem("drivella-horizon-lens-flares", this.sunMesh, this.scene);
       this.lensFlareSystems.push(this.sunFlareSystem);
@@ -580,7 +601,8 @@ export class LegacyVisualEffects {
         if (this.glowLayer) this.glowLayer.addExcludedMesh(disc);
       }
 
-      this.tailMaterial = vehicle.materials?.get?.("bodyTail") ?? null;
+      this.tailMaterial = vehicle.tailMaterial ?? vehicle.materials?.get?.("bodyTail") ?? null;
+      if (this.tailMaterial) this.tailMaterial.emissiveColor.set(0.38, 0.006, 0.018);
       vehicle.setHeadlightsDeployed?.(this.headlightsDeployed);
       this.setHeadlights(this.headlightsEnabled);
       this.syncHeadlampTransforms();
@@ -637,9 +659,11 @@ export class LegacyVisualEffects {
     const deploy = this.vehicle?.headlightDeploy ?? 0;
     const deployPower = clamp((deploy - 0.12) / 0.88, 0, 1);
     const beamPower = this.headlightsEnabled ? deployPower : 0;
-    this.headlightRoadPower = beamPower * 1.25;
-    for (const light of this.headlampSpots) light.intensity = 14 * beamPower;
-    const emissive = new Color3(0.01 + beamPower * 0.78, 0.025 + beamPower * 0.82, 0.05 + beamPower * 0.92);
+    // Stronger output is intentional: the road shader adds a soft beam to a dark
+    // synthwave scene, while SpotLights provide visible local spill on nearby meshes.
+    this.headlightRoadPower = beamPower * 2.35;
+    for (const light of this.headlampSpots) light.intensity = 28 * beamPower;
+    const emissive = new Color3(0.01 + beamPower * 1.05, 0.025 + beamPower * 1.08, 0.05 + beamPower * 1.16);
     for (const material of this.vehicle?.headlampLensMaterials ?? []) material.emissiveColor.copyFrom(emissive);
     return beamPower > 0.01;
   }
@@ -750,10 +774,24 @@ export class LegacyVisualEffects {
     if (!vehicle) return;
     this.syncHeadlampTransforms();
     this.syncHeadlightOutput();
+
+    // Running tail lamps stay visibly red; braking raises their output.
     if (this.tailMaterial) {
-      this.tailMaterial.emissiveColor = vehicle.brake
-        ? new Color3(0.92, 0.018, 0.045)
-        : new Color3(0.24, 0.008, 0.018);
+      const braking = Boolean(vehicle.brake || (vehicle.brakeRequested ?? 0) > 1);
+      this.tailMaterial.emissiveColor = braking
+        ? new Color3(1.45, 0.028, 0.075)
+        : new Color3(0.42, 0.006, 0.022);
+    }
+
+    // Indicators follow the steering side and blink at the legacy cadence.
+    const steerInput = Number(vehicle.steerInput ?? 0);
+    const blinkOn = Math.sin(performance.now() * 0.012) > -0.15;
+    for (const [side, material] of vehicle.turnSignalMaterials ?? []) {
+      const selected = side < 0 ? steerInput < -0.16 : steerInput > 0.16;
+      const active = selected && blinkOn;
+      material.emissiveColor = active
+        ? new Color3(1.65, 0.48, 0.045)
+        : new Color3(0.012, 0.004, 0.001);
     }
     for (const [key, shadow] of this.wheelShadows) {
       const pivot = vehicle.wheelPivots?.get?.(key);
@@ -818,6 +856,14 @@ export class LegacyVisualEffects {
       atmosphere: Boolean(this.atmosphereEnabled && this.scene.fogEnabled),
       godRays: Boolean(this.vls && this.vlsAttached),
       lensFlares: Boolean(this.lensFlareSystems.some((system) => system.isEnabled)),
+      lensFlareTextureKind: this.flareTextureKind,
+      lensFlareSpriteCount: this.lensFlareSystems.reduce((sum, system) => sum + system.lensFlares.length, 0),
+      lensFlareTexturesReady: this.lensFlareSystems.flatMap((system) => system.lensFlares)
+        .every((flare) => Boolean(flare.texture?.isReady?.())),
+      frontTurnSignalCount: this.vehicle?.frontSignalMeshes?.size ?? 0,
+      rearTurnSignalCount: this.vehicle?.rearSignalMeshes?.size ?? 0,
+      fogLampCount: this.vehicle?.fogLightMeshes?.length ?? 0,
+      tailLampEmissive: this.tailMaterial?.emissiveColor?.toArray?.() ?? null,
       underglow: Boolean(this.underglowEnabled),
       outlines: Boolean(this.outlinesEnabled),
       headlights: Boolean(this.headlightsDeployed),
