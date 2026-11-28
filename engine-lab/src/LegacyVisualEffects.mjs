@@ -673,7 +673,8 @@ export class LegacyVisualEffects {
     // transform can shift the child origin. Track its source in world space.
     plane.position.copyFrom(Vector3.Zero());
     plane.billboardMode = Mesh.BILLBOARDMODE_ALL;
-    plane.material = this.lampFlareMaterials.get(kind);
+    const flareMaterial = this.lampFlareMaterials.get(kind).clone("drivella-lamp-flare-" + name);
+    plane.material = flareMaterial;
     plane.renderingGroupId = 2;
     plane.isPickable = false;
     plane.alwaysSelectAsActiveMesh = true;
@@ -687,7 +688,11 @@ export class LegacyVisualEffects {
       lampFlareSource: name
     };
     const anchorPosition = localCenter.clone().addInPlace(localNormal.clone().scaleInPlace(0.045));
-    const item = { name, plane, sourceParent, anchorPosition, kind, radiusPixels, intensity: 0, anchorError: Infinity, sourceResolved: false };
+    const sourceMaterial = name.startsWith("tail-") ? this.tailMaterial : (sourceParent.material ?? null);
+    const item = {
+      name, plane, sourceParent, sourceMaterial, flareMaterial, anchorPosition, kind, radiusPixels,
+      intensity: 0, anchorError: Infinity, sourceResolved: false, flareColor: [1, 1, 1]
+    };
     this.lampFlareObjects.push(item);
     return item;
   }
@@ -833,6 +838,30 @@ export class LegacyVisualEffects {
       const distanceGain = clamp(19 / distance, 0.58, 1.75);
       const intensity = this.lensFlaresEnabled ? power * Math.pow(facing, 0.72) * distanceGain : 0;
       item.intensity = intensity;
+
+      // Tint each star from the actual lamp material instead of a separate
+      // generic palette: cool white projectors, blue-white fog lamps, amber
+      // indicators and the live red tail/brake lamps keep their own colors.
+      const sourceEmission = item.sourceMaterial?.emissiveColor;
+      const sourceDiffuse = item.sourceMaterial?.diffuseColor;
+      const emissionLevel = sourceEmission
+        ? Math.max(sourceEmission.r, sourceEmission.g, sourceEmission.b)
+        : 0;
+      const sourceColor = emissionLevel > 0.035 ? sourceEmission : sourceDiffuse;
+      const colorPeak = sourceColor
+        ? Math.max(sourceColor.r, sourceColor.g, sourceColor.b)
+        : 0;
+      const flareColor = colorPeak > 0.001
+        ? new Color3(
+          sourceColor.r / colorPeak,
+          sourceColor.g / colorPeak,
+          sourceColor.b / colorPeak
+        )
+        : Color3.White();
+      item.flareMaterial.diffuseColor.copyFrom(flareColor);
+      item.flareMaterial.emissiveColor.copyFrom(flareColor.scale(1.18));
+      item.flareColor = [flareColor.r, flareColor.g, flareColor.b];
+
       item.plane.isVisible = intensity > 0.035;
       item.plane.visibility = clamp(intensity * 1.18, 0, 1);
 
@@ -860,7 +889,9 @@ export class LegacyVisualEffects {
       error: Number((item.anchorError ?? Infinity).toFixed(6)),
       visible: Boolean(item.plane.isVisible),
       radiusPixels: item.radiusPixels,
-      intensity: Number((item.intensity ?? 0).toFixed(3))
+      intensity: Number((item.intensity ?? 0).toFixed(3)),
+      color: item.flareColor.map((value) => Number(value.toFixed(3))),
+      colorSource: item.sourceMaterial?.name ?? ""
     }));
   }
   createTrackLights() {
