@@ -122,9 +122,9 @@
 <body>
 <canvas id="scene"></canvas><canvas id="sun"></canvas>
 <div id="hud">
- <div class="top"><div class="logo">DRIVELLA<small>3D SYNTHWAVE DRIFT RACING</small></div><div class="version-label" id="version-label">v0.19.53 · BUILD 219</div><div class="stat">DISTANCE<b id="distance">000.0 KM</b></div><div class="stat">LOCATION<b>VIOLET COAST</b></div></div>
+ <div class="top"><div class="logo">DRIVELLA<small>3D SYNTHWAVE DRIFT RACING</small></div><div class="version-label" id="version-label">v0.19.54 · BUILD 220</div><div class="stat">DISTANCE<b id="distance">000.0 KM</b></div><div class="stat">LOCATION<b>VIOLET COAST</b></div></div>
  <div class="right"><div id="speed">000 <span>KM/H</span></div><div id="direction">▶ FORWARD</div><div id="music">♫ MUSIC SCANNING…</div></div>
- <div class="bottom"><div class="hint"><strong>W / ↑</strong> ACCELERATE　<strong>S / ↓</strong> BRAKE / REVERSE<br><strong>A / ←　D / →</strong> STEER　<strong>SPACE</strong> HANDBRAKE　<strong>C</strong> CAMERA　<strong>HOLD + DRAG LMB</strong> LOOK　<strong>L</strong> LIGHTS　<strong>K</strong> WIREFRAME</div><div class="build-credit"><span>3D NEON HIGHWAY // BUILD 219</span><a class="asset-credit" href="https://sketchfab.com/3d-models/low-poly-lamborghini-countach-c9b28a4ad5c74649a09afa613dd3fae1" target="_blank" rel="noopener noreferrer">Original model: 3DShinobi · Sketchfab · CC BY · modified for DRIVELLA</a></div></div>
+ <div class="bottom"><div class="hint"><strong>W / ↑</strong> ACCELERATE　<strong>S / ↓</strong> BRAKE / REVERSE<br><strong>A / ←　D / →</strong> STEER　<strong>SPACE</strong> HANDBRAKE　<strong>C</strong> CAMERA　<strong>HOLD + DRAG LMB</strong> LOOK　<strong>L</strong> LIGHTS　<strong>K</strong> WIREFRAME</div><div class="build-credit"><span>3D NEON HIGHWAY // BUILD 220</span><a class="asset-credit" href="https://sketchfab.com/3d-models/low-poly-lamborghini-countach-c9b28a4ad5c74649a09afa613dd3fae1" target="_blank" rel="noopener noreferrer">Original model: 3DShinobi · Sketchfab · CC BY · modified for DRIVELLA</a></div></div>
 </div>
 <div id="fps-counter" aria-live="off">FPS --</div>
 <div id="effects-menu" aria-hidden="true">
@@ -170,7 +170,7 @@
 </div>
 <div id="tools-ui"><button id="cam-prev" aria-label="Previous camera">◀</button><span id="cam-label">CAM 2 · CLOSE</span><button id="cam-next" aria-label="Next camera">▶</button><button id="debug-toggle">DEBUG</button></div>
 <div id="debug-panel"><div class="debug-head"><div class="debug-title">DRIVELLA DIAGNOSTICS</div><button id="debug-copy" type="button" aria-label="Скопировать всю диагностику">КОПИРОВАТЬ</button></div><div id="debug-data">Initializing…</div></div>
-<div id="boot-screen"><div class="boot-content"><div class="boot-kicker">NIGHT DRIVE SYSTEMS // INITIALIZING</div><div class="boot-logo">DRIVELLA</div><div class="boot-subtitle">3D SYNTHWAVE DRIFT RACING</div><div class="boot-mark"></div><div class="boot-status" id="boot-status">BUILDING THE 3D WORLD</div><div class="boot-track"><div class="boot-progress" id="boot-progress"></div></div><div class="boot-meta"><span>3D ENGINE ONLINE</span><span id="boot-percent">00%</span></div><div class="boot-footer">ENGINE STARTUP // v0.19.53 · BUILD 219</div></div></div>
+<div id="boot-screen"><div class="boot-content"><div class="boot-kicker">NIGHT DRIVE SYSTEMS // INITIALIZING</div><div class="boot-logo">DRIVELLA</div><div class="boot-subtitle">3D SYNTHWAVE DRIFT RACING</div><div class="boot-mark"></div><div class="boot-status" id="boot-status">BUILDING THE 3D WORLD</div><div class="boot-track"><div class="boot-progress" id="boot-progress"></div></div><div class="boot-meta"><span>3D ENGINE ONLINE</span><span id="boot-percent">00%</span></div><div class="boot-footer">ENGINE STARTUP // v0.19.54 · BUILD 220</div></div></div>
 <div id="main-menu"><div class="menu-content"><div class="menu-brand">DRIVELLA GTS</div><div class="menu-sub">RIDE THE RETRO FUTURE</div><div class="menu-actions"><button class="menu-btn" id="menu-start">СТАРТ</button><button class="menu-btn" id="menu-garage">ГАРАЖ</button><button class="menu-btn" id="menu-options">НАСТРОЙКИ</button></div></div><div class="menu-footer">РАЗРАБОТЧИК — <b>НИКИТА МАРКИН</b></div></div>
 <div id="garage-screen"><div class="garage-head">ГАРАЖ // DRIVELLA GTS</div><div class="garage-copy">DRIVELLA GTS · SHOWROOM LAB<br>ТРИ COUNTACH ДЛЯ СРАВНЕНИЯ МАТЕРИАЛОВ И СВЕТА<br>ДОМА · ПАЛЬМЫ · SUN / BLOOM / GOD RAYS</div><div class="garage-controls"><button id="garage-back">← НАЗАД В МЕНЮ</button></div><div class="garage-tip">ЗАЖМИ И ТЯНИ — ВРАЩАЙ ВСЮ СЦЕНУ<br>КОЛЁСИКО — МАСШТАБ · F4 — ЭФФЕКТЫ · F3 — ДИАГНОСТИКА</div></div>
 <div id="options-screen"><div class="options-head">ОПЦИИ</div><div class="options-card"><div class="option-row"><span>МУЗЫКА</span><button id="option-music">ВКЛЮЧЕНА</button></div><div class="option-row"><span>ГРОМКОСТЬ</span><input id="option-volume" type="range" min="0" max="100" value="52"></div><div class="option-row"><span>ЗВУК ДВИГАТЕЛЯ</span><button id="option-sfx">ВКЛЮЧЁН</button></div><div class="option-row"><span>КАМЕРА</span><span>КЛАВИШИ 1–4</span></div><button id="options-back" style="width:100%;margin-top:18px">← НАЗАД В МЕНЮ</button></div></div>
@@ -189,7 +189,7 @@
 <script>
 (()=>{
 'use strict';
-const VERSION='v0.19.53',BUILD='219';
+const VERSION='v0.19.54',BUILD='220';
 const GPU_POWER_PREFERENCE='high-performance';
 const canvas=document.getElementById('scene'),gl=canvas.getContext('webgl',{antialias:true,alpha:true,powerPreference:GPU_POWER_PREFERENCE}),sun=document.getElementById('sun'),sctx=sun.getContext('2d');
 const $=id=>document.getElementById(id);
@@ -1730,7 +1730,7 @@ const C={
  glass:[.012,.035,.075,1],glassLight:[.055,.17,.28,1],trim:[.012,.016,.026,1],
  tire:[.012,.014,.019,1],hub:[.55,.52,.68,1],brake:[.20,.20,.28,1],city:[.085,.045,.12,1],mount:[.08,.045,.14,1]
 };
-let keys={},headlightsUp=false,headlightDeploy=0,wireframeMode=false,started=false,paused=true,speed=0,playerX=0,steer=0,bodyRoll=0,bodyPitch=0,distance=0,travelDistance=0,boost=0,carYaw=0,yawRate=0,lateralVelocity=0,driftIntensity=0,driftState=0,driftDirection=0,driftTimer=0,driftPeakSlip=0,driftCooldown=0,driftClearTimer=0,handbrakePulse=0,previousHandbrake=false,rearGripRecovery=1,tireSlipFront=0,tireSlipRear=0,tireForceFront=0,tireForceRear=0,rearGripDiagnostic=1,wheelTravel={fl:0,fr:0,rl:0,rr:0},handbrakeActive=false,brakeLight=0,last=performance.now(),musicOn=true,track=0,trackOrder=[],trackPos=0,audio=null,musicPending=true,foundTracks=[],audioCtx=null,engineOsc=null,engineOsc2=null,engineGain=null,engineFilter=null,skidGain=null,skidFilter=null,roadGain=null,roadFilter=null,audioNoise=null;
+let keys={},headlightsUp=false,headlightDeploy=0,wireframeMode=false,started=false,paused=true,speed=0,playerX=0,steer=0,bodyRoll=0,bodyPitch=0,distance=0,travelDistance=0,boost=0,carYaw=0,yawRate=0,lateralVelocity=0,driftIntensity=0,driftState=0,driftDirection=0,driftTimer=0,driftPeakSlip=0,driftCooldown=0,driftClearTimer=0,handbrakePulse=0,previousHandbrake=false,reverseHoldTimer=0,reverseEngaged=false,rearGripRecovery=1,tireSlipFront=0,tireSlipRear=0,tireForceFront=0,tireForceRear=0,rearGripDiagnostic=1,wheelTravel={fl:0,fr:0,rl:0,rr:0},handbrakeActive=false,brakeLight=0,last=performance.now(),musicOn=true,track=0,trackOrder=[],trackPos=0,audio=null,musicPending=true,foundTracks=[],audioCtx=null,engineOsc=null,engineOsc2=null,engineGain=null,engineFilter=null,skidGain=null,skidFilter=null,roadGain=null,roadFilter=null,audioNoise=null;
 // One axis convention shared by controls, car movement, body lean and indicators.
 const STEER_AXIS=Object.freeze({left:-1,right:1,screenRight:1,bodyLean:-1});
 const DRIFT_STATE=Object.freeze({GRIP:0,INITIATION:1,DRIFT:2,RECOVERY:3});
@@ -2882,6 +2882,7 @@ function updateDebug(dt){
    '<strong>VELOCITY LONG / LAT</strong> '+(speed/3.6).toFixed(1)+' / '+lateralVelocity.toFixed(1)+' m/s<br>'+
    '<strong>TYRE SLIP FRONT / REAR</strong> '+(tireSlipFront*180/Math.PI).toFixed(1)+'° / '+(tireSlipRear*180/Math.PI).toFixed(1)+'°<br>'+
    '<strong>TYRE FORCE FRONT / REAR</strong> '+(tireForceFront/1000).toFixed(1)+' / '+(tireForceRear/1000).toFixed(1)+' kN · REAR GRIP '+rearGripDiagnostic.toFixed(2)+'<br>'+
+   '<strong>YAW LIMIT / REVERSE</strong> '+(clamp(16/Math.max(getVehicleSpeed()/3.6,8),.55,1.8)*180/Math.PI).toFixed(0)+'°/s · '+(reverseEngaged?'ENGAGED':down?'BRAKING':'OFF')+'<br>'+
    '<strong>WORLD Z</strong> '+distance.toFixed(2)+'<br>'+
    '<strong>STEER / X / ROLL / PITCH</strong> '+steer.toFixed(2)+' / '+playerX.toFixed(2)+' / '+bodyRoll.toFixed(3)+' / '+bodyPitch.toFixed(3)+'<br>'+
    '<strong>WEBGL</strong> '+(gl.getParameter(gl.VERSION)||'OK')+'<br>'+
@@ -2950,18 +2951,25 @@ function frame(now){
   steer+=(steerInput-steer)*Math.min(1,dt*8.5);
 
   // Rear-wheel drive torque, rolling drag and a front-biased service-brake split.
+  // S first brakes to zero. Reverse engages only after a short hold at a standstill,
+  // avoiding rapid forward/reverse switching while the tyres are sliding sideways.
+  if(!down){reverseHoldTimer=0;reverseEngaged=false;}
   const drag=.18+.006*Math.abs(vLong)+.00018*vLong*vLong;
   const driveAccel=up&&!down?4.8*clamp(1-(Math.abs(vLong)/88)**2,.22,1):0;
   const coastAccel=(!up||down)?-Math.sign(vLong)*drag:0;
   let serviceBrakeAccel=0;
-  if(down){
-   if(vLong>.6)serviceBrakeAccel=-10.0;
-   else if(vLong<-.6)serviceBrakeAccel=8.0;
-   else serviceBrakeAccel=-4.5;
+  if(down&&vLong>.6){
+   serviceBrakeAccel=-10.0;reverseHoldTimer=0;reverseEngaged=false;
+  }else if(down&&vLong<-.6&&!reverseEngaged){
+   serviceBrakeAccel=8.0;reverseHoldTimer=0;
+  }else if(down){
+   reverseHoldTimer+=dt;
+   if(reverseHoldTimer>=.28)reverseEngaged=true;
+   serviceBrakeAccel=reverseEngaged?-3.0:0;
   }
   const handbrakeDecel=handbrakeActive?-Math.sign(vLong||1)*1.7:0;
   const longitudinalAccel=driveAccel+coastAccel+serviceBrakeAccel+handbrakeDecel;
-  const serviceBraking=down&&Math.abs(vLong)>.6;
+  const serviceBraking=down&&((vLong>.6&&serviceBrakeAccel<0)||(vLong<-.6&&serviceBrakeAccel>0));
   const frontLongitudinalForce=serviceBraking?VEHICLE_MASS*serviceBrakeAccel*.68:0;
   const rearLongitudinalForce=VEHICLE_MASS*(driveAccel+coastAccel+handbrakeDecel+serviceBrakeAccel*(serviceBraking?.32:1));
   const steerAngle=getSteeringAngle();
@@ -2982,15 +2990,25 @@ function frame(now){
    const frontSlip=Math.atan2((lateralVelocity+VEHICLE_CG_TO_FRONT*yawRate)*travelSign,Math.max(Math.abs(vLong),2))-steerAngle*travelSign;
    const rearSlip=Math.atan2((lateralVelocity-VEHICLE_CG_TO_REAR*yawRate)*travelSign,Math.max(Math.abs(vLong),2));
    tireSlipFront=frontSlip;tireSlipRear=rearSlip;
-   frontLateralForce=clamp(-FRONT_CORNERING_STIFFNESS*frontSlip,-frontLateralLimit,frontLateralLimit);
-   rearLateralForce=clamp(-REAR_CORNERING_STIFFNESS*rearSlip,-rearLateralLimit,rearLateralLimit);
+   // Convert tyre lateral forces back to the car's right/left axis. This sign
+   // must be restored in reverse; otherwise a backward slide is self-accelerating.
+   frontLateralForce=travelSign*clamp(-FRONT_CORNERING_STIFFNESS*frontSlip,-frontLateralLimit,frontLateralLimit);
+   rearLateralForce=travelSign*clamp(-REAR_CORNERING_STIFFNESS*rearSlip,-rearLateralLimit,rearLateralLimit);
    tireForceFront=frontLateralForce;tireForceRear=rearLateralForce;
    lateralAcceleration=(frontLateralForce+rearLateralForce)/VEHICLE_MASS-yawRate*vLong;
    const yawAcceleration=(VEHICLE_CG_TO_FRONT*frontLateralForce-VEHICLE_CG_TO_REAR*rearLateralForce)/VEHICLE_YAW_INERTIA;
    lateralVelocity+=lateralAcceleration*stepDt;
-   yawRate=clamp(yawRate+yawAcceleration*stepDt,-2.8,2.8);
+   const yawRateLimit=clamp(16/Math.max(Math.hypot(vLong,lateralVelocity),8),.55,1.8);
+   yawRate=clamp(yawRate+yawAcceleration*stepDt,-yawRateLimit,yawRateLimit);
    vLong=clamp(vLong+longitudinalAccel*stepDt,-20.8,86);
    carYaw+=yawRate*stepDt;
+  }
+  // The vehicle's speed is the full velocity vector, not only its forward component.
+  // Keep the 86 m/s design limit on both axes so a sideways slide cannot create 3,000 km/h.
+  const totalVelocity=Math.hypot(vLong,lateralVelocity);
+  if(totalVelocity>86){
+   const velocityScale=86/totalVelocity;
+   vLong*=velocityScale;lateralVelocity*=velocityScale;
   }
   speed=vLong*3.6;
   const updatedSlip=Math.atan2(lateralVelocity,Math.max(2,Math.abs(vLong)));
@@ -3046,14 +3064,14 @@ function frame(now){
   bodyRoll+=(rollTarget-bodyRoll)*Math.min(1,dt*4.5);
   bodyPitch+=(pitchTarget-bodyPitch)*Math.min(1,dt*4.2);
  }else if(!paused){
-  handbrakeActive=false;handbrakePulse=0;previousHandbrake=false;
+  handbrakeActive=false;handbrakePulse=0;previousHandbrake=false;reverseHoldTimer=0;reverseEngaged=false;
   yawRate*=Math.pow(.88,dt*60);
   lateralVelocity*=Math.pow(.90,dt*60);
   driftIntensity*=.88;
   bodyRoll*=Math.pow(.88,dt*60);
   bodyPitch*=Math.pow(.88,dt*60);
  }else{
-  handbrakeActive=false;handbrakePulse=0;previousHandbrake=false;
+  handbrakeActive=false;handbrakePulse=0;previousHandbrake=false;reverseHoldTimer=0;reverseEngaged=false;
   brakeLight*=Math.pow(.88,dt*60);
   bodyRoll*=Math.pow(.88,dt*60);
   bodyPitch*=Math.pow(.88,dt*60);
