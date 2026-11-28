@@ -24,6 +24,40 @@ const raw = inflateSync(Buffer.from(encoded, "base64"));
 assert.equal(raw.byteLength, meta.rawBytes, "Decompressed Countach bytes must match its metadata.");
 const view = new DataView(raw.buffer, raw.byteOffset, raw.byteLength);
 
+// Diagnostic map for the source's black material: the exported Countach has no
+// named glass material, so identify its window polygons before reassigning them.
+const bodyBlackPart = meta.parts.find((entry) => entry.name === "bodyBlack");
+assert.ok(bodyBlackPart, "Countach bodyBlack geometry must exist.");
+const bodyBlackTriangleMap = [];
+for (let index = 0; index < bodyBlackPart.indexCount; index += 3) {
+  const points = [];
+  for (let vertex = 0; vertex < 3; vertex += 1) {
+    const vertexIndex = view.getUint16(bodyBlackPart.indexOffset + (index + vertex) * 2, true);
+    const offset = bodyBlackPart.vertexOffset + vertexIndex * 6;
+    points.push([
+      view.getInt16(offset, true) / meta.unitsPerGameUnit,
+      view.getInt16(offset + 2, true) / meta.unitsPerGameUnit,
+      view.getInt16(offset + 4, true) / meta.unitsPerGameUnit
+    ]);
+  }
+  const center = [0, 1, 2].map((axis) => (points[0][axis] + points[1][axis] + points[2][axis]) / 3);
+  const a = points[1].map((value, axis) => value - points[0][axis]);
+  const b = points[2].map((value, axis) => value - points[0][axis]);
+  const normal = [
+    a[1] * b[2] - a[2] * b[1],
+    a[2] * b[0] - a[0] * b[2],
+    a[0] * b[1] - a[1] * b[0]
+  ];
+  const length = Math.hypot(...normal) || 1;
+  bodyBlackTriangleMap.push({
+    triangle: index / 3,
+    center: center.map((value) => Number(value.toFixed(3))),
+    normal: normal.map((value) => Number((value / length).toFixed(2)))
+  });
+}
+console.log("COUNTACH BODY BLACK TRIANGLE MAP", JSON.stringify(bodyBlackTriangleMap));
+
+
 // The two outboard pairs of the original bodyTail mesh are independent rear
 // indicator lenses. Keep exactly two triangles per side out of the red brake lens.
 const bodyTailPart=meta.parts.find((entry)=>entry.name==="bodyTail");
