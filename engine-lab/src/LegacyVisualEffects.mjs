@@ -701,7 +701,7 @@ export class LegacyVisualEffects {
       return center?.clone?.() ?? Vector3.Zero();
     };
 
-    for (const [side, mesh] of vehicle.headlightLensMeshes ?? []) {
+    for (const [side, mesh] of this.headlampLensMeshes) {
       this.addLampFlare(
         "headlamp-" + (side < 0 ? "left" : "right"),
         mesh,
