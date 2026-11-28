@@ -15,6 +15,7 @@ on:
       - 'tools/test-vehicle-controller.mjs'
       - 'tools/test-neon-palette.mjs'
       - 'tools/test-road-curbs.mjs'
+      - 'tools/test-road-grid-mask.mjs'
       - '.github/workflows/engine-foundation.yml'
   pull_request:
     branches: [main]
@@ -25,6 +26,7 @@ on:
       - 'tools/test-spatial-chunks.mjs'
       - 'tools/test-vehicle-controller.mjs'
       - 'tools/test-road-curbs.mjs'
+      - 'tools/test-road-grid-mask.mjs'
       - '.github/workflows/engine-foundation.yml'
 
 permissions:
@@ -51,6 +53,8 @@ jobs:
         run: node tools/test-neon-palette.mjs
       - name: Verify raised non-emissive-road kerb geometry
         run: node tools/test-road-curbs.mjs
+      - name: Verify the terrain grid stays clear of the road corridor
+        run: node tools/test-road-grid-mask.mjs
       - name: Install pinned engine and build dependencies
         run: npm install --no-audit --no-fund
       - name: Verify Countach geometry, Ackermann steering and tire friction

@@ -1,4 +1,5 @@
 import {Color3,Mesh,MeshBuilder,PhysicsAggregate,PhysicsShapeType,Quaternion,StandardMaterial,TransformNode,Vector3,VertexData} from "@babylonjs/core";
+import {CellMaterial} from "@babylonjs/materials/cell/cellMaterial";
 import {PhysicsRaycastResult} from "@babylonjs/core/Physics/physicsRaycastResult.js";
 const WHEEL_PARTS=new Set(["front_tyre","front_rims","front_extra_NoMaterial","rear_tyre","rear_rims"]);
 const WHEELS=Object.freeze([Object.freeze({key:"frontLeft",axle:"front",side:-1}),Object.freeze({key:"frontRight",axle:"front",side:1}),Object.freeze({key:"rearLeft",axle:"rear",side:-1}),Object.freeze({key:"rearRight",axle:"rear",side:1})]);
@@ -6,6 +7,7 @@ const WHEELS=Object.freeze([Object.freeze({key:"frontLeft",axle:"front",side:-1}
 const BODY_MOTION=Object.freeze({STATIC:0,DYNAMIC:2});
 const P=Object.freeze({mass:1250,cg:.50,spawn:.05,colliderH:.42,rest:.32,rideSag:.06,min:.12,max:.55,maxComp:.20,spring:38000,damper:4200,bump:98000,antiRoll:26000,maxLateralAccel:7.0,rollStiffness:16000,rollDamping:4000,maxRollTorque:9000,maxForce:16000,maxSteer:.49,engine:8600,brake:19500,handbrake:10500,parkingBrake:18000,frontGrip:1.22,rearGrip:1.04,rearHandbrakeGrip:.32,frontCornering:5600,rearCornering:3950,drag:.46,rolling:.012});
 const clamp=(v,a,b)=>Math.max(a,Math.min(b,v));
+export function calculatePopUpHeadlightAngle(deploy){const d=clamp(Number(deploy)||0,0,1),ease=d*d*(3-2*d);return Math.PI*.25*(1-ease);}
 export function calculateStaticSuspensionCompression(wheelCenterY,wheelRadius,rideSag=.06){
  return wheelRadius-wheelCenterY+rideSag;
 }
@@ -59,21 +61,58 @@ async function decodeModel(meta,encoded){
  const stream=new Blob([packed]).stream().pipeThrough(new DecompressionStream("deflate")),raw=new Uint8Array(await new Response(stream).arrayBuffer());
  if(raw.byteLength!==meta.rawBytes)throw new Error("Countach geometry byte-count integrity check failed.");
  const view=new DataView(raw.buffer,raw.byteOffset,raw.byteLength),parts=new Map(),bounds={min:new Vector3(Infinity,Infinity,Infinity),max:new Vector3(-Infinity,-Infinity,-Infinity)};
- for(const part of meta.parts){const pos=new Float32Array(part.indexCount*3);let o=0;
-  for(let i=0;i<part.indexCount;i++){const vi=view.getUint16(part.indexOffset+i*2,true),vo=part.vertexOffset+vi*6;
-   const x=view.getInt16(vo,true)/meta.unitsPerGameUnit,y=view.getInt16(vo+2,true)/meta.unitsPerGameUnit,z=view.getInt16(vo+4,true)/meta.unitsPerGameUnit;
-   pos[o++]=x;pos[o++]=y;pos[o++]=z;if(!WHEEL_PARTS.has(part.name)){
-    bounds.min.x=Math.min(bounds.min.x,x);bounds.min.y=Math.min(bounds.min.y,y);bounds.min.z=Math.min(bounds.min.z,z);
-    bounds.max.x=Math.max(bounds.max.x,x);bounds.max.y=Math.max(bounds.max.y,y);bounds.max.z=Math.max(bounds.max.z,z);
+ const movingCaps={left:[],right:[]},frontLowerPaint=[];
+ let hoodCapTriangles=0,frontOverlayTriangles=0,lowerPanelTriangles=0;
+ for(const part of meta.parts){
+  // Replace the source model's fixed optics with the moving DRIVELLA pop-up modules.
+  if(part.name==="headlampR"||part.name==="headlampL")continue;
+  if(part.indexCount%3!==0)throw new Error("Countach part contains an incomplete triangle: "+part.name);
+  const pos=new Float32Array(part.indexCount*3);let writeAt=0;
+  for(let i=0;i<part.indexCount;i+=3){
+   const triangle=[];
+   for(let j=0;j<3;j++){
+    const vi=view.getUint16(part.indexOffset+(i+j)*2,true),vo=part.vertexOffset+vi*6;
+    const point=[view.getInt16(vo,true)/meta.unitsPerGameUnit,view.getInt16(vo+2,true)/meta.unitsPerGameUnit,view.getInt16(vo+4,true)/meta.unitsPerGameUnit];
+    triangle.push(point);
+    if(!WHEEL_PARTS.has(part.name)){
+     bounds.min.x=Math.min(bounds.min.x,point[0]);bounds.min.y=Math.min(bounds.min.y,point[1]);bounds.min.z=Math.min(bounds.min.z,point[2]);
+     bounds.max.x=Math.max(bounds.max.x,point[0]);bounds.max.y=Math.max(bounds.max.y,point[1]);bounds.max.z=Math.max(bounds.max.z,point[2]);
+    }
    }
-  }parts.set(part.name,pos);
+   const oldTriangularHoodCap=part.name==="bodyPaint"&&triangle.every(p=>{
+    const ax=Math.abs(p[0]);return ax>=.60&&ax<=1.12&&p[1]>=.63&&p[1]<=.86&&p[2]>=2.19&&p[2]<=2.46;
+   });
+   if(oldTriangularHoodCap){
+    hoodCapTriangles++;const target=triangle[0][0]<0?movingCaps.left:movingCaps.right;
+    for(const point of triangle)target.push(...point);continue;
+   }
+   const oldFrontHeadlampOverlay=part.name==="bodyPlastic"&&triangle.every(p=>
+    Math.abs(p[2]-2.4561)<.00015&&Math.abs(p[0])>=.62&&Math.abs(p[0])<=1.07&&p[1]>=.67&&p[1]<=.86
+   );
+   if(oldFrontHeadlampOverlay){frontOverlayTriangles++;continue;}
+   const oldLowerBlackHeadlampPanel=part.name==="bodyBlack"&&triangle.every(p=>
+    Math.abs(p[0])>=.62&&Math.abs(p[0])<=1.07&&p[1]>=.57&&p[1]<=.68&&p[2]>=2.47&&p[2]<=2.71
+   );
+   if(oldLowerBlackHeadlampPanel){for(const point of triangle)frontLowerPaint.push(...point);lowerPanelTriangles++;continue;}
+   for(const point of triangle){pos[writeAt++]=point[0];pos[writeAt++]=point[1];pos[writeAt++]=point[2];}
+  }
+  parts.set(part.name,writeAt===pos.length?pos:pos.slice(0,writeAt));
  }
+ if(hoodCapTriangles!==58||movingCaps.left.length!==261||movingCaps.right.length!==261){
+  throw new Error("Countach pop-up cap extraction mismatch: "+JSON.stringify({hoodCapTriangles,left:movingCaps.left.length/9,right:movingCaps.right.length/9}));
+ }
+ parts.set("movingLampCapL",new Float32Array(movingCaps.left));
+ parts.set("movingLampCapR",new Float32Array(movingCaps.right));
+ if(frontLowerPaint.length)parts.set("frontLowerPaint",new Float32Array(frontLowerPaint));
  const rf=tyreRadius(parts.get("front_tyre")),rr=tyreRadius(parts.get("rear_tyre"));
  const metrics=measureCountachRigMetrics(meta,(rf+rr)*.5);
- return {parts,bounds,bodySize:bounds.max.subtract(bounds.min),metrics};
+ return {parts,bounds,bodySize:bounds.max.subtract(bounds.min),metrics,headlampGeometry:{capTrianglesPerSide:29,frontOverlayTriangles,lowerPanelTriangles}};
 }
 function material(scene,name,diffuse,specular,power,emissive=null){
  const m=new StandardMaterial(name,scene);m.diffuseColor=Color3.FromHexString(diffuse);m.specularColor=Color3.FromHexString(specular);m.specularPower=power;m.backFaceCulling=true;if(emissive)m.emissiveColor=Color3.FromHexString(emissive);return m;
+}
+function cellMaterial(scene,name,diffuse){
+ const m=new CellMaterial(name,scene);m.diffuseColor=Color3.FromHexString(diffuse);m.computeHighLevel=true;m.maxSimultaneousLights=4;m.backFaceCulling=true;return m;
 }
 function triangleMesh(scene,name,pos,parent,mat){
  if(!pos?.length||pos.length%9!==0)throw new Error("Invalid Countach triangle geometry: "+name);
@@ -89,7 +128,7 @@ export class VehicleController{
   if(!scene?.getPhysicsEngine?.())throw new Error("Vehicle requires active Havok Physics V2.");
   if(!Array.isArray(roadSamples)||roadSamples.length<2||!startSample)throw new TypeError("Vehicle requires sampled road and spawn point.");
   this.scene=scene;this.model=model;this.startSample=startSample;this.metrics=model.metrics;this.mass=P.mass;this.keys=new Set();this.steer=0;this.steerInput=0;this.handbrake=false;this.brake=false;this.throttle=false;this.parked=true;this.driveRequested=0;this.brakeRequested=0;this.lastDt=1/60;
-  this.wheelContacts=new Map();this.wheelSpin=new Map(WHEELS.map(w=>[w.key,0]));this.wheelPivots=new Map();this.materials=new Map();this.ray=new PhysicsRaycastResult();this.appliedDriveForceWorld=Vector3.Zero();
+  this.wheelContacts=new Map();this.wheelSpin=new Map(WHEELS.map(w=>[w.key,0]));this.wheelPivots=new Map();this.headlightPivots=new Map();this.headlightCaps=new Map();this.headlampLensMaterials=[];this.headlightDeploy=0;this.headlightDeployTarget=0;this.materials=new Map();this.ray=new PhysicsRaycastResult();this.appliedDriveForceWorld=Vector3.Zero();
   const yaw=Math.atan2(startSample.tangentX,startSample.tangentZ),width=clamp(model.bodySize.x*.88,1.72,2.05),length=clamp(model.bodySize.z*.80,3.65,4.05);
   this.unwrappedYaw=yaw;this.initialYaw=yaw;this.lastYaw=yaw;
   this.colliderDimensions={width,height:P.colliderH,length};
@@ -100,21 +139,57 @@ export class VehicleController{
   this.aggregate.body.setMotionType(BODY_MOTION.STATIC);
   this.aggregate.body.setLinearDamping(.018);this.aggregate.body.setAngularDamping(.42);
   this.bodyRoot=new TransformNode("drivella-countach-render-root",scene);this.bodyRoot.parent=this.chassis;this.bodyRoot.position.set(0,-P.cg-P.spawn,0);
-  this.buildMaterials();this.buildBody();this.buildWheels();
+  this.buildMaterials();this.buildBody();this.buildHeadlights();this.buildWheels();
   this.keydown=e=>{const k=String(e.key||"").toLowerCase();if(["w","a","s","d","arrowup","arrowdown","arrowleft","arrowright"," "].includes(k)){e.preventDefault();if(this.parked){this.aggregate.body.setMotionType(BODY_MOTION.DYNAMIC);this.aggregate.body.setLinearVelocity(Vector3.Zero());this.aggregate.body.setAngularVelocity(Vector3.Zero());this.parked=false;}this.keys.add(k);}};
   this.keyup=e=>this.keys.delete(String(e.key||"").toLowerCase());this.blur=()=>this.keys.clear();
   window.addEventListener("keydown",this.keydown,{passive:false});window.addEventListener("keyup",this.keyup);window.addEventListener("blur",this.blur);
   this.observer=scene.onBeforePhysicsObservable.add(()=>this.stepPhysics());this.syncVisuals();
  }
  buildMaterials(){
-  const p={bodyPaint:["#15529a","#b8d7ff",92],bodyPlastic:["#111a27","#536275",30],bodyBlack:["#05080f","#242d3c",18],
+  const p={bodyPaint:["#b80518","#b8d7ff",92],bodyPlastic:["#111a27","#536275",30],bodyBlack:["#05080f","#242d3c",18],
    bodyMetal:["#8798aa","#f0f5ff",120],bodyTail:["#6e0717","#ff687e",64],headlampR:["#c4d9ea","#ffffff",140,"#152538"],
-   headlampL:["#c4d9ea","#ffffff",140,"#152538"],sideMirror_bodyPlastic:["#101b2c","#8ba6c2",80],frontDetail_detailRed:["#15529a","#b8d7ff",92],
+   headlampL:["#c4d9ea","#ffffff",140,"#152538"],sideMirror_bodyPlastic:["#101b2c","#8ba6c2",80],frontDetail_detailRed:["#b80518","#b8d7ff",92],
    frontDetail_bodyPlastic:["#111a27","#536275",30],exhaustA_chrome:["#a9b5c3","#ffffff",150],exhaustB_chrome:["#a9b5c3","#ffffff",150],
    tyre:["#11151d","#394454",12],rims:["#a7b5c6","#ffffff",150],wheelExtra:["#62758c","#dceaff",95]};
-  for(const [n,v] of Object.entries(p))this.materials.set(n,material(this.scene,"countach-material-"+n,v[0],v[1],v[2],v[3]??null));
+  const toonParts=new Set(["bodyPaint","bodyPlastic","bodyBlack","sideMirror_bodyPlastic","frontDetail_detailRed","frontDetail_bodyPlastic"]);
+  for(const [n,v] of Object.entries(p)){
+   const mat=toonParts.has(n)
+    ?cellMaterial(this.scene,"countach-toon-material-"+n,v[0])
+    :material(this.scene,"countach-material-"+n,v[0],v[1],v[2],v[3]??null);
+   this.materials.set(n,mat);
+  }
+  this.materials.set("frontLowerPaint",cellMaterial(this.scene,"countach-toon-material-front-lower-paint","#b80518"));
+  this.headlampLensMaterials=[this.materials.get("headlampL"),this.materials.get("headlampR")];
  }
- buildBody(){for(const [n,pos] of this.model.parts)if(!WHEEL_PARTS.has(n))triangleMesh(this.scene,"countach-"+n,pos,this.bodyRoot,this.materials.get(n)??this.materials.get("bodyPlastic"));}
+ buildBody(){for(const [n,pos] of this.model.parts)if(!WHEEL_PARTS.has(n)&&!n.startsWith("movingLampCap"))triangleMesh(this.scene,"countach-"+n,pos,this.bodyRoot,this.materials.get(n)??this.materials.get("bodyPlastic"));}
+ buildHeadlights(){
+  const hinge=new Vector3(0,.76,2.30);
+  for(const side of [-1,1]){
+   const key=side<0?"L":"R",pivot=new TransformNode("countach-popup-headlight-pivot-"+key,this.scene);
+   pivot.parent=this.bodyRoot;pivot.position.copyFrom(hinge);pivot.rotation.x=calculatePopUpHeadlightAngle(0);
+   this.headlightPivots.set(side,pivot);
+   const source=this.model.parts.get("movingLampCap"+key);
+   if(!source)throw new Error("Countach moving pop-up hood cap is missing: "+key);
+   const local=new Float32Array(source.length);
+   for(let i=0;i<source.length;i+=3){local[i]=source[i]-hinge.x;local[i+1]=source[i+1]-hinge.y;local[i+2]=source[i+2]-hinge.z;}
+   const cap=triangleMesh(this.scene,"countach-popup-hood-cap-"+key,local,pivot,this.materials.get("bodyPaint"));
+   cap.metadata={...(cap.metadata??{}),headlightCap:true};
+   this.headlightCaps.set(side,cap);
+   const pod=MeshBuilder.CreateBox("countach-popup-lamp-pod-"+key,{width:.46,height:.105,depth:.17},this.scene);
+   pod.parent=pivot;pod.position.set(side*.67,-.078,.12);pod.material=this.materials.get("bodyBlack");pod.isPickable=false;
+   const centers=[side*.742,side*.598],lensMaterial=this.materials.get(side<0?"headlampL":"headlampR");
+   for(let index=0;index<centers.length;index++){
+    const ring=MeshBuilder.CreateCylinder("countach-popup-projector-ring-"+key+"-"+index,{diameter:.102,height:.026,tessellation:20},this.scene);
+    ring.parent=pivot;ring.rotation.x=Math.PI*.5;ring.position.set(centers[index],-.032,.205);ring.material=this.materials.get("bodyMetal");ring.isPickable=false;
+    const lens=MeshBuilder.CreateCylinder("countach-popup-projector-lens-"+key+"-"+index,{diameter:.067,height:.018,tessellation:20},this.scene);
+    lens.parent=pivot;lens.rotation.x=Math.PI*.5;lens.position.set(centers[index],-.032,.228);lens.material=lensMaterial;lens.isPickable=false;
+   }
+  }
+ }
+ setHeadlightsDeployed(enabled){
+  this.headlightDeployTarget=enabled?1:0;
+  return Boolean(this.headlightDeployTarget);
+ }
  buildWheels(){
   for(const w of WHEELS){const pivot=new TransformNode("countach-wheel-pivot-"+w.key,this.scene);this.wheelPivots.set(w.key,pivot);
    const c=this.metrics.wheelCenters[w.axle],signed=[w.side*c[0],c[1],c[2]],names=w.axle==="front"?["front_tyre","front_rims","front_extra_NoMaterial"]:["rear_tyre","rear_rims"];
@@ -211,6 +286,10 @@ export class VehicleController{
    if(c?.hit)centre=c.point.add(c.normal.scale(this.metrics.wheelRadius));else{const a=Vector3.TransformCoordinates(this.wheelMount(w),m);centre=a.subtract(new Vector3(0,P.rest,0));}
    pivot.position.copyFrom(centre);const steer=Quaternion.RotationYawPitchRoll(yaw+(c?.steerAngle??0),0,0),spin=Quaternion.RotationAxis(Vector3.Right(),this.wheelSpin.get(w.key)??0);pivot.rotationQuaternion=steer.multiply(spin);
   }
+  const frameDt=clamp((this.scene.getEngine()?.getDeltaTime?.()??16.667)/1000,0,.05);
+  this.headlightDeploy+=(this.headlightDeployTarget-this.headlightDeploy)*(1-Math.exp(-7*frameDt));
+  const headlightAngle=calculatePopUpHeadlightAngle(this.headlightDeploy);
+  for(const pivot of this.headlightPivots.values())pivot.rotation.x=headlightAngle;
  }
  getPosition(){return this.chassis.position.clone();}
  getCameraTarget(){return this.chassis.position.add(new Vector3(0,-.10,0));}

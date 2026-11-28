@@ -1,7 +1,7 @@
 import assert from "node:assert/strict";
 import { readFile } from "node:fs/promises";
 import { inflateSync } from "node:zlib";
-import { calculateAckermannAngles, calculateAntiRollForces, calculateLateralTireForce, calculateSpeedSteerLimit, calculateStaticSuspensionCompression, calculateVehicleMotionTelemetry, clampTireForce, measureCountachRigMetrics, wrapVehicleAngle } from "../engine-lab/src/VehicleController.mjs";
+import { calculatePopUpHeadlightAngle, calculateAckermannAngles, calculateAntiRollForces, calculateLateralTireForce, calculateSpeedSteerLimit, calculateStaticSuspensionCompression, calculateVehicleMotionTelemetry, clampTireForce, measureCountachRigMetrics, wrapVehicleAngle } from "../engine-lab/src/VehicleController.mjs";
 
 const assetDir = new URL("../engine-lab/assets/", import.meta.url);
 const names = [
@@ -96,3 +96,14 @@ console.log("COUNTACH SOURCE GEOMETRY PASS", JSON.stringify({
   measuredWheelRadius: rig.wheelRadius
 }));
 console.log("VEHICLE CONTROLLER UNIT PASS", JSON.stringify({ right, left, saturated, frontStaticCompression, rearStaticCompression,steerLow:calculateSpeedSteerLimit(0,rig.wheelbase,7,.49),steerMid:calculateSpeedSteerLimit(7.5,rig.wheelbase,7,.49),steerHigh:calculateSpeedSteerLimit(15,rig.wheelbase,7,.49),antiRollLeft,antiRollRight }));
+
+const closedHeadlightAngle = calculatePopUpHeadlightAngle(0);
+const openHeadlightAngle = calculatePopUpHeadlightAngle(1);
+const halfHeadlightAngle = calculatePopUpHeadlightAngle(0.5);
+assert.ok(Math.abs(closedHeadlightAngle - Math.PI / 4) < 1e-10,
+  "pop-up headlights must sit flush at the original 45-degree stowed angle");
+assert.ok(Math.abs(openHeadlightAngle) < 1e-10,
+  "pop-up headlights must rotate to the horizontal deployed position");
+assert.ok(Math.abs(halfHeadlightAngle - Math.PI / 8) < 1e-10,
+  "pop-up headlight interpolation must use a symmetric smoothstep midpoint");
+console.log("POP-UP HEADLIGHT HINGE PASS: 45° stowed, 0° deployed, smooth midpoint.");

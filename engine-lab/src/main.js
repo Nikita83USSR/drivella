@@ -28,6 +28,8 @@ import { buildHydrologyChunkGeometry, classifyRoadHydrologyCrossings, getHydrolo
 import { buildRoadChunkGeometry, buildRoadCurbChunkGeometry, buildRoadFurnitureChunkGeometry, generateMainRoadSamples, getRoadStats, getRoadFurnitureStats, nearestRoadSurfaceHeight, nearestRoadSurfaceInfo } from "./RoadNetwork.mjs";
 import { buildTunnelChunkGeometry, detectTunnelSegments, getTunnelStats, TUNNEL_CLEAR_HEIGHT } from "./TunnelNetwork.mjs";
 
+import { createRoadGridExclusionIndex } from "./RoadGridMask.mjs";
+
 const canvas = document.getElementById("renderCanvas");
 const statusText = document.getElementById("engineStatus");
 const statusDot = document.getElementById("statusDot");
@@ -237,7 +239,7 @@ function createTerrainGridMesh(scene, name, geometry, material, origin) {
   return mesh;
 }
 
-function createTerrainGridChunk(scene, chunkX, chunkY, chunkZ, chunkSize, minorMaterial, majorMaterial) {
+function createTerrainGridChunk(scene, chunkX, chunkY, chunkZ, chunkSize, minorMaterial, majorMaterial, roadGridMask = null) {
   const half = chunkSize * 0.5;
   const origin = new Vector3(chunkX * chunkSize, chunkY * chunkSize, chunkZ * chunkSize);
   const minX = chunkX * chunkSize - half;
@@ -257,6 +259,7 @@ function createTerrainGridChunk(scene, chunkX, chunkY, chunkZ, chunkSize, minorM
       const z1 = z0 + sampleStep;
       const y0 = terrainHeight(worldX, z0) + 0.17;
       const y1 = terrainHeight(worldX, z1) + 0.17;
+      if (roadGridMask && (roadGridMask.isNearRoad(worldX, z0) || roadGridMask.isNearRoad(worldX, (z0 + z1) * 0.5) || roadGridMask.isNearRoad(worldX, z1))) continue;
       pushGridQuad(target, origin,
         [worldX - halfWidth, y0, z0],
         [worldX + halfWidth, y0, z0],
@@ -273,6 +276,7 @@ function createTerrainGridChunk(scene, chunkX, chunkY, chunkZ, chunkSize, minorM
       const x1 = x0 + sampleStep;
       const y0 = terrainHeight(x0, worldZ) + 0.17;
       const y1 = terrainHeight(x1, worldZ) + 0.17;
+      if (roadGridMask && (roadGridMask.isNearRoad(x0, worldZ) || roadGridMask.isNearRoad((x0 + x1) * 0.5, worldZ) || roadGridMask.isNearRoad(x1, worldZ))) continue;
       pushGridQuad(target, origin,
         [x0, y0, worldZ - halfWidth],
         [x1, y1, worldZ - halfWidth],
@@ -590,6 +594,7 @@ function createEnvironment(scene) {
   terrainMaterial.useVertexColors = true;
 
   const roadSamples = generateMainRoadSamples();
+  const roadGridMask = createRoadGridExclusionIndex(roadSamples, { radius: 9.9, cellSize: 24 });
   const tunnels = detectTunnelSegments(roadSamples);
   const tunnelSpatialStats = registerTunnelCorridors(tunnels);
   const tunnelStats = getTunnelStats(tunnels);
@@ -684,7 +689,7 @@ function createEnvironment(scene) {
         const mesh = createTerrainChunk(scene, chunk.x, chunk.y, chunk.z, 128, terrainMaterial);
         payload.terrainMesh = mesh;
         terrainMeshes.set(chunk.key, mesh);
-        const terrainGrid = createTerrainGridChunk(scene, chunk.x, chunk.y, chunk.z, 128, terrainGridMinorMaterial, terrainGridMajorMaterial);
+        const terrainGrid = createTerrainGridChunk(scene, chunk.x, chunk.y, chunk.z, 128, terrainGridMinorMaterial, terrainGridMajorMaterial, roadGridMask);
         payload.terrainGrid = terrainGrid;
         terrainGridMeshes.set(chunk.key, terrainGrid);
         labState.terrainGridChunks = terrainGridMeshes.size;
@@ -1121,7 +1126,9 @@ async function tryInitializeHavok() {
 function wireVisualEffectsControls() {
   if (!visualEffects) return;
   const controls = fxPanel?.querySelectorAll("[data-effect]") ?? [];
+  const initialEffects = visualEffects.getStatus();
   for (const input of controls) {
+    if (Object.prototype.hasOwnProperty.call(initialEffects, input.dataset.effect)) input.checked = Boolean(initialEffects[input.dataset.effect]);
     input.addEventListener("change", () => visualEffects.setEnabled(input.dataset.effect, input.checked));
   }
   fxToggle?.addEventListener("click", () => {
@@ -1136,10 +1143,16 @@ function wireVisualEffectsControls() {
       const open = fxPanel?.classList.toggle("open") ?? false;
       fxPanel?.setAttribute("aria-hidden", open ? "false" : "true");
     }
-    if (event.key.toLowerCase() === "l" || event.key.toLowerCase() === "h") {
-      visualEffects.toggleHeadlights();
+    const key = event.key.toLowerCase();
+    if (key === "l") {
+      visualEffects.toggleHeadlightDeployment();
       const lamp = fxPanel?.querySelector('[data-effect="headlights"]');
-      if (lamp) lamp.checked = visualEffects.headlightsEnabled;
+      if (lamp) lamp.checked = visualEffects.headlightsDeployed;
+    }
+    if (key === "h") {
+      visualEffects.toggleHeadlights();
+      const beam = fxPanel?.querySelector('[data-effect="headlightLighting"]');
+      if (beam) beam.checked = visualEffects.headlightsEnabled;
     }
   });
 }
@@ -1314,7 +1327,7 @@ async function boot() {
         lastRoadProbePosition = { x: position.x, y: position.y, z: position.z };
         labState.roadProbeStableFrames = roadProbeStableFrames;
       }
-      if (frameCounter % 18 === 0) fpsMeta.textContent = "FPS: " + engine.getFps().toFixed(0);
+      
       if(frameCounter%6===0&&chunkManager&&camera){
         const player=vehicle?vehicle.getPosition():camera.target;
         if(!lastVehicleChunkPosition||Vector3.Distance(player,lastVehicleChunkPosition)>18){chunkManager.update(player);lastVehicleChunkPosition=player.clone();}
@@ -1352,7 +1365,47 @@ async function boot() {
       }
     });
 
-    engine.runRenderLoop(() => scene.render());
+    let fpsWindowStart = performance.now();
+    let lastFrameStart = null;
+    let fpsWindowFrames = 0;
+    let frameIntervals = [];
+    let renderCosts = [];
+    engine.runRenderLoop(() => {
+      const frameStart = performance.now();
+      if (lastFrameStart !== null) frameIntervals.push(frameStart - lastFrameStart);
+      lastFrameStart = frameStart;
+      fpsWindowFrames += 1;
+      const renderStart = performance.now();
+      scene.render();
+      renderCosts.push(performance.now() - renderStart);
+      const elapsed = frameStart - fpsWindowStart;
+      if (elapsed >= 1000) {
+        const sortedIntervals = frameIntervals.slice().sort((a, b) => a - b);
+        const averageFrameMs = frameIntervals.length
+          ? frameIntervals.reduce((sum, value) => sum + value, 0) / frameIntervals.length
+          : elapsed / Math.max(1, fpsWindowFrames);
+        const p95FrameMs = sortedIntervals.length
+          ? sortedIntervals[Math.min(sortedIntervals.length - 1, Math.ceil(sortedIntervals.length * 0.95) - 1)]
+          : averageFrameMs;
+        const averageRenderMs = renderCosts.length
+          ? renderCosts.reduce((sum, value) => sum + value, 0) / renderCosts.length
+          : 0;
+        const measuredFps = fpsWindowFrames * 1000 / elapsed;
+        const babylonFps = engine.getFps();
+        fpsMeta.textContent = `FPS ${measuredFps.toFixed(0)} (Babylon ${babylonFps.toFixed(0)}) · ${averageFrameMs.toFixed(1)} ms avg / ${p95FrameMs.toFixed(1)} p95 · CPU ${averageRenderMs.toFixed(1)} ms`;
+        labState.frameMetrics = {
+          measuredFps: Number(measuredFps.toFixed(1)),
+          babylonFps: Number(babylonFps.toFixed(1)),
+          averageFrameMs: Number(averageFrameMs.toFixed(2)),
+          p95FrameMs: Number(p95FrameMs.toFixed(2)),
+          averageRenderCpuMs: Number(averageRenderMs.toFixed(2))
+        };
+        fpsWindowStart = frameStart;
+        fpsWindowFrames = 0;
+        frameIntervals = [];
+        renderCosts = [];
+      }
+    });
     window.addEventListener("resize", () => engine.resize());
 
     resetButton.addEventListener("click", () => {

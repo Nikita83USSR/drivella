@@ -102,6 +102,7 @@ export class LegacyVisualEffects {
     this.errors = [];
     this.shadowReceivers = new Set();
     this.headlightsEnabled = false;
+    this.headlightsDeployed = false;
     this.underglowEnabled = true;
     this.lensFlaresEnabled = true;
     this.outlinesEnabled = true;
@@ -391,7 +392,8 @@ export class LegacyVisualEffects {
           2.2,
           this.scene
         );
-        spot.parent = vehicle.chassis;
+        spot.parent = vehicle.headlightPivots?.get?.(side) ?? vehicle.chassis;
+        spot.position.set(side * 0.67, -0.032, 0.255);
         spot.diffuse = new Color3(0.72, 0.86, 1);
         spot.specular = new Color3(0.72, 0.86, 1);
         spot.range = 86;
@@ -440,6 +442,7 @@ export class LegacyVisualEffects {
       }
 
       this.tailMaterial = vehicle.materials?.get?.("bodyTail") ?? null;
+      vehicle.setHeadlightsDeployed?.(this.headlightsDeployed);
       this.setHeadlights(this.headlightsEnabled);
     } catch (error) {
       this.recordError("vehicle lighting", error);
@@ -450,24 +453,39 @@ export class LegacyVisualEffects {
     if (!mesh || mesh.isDisposed?.()) return;
     mesh.renderOutline = this.outlinesEnabled;
     mesh.outlineColor = new Color3(0.008, 0.014, 0.03);
-    mesh.outlineWidth = 0.014;
+    mesh.outlineWidth = 0.020;
     this.outlineMeshes.add(mesh);
+  }
+
+  syncHeadlightOutput() {
+    const deploy = this.vehicle?.headlightDeploy ?? 0;
+    const deployPower = clamp((deploy - 0.12) / 0.88, 0, 1);
+    const beamPower = this.headlightsEnabled ? deployPower : 0;
+    for (const light of this.headlampSpots) light.intensity = 8.5 * beamPower;
+    const emissive = new Color3(0.01 + beamPower * 0.78, 0.025 + beamPower * 0.82, 0.05 + beamPower * 0.92);
+    for (const material of this.vehicle?.headlampLensMaterials ?? []) material.emissiveColor.copyFrom(emissive);
+    return beamPower > 0.01;
   }
 
   setHeadlights(enabled) {
     this.headlightsEnabled = Boolean(enabled);
-    for (const light of this.headlampSpots) light.intensity = this.headlightsEnabled ? 8.5 : 0;
-    for (const key of ["headlampL", "headlampR"]) {
-      const material = this.vehicle?.materials?.get?.(key);
-      if (material) material.emissiveColor = this.headlightsEnabled
-        ? new Color3(0.52, 0.68, 0.9)
-        : new Color3(0.01, 0.025, 0.05);
-    }
+    this.syncHeadlightOutput();
     return this.headlightsEnabled;
   }
 
   toggleHeadlights() {
     return this.setHeadlights(!this.headlightsEnabled);
+  }
+
+  setHeadlightsDeployed(enabled) {
+    this.headlightsDeployed = Boolean(enabled);
+    this.vehicle?.setHeadlightsDeployed?.(this.headlightsDeployed);
+    this.syncHeadlightOutput();
+    return this.headlightsDeployed;
+  }
+
+  toggleHeadlightDeployment() {
+    return this.setHeadlightsDeployed(!this.headlightsDeployed);
   }
 
   setEnabled(name, enabled) {
@@ -530,6 +548,9 @@ export class LegacyVisualEffects {
         }
         break;
       case "headlights":
+        this.setHeadlightsDeployed(value);
+        break;
+      case "headlightLighting":
         this.setHeadlights(value);
         break;
       default:
@@ -550,6 +571,7 @@ export class LegacyVisualEffects {
     }
 
     if (!vehicle) return;
+    this.syncHeadlightOutput();
     if (this.tailMaterial) {
       this.tailMaterial.emissiveColor = vehicle.brake
         ? new Color3(0.92, 0.018, 0.045)
@@ -592,7 +614,9 @@ export class LegacyVisualEffects {
       lensFlares: Boolean(this.lensFlareSystems.some((system) => system.isEnabled)),
       underglow: Boolean(this.underglowEnabled),
       outlines: Boolean(this.outlinesEnabled),
-      headlights: Boolean(this.headlightsEnabled),
+      headlights: Boolean(this.headlightsDeployed),
+      headlightLighting: Boolean(this.headlightsEnabled),
+      headlightDeploy: Number(this.vehicle?.headlightDeploy ?? 0),
       errors: this.errors.slice()
     };
   }
