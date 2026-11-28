@@ -1172,11 +1172,16 @@ function wireVisualEffectsControls() {
     }
     const key = event.key.toLowerCase();
     if (key === "l") {
+      // One key controls the whole pop-up headlamp action: deploy/retract and
+      // automatically fade the two road projectors with the moving modules.
       visualEffects.toggleHeadlightDeployment();
       const lamp = fxPanel?.querySelector('[data-effect="headlights"]');
+      const beam = fxPanel?.querySelector('[data-effect="headlightLighting"]');
       if (lamp) lamp.checked = visualEffects.headlightsDeployed;
+      if (beam) beam.checked = visualEffects.headlightsEnabled;
     }
     if (key === "h") {
+      // Optional manual beam override while the pop-up modules are deployed.
       visualEffects.toggleHeadlights();
       const beam = fxPanel?.querySelector('[data-effect="headlightLighting"]');
       if (beam) beam.checked = visualEffects.headlightsEnabled;
