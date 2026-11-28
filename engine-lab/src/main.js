@@ -1238,6 +1238,9 @@ async function boot() {
       roadSamples,
       roadMaterial: environment.roadMaterial
     });
+    // Update every lamp billboard from its source mesh immediately before
+    // drawing the frame, never from a delayed screen-space post-process.
+    scene.onBeforeRenderObservable.add(() => visualEffects?.updateLampFlares(vehicle));
     labState.legacyEffectsReady = visualEffects.ready;
     labState.legacyEffects = visualEffects.getStatus();
     wireVisualEffectsControls();
