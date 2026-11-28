@@ -2,7 +2,7 @@ name: DRIVELLA Babylon + Havok foundation
 
 on:
   push:
-    branches: [engine-migration-foundation]
+    branches: [main, engine-migration-foundation]
     paths:
       - 'package.json'
       - 'engine-lab/index.html'
