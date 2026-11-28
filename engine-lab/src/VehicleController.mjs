@@ -107,12 +107,11 @@ export class VehicleController{
   this.observer=scene.onBeforePhysicsObservable.add(()=>this.stepPhysics());this.syncVisuals();
  }
  buildMaterials(){
-  // Electric blue bodywork, violet shadow surfaces and cyan/magenta emissive accents.
-  const p={bodyPaint:["#0b347f","#8ceeff",108,"#06276f"],bodyPlastic:["#100a2e","#b56dff",62,"#17032f"],bodyBlack:["#040715","#51458d",26,"#07051d"],
-   bodyMetal:["#22cfff","#e8fbff",148,"#0874a8"],bodyTail:["#8b0b4a","#ff83c2",86,"#76053c"],headlampR:["#c4eaff","#ffffff",150,"#3d9fff"],
-   headlampL:["#c4eaff","#ffffff",150,"#3d9fff"],sideMirror_bodyPlastic:["#0b1638","#67dfff",94,"#082b69"],frontDetail_detailRed:["#0b347f","#8ceeff",108,"#06276f"],
-   frontDetail_bodyPlastic:["#100a2e","#b56dff",62,"#17032f"],exhaustA_chrome:["#28dfff","#ffffff",160,"#0877b8"],exhaustB_chrome:["#28dfff","#ffffff",160,"#0877b8"],
-   tyre:["#090d20","#54428d",18,"#08051b"],rims:["#12dfff","#ffffff",160,"#073e9c"],wheelExtra:["#963cff","#eedcff",112,"#390b78"]};
+  const p={bodyPaint:["#15529a","#b8d7ff",92],bodyPlastic:["#111a27","#536275",30],bodyBlack:["#05080f","#242d3c",18],
+   bodyMetal:["#8798aa","#f0f5ff",120],bodyTail:["#6e0717","#ff687e",64],headlampR:["#c4d9ea","#ffffff",140,"#152538"],
+   headlampL:["#c4d9ea","#ffffff",140,"#152538"],sideMirror_bodyPlastic:["#101b2c","#8ba6c2",80],frontDetail_detailRed:["#15529a","#b8d7ff",92],
+   frontDetail_bodyPlastic:["#111a27","#536275",30],exhaustA_chrome:["#a9b5c3","#ffffff",150],exhaustB_chrome:["#a9b5c3","#ffffff",150],
+   tyre:["#11151d","#394454",12],rims:["#a7b5c6","#ffffff",150],wheelExtra:["#62758c","#dceaff",95]};
   for(const [n,v] of Object.entries(p))this.materials.set(n,material(this.scene,"countach-material-"+n,v[0],v[1],v[2],v[3]??null));
  }
  buildBody(){for(const [n,pos] of this.model.parts)if(!WHEEL_PARTS.has(n))triangleMesh(this.scene,"countach-"+n,pos,this.bodyRoot,this.materials.get(n)??this.materials.get("bodyPlastic"));}

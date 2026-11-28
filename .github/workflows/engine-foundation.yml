@@ -13,6 +13,7 @@ on:
       - 'tools/run-engine-lab-smoke.mjs'
       - 'tools/test-spatial-chunks.mjs'
       - 'tools/test-vehicle-controller.mjs'
+      - 'tools/test-neon-palette.mjs'
       - '.github/workflows/engine-foundation.yml'
   pull_request:
     branches: [main]
@@ -44,6 +45,8 @@ jobs:
           node-version: 22
       - name: Verify symmetric XYZ chunk coverage
         run: node tools/test-spatial-chunks.mjs
+      - name: Verify hue-preserving neon object palette
+        run: node tools/test-neon-palette.mjs
       - name: Install pinned engine and build dependencies
         run: npm install --no-audit --no-fund
       - name: Verify Countach geometry, Ackermann steering and tire friction

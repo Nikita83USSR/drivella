@@ -8,8 +8,9 @@ Published preview: [DRIVELLA 3D Engine Lab](https://nikita83ussr.github.io/drive
 
 - Drive with **W/A/S/D** or the arrow keys; Space is the handbrake.
 - Orbit the camera with the mouse only; the mouse wheel controls zoom.
-- Terrain uses the same 10 m minor / 50 m major neon-grid rhythm as the stable DRIVELLA renderer.
-- Roads, bridges, tunnels, water, vegetation, rocks and the Countach use a synthwave emissive palette with a glow pass.
+- Terrain keeps the 10 m minor / 50 m major neon grid.
+- World objects retain their own source hues and material identity: green foliage, brown wood and shores, blue-gray stone, water, road markings and amber tunnel warnings.
+- Object colors receive a hue-preserving brightness/saturation lift; each streamed mesh emits a matching glow tint. The Countach keeps its original material palette.
 
 ## Local build
 

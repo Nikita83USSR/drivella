@@ -18,6 +18,7 @@ import {
   WebGPUEngine
 } from "@babylonjs/core";
 import HavokPhysics from "@babylonjs/havok";
+import { neonizeGeometryColors } from "./NeonPalette.mjs";
 import { VehicleController } from "./VehicleController.mjs";
 import { SpatialChunkManager } from "./SpatialChunkManager.mjs";
 import { registerTunnelCorridors, terrainChunkLayer, terrainHeight, terrainMoisture } from "./TerrainField.mjs";
@@ -292,63 +293,6 @@ function createTerrainGridChunk(scene, chunkX, chunkY, chunkZ, chunkSize, minorM
   };
 }
 
-function mixNeonColor(a, b, amount) {
-  return [
-    a[0] + (b[0] - a[0]) * amount,
-    a[1] + (b[1] - a[1]) * amount,
-    a[2] + (b[2] - a[2]) * amount
-  ];
-}
-
-function neonVertexColor(name, r, g, b) {
-  const luminance = r * 0.2126 + g * 0.7152 + b * 0.0722;
-  const t = Math.max(0, Math.min(1, (luminance - 0.08) / 0.62));
-
-  if (name.startsWith("road-furniture-")) {
-    const base = mixNeonColor([0.025, 0.018, 0.12], [0.035, 0.38, 0.78], t);
-    return r > g * 1.18 ? mixNeonColor(base, [1.0, 0.055, 0.42], 0.58) : base;
-  }
-  if (name.startsWith("road-")) {
-    if (r > 0.58 && g > 0.62 && b > 0.62) return [0.95, 0.055, 0.48];
-    if (g > r * 2.4 && b > r * 2.3) return [0.025, 0.76, 1.0];
-    if (r > 0.18 && g > 0.18) return [0.12, 0.035, 0.32];
-    return [0.018, 0.014, 0.075];
-  }
-  if (name.startsWith("tunnel-")) {
-    if (r > g * 1.18 && g > b * 1.65) return [1.0, 0.045, 0.34];
-    if (g > 0.68 && b > 0.78) return [0.025, 0.86, 1.0];
-    return mixNeonColor([0.075, 0.018, 0.24], [0.58, 0.055, 0.82], t);
-  }
-  if (name.startsWith("water-")) {
-    return mixNeonColor([0.012, 0.31, 0.62], [0.025, 0.84, 1.0], t);
-  }
-  if (name.startsWith("shore-")) {
-    return mixNeonColor([0.16, 0.018, 0.28], [0.95, 0.045, 0.42], t);
-  }
-  if (name.startsWith("vegetation-")) {
-    if (g > r * 1.12 && g > b * 1.08) {
-      return mixNeonColor([0.025, 0.22, 0.48], [0.02, 0.88, 0.96], t);
-    }
-    return mixNeonColor([0.16, 0.018, 0.25], [0.86, 0.035, 0.48], t);
-  }
-  if (name.startsWith("rocks-")) {
-    const violet = mixNeonColor([0.10, 0.018, 0.34], [0.55, 0.045, 0.86], t);
-    return b > r * 1.12 ? mixNeonColor(violet, [0.025, 0.58, 0.96], 0.46) : violet;
-  }
-  return mixNeonColor([0.06, 0.02, 0.24], [0.08, 0.68, 0.96], t);
-}
-
-function applyNeonPalette(geometry, name) {
-  if (!Array.isArray(geometry.colors)) return;
-  for (let index = 0; index < geometry.colors.length; index += 4) {
-    const color = neonVertexColor(name, geometry.colors[index], geometry.colors[index + 1], geometry.colors[index + 2]);
-    geometry.colors[index] = color[0];
-    geometry.colors[index + 1] = color[1];
-    geometry.colors[index + 2] = color[2];
-    geometry.colors[index + 3] = 1;
-  }
-}
-
 function pushFlatTriangle(positions, colors, indices, a, b, c, color) {
   const base = positions.length / 3;
   positions.push(...a, ...b, ...c);
@@ -427,8 +371,9 @@ function appendRock(geometry, x, y, z, size, seed) {
 
 function createCombinedPropMesh(scene, name, geometry, material, position) {
   if (!geometry.indices.length) return null;
-  applyNeonPalette(geometry, name);
+  const neonGlowColor = neonizeGeometryColors(geometry.colors);
   const mesh = new Mesh(name, scene);
+  mesh.metadata = { ...(mesh.metadata ?? {}), neonGlowColor };
   const normals = [];
   VertexData.ComputeNormals(geometry.positions, geometry.indices, normals);
   const data = new VertexData();
@@ -604,6 +549,16 @@ function createEnvironment(scene) {
 
   const neonGlow = new GlowLayer("drivella-neon-glow", scene, { blurKernelSize: 28 });
   neonGlow.intensity = 0.72;
+  neonGlow.customEmissiveColorSelector = (mesh, _subMesh, material, result) => {
+    const glow = mesh.metadata?.neonGlowColor;
+    if (glow) {
+      result.set(glow[0], glow[1], glow[2], 1);
+    } else if (material?.emissiveColor) {
+      result.set(material.emissiveColor.r, material.emissiveColor.g, material.emissiveColor.b, 1);
+    } else {
+      result.set(0, 0, 0, 0);
+    }
+  };
   labState.neonGlowReady = true;
 
   const terrainGridMinorMaterial = new StandardMaterial("terrain-grid-minor-material", scene);
@@ -645,28 +600,28 @@ function createEnvironment(scene) {
   roadMaterial.diffuseColor = Color3.White();
   roadMaterial.specularColor = new Color3(0.26, 0.3, 0.34);
   roadMaterial.specularPower = 24;
-  roadMaterial.emissiveColor = new Color3(0.018, 0.014, 0.075);
+  roadMaterial.emissiveColor = new Color3(0.045, 0.045, 0.045);
   roadMaterial.useVertexColors = true;
   roadMaterial.backFaceCulling = false;
   const roadFurnitureMaterial = new StandardMaterial("drivella-road-furniture-material", scene);
   roadFurnitureMaterial.diffuseColor = Color3.White();
   roadFurnitureMaterial.specularColor = new Color3(0.18, 0.21, 0.22);
   roadFurnitureMaterial.specularPower = 14;
-  roadFurnitureMaterial.emissiveColor = new Color3(0.075, 0.012, 0.16);
+  roadFurnitureMaterial.emissiveColor = new Color3(0.055, 0.055, 0.055);
   roadFurnitureMaterial.useVertexColors = true;
   roadFurnitureMaterial.backFaceCulling = false;
 
   const tunnelMaterial = new StandardMaterial("drivella-tunnel-material", scene);
   tunnelMaterial.diffuseColor = Color3.White();
-  tunnelMaterial.emissiveColor = new Color3(0.11, 0.018, 0.22);
+  tunnelMaterial.emissiveColor = new Color3(0.055, 0.055, 0.055);
   tunnelMaterial.specularColor = new Color3(0.28, 0.34, 0.39);
   tunnelMaterial.specularPower = 28;
   tunnelMaterial.useVertexColors = true;
   tunnelMaterial.backFaceCulling = false;
 
   const waterMaterial = new StandardMaterial("drivella-water-material", scene);
-  waterMaterial.diffuseColor = new Color3(0.42, 0.76, 0.84);
-  waterMaterial.emissiveColor = new Color3(0.018, 0.22, 0.42);
+  waterMaterial.diffuseColor = Color3.White();
+  waterMaterial.emissiveColor = new Color3(0.06, 0.06, 0.06);
   waterMaterial.specularColor = new Color3(0.68, 0.84, 0.9);
   waterMaterial.specularPower = 96;
   waterMaterial.useVertexColors = true;
@@ -677,7 +632,7 @@ function createEnvironment(scene) {
 
   const shoreMaterial = new StandardMaterial("drivella-shore-material", scene);
   shoreMaterial.diffuseColor = Color3.White();
-  shoreMaterial.emissiveColor = new Color3(0.16, 0.012, 0.12);
+  shoreMaterial.emissiveColor = new Color3(0.045, 0.045, 0.045);
   shoreMaterial.specularColor = new Color3(0.1, 0.12, 0.1);
   shoreMaterial.specularPower = 10;
   shoreMaterial.useVertexColors = true;
@@ -692,14 +647,14 @@ function createEnvironment(scene) {
   biomeMaterial.diffuseColor = Color3.White();
   biomeMaterial.specularColor = new Color3(0.06, 0.08, 0.07);
   biomeMaterial.specularPower = 8;
-  biomeMaterial.emissiveColor = new Color3(0.025, 0.095, 0.20);
+  biomeMaterial.emissiveColor = new Color3(0.045, 0.045, 0.045);
   biomeMaterial.useVertexColors = true;
   biomeMaterial.backFaceCulling = false;
   const rockMaterial = new StandardMaterial("biome-rock-material", scene);
   rockMaterial.diffuseColor = Color3.White();
   rockMaterial.specularColor = new Color3(0.14, 0.17, 0.2);
   rockMaterial.specularPower = 18;
-  rockMaterial.emissiveColor = new Color3(0.075, 0.018, 0.22);
+  rockMaterial.emissiveColor = new Color3(0.055, 0.055, 0.055);
   rockMaterial.useVertexColors = true;
   rockMaterial.backFaceCulling = false;
   const chunkManager = new SpatialChunkManager({
