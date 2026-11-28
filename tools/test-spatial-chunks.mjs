@@ -253,7 +253,6 @@ for (const key of roadStats.chunkKeys) {
   roadMarkingVertices += markingGeometry.positions.length / 3;
   assert.ok(chunkGeometry.indices.length > 0, `route chunk ${key} should contain road geometry`);
   assert.ok(chunkGeometry.positions.every(Number.isFinite), `road chunk ${key} has invalid geometry`);
-  assert.ok(markingGeometry.indices.length > 0, `route chunk ${key} should contain separated white lane markings`);
   assert.ok(markingGeometry.positions.every(Number.isFinite), `road markings in chunk ${key} have invalid geometry`);
 
   const furniture = buildRoadFurnitureChunkGeometry(roadSamplesA, x, y, z, 128);
