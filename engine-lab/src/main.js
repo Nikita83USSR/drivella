@@ -1259,7 +1259,7 @@ async function boot() {
     labState.tunnelMinCover = environment.tunnelStats.minCover === null
       ? null
       : Number(environment.tunnelStats.minCover.toFixed(2));
-    labState.roadGuardrailSegments = environment.roadFurnitureStats.guardrailSegments;
+    labState.roadGuardrailSegments = environment.roadFurnitureStats.fencedDropSegments;
     labState.roadDrainageSegments = environment.roadFurnitureStats.drainageSegments;
     labState.roadTransitionSegments = environment.roadFurnitureStats.transitionSegments;
     labState.roadLength = Number(roadStats.length.toFixed(1));
