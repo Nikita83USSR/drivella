@@ -735,7 +735,7 @@ export class LegacyVisualEffects {
         "fog-" + (index === 0 ? "left" : "right"),
         mesh,
         localCenter(mesh),
-        new Vector3(0, 0, 1),
+        new Vector3(0, 0.925, 0.38),
         "white",
         20
       );
@@ -745,7 +745,7 @@ export class LegacyVisualEffects {
         "front-signal-" + (side < 0 ? "left" : "right"),
         mesh,
         localCenter(mesh),
-        new Vector3(0, 0, 1),
+        new Vector3(0, 0.925, 0.38),
         "amber",
         18
       );
@@ -784,6 +784,10 @@ export class LegacyVisualEffects {
     const bodyForward = vehicle.bodyRoot?.getDirection?.(Vector3.Forward())?.normalize?.()
       ?? new Vector3(0, 0, 1);
     const bodyBackward = bodyForward.scale(-1);
+    // The front bumper lamps sit on a sloped fascia, not on the body-forward plane.
+    const frontLampNormal = Vector3.TransformNormal(
+      new Vector3(0, 0.925, 0.38), vehicle.bodyRoot.getWorldMatrix()
+    ).normalize();
     const width = Math.max(1, this.engine.getRenderWidth(true));
     const height = Math.max(1, this.engine.getRenderHeight(true));
     const fov = Math.max(0.01, Number(this.camera.fov ?? 0.8));
@@ -816,11 +820,11 @@ export class LegacyVisualEffects {
         facingDirection = this.headlampSpotBySide.get(side)?.direction ?? bodyForward;
       } else if (itemName.startsWith("fog-")) {
         power = fogPower;
-        facingDirection = bodyForward;
+        facingDirection = frontLampNormal;
       } else if (itemName.startsWith("front-signal-")) {
         const side = itemName.endsWith("left") ? -1 : 1;
         power = signalPower(side);
-        facingDirection = bodyForward;
+        facingDirection = frontLampNormal;
       } else if (itemName.startsWith("rear-signal-")) {
         const side = itemName.endsWith("left") ? -1 : 1;
         power = signalPower(side);
