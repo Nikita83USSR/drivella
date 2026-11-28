@@ -2,12 +2,13 @@
 
 A browser-based synthwave drift-racing prototype with a custom low-poly 3D car, a procedural neon environment, and a hand-built WebGL renderer.
 
-> **Status:** Playable prototype under active development. Current renderer reference: **v0.19.52 / BUILD 218**.
+> **Status:** Playable prototype under active development. Current renderer reference: **v0.19.53 / BUILD 219**.
 > **Release identification:** every published game change increments the visible BUILD number in the HUD and startup screen; README and rendering architecture are updated in the same release.
 
 - **BUILD 212:** add a clickable F3 diagnostics copy button. It copies the full diagnostic text, including the current CPU/GPU pass timings, and falls back to the legacy selection-based clipboard path when needed.
 
 - **BUILD 218 / v0.19.52:** reduce the road-car reflection blend to 0.225 and add a subtle vertical fade so the reflected vehicle image diminishes farther up the screen. Production shader and pixel regressions cover the intensity reduction and height fade.
+- **BUILD 219 / v0.19.53:** replace target-yaw arcade steering with a two-axle tyre-force model. Front and rear slip angles generate lateral force; each axle shares its friction budget between cornering and longitudinal drive/braking, with front/rear load transfer under acceleration and braking. Rear-wheel-drive torque and a brief handbrake lock can initiate a slide without injecting a scripted yaw impulse. Separate chassis roll/pitch from wheel transforms so the body moves slightly around its centre of gravity while the four Countach wheel assemblies remain level. F3 reports front/rear tyre slip, lateral force and rear-grip factor. Static source checks are not a substitute for in-game handling and target-GPU validation.
 
 - **BUILD 211:** preserve the original asphalt-reflection kernel and spatial resolution while skipping road-environment and vehicle-mirror shader work when their effects are disabled or the projected mirror is invalid. In races only, mirror capture refreshes every second frame below 62 FPS and returns to full rate above 70 FPS; the garage remains full-rate. F3 separates mirror capture CPU/GPU timing from the rest of the world pass.
 
@@ -185,7 +186,7 @@ Core implementation completed: adaptive directional shadows, PCSS-style filterin
 
 ### Track environment development — Stage 2: wheels, suspension and road contact
 
-**Status: planned; complete this stage before implementing large hills or ramp jumps.**
+**Status: in progress — BUILD 219 establishes the tyre-force, friction-circle and chassis/wheel separation foundation; suspension travel and final ground-contact validation remain. Complete this stage before implementing large hills or ramp jumps.**
 
 - Repair and refine the wheel system so all four wheels stay correctly seated in their arches and maintain coherent rotation, steering, suspension travel and contact with the road.
 - Establish one reliable vehicle ground/contact reference that can later follow both horizontal road curvature and vertical road profile.
