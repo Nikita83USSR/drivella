@@ -392,7 +392,7 @@ export class LegacyVisualEffects {
         const spot = new SpotLight(
           "drivella-countach-headlamp-" + side,
           Vector3.Zero(),
-          new Vector3(0, -Math.SQRT1_2, Math.SQRT1_2),
+          new Vector3(0, -0.75, 0.66),
           Math.PI / 3.2,
           2.2,
           this.scene
@@ -401,7 +401,7 @@ export class LegacyVisualEffects {
         // optics root. Keep the light unparented and update its world pose from that root;
         // parenting a body-space projector point to the root double-transforms its offset.
         spot.position.set(0, 0, 0);
-        spot.direction.set(0, -Math.SQRT1_2, Math.SQRT1_2);
+        spot.direction.set(0, -0.75, 0.66);
         spot.diffuse = new Color3(0.72, 0.86, 1);
         spot.specular = new Color3(0.72, 0.86, 1);
         spot.range = 86;
@@ -476,7 +476,7 @@ export class LegacyVisualEffects {
     if (!vehicle) return;
     // The local axis follows the slanted projector face. After the -45° optic
     // counter-rotation it points down the road instead of into the sky.
-    const localBeamAxis = new Vector3(0, -Math.SQRT1_2, Math.SQRT1_2);
+    const localBeamAxis = new Vector3(0, -0.75, 0.66);
     for (const side of [-1, 1]) {
       const root = vehicle.headlightOpticRoots?.get?.(side);
       const aim = vehicle.headlightProjectorAims?.get?.(side);
@@ -497,7 +497,7 @@ export class LegacyVisualEffects {
     const deploy = this.vehicle?.headlightDeploy ?? 0;
     const deployPower = clamp((deploy - 0.12) / 0.88, 0, 1);
     const beamPower = this.headlightsEnabled ? deployPower : 0;
-    for (const light of this.headlampSpots) light.intensity = 8.5 * beamPower;
+    for (const light of this.headlampSpots) light.intensity = 14 * beamPower;
     const emissive = new Color3(0.01 + beamPower * 0.78, 0.025 + beamPower * 0.82, 0.05 + beamPower * 0.92);
     for (const material of this.vehicle?.headlampLensMaterials ?? []) material.emissiveColor.copyFrom(emissive);
     return beamPower > 0.01;
