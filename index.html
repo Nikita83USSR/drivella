@@ -122,9 +122,9 @@
 <body>
 <canvas id="scene"></canvas><canvas id="sun"></canvas>
 <div id="hud">
- <div class="top"><div class="logo">DRIVELLA<small>3D SYNTHWAVE DRIFT RACING</small></div><div class="version-label" id="version-label">v0.19.55 · BUILD 221</div><div class="stat">DISTANCE<b id="distance">000.0 KM</b></div><div class="stat">LOCATION<b>VIOLET COAST</b></div></div>
+ <div class="top"><div class="logo">DRIVELLA<small>3D SYNTHWAVE DRIFT RACING</small></div><div class="version-label" id="version-label">v0.19.56 · BUILD 222</div><div class="stat">DISTANCE<b id="distance">000.0 KM</b></div><div class="stat">LOCATION<b>VIOLET COAST</b></div></div>
  <div class="right"><div id="speed">000 <span>KM/H</span></div><div id="direction">▶ FORWARD</div><div id="music">♫ MUSIC SCANNING…</div></div>
- <div class="bottom"><div class="hint"><strong>W / ↑</strong> ACCELERATE　<strong>S / ↓</strong> BRAKE / REVERSE<br><strong>A / ←　D / →</strong> STEER　<strong>SPACE</strong> HANDBRAKE　<strong>C</strong> CAMERA　<strong>HOLD + DRAG LMB</strong> LOOK　<strong>L</strong> LIGHTS　<strong>K</strong> WIREFRAME</div><div class="build-credit"><span>3D NEON HIGHWAY // BUILD 221</span><a class="asset-credit" href="https://sketchfab.com/3d-models/low-poly-lamborghini-countach-c9b28a4ad5c74649a09afa613dd3fae1" target="_blank" rel="noopener noreferrer">Original model: 3DShinobi · Sketchfab · CC BY · modified for DRIVELLA</a></div></div>
+ <div class="bottom"><div class="hint"><strong>W / ↑</strong> ACCELERATE　<strong>S / ↓</strong> BRAKE / REVERSE<br><strong>A / ←　D / →</strong> STEER　<strong>SPACE</strong> HANDBRAKE　<strong>C</strong> CAMERA　<strong>HOLD + DRAG LMB</strong> LOOK　<strong>L</strong> LIGHTS　<strong>K</strong> WIREFRAME</div><div class="build-credit"><span>3D NEON HIGHWAY // BUILD 222</span><a class="asset-credit" href="https://sketchfab.com/3d-models/low-poly-lamborghini-countach-c9b28a4ad5c74649a09afa613dd3fae1" target="_blank" rel="noopener noreferrer">Original model: 3DShinobi · Sketchfab · CC BY · modified for DRIVELLA</a></div></div>
 </div>
 <div id="fps-counter" aria-live="off">FPS --</div>
 <div id="effects-menu" aria-hidden="true">
@@ -170,7 +170,7 @@
 </div>
 <div id="tools-ui"><button id="cam-prev" aria-label="Previous camera">◀</button><span id="cam-label">CAM 2 · CLOSE</span><button id="cam-next" aria-label="Next camera">▶</button><button id="debug-toggle">DEBUG</button></div>
 <div id="debug-panel"><div class="debug-head"><div class="debug-title">DRIVELLA DIAGNOSTICS</div><button id="debug-copy" type="button" aria-label="Скопировать всю диагностику">КОПИРОВАТЬ</button></div><div id="debug-data">Initializing…</div></div>
-<div id="boot-screen"><div class="boot-content"><div class="boot-kicker">NIGHT DRIVE SYSTEMS // INITIALIZING</div><div class="boot-logo">DRIVELLA</div><div class="boot-subtitle">3D SYNTHWAVE DRIFT RACING</div><div class="boot-mark"></div><div class="boot-status" id="boot-status">BUILDING THE 3D WORLD</div><div class="boot-track"><div class="boot-progress" id="boot-progress"></div></div><div class="boot-meta"><span>3D ENGINE ONLINE</span><span id="boot-percent">00%</span></div><div class="boot-footer">ENGINE STARTUP // v0.19.55 · BUILD 221</div></div></div>
+<div id="boot-screen"><div class="boot-content"><div class="boot-kicker">NIGHT DRIVE SYSTEMS // INITIALIZING</div><div class="boot-logo">DRIVELLA</div><div class="boot-subtitle">3D SYNTHWAVE DRIFT RACING</div><div class="boot-mark"></div><div class="boot-status" id="boot-status">BUILDING THE 3D WORLD</div><div class="boot-track"><div class="boot-progress" id="boot-progress"></div></div><div class="boot-meta"><span>3D ENGINE ONLINE</span><span id="boot-percent">00%</span></div><div class="boot-footer">ENGINE STARTUP // v0.19.56 · BUILD 222</div></div></div>
 <div id="main-menu"><div class="menu-content"><div class="menu-brand">DRIVELLA GTS</div><div class="menu-sub">RIDE THE RETRO FUTURE</div><div class="menu-actions"><button class="menu-btn" id="menu-start">СТАРТ</button><button class="menu-btn" id="menu-garage">ГАРАЖ</button><button class="menu-btn" id="menu-options">НАСТРОЙКИ</button></div></div><div class="menu-footer">РАЗРАБОТЧИК — <b>НИКИТА МАРКИН</b></div></div>
 <div id="garage-screen"><div class="garage-head">ГАРАЖ // DRIVELLA GTS</div><div class="garage-copy">DRIVELLA GTS · SHOWROOM LAB<br>ТРИ COUNTACH ДЛЯ СРАВНЕНИЯ МАТЕРИАЛОВ И СВЕТА<br>ДОМА · ПАЛЬМЫ · SUN / BLOOM / GOD RAYS</div><div class="garage-controls"><button id="garage-back">← НАЗАД В МЕНЮ</button></div><div class="garage-tip">ЗАЖМИ И ТЯНИ — ВРАЩАЙ ВСЮ СЦЕНУ<br>КОЛЁСИКО — МАСШТАБ · F4 — ЭФФЕКТЫ · F3 — ДИАГНОСТИКА</div></div>
 <div id="options-screen"><div class="options-head">ОПЦИИ</div><div class="options-card"><div class="option-row"><span>МУЗЫКА</span><button id="option-music">ВКЛЮЧЕНА</button></div><div class="option-row"><span>ГРОМКОСТЬ</span><input id="option-volume" type="range" min="0" max="100" value="52"></div><div class="option-row"><span>ЗВУК ДВИГАТЕЛЯ</span><button id="option-sfx">ВКЛЮЧЁН</button></div><div class="option-row"><span>КАМЕРА</span><span>КЛАВИШИ 1–4</span></div><button id="options-back" style="width:100%;margin-top:18px">← НАЗАД В МЕНЮ</button></div></div>
@@ -189,7 +189,7 @@
 <script>
 (()=>{
 'use strict';
-const VERSION='v0.19.55',BUILD='221';
+const VERSION='v0.19.56',BUILD='222';
 const GPU_POWER_PREFERENCE='high-performance';
 const canvas=document.getElementById('scene'),gl=canvas.getContext('webgl',{antialias:true,alpha:true,powerPreference:GPU_POWER_PREFERENCE}),sun=document.getElementById('sun'),sctx=sun.getContext('2d');
 const $=id=>document.getElementById(id);
@@ -1753,7 +1753,17 @@ function getVehicleSpeed(){return Math.hypot(speed/3.6,lateralVelocity)*3.6;}
 function readSteeringInput(){return (keys.d||keys.arrowright?STEER_AXIS.right:0)+(keys.a||keys.arrowleft?STEER_AXIS.left:0);}
 function getSteeringAngle(){
  const v=Math.abs(speed/3.6),gripAcceleration=1.08*VEHICLE_GRAVITY;
- return steer*Math.min(.55,Math.atan(gripAcceleration*VEHICLE_WHEELBASE/(v*v+4)));
+ return steer*Math.min(.40,Math.atan(gripAcceleration*VEHICLE_WHEELBASE/(v*v+4)));
+}
+function getYawRateLimit(vLong,latVelocity,steeringAngle){
+ const motionSpeed=Math.hypot(vLong,latVelocity);
+ const steerBlend=clamp(motionSpeed/2.5,0,1);
+ const effectiveSteer=Math.abs(steeringAngle)*steerBlend;
+ const steeringYaw=(Math.abs(vLong)/VEHICLE_WHEELBASE)*Math.tan(effectiveSteer)*1.35;
+ const slipRatio=clamp(Math.abs(latVelocity)/Math.max(motionSpeed,1),0,1);
+ const driftAllowance=.22*slipRatio*steerBlend;
+ const tyreYaw=(1.22*VEHICLE_GRAVITY)/Math.max(motionSpeed,4);
+ return Math.max(0,Math.min(2.5,steeringYaw+driftAllowance,tyreYaw));
 }
 function getFrontWheelSteerAngle(side){
  const angle=getSteeringAngle(),magnitude=Math.abs(angle);
@@ -2882,7 +2892,7 @@ function updateDebug(dt){
    '<strong>VELOCITY LONG / LAT</strong> '+(speed/3.6).toFixed(1)+' / '+lateralVelocity.toFixed(1)+' m/s<br>'+
    '<strong>TYRE SLIP FRONT / REAR</strong> '+(tireSlipFront*180/Math.PI).toFixed(1)+'° / '+(tireSlipRear*180/Math.PI).toFixed(1)+'°<br>'+
    '<strong>TYRE FORCE FRONT / REAR</strong> '+(tireForceFront/1000).toFixed(1)+' / '+(tireForceRear/1000).toFixed(1)+' kN · REAR GRIP '+rearGripDiagnostic.toFixed(2)+'<br>'+
-   '<strong>YAW LIMIT / REVERSE</strong> '+(clamp(16/Math.max(getVehicleSpeed()/3.6,8),.55,1.8)*180/Math.PI).toFixed(0)+'°/s · '+(reverseEngaged?'ENGAGED':down?'BRAKING':'OFF')+'<br>'+
+   '<strong>YAW LIMIT / FRONT STEER / REVERSE</strong> '+(getYawRateLimit(speed/3.6,lateralVelocity,getSteeringAngle())*180/Math.PI).toFixed(1)+'°/s · '+(getSteeringAngle()*180/Math.PI).toFixed(1)+'° · '+(reverseEngaged?'ENGAGED':down?'BRAKING':'OFF')+'<br>'+
    '<strong>WORLD Z</strong> '+distance.toFixed(2)+'<br>'+
    '<strong>STEER / X / ROLL / PITCH</strong> '+steer.toFixed(2)+' / '+playerX.toFixed(2)+' / '+bodyRoll.toFixed(3)+' / '+bodyPitch.toFixed(3)+'<br>'+
    '<strong>WEBGL</strong> '+(gl.getParameter(gl.VERSION)||'OK')+'<br>'+
@@ -2954,7 +2964,7 @@ function frame(now){
   // S first brakes to zero. Reverse engages only after a short hold at a standstill,
   // avoiding rapid forward/reverse switching while the tyres are sliding sideways.
   if(!down){reverseHoldTimer=0;reverseEngaged=false;}
-  const drag=.18+.006*Math.abs(vLong)+.00018*vLong*vLong;
+  const drag=.35+.010*Math.abs(vLong)+.00025*vLong*vLong;
   const driveAccel=up&&!down?4.8*clamp(1-(Math.abs(vLong)/88)**2,.22,1):0;
   const coastAccel=(!up||down)?-Math.sign(vLong)*drag:0;
   let serviceBrakeAccel=0;
@@ -2987,7 +2997,8 @@ function frame(now){
    const frontLateralLimit=Math.sqrt(Math.max(0,frontFriction*frontFriction-frontLongitudinalForce*frontLongitudinalForce));
    const rearLateralLimit=Math.sqrt(Math.max(0,rearFriction*rearFriction-rearLongitudinalForce*rearLongitudinalForce));
    const travelSign=vLong>=0?1:-1;
-   const frontSlip=Math.atan2((lateralVelocity+VEHICLE_CG_TO_FRONT*yawRate)*travelSign,Math.max(Math.abs(vLong),2))-steerAngle*travelSign;
+   const steerBlend=clamp(Math.hypot(vLong,lateralVelocity)/2.5,0,1);
+   const frontSlip=Math.atan2((lateralVelocity+VEHICLE_CG_TO_FRONT*yawRate)*travelSign,Math.max(Math.abs(vLong),2))-steerAngle*steerBlend*travelSign;
    const rearSlip=Math.atan2((lateralVelocity-VEHICLE_CG_TO_REAR*yawRate)*travelSign,Math.max(Math.abs(vLong),2));
    tireSlipFront=frontSlip;tireSlipRear=rearSlip;
    // Convert tyre lateral forces back to the car's right/left axis. This sign
@@ -2997,10 +3008,11 @@ function frame(now){
    tireForceFront=frontLateralForce;tireForceRear=rearLateralForce;
    lateralAcceleration=(frontLateralForce+rearLateralForce)/VEHICLE_MASS-yawRate*vLong;
    const yawAcceleration=(VEHICLE_CG_TO_FRONT*frontLateralForce-VEHICLE_CG_TO_REAR*rearLateralForce)/VEHICLE_YAW_INERTIA;
+   const tyreScrubAccel=(Math.abs(frontLateralForce)*Math.abs(Math.sin(frontSlip))+Math.abs(rearLateralForce)*Math.abs(Math.sin(rearSlip)))/VEHICLE_MASS*.25;
    lateralVelocity+=lateralAcceleration*stepDt;
-   const yawRateLimit=clamp(30/Math.max(Math.hypot(vLong,lateralVelocity),8),1.0,2.5);
+   const yawRateLimit=getYawRateLimit(vLong,lateralVelocity,steerAngle);
    yawRate=clamp(yawRate+yawAcceleration*stepDt,-yawRateLimit,yawRateLimit);
-   vLong=clamp(vLong+longitudinalAccel*stepDt,-20.8,86);
+   vLong=clamp(vLong+(longitudinalAccel-Math.sign(vLong)*tyreScrubAccel)*stepDt,-20.8,86);
    carYaw+=yawRate*stepDt;
   }
   // The vehicle's speed is the full velocity vector, not only its forward component.
