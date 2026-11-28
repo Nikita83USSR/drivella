@@ -593,10 +593,10 @@ export class LegacyVisualEffects {
       ctx.clearRect(0, 0, 128, 128);
 
       const aura = ctx.createRadialGradient(64, 64, 0, 64, 64, 62);
-      aura.addColorStop(0, "rgba(255,255,255,0.96)");
-      aura.addColorStop(0.045, "rgba(255,255,255,0.82)");
-      aura.addColorStop(0.15, "rgba(255,255,255,0.28)");
-      aura.addColorStop(0.40, "rgba(255,255,255,0.075)");
+      aura.addColorStop(0, "rgba(255,255,255,1.00)");
+      aura.addColorStop(0.045, "rgba(255,255,255,0.94)");
+      aura.addColorStop(0.15, "rgba(255,255,255,0.42)");
+      aura.addColorStop(0.40, "rgba(255,255,255,0.12)");
       aura.addColorStop(1, "rgba(255,255,255,0)");
       ctx.fillStyle = aura;
       ctx.fillRect(0, 0, 128, 128);
@@ -623,19 +623,19 @@ export class LegacyVisualEffects {
         ctx.stroke();
         ctx.restore();
       };
-      drawRay(0, 60, 2.8, 0.88);
-      drawRay(Math.PI * 0.5, 39, 2.3, 0.78);
-      drawRay(Math.PI * 0.25, 27, 1.8, 0.52);
-      drawRay(-Math.PI * 0.25, 27, 1.8, 0.52);
+      drawRay(0, 60, 3.8, 1.00);
+      drawRay(Math.PI * 0.5, 45, 3.2, 0.94);
+      drawRay(Math.PI * 0.25, 33, 2.4, 0.68);
+      drawRay(-Math.PI * 0.25, 33, 2.4, 0.68);
 
       ctx.save();
-      const core = ctx.createRadialGradient(64, 64, 0, 64, 64, 17);
+      const core = ctx.createRadialGradient(64, 64, 0, 64, 64, 21);
       core.addColorStop(0, "rgba(255,255,255,1)");
-      core.addColorStop(0.18, "rgba(255,255,255,0.92)");
-      core.addColorStop(0.52, "rgba(255,255,255,0.38)");
+      core.addColorStop(0.18, "rgba(255,255,255,0.98)");
+      core.addColorStop(0.52, "rgba(255,255,255,0.48)");
       core.addColorStop(1, "rgba(255,255,255,0)");
       ctx.fillStyle = core;
-      ctx.fillRect(46, 46, 36, 36);
+      ctx.fillRect(42, 42, 44, 44);
       ctx.restore();
       texture.update(false);
       this.lampFlareTexture = texture;
@@ -651,7 +651,7 @@ export class LegacyVisualEffects {
         material.emissiveTexture = texture;
         material.useAlphaFromDiffuseTexture = true;
         material.diffuseColor.copyFrom(tint);
-        material.emissiveColor.copyFrom(tint);
+        material.emissiveColor.copyFrom(tint.scale(1.18));
         material.specularColor = Color3.Black();
         material.backFaceCulling = false;
         material.alpha = 1;
@@ -708,7 +708,7 @@ export class LegacyVisualEffects {
         localCenter(mesh),
         new Vector3(0, -Math.SQRT1_2, Math.SQRT1_2),
         "white",
-        22
+        34
       );
     }
     for (let index = 0; index < (vehicle.fogLightMeshes?.length ?? 0); index += 1) {
@@ -719,7 +719,7 @@ export class LegacyVisualEffects {
         localCenter(mesh),
         new Vector3(0, 0, 1),
         "white",
-        13
+        20
       );
     }
     for (const [side, mesh] of vehicle.frontSignalMeshes ?? []) {
@@ -729,7 +729,7 @@ export class LegacyVisualEffects {
         localCenter(mesh),
         new Vector3(0, 0, 1),
         "amber",
-        12
+        18
       );
     }
     for (const [side, mesh] of vehicle.rearSignalMeshes ?? []) {
@@ -739,7 +739,7 @@ export class LegacyVisualEffects {
         localCenter(mesh),
         new Vector3(0, 0, -1),
         "amber",
-        12
+        18
       );
     }
 
@@ -753,7 +753,7 @@ export class LegacyVisualEffects {
         new Vector3(side * 0.843, 0.815, -2.610),
         rearNormal,
         "red",
-        15
+        22
       );
     }
     this.lampFlareTargetCount = this.lampFlareObjects.length;
@@ -834,7 +834,7 @@ export class LegacyVisualEffects {
       const intensity = this.lensFlaresEnabled ? power * Math.pow(facing, 0.72) * distanceGain : 0;
       item.intensity = intensity;
       item.plane.isVisible = intensity > 0.035;
-      item.plane.visibility = clamp(intensity, 0, 1);
+      item.plane.visibility = clamp(intensity * 1.18, 0, 1);
 
       // Scale in world units so each billboard remains a stable screen-space
       // size, while its position is inherited from the real lamp mesh parent.
@@ -858,7 +858,9 @@ export class LegacyVisualEffects {
       sourceResolved: Boolean(item.sourceResolved),
       position: (item.worldPosition ?? item.plane.position.asArray()).map((value) => Number(value.toFixed(5))),
       error: Number((item.anchorError ?? Infinity).toFixed(6)),
-      visible: Boolean(item.plane.isVisible)
+      visible: Boolean(item.plane.isVisible),
+      radiusPixels: item.radiusPixels,
+      intensity: Number((item.intensity ?? 0).toFixed(3))
     }));
   }
   createTrackLights() {
