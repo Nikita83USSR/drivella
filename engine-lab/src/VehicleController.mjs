@@ -28,7 +28,7 @@ export function calculateSpeedSteerLimit(speed,wheelbase,maxLateralAccel,maximum
 }
 export function calculateAntiRollForces(leftCompression,rightCompression,stiffness){
  const force=(leftCompression-rightCompression)*Math.max(0,stiffness);
- return {leftY:force,rightY:-force};
+ return {leftY:force||0,rightY:(-force)||0};
 }
 export function calculateAckermannAngles(input,wheelbase,track,maximumAngle=P.maxSteer){
  const centre=clamp(input,-1,1)*maximumAngle;if(Math.abs(centre)<1e-5)return {left:0,right:0};
