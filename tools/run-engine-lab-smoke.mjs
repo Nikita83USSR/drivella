@@ -179,6 +179,8 @@ try {
         && effects?.lampFlareSpriteCount === 10
         && effects?.lampFlareAnchoringMaxError < 0.001
         && effects?.lampFlareAnchors?.every((anchor) => anchor.sourceResolved && anchor.error < 0.001) === true
+        && effects?.lampFlareAnchors?.filter((anchor) => anchor.name.startsWith("headlamp-"))
+          .every((anchor) => anchor.visible && anchor.intensity > 0.035 && anchor.textureAttached) === true
         && effects?.lampFlareTargetCount === 10
         && effects?.tailLampMeshCount === 1
         && effects?.roadSampleCount > 100
@@ -221,8 +223,13 @@ try {
     if (anchor.name.startsWith("tail-")) return !(r > g * 3 && r > b * 3);
     return true;
   });
-  if (invalidLampFlareColors.length) {
-    throw new Error("Vehicle lamp starbursts do not match their source lamp colors: " + JSON.stringify(invalidLampFlareColors));
+  const invalidLampFlareRendering = (illuminatedHeadlights?.lampFlareAnchors ?? []).filter((anchor) =>
+    !anchor.textureAttached
+    || (anchor.name.startsWith("headlamp-") && (!anchor.visible || anchor.intensity <= 0.035))
+  );
+  if (invalidLampFlareColors.length || invalidLampFlareRendering.length) {
+    throw new Error("Vehicle lamp starbursts must retain their shared canvas texture, remain visible on both pop-up headlights, and match source lamp colors: "
+      + JSON.stringify({ invalidLampFlareColors, invalidLampFlareRendering }));
   }
   if (illuminatedHeadlights?.headlightSourceCount !== 2 || illuminatedHeadlights?.headlightOpticPartCount !== 12
       || illuminatedHeadlights.headlightBeamIntensity < 1.5 || illuminatedHeadlights.headlightBeams?.length !== 2
@@ -250,7 +257,7 @@ try {
        || illuminatedHeadlights.lampFlareSpriteCount !== 10
        || illuminatedHeadlights.lampFlareAnchoringMaxError >= 0.001
        || illuminatedHeadlights.lampFlareAnchors?.length !== 10
-       || illuminatedHeadlights.lampFlareAnchors?.some((anchor) => !anchor.sourceResolved || anchor.error >= 0.001)
+       || illuminatedHeadlights.lampFlareAnchors?.some((anchor) => !anchor.sourceResolved || anchor.error >= 0.001 || !anchor.textureAttached)
        || illuminatedHeadlights.lampFlareTargetCount !== 10
        || illuminatedHeadlights.tailLampMeshCount !== 1
        || illuminatedHeadlights.roadSampleCount < 100
