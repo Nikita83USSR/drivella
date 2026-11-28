@@ -51,7 +51,7 @@ jobs:
         run: node tools/test-spatial-chunks.mjs
       - name: Verify hue-preserving neon object palette
         run: node tools/test-neon-palette.mjs
-      - name: Verify raised non-emissive-road kerb geometry
+      - name: Verify crisp white road markings and separate neon fence geometry
         run: node tools/test-road-curbs.mjs
       - name: Verify the terrain grid stays clear of the road corridor
         run: node tools/test-road-grid-mask.mjs
