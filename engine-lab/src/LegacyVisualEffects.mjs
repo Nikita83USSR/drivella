@@ -133,7 +133,7 @@ fn drivellaRoadHeadlightEnergy(
   return energy * roadLightIntensity;
 }
 `,
-        CUSTOM_FRAGMENT_BEFORE_FOG: `
+        CUSTOM_FRAGMENT_BEFORE_FRAGCOLOR: `
 color = vec4f(
   color.rgb + vec3f(0.92, 0.96, 1.0) * (drivellaRoadHeadlightEnergy(
     fragmentInputs.vPositionW,
