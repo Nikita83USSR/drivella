@@ -154,6 +154,11 @@ try {
       && effects?.frontTurnSignalCount === 2
       && effects?.rearTurnSignalCount === 2
       && effects?.fogLampCount === 2
+      && effects?.glassMeshCount === 1
+      && effects?.headlampGlowMeshCount === 4
+      && effects?.headlampGlowActiveCount === 4
+      && effects?.vehicleOutlineMeshCount >= 20
+      && effects?.vehicleOutlineWidth >= 0.045
       && (effects?.tailLampEmissive?.[0] ?? 0) > 0.3;
   }, null, { timeout: 12000 });
   const illuminatedState = await page.evaluate(() => ({
@@ -179,6 +184,11 @@ try {
       || illuminatedHeadlights.frontTurnSignalCount !== 2
       || illuminatedHeadlights.rearTurnSignalCount !== 2
       || illuminatedHeadlights.fogLampCount !== 2
+      || illuminatedHeadlights.glassMeshCount !== 1
+      || illuminatedHeadlights.headlampGlowMeshCount !== 4
+      || illuminatedHeadlights.headlampGlowActiveCount !== 4
+      || illuminatedHeadlights.vehicleOutlineMeshCount < 20
+      || illuminatedHeadlights.vehicleOutlineWidth < 0.045
       || (illuminatedHeadlights.tailLampEmissive?.[0] ?? 0) < 0.3
       || illuminatedState.roadMaxSimultaneousLights !== 10) {
     throw new Error("Both pop-up projectors and the dedicated road shader must be active, correctly aimed and bound: "
