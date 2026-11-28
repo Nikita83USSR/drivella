@@ -385,6 +385,9 @@ export class LegacyVisualEffects {
         }
       }
 
+      // Register both projector spots before the decorative underbody points.
+      // The road material is intentionally capped at 12 lights (2 sky/sun + 8
+      // track + 2 headlights), so the two beams must occupy slots 10 and 11.
       for (const side of [-1, 1]) {
         const spot = new SpotLight(
           "drivella-countach-headlamp-" + side,
@@ -412,7 +415,11 @@ export class LegacyVisualEffects {
           new LensFlare(0.24, 0, new Color3(0.74, 0.86, 1), this.flareTextureUrl, lampFlare);
           new LensFlare(0.09, 0.42, new Color3(0.35, 0.72, 1), this.flareTextureUrl, lampFlare);
         }
+      }
 
+      // Decorative underbody lights follow the projectors in scene order so they
+      // cannot push the right headlamp beyond the WebGL-safe road-light budget.
+      for (const side of [-1, 1]) {
         const under = new PointLight(
           "drivella-countach-underbody-" + side,
           new Vector3(side * 0.78, -0.13, 0),
