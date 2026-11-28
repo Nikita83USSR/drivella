@@ -1,0 +1,110 @@
+name: DRIVELLA Babylon + Havok foundation
+
+on:
+  push:
+    branches: [main, engine-migration-foundation]
+    paths:
+      - 'package.json'
+      - 'engine-lab/index.html'
+      - 'engine-lab/styles.css'
+      - 'engine-lab/src/**'
+      - 'engine-lab/build.mjs'
+      - 'engine-lab/sw.js'
+      - 'tools/run-engine-lab-smoke.mjs'
+      - 'tools/test-spatial-chunks.mjs'
+      - 'tools/test-vehicle-controller.mjs'
+      - 'tools/test-neon-palette.mjs'
+      - '.github/workflows/engine-foundation.yml'
+  pull_request:
+    branches: [main]
+    paths:
+      - 'package.json'
+      - 'engine-lab/**'
+      - 'tools/run-engine-lab-smoke.mjs'
+      - 'tools/test-spatial-chunks.mjs'
+      - 'tools/test-vehicle-controller.mjs'
+      - '.github/workflows/engine-foundation.yml'
+
+permissions:
+  contents: write
+
+concurrency:
+  group: drivella-engine-foundation-${{ github.event_name }}-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  build-and-browser-test:
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+      - name: Set up Node
+        uses: actions/setup-node@v4
+        with:
+          node-version: 22
+      - name: Verify symmetric XYZ chunk coverage
+        run: node tools/test-spatial-chunks.mjs
+      - name: Verify hue-preserving neon object palette
+        run: node tools/test-neon-palette.mjs
+      - name: Install pinned engine and build dependencies
+        run: npm install --no-audit --no-fund
+      - name: Verify Countach geometry, Ackermann steering and tire friction
+        run: node tools/test-vehicle-controller.mjs
+      - name: Build repository-local runtime
+        run: npm run build:engine
+      - name: Install Playwright
+        run: npm install --no-save --no-audit --no-fund playwright
+      - name: Install Chromium
+        run: npx playwright install --with-deps chromium
+      - name: Verify browser startup, Havok collision and network isolation
+        run: node tools/run-engine-lab-smoke.mjs
+      - name: Upload spatial world preview
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: drivella-engine-lab-spatial-preview
+          path: artifacts/
+          if-no-files-found: ignore
+          retention-days: 7
+      - name: Commit generated runtime files to the published branch
+        if: github.event_name == 'push' && (github.ref == 'refs/heads/main' || github.ref == 'refs/heads/engine-migration-foundation')
+        run: |
+          set -e
+          BRANCH="${GITHUB_REF#refs/heads/}"
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+
+          for attempt in 1 2 3; do
+            git fetch origin "$BRANCH"
+            REMOTE_HEAD="$(git rev-parse "origin/$BRANCH")"
+            LOCAL_HEAD="$(git rev-parse HEAD)"
+
+            # If another commit landed while this workflow was running, never
+            # rebase an engine bundle built from stale source over a competing
+            # generated bundle. Rebuild and retest against the latest branch.
+            if [ "$REMOTE_HEAD" != "$LOCAL_HEAD" ]; then
+              echo "Branch advanced from $LOCAL_HEAD to $REMOTE_HEAD; rebuilding from the current branch head."
+              git reset --hard "$REMOTE_HEAD"
+              npm install --no-audit --no-fund
+              npm run build:engine
+              node tools/test-spatial-chunks.mjs
+              node tools/run-engine-lab-smoke.mjs
+            fi
+
+            git add package-lock.json engine-lab/vendor engine-lab/licenses
+            if ! git diff --cached --quiet; then
+              git commit -m "build(engine): vendor Babylon.js and Havok runtime"
+            fi
+
+            if git push origin HEAD:"$BRANCH"; then
+              echo "Repository-local runtime bundle is synchronized with $BRANCH."
+              break
+            fi
+
+            if [ "$attempt" -eq 3 ]; then
+              echo "Could not synchronize the generated runtime after three attempts."
+              exit 1
+            fi
+            sleep 2
+          done
