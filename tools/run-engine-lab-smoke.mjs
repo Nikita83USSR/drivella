@@ -57,7 +57,7 @@ try {
     const requestUrl = new URL(request.url());
     if (requestUrl.origin !== "http://127.0.0.1:" + port) externalRequests.push(request.url());
   });
-  page.on("pageerror", (error) => pageErrors.push(String(error)));
+  page.on("pageerror", (error) => pageErrors.push(error?.stack ?? String(error)));
   page.on("console", (message) => {
     if (message.type() === "error") browserConsoleErrors.push(message.text());
   });
