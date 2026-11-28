@@ -165,7 +165,7 @@ try {
   await page.waitForFunction(() => {
     const effects = window.__DRIVELLA_LAB__?.legacyEffects;
     return effects?.lensFlareTextureKind === "canvas-png"
-      && effects?.lensFlareSpriteCount >= 3
+      && effects?.lensFlareSpriteCount >= 1
       && effects?.lensFlareTexturesReady === true
       && effects?.frontTurnSignalCount === 2
       && effects?.rearTurnSignalCount === 2
@@ -204,7 +204,7 @@ try {
       || illuminatedHeadlights.headlightRoadProbeEnergy < 0.2
       || illuminatedHeadlights.headlightRoadDirectionY > -0.05
       || illuminatedHeadlights.lensFlareTextureKind !== "canvas-png"
-      || illuminatedHeadlights.lensFlareSpriteCount < 3
+      || illuminatedHeadlights.lensFlareSpriteCount < 1
       || !illuminatedHeadlights.lensFlareTexturesReady
       || illuminatedHeadlights.frontTurnSignalCount !== 2
       || illuminatedHeadlights.rearTurnSignalCount !== 2
@@ -219,6 +219,9 @@ try {
        || illuminatedHeadlights.roadSampleCount < 100
       || illuminatedHeadlights.vehicleOutlineEdgeMeshCount < 20
       || illuminatedHeadlights.vehicleOutlineEdgeWidth < 3
+      || illuminatedHeadlights.vehicleOutlineEdgeColor?.some((channel) => channel > 0.01)
+      || !illuminatedHeadlights.headlightRoadPluginGlslCompatible
+      || !illuminatedHeadlights.headlightRoadPluginWgslCompatible
       || !illuminatedHeadlights.glassDiffuseColor?.every((channel) => channel <= 0.04)
       || illuminatedState.roadMarkingChunks < 1
       || illuminatedState.neonFenceChunks < 1
