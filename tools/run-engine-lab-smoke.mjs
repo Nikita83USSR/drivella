@@ -130,25 +130,24 @@ try {
     throw new Error("Countach did not settle on four independent wheel contacts. Diagnostic: " + JSON.stringify(diagnostic) + " · pageErrors=" + JSON.stringify(pageErrors) + " · consoleErrors=" + JSON.stringify(browserConsoleErrors) + " · " + String(error));
   }
 
-  // Verify the actual pop-up hinge and light output separately: L deploys the
-  // two modules, while H energizes the two vehicle-mounted projector beams.
+  // L must operate the complete pop-up headlamp assembly: deploy both
+  // modules and automatically energize their projectors without a second key.
   await page.keyboard.press("l");
   await page.waitForFunction(() => {
     const effects = window.__DRIVELLA_LAB__?.legacyEffects;
-    return effects?.headlights === true && effects?.headlightDeploy >= 0.92;
+    return effects?.headlights === true
+      && effects?.headlightDeploy >= 0.92
+      && effects?.headlightLighting === true
+      && effects?.headlightBeamIntensity > 1.5;
   }, null, { timeout: 15000 });
   const deployedHeadlights = await page.evaluate(() => window.__DRIVELLA_LAB__?.legacyEffects ?? null);
-  if (!deployedHeadlights || deployedHeadlights.headlightSourceCount !== 2 || deployedHeadlights.headlightOpticPartCount !== 12 || deployedHeadlights.headlightLighting !== false) {
-    throw new Error("Pop-up headlight deployment state is incorrect: " + JSON.stringify(deployedHeadlights));
+  if (!deployedHeadlights || deployedHeadlights.headlightSourceCount !== 2
+      || deployedHeadlights.headlightOpticPartCount !== 12
+      || deployedHeadlights.headlightLighting !== true) {
+    throw new Error("Pop-up headlights did not deploy and illuminate together from L: " + JSON.stringify(deployedHeadlights));
   }
-  await page.keyboard.press("h");
-  await page.waitForFunction(() => {
-    const effects = window.__DRIVELLA_LAB__?.legacyEffects;
-    return effects?.headlightLighting === true && effects?.headlightBeamIntensity > 1.5;
-  }, null, { timeout: 8000 });
   // The road-light diagnostic is sampled every 15 render frames. Wait for
-  // a fresh measurement after H is pressed; otherwise this can read the
-  // previous "headlights off" sample and report a false zero-energy failure.
+  // a fresh measurement after L has opened the lamps and enabled the beams.
   try {
     await page.waitForFunction(() => {
       const effects = window.__DRIVELLA_LAB__?.legacyEffects;
@@ -180,6 +179,8 @@ try {
       && effects?.roadSampleCount > 100
       && effects?.vehicleOutlineEdgeMeshCount >= 20
       && effects?.vehicleOutlineEdgeWidth >= 3
+       && effects?.vehicleOutlineRenderPassMeshCount === 0
+       && effects?.vehicleOutlineNonBlackEdgeMeshCount === 0
       && effects?.glassDiffuseColor?.every((channel) => channel <= 0.04)
       && (effects?.tailLampEmissive?.[0] ?? 0) > 0.3;
   }, null, { timeout: 12000 });
@@ -221,6 +222,8 @@ try {
       || illuminatedHeadlights.vehicleOutlineEdgeMeshCount < 20
       || illuminatedHeadlights.vehicleOutlineEdgeWidth < 3
       || illuminatedHeadlights.vehicleOutlineEdgeColor?.some((channel) => channel > 0.01)
+       || illuminatedHeadlights.vehicleOutlineRenderPassMeshCount !== 0
+       || illuminatedHeadlights.vehicleOutlineNonBlackEdgeMeshCount !== 0
       || !illuminatedHeadlights.headlightRoadPluginGlslCompatible
       || !illuminatedHeadlights.headlightRoadPluginWgslCompatible
       || !illuminatedHeadlights.glassDiffuseColor?.every((channel) => channel <= 0.04)
@@ -233,12 +236,13 @@ try {
   }
   await mkdir("artifacts", { recursive: true });
   await page.screenshot({ path: "artifacts/engine-lab-popup-headlights-preview.png" });
-  await page.keyboard.press("h");
-  await page.waitForFunction(() => window.__DRIVELLA_LAB__?.legacyEffects?.headlightLighting === false, null, { timeout: 5000 });
   await page.keyboard.press("l");
   await page.waitForFunction(() => {
     const effects = window.__DRIVELLA_LAB__?.legacyEffects;
-    return effects?.headlights === false && effects?.headlightDeploy <= 0.1;
+    return effects?.headlights === false
+      && effects?.headlightDeploy <= 0.1
+      && effects?.headlightLighting === false
+      && effects?.headlightBeamIntensity <= 0.01;
   }, null, { timeout: 15000 });
   console.log("POP-UP HEADLIGHTS PASS", JSON.stringify({ deployedHeadlights, illuminatedHeadlights }));
 
