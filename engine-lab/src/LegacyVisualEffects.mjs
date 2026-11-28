@@ -311,8 +311,11 @@ export class LegacyVisualEffects {
     this.headlampSpots = [];
     this.headlampSpotBySide = new Map();
     this.headlampGlowMeshes = [];
+    this.headlampLensMeshes = new Map();
     this.headlampOpticsPostProcess = null;
     this.headlampOpticsSourceCount = 0;
+    this.lampFlareTargetCount = 0;
+    this.lampFlareSourceCounts = { headlamps: 0, fogLamps: 0, frontSignals: 0, rearSignals: 0 };
     this.headlightRoadProbeEnergy = 0;
     this.headlightRoadProbeCounter = 0;
     this.headlightRoadProbeMaxForwardDot = -1;
@@ -571,6 +574,13 @@ export class LegacyVisualEffects {
     }
   }
 
+  getOpticalMeshCenter(mesh) {
+    if (!mesh || mesh.isDisposed?.() || !mesh.isEnabled?.()) return null;
+    mesh.computeWorldMatrix(true);
+    const center = mesh.getBoundingInfo?.()?.boundingBox?.centerWorld;
+    return center?.clone?.() ?? mesh.getAbsolutePosition?.().clone?.() ?? null;
+  }
+
   createHeadlampOpticsPostProcess() {
     try {
       Effect.ShadersStore.drivellaHeadlampOpticsPixelShader = `
@@ -579,6 +589,12 @@ varying vec2 vUV;
 uniform sampler2D textureSampler;
 uniform vec4 headlampLeft;
 uniform vec4 headlampRight;
+uniform vec4 fogLampLeft;
+uniform vec4 fogLampRight;
+uniform vec4 frontSignalLeft;
+uniform vec4 frontSignalRight;
+uniform vec4 rearSignalLeft;
+uniform vec4 rearSignalRight;
 uniform float screenAspect;
 uniform float opticsEnabled;
 float rayProfile(vec2 p, vec2 direction, float lengthFactor, float widthFactor) {
@@ -589,18 +605,18 @@ float rayProfile(vec2 p, vec2 direction, float lengthFactor, float widthFactor) 
   float rayWidth = 1.0 - smoothstep(widthFactor * 0.42, widthFactor * 1.35, across);
   return rayLength * rayWidth;
 }
-vec3 headlampFlare(vec2 uv, vec4 source) {
+vec3 lampDiffraction(vec2 uv, vec4 source, vec3 tint) {
   if (source.w <= 0.001) return vec3(0.0);
   vec2 p = vec2((uv.x - source.x) * screenAspect, uv.y - source.y) / max(source.z, 0.0001);
   float d = length(p);
-  float core = 0.34 * exp(-d * d * 20.0);
-  float inner = 0.10 * exp(-d * d * 5.2);
-  float aura = 0.075 * exp(-d * d * 1.35);
-  // A clean four-point diffraction cross; wider antialiased rays avoid
-  // sub-pixel flicker when the camera or car moves.
-  float rays = rayProfile(p, vec2(1.0, 0.0), 2.15, 0.105) * 0.18
-             + rayProfile(p, vec2(0.0, 1.0), 1.20, 0.085) * 0.16;
-  return vec3(0.91, 0.965, 1.0) * (core + inner + aura + rays) * source.w;
+  float core = 0.38 * exp(-d * d * 22.0);
+  float inner = 0.13 * exp(-d * d * 5.2);
+  float aura = 0.105 * exp(-d * d * 1.22);
+  // Four-point optical diffraction: a sharp horizontal/vertical cross sits
+  // on the actual luminous element, surrounded by a soft radial aura.
+  float rays = rayProfile(p, vec2(1.0, 0.0), 2.25, 0.095) * 0.22
+             + rayProfile(p, vec2(0.0, 1.0), 1.28, 0.078) * 0.19;
+  return tint * (core + inner + aura + rays) * source.w;
 }
 void main(void) {
   vec4 sceneColor = texture2D(textureSampler, vUV);
@@ -608,12 +624,28 @@ void main(void) {
     gl_FragColor = sceneColor;
     return;
   }
-  vec3 flare = headlampFlare(vUV, headlampLeft) + headlampFlare(vUV, headlampRight);
+  vec3 coolWhite = vec3(0.91, 0.965, 1.0);
+  vec3 amber = vec3(1.0, 0.58, 0.20);
+  vec3 flare =
+      lampDiffraction(vUV, headlampLeft, coolWhite)
+    + lampDiffraction(vUV, headlampRight, coolWhite)
+    + lampDiffraction(vUV, fogLampLeft, coolWhite)
+    + lampDiffraction(vUV, fogLampRight, coolWhite)
+    + lampDiffraction(vUV, frontSignalLeft, amber)
+    + lampDiffraction(vUV, frontSignalRight, amber)
+    + lampDiffraction(vUV, rearSignalLeft, amber)
+    + lampDiffraction(vUV, rearSignalRight, amber);
   gl_FragColor = vec4(sceneColor.rgb + flare, sceneColor.a);
 }`;
       this.headlampOpticsPostProcess = new PostProcess(
-        "drivella-headlamp-diffraction", "drivellaHeadlampOptics",
-        ["headlampLeft", "headlampRight", "screenAspect", "opticsEnabled"], [],
+        "drivella-lamp-diffraction", "drivellaHeadlampOptics",
+        [
+          "headlampLeft", "headlampRight",
+          "fogLampLeft", "fogLampRight",
+          "frontSignalLeft", "frontSignalRight",
+          "rearSignalLeft", "rearSignalRight",
+          "screenAspect", "opticsEnabled"
+        ], [],
         1.0, this.camera, Texture.BILINEAR_SAMPLINGMODE, this.engine, false
       );
       this.headlampOpticsPostProcess.onApply = (effect) => {
@@ -622,36 +654,98 @@ void main(void) {
         const height = Math.max(1, this.engine.getRenderHeight(true));
         effect.setFloat("screenAspect", width / height);
         effect.setFloat("opticsEnabled", this.lensFlaresEnabled ? 1 : 0);
+
         this.headlampOpticsSourceCount = 0;
+        this.lampFlareSourceCounts = { headlamps: 0, fogLamps: 0, frontSignals: 0, rearSignals: 0 };
         const cameraPosition = this.camera.globalPosition;
-        const transform = this.scene.getTransformMatrix();
+        // Project world-space centers of the luminous meshes, not spotlight
+        // aim points. Each cross follows the real lens through hinge/body motion.
+        const transform = this.camera.getTransformationMatrix();
+        const bodyForward = this.vehicle?.bodyRoot?.getDirection?.(Vector3.Forward())?.normalize?.()
+          ?? new Vector3(0, 0, 1);
+        const bodyBackward = bodyForward.scale(-1);
+
+        const applySource = (uniformName, mesh, strength, radiusFactor, direction, bucket) => {
+          if (!mesh || !this.lensFlaresEnabled || strength <= 0.001) {
+            effect.setFloat4(uniformName, 0, 0, 0.03, 0);
+            return;
+          }
+          const worldPosition = this.getOpticalMeshCenter(mesh);
+          if (!worldPosition) {
+            effect.setFloat4(uniformName, 0, 0, 0.03, 0);
+            return;
+          }
+          const projected = Vector3.TransformCoordinates(worldPosition, transform);
+          if (projected.z <= 0 || projected.z >= 1
+              || Math.abs(projected.x) > 1.08 || Math.abs(projected.y) > 1.08) {
+            effect.setFloat4(uniformName, 0, 0, 0.03, 0);
+            return;
+          }
+
+          const toCamera = cameraPosition.subtract(worldPosition).normalize();
+          const facing = Math.max(0, Vector3.Dot(direction.clone().normalize(), toCamera));
+          if (facing <= 0.035) {
+            effect.setFloat4(uniformName, 0, 0, 0.03, 0);
+            return;
+          }
+          const distance = Math.max(1, Vector3.Distance(cameraPosition, worldPosition));
+          const distanceGain = clamp(17 / distance, 0.58, 1.6);
+          const intensity = clamp(strength * Math.pow(facing, 0.62) * distanceGain, 0, 1.6);
+          const radiusPixels = clamp(Math.min(width, height) * radiusFactor * distanceGain, 8, 34);
+          effect.setFloat4(
+            uniformName,
+            projected.x * 0.5 + 0.5,
+            0.5 - projected.y * 0.5,
+            radiusPixels / height,
+            intensity
+          );
+          if (intensity > 0.02) {
+            this.headlampOpticsSourceCount += 1;
+            this.lampFlareSourceCounts[bucket] += 1;
+          }
+        };
+
+        const forward = bodyForward;
+        const backward = bodyBackward;
         for (const [side, uniformName] of [[-1, "headlampLeft"], [1, "headlampRight"]]) {
           const spot = this.headlampSpotBySide.get(side);
-          if (!spot || !this.lensFlaresEnabled || !this.headlightsEnabled || spot.intensity <= 0.01) {
-            effect.setFloat4(uniformName, 0, 0, 0.03, 0);
-            continue;
-          }
-          const projected = Vector3.TransformCoordinates(spot.position, transform);
-          if (projected.z <= 0 || projected.z >= 1 || Math.abs(projected.x) > 1.08 || Math.abs(projected.y) > 1.08) {
-            effect.setFloat4(uniformName, 0, 0, 0.03, 0);
-            continue;
-          }
-          const toCamera = cameraPosition.subtract(spot.position).normalize();
-          const facing = Math.max(0, Vector3.Dot(spot.direction.clone().normalize(), toCamera));
-          const distance = Math.max(1, Vector3.Distance(cameraPosition, spot.position));
-          const distanceGain = clamp(17 / distance, 0.58, 1.6);
-          const intensity = clamp((spot.intensity / 2.8) * Math.pow(facing, 0.62) * distanceGain, 0, 1.6);
-          const radiusPixels = clamp(Math.min(width, height) * 0.028 * distanceGain, 9, 32);
-          effect.setFloat4(uniformName, projected.x * 0.5 + 0.5, 0.5 - projected.y * 0.5, radiusPixels / height, intensity);
-          if (intensity > 0.02) this.headlampOpticsSourceCount += 1;
+          const lens = this.headlampLensMeshes.get(side);
+          const strength = this.headlightsEnabled && spot
+            ? clamp(spot.intensity / 2.8, 0, 1.6)
+            : 0;
+          applySource(uniformName, lens, strength, 0.028, spot?.direction ?? forward, "headlamps");
+        }
+
+        const fogMaterial = this.vehicle?.materials?.get?.("fogLamp");
+        const fogEmission = fogMaterial?.emissiveColor
+          ? Math.max(fogMaterial.emissiveColor.r, fogMaterial.emissiveColor.g, fogMaterial.emissiveColor.b)
+          : 0;
+        const fogStrength = clamp(fogEmission / 0.8, 0, 1) * 0.46;
+        for (let index = 0; index < 2; index += 1) {
+          const side = index === 0 ? -1 : 1;
+          applySource("fogLamp" + (side < 0 ? "Left" : "Right"),
+            this.vehicle?.fogLightMeshes?.[index], fogStrength, 0.020, forward, "fogLamps");
+        }
+
+        const signalStrength = (side) => {
+          const emission = this.vehicle?.turnSignalMaterials?.get?.(side)?.emissiveColor;
+          if (!emission) return 0;
+          const level = Math.max(emission.r, emission.g, emission.b);
+          return clamp((level - 0.08) / 1.35, 0, 1) * 0.88;
+        };
+        for (const [side, suffix] of [[-1, "Left"], [1, "Right"]]) {
+          const strength = signalStrength(side);
+          applySource("frontSignal" + suffix,
+            this.vehicle?.frontSignalMeshes?.get?.(side), strength, 0.019, forward, "frontSignals");
+          applySource("rearSignal" + suffix,
+            this.vehicle?.rearSignalMeshes?.get?.(side), strength, 0.019, backward, "rearSignals");
         }
       };
     } catch (error) {
-      this.recordError("headlamp diffraction optics", error);
+      this.recordError("lamp diffraction optics", error);
       this.headlampOpticsPostProcess = null;
     }
   }
-
   createTrackLights() {
     if (!this.roadSamples?.length) return;
     const count = 8;
@@ -687,6 +781,9 @@ void main(void) {
         if (mesh.metadata?.headlightOptic
             && (mesh.metadata.headlightPart === "lens" || mesh.metadata.headlightPart === "projector-core")) {
           this.headlampGlowMeshes.push(mesh);
+        }
+        if (mesh.metadata?.headlightOptic && mesh.metadata.headlightPart === "lens") {
+          this.headlampLensMeshes.set(mesh.metadata.headlightSide === "L" ? -1 : 1, mesh);
         }
       }
       for (const pivot of vehicle.wheelPivots?.values?.() ?? []) {
@@ -1109,7 +1206,12 @@ void main(void) {
       headlampOpticsPostProcessReady: Boolean(this.headlampOpticsPostProcess),
       headlampOpticsShaderReady: Boolean(this.headlampOpticsPostProcess?.getEffect?.()?.isReady?.()),
       headlampOpticsSourceCount: this.headlampOpticsSourceCount,
-      headlampOpticsEnabled: Boolean(this.lensFlaresEnabled && this.headlightsEnabled),
+      lampFlareTargetCount: this.headlampLensMeshes.size
+        + (this.vehicle?.fogLightMeshes?.length ?? 0)
+        + (this.vehicle?.frontSignalMeshes?.size ?? 0)
+        + (this.vehicle?.rearSignalMeshes?.size ?? 0),
+      lampFlareSourceCounts: { ...this.lampFlareSourceCounts },
+      headlampOpticsEnabled: Boolean(this.lensFlaresEnabled),
       roadSampleCount: this.roadSamples?.length ?? 0,
       roadSampleFirst: this.roadSamples?.[0]
         ? [this.roadSamples[0].x, this.roadSamples[0].y, this.roadSamples[0].z]
