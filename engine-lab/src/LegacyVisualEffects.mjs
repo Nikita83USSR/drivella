@@ -310,7 +310,7 @@ export class LegacyVisualEffects {
     this.headlampSpots = [];
     this.headlampSpotBySide = new Map();
     this.headlampGlowMeshes = [];
-    this.headlampLensMeshes = new Map();
+    this.headlampProjectorMeshes = new Map();
     this.tailLampMesh = null;
     this.lampFlareTexture = null;
     this.lampFlareMaterials = new Map();
@@ -719,7 +719,7 @@ export class LegacyVisualEffects {
       return center?.clone?.() ?? Vector3.Zero();
     };
 
-    for (const [side, mesh] of this.headlampLensMeshes) {
+    for (const [side, mesh] of this.headlampProjectorMeshes) {
       this.addLampFlare(
         "headlamp-" + (side < 0 ? "left" : "right"),
         mesh,
@@ -791,23 +791,17 @@ export class LegacyVisualEffects {
     const headLampPower = new Map();
     for (const [side, spot] of this.headlampSpotBySide) {
       headLampPower.set("headlamp-" + (side < 0 ? "left" : "right"),
-        this.headlightsEnabled ? clamp(spot.intensity / 2.8, 0, 1.6) : 0);
+        this.headlightsEnabled ? clamp(spot.intensity / 2.8, 0, 1) * 1.82 : 0);
     }
-    const fogMaterial = vehicle.materials?.get?.("fogLamp");
-    const fogEmission = fogMaterial?.emissiveColor
-      ? Math.max(fogMaterial.emissiveColor.r, fogMaterial.emissiveColor.g, fogMaterial.emissiveColor.b)
-      : 0;
-    const fogPower = clamp(fogEmission / 0.8, 0, 1) * 0.46;
+    const fogPower = vehicle.fogLightMeshes?.length ? 0.72 : 0;
     const signalPower = (side) => {
       const emission = vehicle.turnSignalMaterials?.get?.(side)?.emissiveColor;
       if (!emission) return 0;
       const level = Math.max(emission.r, emission.g, emission.b);
-      return clamp((level - 0.08) / 1.35, 0, 1) * 0.88;
+      return level > 0.8 ? 1.22 : 0;
     };
-    const tailEmission = this.tailMaterial?.emissiveColor
-      ? Math.max(this.tailMaterial.emissiveColor.r, this.tailMaterial.emissiveColor.g, this.tailMaterial.emissiveColor.b)
-      : 0;
-    const tailPower = clamp(tailEmission / 1.45, 0, 1) * 0.95;
+    const braking = Boolean(vehicle.brake || (vehicle.brakeRequested ?? 0) > 1);
+    const tailPower = braking ? 1.20 : 0.92;
 
     this.lampFlareSourceCount = 0;
     this.lampFlareSourceCounts = { headlamps: 0, fogLamps: 0, frontSignals: 0, rearSignals: 0, tailLamps: 0 };
@@ -852,27 +846,15 @@ export class LegacyVisualEffects {
       const intensity = this.lensFlaresEnabled ? power * Math.pow(facing, 0.72) * distanceGain : 0;
       item.intensity = intensity;
 
-      // Tint each star from the actual lamp material instead of a separate
-      // generic palette: cool white projectors, blue-white fog lamps, amber
-      // indicators and the live red tail/brake lamps keep their own colors.
-      const sourceEmission = item.sourceMaterial?.emissiveColor;
-      const sourceDiffuse = item.sourceMaterial?.diffuseColor;
-      const emissionLevel = sourceEmission
-        ? Math.max(sourceEmission.r, sourceEmission.g, sourceEmission.b)
-        : 0;
-      const sourceColor = emissionLevel > 0.035 ? sourceEmission : sourceDiffuse;
-      const colorPeak = sourceColor
-        ? Math.max(sourceColor.r, sourceColor.g, sourceColor.b)
-        : 0;
-      const flareColor = colorPeak > 0.001
-        ? new Color3(
-          sourceColor.r / colorPeak,
-          sourceColor.g / colorPeak,
-          sourceColor.b / colorPeak
-        )
-        : Color3.White();
+      // Preserve lamp color even when Bloom and additive blending are enabled.
+      // Normalizing a hot source and boosting every channel equally can wash amber/red to white.
+      const flareColor = item.kind === "amber"
+        ? (itemName.startsWith("rear-signal-") ? new Color3(1, 0.56, 0.16) : new Color3(1, 0.48, 0.10))
+        : item.kind === "red"
+          ? new Color3(1, 0.045, 0.085)
+          : new Color3(0.92, 0.98, 1.0);
       item.flareMaterial.diffuseColor.copyFrom(flareColor);
-      item.flareMaterial.emissiveColor.copyFrom(flareColor.scale(1.55));
+      item.flareMaterial.emissiveColor.copyFrom(flareColor.scale(item.kind === "white" ? 1.25 : 1.05));
       item.flareColor = [flareColor.r, flareColor.g, flareColor.b];
 
       item.plane.isVisible = intensity > 0.035;
@@ -941,12 +923,9 @@ export class LegacyVisualEffects {
       for (const mesh of vehicle.bodyRoot?.getChildMeshes?.() ?? []) {
         this.registerShadowReceiver(mesh);
         this.applyVehicleOutline(mesh);
-        if (mesh.metadata?.headlightOptic
-            && (mesh.metadata.headlightPart === "lens" || mesh.metadata.headlightPart === "projector-core")) {
+        if (mesh.metadata?.headlightOptic && mesh.metadata.headlightPart === "projector-core") {
           this.headlampGlowMeshes.push(mesh);
-        }
-        if (mesh.metadata?.headlightOptic && mesh.metadata.headlightPart === "lens") {
-          this.headlampLensMeshes.set(mesh.metadata.headlightSide === "L" ? -1 : 1, mesh);
+          this.headlampProjectorMeshes.set(mesh.metadata.headlightSide === "L" ? -1 : 1, mesh);
         }
         if (mesh.material === vehicle.materials?.get?.("bodyTail")) {
           this.tailLampMesh = mesh;
@@ -1023,7 +1002,7 @@ export class LegacyVisualEffects {
       }
 
       this.tailMaterial = vehicle.tailMaterial ?? vehicle.materials?.get?.("bodyTail") ?? null;
-      if (this.tailMaterial) this.tailMaterial.emissiveColor.set(0.38, 0.006, 0.018);
+      if (this.tailMaterial) this.tailMaterial.emissiveColor.set(0.56, 0.006, 0.018);
       this.createVehicleLampFlares();
       vehicle.setHeadlightsDeployed?.(this.headlightsDeployed);
       this.setHeadlights(this.headlightsEnabled);
@@ -1133,24 +1112,25 @@ export class LegacyVisualEffects {
     const deploy = this.vehicle?.headlightDeploy ?? 0;
     const deployPower = clamp((deploy - 0.12) / 0.88, 0, 1);
     const beamPower = this.headlightsEnabled ? deployPower : 0;
-    const visibleLensPower = deployPower * (this.headlightsEnabled ? 1 : 0.28);
+    const visibleLensPower = deployPower * (this.headlightsEnabled ? 1 : 0.10);
     this.headlightRoadPower = beamPower * 5.5;
     for (const light of this.headlampSpots) light.intensity = 2.8 * beamPower;
+    // The old renderer kept the glass dark and lit only the small projector core.
     const emissive = new Color3(
-      0.035 + visibleLensPower * 1.12,
-      0.045 + visibleLensPower * 1.18,
-      0.065 + visibleLensPower * 1.28
+      0.48 + visibleLensPower,
+      0.58 + visibleLensPower,
+      0.72 + visibleLensPower
     );
-    for (const material of this.vehicle?.headlampLensMaterials ?? []) material.emissiveColor.copyFrom(emissive);
+    for (const material of this.vehicle?.headlampCoreMaterials ?? []) material.emissiveColor.copyFrom(emissive);
     for (const mesh of this.headlampGlowMeshes) {
       if (!mesh || mesh.isDisposed?.()) continue;
       if (visibleLensPower > 0.01) {
         mesh.metadata = {
           ...(mesh.metadata ?? {}),
           neonGlowColor: [
-            0.70 + visibleLensPower * 1.65,
-            0.82 + visibleLensPower * 1.78,
-            1.00 + visibleLensPower * 1.95
+            0.92 + visibleLensPower * 0.40,
+            0.98 + visibleLensPower * 0.42,
+            1.00 + visibleLensPower * 0.45
           ]
         };
       } else if (mesh.metadata?.neonGlowColor) {
@@ -1285,23 +1265,25 @@ export class LegacyVisualEffects {
     this.syncHeadlampTransforms();
     this.syncHeadlightOutput();
 
-    // Running tail lamps stay visibly red; braking raises their output.
+    // Match the stable renderer: running lamps are red and the brake state
+    // increases red output without washing the lens toward white.
+    const braking = Boolean(vehicle.brake || (vehicle.brakeRequested ?? 0) > 1);
     if (this.tailMaterial) {
-      const braking = Boolean(vehicle.brake || (vehicle.brakeRequested ?? 0) > 1);
-      this.tailMaterial.emissiveColor = braking
-        ? new Color3(1.45, 0.028, 0.075)
-        : new Color3(0.42, 0.006, 0.022);
+      const brakeLevel = braking ? 1 : 0;
+      this.tailMaterial.emissiveColor.set(
+        0.56 + brakeLevel * 0.38,
+        0.006 + brakeLevel * 0.012,
+        0.018 + brakeLevel * 0.020
+      );
     }
 
-    // Indicators follow the steering side and blink at the legacy cadence.
+    // Indicators follow the same steering side and blink cadence as the old game.
     const steerInput = Number(vehicle.steerInput ?? 0);
     const blinkOn = Math.sin(performance.now() * 0.012) > -0.15;
     for (const [side, material] of vehicle.turnSignalMaterials ?? []) {
       const selected = side < 0 ? steerInput < -0.16 : steerInput > 0.16;
       const active = selected && blinkOn;
-      material.emissiveColor = active
-        ? new Color3(1.65, 0.48, 0.045)
-        : new Color3(0.012, 0.004, 0.001);
+      material.emissiveColor.set(active ? 1.55 : 0, active ? 0.48 : 0, active ? 0.055 : 0);
     }
     for (const [key, shadow] of this.wheelShadows) {
       const pivot = vehicle.wheelPivots?.get?.(key);
