@@ -161,6 +161,7 @@ try {
       && effects?.vehicleOutlineWidth >= 0.075
       && effects?.headlampOpticsPostProcessReady === true
       && effects?.headlampOpticsShaderReady === true
+      && effects?.roadSampleCount > 100
       && effects?.vehicleOutlineEdgeMeshCount >= 20
       && effects?.vehicleOutlineEdgeWidth >= 3
       && effects?.glassDiffuseColor?.every((channel) => channel <= 0.04)
@@ -199,6 +200,7 @@ try {
       || illuminatedHeadlights.vehicleOutlineWidth < 0.075
       || !illuminatedHeadlights.headlampOpticsPostProcessReady
        || !illuminatedHeadlights.headlampOpticsShaderReady
+       || illuminatedHeadlights.roadSampleCount < 100
       || illuminatedHeadlights.vehicleOutlineEdgeMeshCount < 20
       || illuminatedHeadlights.vehicleOutlineEdgeWidth < 3
       || !illuminatedHeadlights.glassDiffuseColor?.every((channel) => channel <= 0.04)
