@@ -1019,6 +1019,13 @@ void main(void) {
       headlampOpticsEnabled: Boolean(this.lensFlaresEnabled && this.headlightsEnabled),
       lensFlareTexturesReady: this.lensFlareSystems.flatMap((system) => system.lensFlares)
         .every((flare) => Boolean(flare.texture?.isReady?.())),
+      headlampOpticsPostProcessReady: Boolean(this.headlampOpticsPostProcess),
+      headlampOpticsSourceCount: this.headlampOpticsSourceCount,
+      headlampOpticsEnabled: Boolean(this.lensFlaresEnabled && this.headlightsEnabled),
+      headlightRoadProbeEnergy: this.headlightRoadProbeEnergy,
+      glassDiffuseColor: this.vehicle?.materials?.get?.("glass")?.diffuseColor
+        ? [this.vehicle.materials.get("glass").diffuseColor.r, this.vehicle.materials.get("glass").diffuseColor.g, this.vehicle.materials.get("glass").diffuseColor.b]
+        : null,
       headlampGlowMeshCount: this.headlampGlowMeshes.length,
       headlampGlowActiveCount: this.headlampGlowMeshes.filter((mesh) => Boolean(mesh.metadata?.neonGlowColor)).length,
       vehicleOutlineMeshCount: this.outlineMeshes.size,
