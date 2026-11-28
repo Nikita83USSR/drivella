@@ -589,8 +589,8 @@ export function buildRoadFurnitureChunkGeometry(
       ) {
         // Keep the metal barrier clearly outside the coloured shoulder strips.
         const railOffset = ROAD_EDGE_OUTER_OFFSET + 1.65;
-        const groundA = offsetPoint(a, side * railOffset, ROAD_SHOULDER_OFFSET);
-        const groundB = offsetPoint(b, side * railOffset, ROAD_SHOULDER_OFFSET);
+        const groundA = terrainPointAtOffset(a, side, railOffset, 0.05);
+        const groundB = terrainPointAtOffset(b, side, railOffset, 0.05);
         const topA = { ...groundA, y: groundA.y + 0.98 };
         const topB = { ...groundB, y: groundB.y + 0.98 };
         const midA = { ...groundA, y: groundA.y + 0.52 };
