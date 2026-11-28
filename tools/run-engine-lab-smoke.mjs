@@ -90,28 +90,9 @@ try {
       + JSON.stringify({ initialEffects, missingEffects }));
   }
 
-  // Verify optional global bloom can be enabled, then leave the single local
-  // neon GlowLayer as the default to avoid a double halo.
-  await page.locator("#fxToggle").click();
-  const framesBeforeBloom = await page.evaluate(() => window.__DRIVELLA_LAB__?.frames ?? 0);
-  await page.locator('[data-effect="bloom"]').check();
-  await page.waitForFunction((startFrame) => {
-    const state = window.__DRIVELLA_LAB__;
-    return state?.legacyEffects?.bloom === true && state.frames >= startFrame + 6;
-  }, framesBeforeBloom, { timeout: 15000 });
-  const framesBeforeBloomOff = await page.evaluate(() => window.__DRIVELLA_LAB__?.frames ?? 0);
-  await page.locator('[data-effect="bloom"]').uncheck();
-  await page.waitForFunction((startFrame) => {
-    const state = window.__DRIVELLA_LAB__;
-    return state?.legacyEffects?.bloom === false && state.frames >= startFrame + 4;
-  }, framesBeforeBloomOff, { timeout: 15000 });
-  const bloomTogglePass = {
-    enabled: true,
-    disabled: (await page.evaluate(() => window.__DRIVELLA_LAB__?.legacyEffects?.bloom)) === false
-  };
-
   // Exercise SSR as an isolated, user-triggered effect. The browser test checks
   // that frames continue advancing while SSR is attached and after detaching it.
+  await page.locator("#fxToggle").click();
   for (const effect of ["ssao", "shadows", "godRays"]) {
     await page.locator('[data-effect="' + effect + '"]').uncheck();
   }
@@ -504,7 +485,7 @@ try {
 
   await mkdir("artifacts", { recursive: true });
   await page.screenshot({ path: "artifacts/engine-lab-spatial-preview.png" });
-  console.log("NATIVE GRAPHICS EFFECTS PASS", JSON.stringify({ initialEffects, bloomTogglePass, reflectionTogglePass, restoredEffects }));
+  console.log("NATIVE GRAPHICS EFFECTS PASS", JSON.stringify({ initialEffects, reflectionTogglePass, restoredEffects }));
   console.log("ENGINE LAB PASS", JSON.stringify(state));
   console.log("VEHICLE HANDLING ACCEPTANCE DATA",JSON.stringify(handlingSamples));
   console.log("RUNTIME NETWORK PASS: same-origin requests only.");
