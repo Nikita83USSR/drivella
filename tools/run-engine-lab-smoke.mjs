@@ -174,7 +174,10 @@ try {
       && effects?.headlampGlowActiveCount === 4
       && effects?.vehicleOutlineMeshCount >= 20
       && effects?.vehicleOutlineWidth >= 0.075
-      && effects?.headlampOpticsPostProcessReady === true
+      && effects?.lampFlareTextureReady === true
+      && effects?.lampFlareSpriteCount === 10
+      && effects?.lampFlareAnchoringMaxError < 0.001
+      && effects?.lampFlareAnchors?.every((anchor) => anchor.parentIsSource && anchor.error < 0.001) === true
       && effects?.headlampOpticsShaderReady === true
       && effects?.lampFlareTargetCount === 10
       && effects?.tailLampMeshCount === 1
@@ -218,7 +221,11 @@ try {
       || illuminatedHeadlights.headlampGlowActiveCount !== 4
       || illuminatedHeadlights.vehicleOutlineMeshCount < 20
       || illuminatedHeadlights.vehicleOutlineWidth < 0.075
-      || !illuminatedHeadlights.headlampOpticsPostProcessReady
+      || !illuminatedHeadlights.lampFlareTextureReady
+       || illuminatedHeadlights.lampFlareSpriteCount !== 10
+       || illuminatedHeadlights.lampFlareAnchoringMaxError >= 0.001
+       || illuminatedHeadlights.lampFlareAnchors?.length !== 10
+       || illuminatedHeadlights.lampFlareAnchors?.some((anchor) => !anchor.parentIsSource || anchor.error >= 0.001)
        || !illuminatedHeadlights.headlampOpticsShaderReady
        || illuminatedHeadlights.lampFlareTargetCount !== 10
        || illuminatedHeadlights.tailLampMeshCount !== 1
@@ -294,6 +301,7 @@ try {
       velocityX:s.vehicleVelocityX,velocityY:s.vehicleVelocityY,velocityZ:s.vehicleVelocityZ,
       maxCompression:s.vehicleMaxSuspensionCompression,averageCompression:s.vehicleAverageSuspensionCompression,
       wheels:s.vehicleWheelDiagnostics?.map(w=>({key:w.key,compression:w.compression,springForce:w.springForce,damperForce:w.damperForce,bumpForce:w.bumpForce,rawSpringForce:w.rawSpringForce,anchorY:w.anchorY,suspensionLength:w.suspensionLength,pointVelocityY:w.pointVelocityY,contactY:w.contactY})) ,
+      lampFlareAnchors:s.legacyEffects?.lampFlareAnchors ?? [],lampFlareAnchoringMaxError:s.legacyEffects?.lampFlareAnchoringMaxError ?? null,
       bottomClearance:s.vehicleRoadBodyBottomClearance,appliedForceX:s.vehicleAppliedForceX,appliedForceZ:s.vehicleAppliedForceZ,
       forwardX:s.vehicleForwardX,forwardZ:s.vehicleForwardZ,roadY:s.vehicleRoadSurfaceY,roadDistance:s.vehicleRoadDistance,
       spawnX:s.vehicleSpawnX,spawnZ:s.vehicleSpawnZ,spawnGrade:s.vehicleSpawnGrade,spawnToProbe:s.vehicleSpawnDistanceFromRoadProbe,
@@ -313,6 +321,14 @@ try {
   handlingSamples.accelerationT500=await sampleVehicle();
   await page.waitForTimeout(500);
   handlingSamples.accelerationT1000=await sampleVehicle();
+  if (handlingSamples.accelerationT1000.lampFlareAnchors.length !== 10
+      || handlingSamples.accelerationT1000.lampFlareAnchoringMaxError >= 0.001
+      || handlingSamples.accelerationT1000.lampFlareAnchors.some((anchor) => !anchor.parentIsSource || anchor.error >= 0.001)) {
+    throw new Error("Lamp starbursts detached from their source meshes while the vehicle was moving: "
+      + JSON.stringify(handlingSamples.accelerationT1000.lampFlareAnchors));
+  }
+  await mkdir("artifacts", { recursive: true });
+  await page.screenshot({ path: "artifacts/engine-lab-lamp-flare-follow-preview.png" });
   await page.waitForTimeout(500);
   handlingSamples.acceleration=await sampleVehicle();
   await page.keyboard.up("w");
