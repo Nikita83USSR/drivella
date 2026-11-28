@@ -228,7 +228,7 @@ assert.ok(roadStats.chunkKeys.length >= 8, "the circuit must traverse several wo
 const roadFurnitureStats = getRoadFurnitureStats(roadSamplesA);
 assert.ok(roadFurnitureStats.transitionSegments > 0, "cached road edge statistics must identify cut/fill sections");
 assert.ok(roadFurnitureStats.drainageSegments > 0, "cached road edge statistics must identify drainage sections");
-assert.ok(roadFurnitureStats.guardrailSegments > 0, "cached road edge statistics must identify exposed drops");
+assert.ok(roadFurnitureStats.fencedDropSegments > 0, "cached road edge statistics must identify exposed drops");
 assert.ok(Math.abs(nearestRoadSurfaceHeight(0, 0, roadSamplesA) - 1.05) < 0.001,
   "road start/finish elevation must remain 1.05 m above central terrain");
 let roadSegments = 0;
@@ -237,8 +237,8 @@ let roadMarkingSegments = 0;
 let roadMarkingVertices = 0;
 let transitionSegments = 0;
 let drainageSegments = 0;
-let guardrailSegments = 0;
-let guardrailPosts = 0;
+let fencedDropSegments = 0;
+let fencedDropPosts = 0;
 let furnitureVertices = 0;
 let bridgePiers = 0;
 let bridgeGirderSegments = 0;
@@ -258,9 +258,11 @@ for (const key of roadStats.chunkKeys) {
   const furniture = buildRoadFurnitureChunkGeometry(roadSamplesA, x, y, z, 128);
   transitionSegments += furniture.transitionSegments;
   drainageSegments += furniture.drainageSegments;
-  guardrailSegments += furniture.guardrailSegments;
-  guardrailPosts += furniture.guardrailPosts;
+  fencedDropSegments += furniture.fencedDropSegments;
+  fencedDropPosts += furniture.fencedDropPosts;
   furnitureVertices += furniture.positions.length / 3;
+  assert.equal(furniture.guardrailSegments, 0, "no separate metallic guardrail mesh should be rendered");
+  assert.equal(furniture.guardrailPosts, 0, "no separate metallic guardrail posts should be rendered");
   bridgePiers += furniture.bridgePiers;
   bridgeGirderSegments += furniture.bridgeGirderSegments;
   assert.ok(furniture.positions.every(Number.isFinite), `road furniture chunk ${key} has invalid geometry`);
@@ -272,14 +274,14 @@ assert.ok(roadMarkingSegments > roadSegments / 4, "separated white lane dashes m
 assert.ok(roadMarkingVertices > roadMarkingSegments * 3, "white lane dashes must contain real visible geometry");
 assert.ok(transitionSegments > 0, "cut/fill transitions should be dressed where terrain diverges from the road shoulder");
 assert.ok(drainageSegments > 0, "uphill road cuts should receive drainage channels");
-assert.ok(guardrailSegments > 0 && guardrailPosts > 0, "exposed road drops should receive guardrails and supports");
+assert.ok(fencedDropSegments > 0 && fencedDropPosts > 0, "exposed road drops should be covered by the shared neon fence and its posts");
 assert.ok(furnitureVertices > 1000, "roadside transition and safety geometry should be generated");
 assert.ok(bridgePiers >= 4, "raised river crossings should receive visible structural support piers");
 assert.ok(bridgeGirderSegments >= 6, "raised river crossings should receive continuous structural deck girders");
 
 console.log("ROAD NETWORK TEST PASS", JSON.stringify({
   ...roadStats, roadSegments, roadVertices, roadMarkingSegments, roadMarkingVertices,
-  transitionSegments, drainageSegments, guardrailSegments, guardrailPosts, furnitureVertices, bridgePiers, bridgeGirderSegments
+  transitionSegments, drainageSegments, fencedDropSegments, fencedDropPosts, furnitureVertices, bridgePiers, bridgeGirderSegments
 }));
 
 console.log("SPATIAL CHUNK TEST PASS", JSON.stringify(initial));
