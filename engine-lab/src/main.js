@@ -553,10 +553,10 @@ function createEnvironment(scene) {
   camera.inertia = 0.78;
   scene.activeCamera = camera;
 
-  const neonGlow = new GlowLayer("drivella-neon-glow", scene, { blurKernelSize: 24 });
+  const neonGlow = new GlowLayer("drivella-neon-glow", scene, { blurKernelSize: 18 });
   const environmentNeonGlow = neonGlow;
-  // Local emission gives the grid/kerbs their neon edge; scene bloom is subtle.
-  neonGlow.intensity = 0.46;
+  // A single, tighter GlowLayer keeps the grid and raised kerbs neon without a second bloom pass.
+  neonGlow.intensity = 0.38;
   neonGlow.customEmissiveColorSelector = (mesh, _subMesh, material, result) => {
     const glow = mesh.metadata?.neonGlowColor;
     if (glow) {

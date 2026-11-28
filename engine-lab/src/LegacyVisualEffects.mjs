@@ -234,9 +234,9 @@ export class LegacyVisualEffects {
   createPostProcessing() {
     try {
       this.pipeline = new DefaultRenderingPipeline("drivella-legacy-render-pipeline", true, this.scene, [this.camera]);
-      // The GlowLayer below owns local neon halos. Keep scene-wide bloom
-      // subtle so emissive meshes are not bloomed a second time.
-      this.pipeline.bloomEnabled = true;
+      // GlowLayer is the single always-on neon halo. Global bloom is optional
+      // and starts off so the same neon pixels are not bloomed twice.
+      this.pipeline.bloomEnabled = false;
       this.pipeline.bloomThreshold = 0.94;
       this.pipeline.bloomWeight = 0.11;
       this.pipeline.bloomKernel = 48;
@@ -247,7 +247,7 @@ export class LegacyVisualEffects {
       this.recordError("scene bloom pipeline", error);
       try {
         this.pipeline = new DefaultRenderingPipeline("drivella-legacy-render-pipeline-fallback", false, this.scene, [this.camera]);
-        this.pipeline.bloomEnabled = true;
+        this.pipeline.bloomEnabled = false;
         this.pipeline.bloomThreshold = 0.95;
         this.pipeline.bloomWeight = 0.10;
         this.pipeline.bloomKernel = 40;
@@ -581,6 +581,7 @@ export class LegacyVisualEffects {
         step: this.ssr.step,
         blurDispersionStrength: this.ssr.blurDispersionStrength
       } : null,
+      bloomSupported: Boolean(this.pipeline),
       bloomWeight: this.pipeline?.bloomWeight ?? null,
       glowIntensity: this.glowLayer?.intensity ?? null,
       shadows: Boolean(this.sunLight?.shadowEnabled),

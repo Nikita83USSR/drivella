@@ -82,18 +82,37 @@ try {
       frames: state?.frames ?? 0
     };
   });
-  const requiredEffects = ["bloom", "ssao", "shadows", "sun", "sunFogExcluded", "atmosphere", "godRays", "lensFlares", "underglow", "outlines"];
+  const requiredEffects = ["bloomSupported", "ssao", "shadows", "sun", "sunFogExcluded", "atmosphere", "godRays", "lensFlares", "underglow", "outlines"];
   const missingEffects = requiredEffects.filter((name) => initialEffects.effects?.[name] !== true);
-  if (!initialEffects.ready || missingEffects.length || initialEffects.effects?.reflections !== false
-      || initialEffects.effects?.reflectionsSupported !== true) {
+  if (!initialEffects.ready || missingEffects.length || initialEffects.effects?.bloom !== false
+      || initialEffects.effects?.reflections !== false || initialEffects.effects?.reflectionsSupported !== true) {
     throw new Error("Native visual-effects stack did not initialize with the expected SSR-on-demand profile: "
       + JSON.stringify({ initialEffects, missingEffects }));
   }
 
+  // Verify optional global bloom can be enabled, then leave the single local
+  // neon GlowLayer as the default to avoid a double halo.
+  await page.locator("#fxToggle").click();
+  const framesBeforeBloom = await page.evaluate(() => window.__DRIVELLA_LAB__?.frames ?? 0);
+  await page.locator('[data-effect="bloom"]').check();
+  await page.waitForFunction((startFrame) => {
+    const state = window.__DRIVELLA_LAB__;
+    return state?.legacyEffects?.bloom === true && state.frames >= startFrame + 6;
+  }, framesBeforeBloom, { timeout: 15000 });
+  const framesBeforeBloomOff = await page.evaluate(() => window.__DRIVELLA_LAB__?.frames ?? 0);
+  await page.locator('[data-effect="bloom"]').uncheck();
+  await page.waitForFunction((startFrame) => {
+    const state = window.__DRIVELLA_LAB__;
+    return state?.legacyEffects?.bloom === false && state.frames >= startFrame + 4;
+  }, framesBeforeBloomOff, { timeout: 15000 });
+  const bloomTogglePass = {
+    enabled: true,
+    disabled: (await page.evaluate(() => window.__DRIVELLA_LAB__?.legacyEffects?.bloom)) === false
+  };
+
   // Exercise SSR as an isolated, user-triggered effect. The browser test checks
   // that frames continue advancing while SSR is attached and after detaching it.
-  await page.locator("#fxToggle").click();
-  for (const effect of ["bloom", "ssao", "shadows", "godRays"]) {
+  for (const effect of ["ssao", "shadows", "godRays"]) {
     await page.locator('[data-effect="' + effect + '"]').uncheck();
   }
   const framesBeforeSSR = await page.evaluate(() => window.__DRIVELLA_LAB__?.frames ?? 0);
@@ -469,13 +488,14 @@ try {
   }
 
   await page.locator("#fxToggle").click();
-  for (const effect of ["bloom", "ssao", "shadows", "godRays"]) {
+  for (const effect of ["ssao", "shadows", "godRays"]) {
     await page.locator('[data-effect="' + effect + '"]').check();
   }
   await page.locator("#fxToggle").click();
   await page.waitForTimeout(300);
   const restoredEffects = await page.evaluate(() => window.__DRIVELLA_LAB__?.legacyEffects ?? null);
   if (requiredEffects.some((name) => restoredEffects?.[name] !== true)
+      || restoredEffects?.bloom !== false
       || restoredEffects?.reflections !== false
       || restoredEffects?.reflectionsSupported !== true) {
     throw new Error("Native graphics effects did not restore their expected profile after the physics smoke test: "
@@ -484,7 +504,7 @@ try {
 
   await mkdir("artifacts", { recursive: true });
   await page.screenshot({ path: "artifacts/engine-lab-spatial-preview.png" });
-  console.log("NATIVE GRAPHICS EFFECTS PASS", JSON.stringify({ initialEffects, reflectionTogglePass, restoredEffects }));
+  console.log("NATIVE GRAPHICS EFFECTS PASS", JSON.stringify({ initialEffects, bloomTogglePass, reflectionTogglePass, restoredEffects }));
   console.log("ENGINE LAB PASS", JSON.stringify(state));
   console.log("VEHICLE HANDLING ACCEPTANCE DATA",JSON.stringify(handlingSamples));
   console.log("RUNTIME NETWORK PASS: same-origin requests only.");
