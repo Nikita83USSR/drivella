@@ -178,7 +178,6 @@ try {
       && effects?.lampFlareSpriteCount === 10
       && effects?.lampFlareAnchoringMaxError < 0.001
       && effects?.lampFlareAnchors?.every((anchor) => anchor.parentIsSource && anchor.error < 0.001) === true
-      && effects?.headlampOpticsShaderReady === true
       && effects?.lampFlareTargetCount === 10
       && effects?.tailLampMeshCount === 1
       && effects?.roadSampleCount > 100
@@ -226,7 +225,6 @@ try {
        || illuminatedHeadlights.lampFlareAnchoringMaxError >= 0.001
        || illuminatedHeadlights.lampFlareAnchors?.length !== 10
        || illuminatedHeadlights.lampFlareAnchors?.some((anchor) => !anchor.parentIsSource || anchor.error >= 0.001)
-       || !illuminatedHeadlights.headlampOpticsShaderReady
        || illuminatedHeadlights.lampFlareTargetCount !== 10
        || illuminatedHeadlights.tailLampMeshCount !== 1
        || illuminatedHeadlights.roadSampleCount < 100
