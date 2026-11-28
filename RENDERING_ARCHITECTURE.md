@@ -1,11 +1,15 @@
 # DRIVELLA — Rendering Architecture
 
-Current reference: **v0.19.46 / BUILD 212**  
+Current stable reference: **v0.19.58 / BUILD 224**  
 Main renderer: `index.html` — custom WebGL 1 renderer, no external rendering engine.
 
 **Release marker policy:** every published renderer/game change increments `BUILD` in `index.html` and updates the visible HUD, boot screen, README, and this document in the same release. Increment the patch version with the build when appropriate. Never publish a renderer change while leaving the visible build number unchanged.
 
 This document records the rendering decisions that future vehicle, environment, lighting, and effects work must preserve. The goal is a reusable scene pipeline: new world geometry should take part in shadows and ambient occlusion automatically when it uses the shared draw path.
+
+## BUILD 224 — separate experimental 3D route
+
+The stable root game remains on its custom WebGL 1 renderer. The main menu now opens `/engine-lab/` in a separate tab for the Babylon.js 9.37.2 + Havok 1.3.14 technical preview. The preview's JavaScript runtime, Havok WASM, Countach source chunks, terrain/road/hydrology/tunnel modules, tests and license notices are stored in this repository. Its service worker is scoped to `/engine-lab/`; the experimental page has a direct return link to the stable root game. This is an additive route, not a production cutover or a merge of experimental vehicle physics into the stable build.
 
 ## Frame pipeline
 
