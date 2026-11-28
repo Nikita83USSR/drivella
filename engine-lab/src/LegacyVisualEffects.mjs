@@ -1020,6 +1020,7 @@ void main(void) {
       lensFlareTexturesReady: this.lensFlareSystems.flatMap((system) => system.lensFlares)
         .every((flare) => Boolean(flare.texture?.isReady?.())),
       headlampOpticsPostProcessReady: Boolean(this.headlampOpticsPostProcess),
+      headlampOpticsShaderReady: Boolean(this.headlampOpticsPostProcess?.getEffect?.()?.isReady?.()),
       headlampOpticsSourceCount: this.headlampOpticsSourceCount,
       headlampOpticsEnabled: Boolean(this.lensFlaresEnabled && this.headlightsEnabled),
       headlightRoadProbeEnergy: this.headlightRoadProbeEnergy,
