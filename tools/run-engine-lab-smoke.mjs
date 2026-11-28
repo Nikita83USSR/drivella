@@ -213,6 +213,17 @@ try {
   const invalidHeadlightBeams = (illuminatedHeadlights?.headlightBeams ?? []).filter((beam) =>
     beam.intensity < 1.5 || beam.positionDistance > 4.0 || beam.forwardAlignment < 0.82 || beam.directionY > -0.05
   );
+  const invalidLampFlareColors = (illuminatedHeadlights?.lampFlareAnchors ?? []).filter((anchor) => {
+    const [r, g, b] = anchor.color ?? [];
+    if (![r, g, b].every(Number.isFinite) || !anchor.colorSource) return true;
+    if (anchor.name.startsWith("headlamp-") || anchor.name.startsWith("fog-")) return !(b >= g && g >= r);
+    if (anchor.name.startsWith("front-signal-") || anchor.name.startsWith("rear-signal-")) return !(r > g && g > b);
+    if (anchor.name.startsWith("tail-")) return !(r > g * 3 && r > b * 3);
+    return true;
+  });
+  if (invalidLampFlareColors.length) {
+    throw new Error("Vehicle lamp starbursts do not match their source lamp colors: " + JSON.stringify(invalidLampFlareColors));
+  }
   if (illuminatedHeadlights?.headlightSourceCount !== 2 || illuminatedHeadlights?.headlightOpticPartCount !== 12
       || illuminatedHeadlights.headlightBeamIntensity < 1.5 || illuminatedHeadlights.headlightBeams?.length !== 2
       || invalidHeadlightBeams.length || !illuminatedHeadlights.headlightRoadPlugin
