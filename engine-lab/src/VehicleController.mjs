@@ -207,7 +207,7 @@ export class VehicleController{
   if(!scene?.getPhysicsEngine?.())throw new Error("Vehicle requires active Havok Physics V2.");
   if(!Array.isArray(roadSamples)||roadSamples.length<2||!startSample)throw new TypeError("Vehicle requires sampled road and spawn point.");
   this.scene=scene;this.model=model;this.startSample=startSample;this.metrics=model.metrics;this.mass=P.mass;this.keys=new Set();this.steer=0;this.steerInput=0;this.handbrake=false;this.brake=false;this.throttle=false;this.parked=true;this.driveRequested=0;this.brakeRequested=0;this.lastDt=1/60;
-  this.wheelContacts=new Map();this.wheelSpin=new Map(WHEELS.map(w=>[w.key,0]));this.wheelPivots=new Map();this.headlightPivots=new Map();this.headlightCaps=new Map();this.headlightOpticRoots=new Map();this.headlightProjectorAims=new Map();this.headlampLensMaterials=[];this.headlightDeploy=0;this.headlightDeployTarget=0;this.materials=new Map();this.ray=new PhysicsRaycastResult();this.appliedDriveForceWorld=Vector3.Zero();
+  this.wheelContacts=new Map();this.wheelSpin=new Map(WHEELS.map(w=>[w.key,0]));this.wheelPivots=new Map();this.headlightPivots=new Map();this.headlightCaps=new Map();this.headlightOpticRoots=new Map();this.headlightProjectorAims=new Map();this.headlampCoreMaterials=[];this.headlightDeploy=0;this.headlightDeployTarget=0;this.materials=new Map();this.ray=new PhysicsRaycastResult();this.appliedDriveForceWorld=Vector3.Zero();
   const yaw=Math.atan2(startSample.tangentX,startSample.tangentZ),width=clamp(model.bodySize.x*.88,1.72,2.05),length=clamp(model.bodySize.z*.80,3.65,4.05);
   this.unwrappedYaw=yaw;this.initialYaw=yaw;this.lastYaw=yaw;
   this.colliderDimensions={width,height:P.colliderH,length};
@@ -226,8 +226,8 @@ export class VehicleController{
  }
  buildMaterials(){
   const p={bodyPaint:["#b80518","#ffffff",72],bodyPlastic:["#111a27","#a9c5e6",92],bodyBlack:["#05080f","#242d3c",18],
-   glass:["#010204","#1c222b",120,"#000000"],bodyMetal:["#8798aa","#f0f5ff",120],bodyTail:["#6e0717","#ff687e",64],headlampR:["#c4d9ea","#ffffff",140,"#020409"],
-   headlampL:["#c4d9ea","#ffffff",140,"#020409"],sideMirror_bodyPlastic:["#101b2c","#8ba6c2",110],frontDetail_detailRed:["#b80518","#ffffff",140],
+   glass:["#010204","#1c222b",120,"#000000"],bodyMetal:["#8798aa","#f0f5ff",120],bodyTail:["#6e0717","#ff687e",64],headlampR:["#142b3d","#8fb4ce",140,"#010204"],
+   headlampL:["#142b3d","#8fb4ce",140,"#010204"],sideMirror_bodyPlastic:["#101b2c","#8ba6c2",110],frontDetail_detailRed:["#b80518","#ffffff",140],
    frontDetail_bodyPlastic:["#111a27","#536275",30],exhaustA_chrome:["#a9b5c3","#ffffff",150],exhaustB_chrome:["#a9b5c3","#ffffff",150],
    tyre:["#11151d","#394454",12],rims:["#a7b5c6","#ffffff",150],wheelExtra:["#62758c","#dceaff",95]};
   // Keep edge outlines for the toon look, but use StandardMaterial on paint and glazing
@@ -247,35 +247,56 @@ export class VehicleController{
   glassMaterial.emissiveColor.copyFrom(Color3.Black());
   glassMaterial.backFaceCulling=false;
   glassMaterial.twoSidedLighting=true;
-  this.materials.set("turnSignalL",material(this.scene,"countach-turn-signal-left","#4a2108","#ffb65b",72,"#120600"));
-  this.materials.set("turnSignalR",material(this.scene,"countach-turn-signal-right","#4a2108","#ffb65b",72,"#120600"));
+  this.materials.set("headlampCoreL",material(this.scene,"countach-headlamp-projector-core-left","#102336","#d8eaff",180,"#010204"));
+  this.materials.set("headlampCoreR",material(this.scene,"countach-headlamp-projector-core-right","#102336","#d8eaff",180,"#010204"));
+  this.materials.set("turnSignalL",material(this.scene,"countach-turn-signal-left","#6b2a05","#ffb65b",72,"#000000"));
+  this.materials.set("turnSignalR",material(this.scene,"countach-turn-signal-right","#6b2a05","#ffb65b",72,"#000000"));
   this.materials.set("fogLamp",material(this.scene,"countach-fog-lamp","#d7e5f4","#ffffff",180,"#7c9ab8"));
-  this.headlampLensMaterials=[this.materials.get("headlampL"),this.materials.get("headlampR")];
+  this.headlampCoreMaterials=[this.materials.get("headlampCoreL"),this.materials.get("headlampCoreR")];
   this.turnSignalMaterials=new Map([[-1,this.materials.get("turnSignalL")],[1,this.materials.get("turnSignalR")]]);
   this.tailMaterial=this.materials.get("bodyTail");
  }
  buildBody(){for(const [n,pos] of this.model.parts)if(!WHEEL_PARTS.has(n)&&!n.startsWith("movingLampCap")&&!n.startsWith("bodyTailSignal"))triangleMesh(this.scene,"countach-"+n,pos,this.bodyRoot,this.materials.get(n)??this.materials.get("bodyPlastic"));}
  buildSignals(){
-  const quad=(a,b,c,d)=>new Float32Array([...a,...b,...c,...a,...c,...d]);
+  // Match the stable DRIVELLA four-lamp Countach bumper layout exactly:
+  // amber indicators on the two outer positions and cool-white fog lamps inboard.
+  const centers=[[-.944,.621,2.588],[-.739,.623,2.588],[.739,.623,2.588],[.944,.621,2.588]];
+  const lampQuad=(center,halfWidth,halfHeight,normalOffset)=>{
+   const [cx,cy,cz]=center,upY=.38,upZ=-.925,nY=.925,nZ=.38;
+   const point=(sx,sy)=>[cx+sx*halfWidth,cy+sy*halfHeight*upY+normalOffset*nY,cz+sy*halfHeight*upZ+normalOffset*nZ];
+   const p0=point(-1,-1),p1=point(1,-1),p2=point(1,1),p3=point(-1,1);
+   return new Float32Array([...p0,...p1,...p2,...p0,...p2,...p3]);
+  };
   this.frontSignalMeshes=new Map();
+  this.frontSignalFrames=[];
   this.rearSignalMeshes=new Map();
   this.fogLightMeshes=[];
+  this.fogLightFrames=[];
   for(const side of [-1,1]){
    const key=side<0?"L":"R";
-   const x0=side<0?-.87:.72,x1=side<0?-.72:.87;
-   const amber=quad([x0,.360,2.981],[x1,.360,2.981],[x1,.270,2.981],[x0,.270,2.981]);
-   const front=triangleMesh(this.scene,"countach-front-turn-signal-"+key,amber,this.bodyRoot,this.turnSignalMaterials.get(side));
+   const signalIndex=side<0?0:3;
+   const signalFrame=triangleMesh(this.scene,"countach-front-turn-signal-frame-"+key,
+    lampQuad(centers[signalIndex],.066,.039,.014),this.bodyRoot,this.materials.get("bodyBlack"));
+   signalFrame.metadata={...(signalFrame.metadata??{}),vehicleSignalFrame:true,signalSide:key,signalPosition:"front"};
+   this.frontSignalFrames.push(signalFrame);
+   const front=triangleMesh(this.scene,"countach-front-turn-signal-"+key,
+    lampQuad(centers[signalIndex],.050,.025,.027),this.bodyRoot,this.turnSignalMaterials.get(side));
    front.metadata={...(front.metadata??{}),vehicleSignal:true,signalSide:key,signalPosition:"front"};
    this.frontSignalMeshes.set(side,front);
+
    const rearData=this.model.parts.get("bodyTailSignal"+key);
    if(!rearData)throw new Error("Countach rear turn signal geometry is missing: "+key);
    const rear=triangleMesh(this.scene,"countach-rear-turn-signal-"+key,rearData,this.bodyRoot,this.turnSignalMaterials.get(side));
    rear.metadata={...(rear.metadata??{}),vehicleSignal:true,signalSide:key,signalPosition:"rear"};
    this.rearSignalMeshes.set(side,rear);
-   // Inboard white running/fog lamps from the original Countach bumper layout.
-   const fx0=side<0?-.655:.555,fx1=side<0?-.555:.655;
-   const fogGeometry=quad([fx0,.360,2.981],[fx1,.360,2.981],[fx1,.270,2.981],[fx0,.270,2.981]);
-   const fog=triangleMesh(this.scene,"countach-front-fog-lamp-"+key,fogGeometry,this.bodyRoot,this.materials.get("fogLamp"));
+
+   const fogIndex=side<0?1:2;
+   const fogFrame=triangleMesh(this.scene,"countach-front-fog-lamp-frame-"+key,
+    lampQuad(centers[fogIndex],.066,.039,.014),this.bodyRoot,this.materials.get("bodyBlack"));
+   fogFrame.metadata={...(fogFrame.metadata??{}),vehicleFogLampFrame:true};
+   this.fogLightFrames.push(fogFrame);
+   const fog=triangleMesh(this.scene,"countach-front-fog-lamp-"+key,
+    lampQuad(centers[fogIndex],.050,.025,.027),this.bodyRoot,this.materials.get("fogLamp"));
    fog.metadata={...(fog.metadata??{}),vehicleFogLamp:true};
    this.fogLightMeshes.push(fog);
   }
@@ -306,21 +327,21 @@ export class VehicleController{
    opticsRoot.parent=rotationNode;opticsRoot.position.set(0,-POP_HINGE_Y,-2.30);
    this.headlightOpticRoots.set(side,opticsRoot);
 
-   const geometry=buildCountachPopUpOptics(side),glass=this.materials.get(side<0?"headlampL":"headlampR");
+   const geometry=buildCountachPopUpOptics(side),glass=this.materials.get(side<0?"headlampL":"headlampR"),core=this.materials.get(side<0?"headlampCoreL":"headlampCoreR");
    const parts=[
     ["housing",geometry.housing,this.materials.get("bodyBlack")],
     ["front",geometry.front,this.materials.get("bodyBlack")],
     ["bezel",geometry.bezel,this.materials.get("bodyMetal")],
     ["lens",geometry.lens,glass],
     ["projector-rings",geometry.rings,this.materials.get("bodyMetal")],
-    ["projector-core",geometry.core,glass]
+    ["projector-core",geometry.core,core]
    ];
    for(const [partName,positions,material] of parts){
     const mesh=triangleMesh(this.scene,"countach-popup-"+partName+"-"+key,positions,opticsRoot,material);
     mesh.metadata={...(mesh.metadata??{}),headlightOptic:true,headlightSide:key,headlightPart:partName};
    }
    this.headlightProjectorAims.set(side,geometry.projectorAim);
-   if(!this.headlampLensMaterials.includes(glass))this.headlampLensMaterials.push(glass);
+   if(!this.headlampCoreMaterials.includes(core))this.headlampCoreMaterials.push(core);
   }
  }
  setHeadlightsDeployed(enabled){
